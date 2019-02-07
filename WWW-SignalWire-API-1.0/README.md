@@ -1,4 +1,4 @@
-WWW-SignalWire-API version 0.20
+WWW-SignalWire-API version 1.0
 ===========================
 
 WWW::SignalWire::API is a flexible, extensible API for SignalWire written in
@@ -9,26 +9,27 @@ the API without any changes whatsoever.
 Make any SignalWire API call in two lines of code:
 
     ## make a SignalWire object
-    my $twilio = new WWW::SignalWire::API( AccountSid => '(your sid here)',
-                                     AuthToken  => '(your auth token here)' );
+    my $signalwire = new WWW::SignalWire::API( AccountSid => '(PROJECT KEY)',
+                                     AuthToken  => '(TOKEN)',
+				     API_URL    => 'https://SPACE.signalwire.com');
 
     ## retrieve calls I've made
-    $response = $twilio->GET('Calls');
+    $response = $signalwire->GET('Calls');
 
     ## place a new call to 801-123-5555 from 403-123-1234
-    $response = $twilio->POST('Calls',
+    $response = $signalwire->POST('Calls',
                               From => '4031231234',
                               To   => '8011235555',
-                              Url  => 'http://perlcode.org/cgi-bin/twilio');
+                              Url  => 'http://example.org/cgi-bin/signalwire');
 
     ## see account information
-    $response = $twilio->GET('Accounts');
+    $response = $signalwire->GET('Accounts');
 
     ## see details for a specific call
-    $response = $twilio->GET('Calls/CA42ed11f93dc08b952027ffbc406d0868');
+    $response = $signalwire->GET('Calls/CA42ed11f93dc08b952027ffbc406d0868');
 
     ## send an SMS message
-    $response = $twilio->POST( 'SMS/Messages',
+    $response = $signalwire->POST( 'Messages',
                                From => $from,
                                To   => $to,
                                Body => $body );
