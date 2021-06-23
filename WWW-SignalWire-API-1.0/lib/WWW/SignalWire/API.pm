@@ -74,7 +74,6 @@ sub _do_request {
     my $api = delete $args{API} || '';
     $url .= "/Accounts/" . $account_sid{$self};
     $url .= ( $api eq 'Accounts' ? '' : "/$api" );
-    print "$url\n";
 
     my $content = '';
     if( keys %args ) {
