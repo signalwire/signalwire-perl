@@ -40,6 +40,8 @@ sub addAIApplication {
     my $app      = "ai";
     my $args      = {};
 
+    $self->setVersion($self->{_version});
+
     foreach my $data ('postPrompt','voice', 'engine', 'postPromptURL', 'postUser', 'postPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
 	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
@@ -121,9 +123,9 @@ sub addAIhints {
 # Set document version
 sub setVersion {
     my $self    = shift;
-    my $version = shift;
+    my $v       = shift;
 
-    $self->{_content}->{version} = $version ? $version : $self->{_version};
+    $self->{_content}->{version} = $v ? $v : $self->{_version};
 
     return;
 }
@@ -187,7 +189,7 @@ sub renderJSON {
     my $json = JSON->new->allow_nonref;
     my $i = 0;
 
-    return $json->pretty->encode( $self->{_content} )
+    return $json->pretty->utf8->encode( $self->{_content} )
 }
 
 1;
