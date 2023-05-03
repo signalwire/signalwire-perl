@@ -1,4 +1,4 @@
-package SignalWire::SWML;
+package SignalWire::ML;
 
 use strict;
 use warnings;
@@ -22,11 +22,11 @@ sub new {
     $self->{_params}        = $args->{params}        ||= {};
     $self->{_prompt}        = $args->{prompt}        ||= {};
     $self->{_hints}         = $args->{hints}         ||= [];
-    $self->{_postPromptURL} = $args->{postPromptURL};
-    $self->{_postUser}      = $args->{postUser}      ||= undef;
-    $self->{_postPassword}  = $args->{postPassword}  ||= undef;
-    $self->{_languages}     = $args->{lanuages}      ||= [];
-    $self->{_SWAIG}         = $args->{SWAIG};
+    $self->{_postPromptURL}      = $args->{postPromptURL};
+    $self->{_postPromptUser}     = $args->{postPromptUser};
+    $self->{_postPromptPassword} = $args->{postPromptPassword};
+    $self->{_languages}          = $args->{lanuages};
+    $self->{_SWAIG}              = $args->{SWAIG};
 
     return bless($self, $class);
 }
@@ -35,14 +35,15 @@ sub new {
 # taking all the previously set params and options for the AI and
 # attaching them to the application.
 sub addAIApplication {
-    my $self     = shift;
-    my $section  = shift;
-    my $app      = "ai";
-    my $args      = {};
+    my $self    = shift;
+    my $section = shift;
+    my $app     = "ai";
+    my $args    = {};
 
     $self->setVersion($self->{_version});
 
-    foreach my $data ('postPrompt','voice', 'engine', 'postPromptURL', 'postUser', 'postPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
+    foreach my $data ('postPrompt','voice', 'engine', 'postPromptURL', 'postPromptUser',
+		      'postPromptPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
 	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
     }
@@ -67,11 +68,12 @@ sub addApplication {
 
 # set postUrl and optionally pass in postUser and postPassword
 sub setAIpostPromptURL {
-    my $self = shift;
-    my $post = shift;
+    my $self       = shift;
+    my $postprompt = shift;
 
-    while ( my ($k,$v) = each(%{$post}) ) {
-	$self->{"_$k"} = $post->{$k};
+    while ( my ($k,$v) = each(%{$postprompt}) ) {
+	print "$k\n";
+	$self->{"_$k"} = $postprompt->{$k};
     }
 
     return;
@@ -88,7 +90,7 @@ sub setAIparams {
 
 # Add one or more params
 sub addAIparams {
-    my $self = shift;
+    my $self   = shift;
     my $params = shift;
 
     while ( my ($k,$v) = each(%{$params}) ) {
@@ -100,7 +102,7 @@ sub addAIparams {
 
 # Set hints overriding any previously set hints
 sub setAIhints {
-    my $self = shift;
+    my $self  = shift;
     my @hints = @_;
 
     $self->{_hints} = \@hints;
@@ -122,16 +124,16 @@ sub addAIhints {
 
 # Set document version
 sub setVersion {
-    my $self    = shift;
-    my $v       = shift;
-
-    $self->{_content}->{version} = $v ? $v : $self->{_version};
+    my $self     = shift;
+    my $version  = shift;
+    
+    $self->{_content}->{version} = $version ? $version : $self->{_version};
 
     return;
 }
 
 sub addAISWAIG {
-    my $self = shift;
+    my $self  = shift;
     my $SWAIG = shift;
 
     @{ $self->{_SWAIG} } = (@{ $self->{_SWAIG} }, $SWAIG);
@@ -183,11 +185,10 @@ sub setAIprompt {
     return;
 }
 
-# Render the SWML > JSON;
+# Render the ML > JSON;
 sub renderJSON {
     my $self = shift;
     my $json = JSON->new->allow_nonref;
-    my $i = 0;
 
     return $json->pretty->utf8->encode( $self->{_content} )
 }

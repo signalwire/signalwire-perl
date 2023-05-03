@@ -1,5 +1,5 @@
 ---
-abstract: 'Light and fast SWML generator'
+abstract: 'Light and fast ML generator'
 author:
   - 'Brian West <brian@signalwire.com>'
 build_requires:
@@ -12,7 +12,7 @@ license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: '1.4'
-name: SignalWire-SWML
+name: SignalWire-ML
 no_index:
   directory:
     - t

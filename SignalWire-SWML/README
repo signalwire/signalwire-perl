@@ -1,13 +1,13 @@
-SignalWire-SWML version 1.0
+SignalWire-ML version 1.0
 =============================
 
-SignalWire::SWML is a small module for creating SignalWire SWML
+SignalWire::ML is a small module for creating SignalWire ML
 
-SWML documents:
+ML documents:
 
     Example 1:
     
-    my $swml = new SignalWire::SWML({version => '1.0.1', voice => 'en-US-Neural2-J' });
+    my $swml = new SignalWire::ML({version => '1.0.1', voice => 'en-US-Neural2-J' });
     $swml->addAIlanguage({name => 'English', code => 'en-US', voice => 'en-US-Neural2-F'});
     $swml->addAIlanguage({name => 'French',  code => 'fr-FR', voice => 'fr-FR-Neural2-E'});
     $swml->setAIparams({direction => 'outbound', waitForUser => true, callFromNumber => ',19184238080', callEnabled => 'false', smsEnabled => 'false' });
@@ -28,7 +28,7 @@ SWML documents:
 
 Example 2:
 
-    my $swml = new SignalWire::SWML({version => '1.0.1', voice => 'en-US-Neural2-J' });
+    my $swml = new SignalWire::ML({version => '1.0.1', voice => 'en-US-Neural2-J' });
     $swml->addApplication("test", "play",
 			  { urls => ['https://github.com/freeswitch/freeswitch-sounds/raw/master/fr/ca/june/voicemail/48000/vm-goodbye.wav'] });
     $swml->addApplication("test", "hangup", "NORMAL_CLEARING");

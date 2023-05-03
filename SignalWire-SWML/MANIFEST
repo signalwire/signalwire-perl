@@ -2,6 +2,6 @@ Changes
 Makefile.PL
 MANIFEST
 README
-lib/SignalWire/SWML.pm
+lib/SignalWire/ML.pm
 META.yml                                 Module meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
