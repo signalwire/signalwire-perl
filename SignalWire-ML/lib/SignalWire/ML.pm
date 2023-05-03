@@ -22,11 +22,11 @@ sub new {
     $self->{_params}        = $args->{params}        ||= {};
     $self->{_prompt}        = $args->{prompt}        ||= {};
     $self->{_hints}         = $args->{hints}         ||= [];
-    $self->{_postPromptURL}      = $args->{postPromptURL};
-    $self->{_postPromptUser}     = $args->{postPromptUser};
-    $self->{_postPromptPassword} = $args->{postPromptPassword};
-    $self->{_languages}          = $args->{lanuages};
-    $self->{_SWAIG}              = $args->{SWAIG}    ||= [];
+    $self->{_postPromptURL}          = $args->{postPromptURL};
+    $self->{_postPromptAuthUser}     = $args->{postPromptAuthUser};
+    $self->{_postPromptAuthPassword} = $args->{postPromptAuthPassword};
+    $self->{_languages}              = $args->{lanuages};
+    $self->{_SWAIG}                  = $args->{SWAIG}    ||= [];
 
     return bless($self, $class);
 }
@@ -42,8 +42,8 @@ sub addAIApplication {
 
     $self->setVersion($self->{_version});
 
-    foreach my $data ('postPrompt','voice', 'engine', 'postPromptURL', 'postPromptUser',
-		      'postPromptPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
+    foreach my $data ('postPrompt','voice', 'engine', 'postPromptURL', 'postPromptAuthUser',
+		      'postPromptAuthPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
 	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
     }
