@@ -26,11 +26,11 @@ $swml->setAIpostPromptURL({
     postPromptPassword => $ENV{postPromptPassword}
 			  });
 $swml->addAISWAIG({function => 'get_weather', purpose => "To determine what the current weather is in a provided location.",
-		   arugment => "The location or name of the city to get the weather from.", webHookURL => "https://briankwest.ngrok.io/public/swaig.cgi"
+		   arugment => "The location or name of the city to get the weather from.", webHookURL => $ENV{webHookURL}
 		  });
 
 $swml->addAISWAIG({function => 'get_world_time', purpose => "To determine what the current time is in a provided location.",
-		   arugment => "The location or name of the city to get the time from.", webHookURL => "https://briankwest.ngrok.io/public/swaig.cgi"
+		   arugment => "The location or name of the city to get the time from.", webHookURL => $ENV{webHookURL}
 		  });
 
 $swml->addAIApplication("main");
