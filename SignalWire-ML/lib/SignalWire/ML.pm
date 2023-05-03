@@ -26,7 +26,7 @@ sub new {
     $self->{_postPromptUser}     = $args->{postPromptUser};
     $self->{_postPromptPassword} = $args->{postPromptPassword};
     $self->{_languages}          = $args->{lanuages};
-    $self->{_SWAIG}              = $args->{SWAIG};
+    $self->{_SWAIG}              = $args->{SWAIG}    ||= [];
 
     return bless($self, $class);
 }
