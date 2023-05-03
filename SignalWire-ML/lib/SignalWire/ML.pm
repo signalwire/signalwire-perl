@@ -72,7 +72,6 @@ sub setAIpostPromptURL {
     my $postprompt = shift;
 
     while ( my ($k,$v) = each(%{$postprompt}) ) {
-	print "$k\n";
 	$self->{"_$k"} = $postprompt->{$k};
     }
 
