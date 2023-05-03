@@ -23,7 +23,7 @@ $swml->addAIhints("internet", "cable", "speed");
 $swml->setAIpostPromptURL({
     postPromptURL => $ENV{postPromptURL},
     postPromptAuthUser => $ENV{postPromptAuthUser},
-    postPromptPassword => $ENV{postPromptPassword}
+    postPromptAuthPassword => $ENV{postPromptAuthPassword}
 			  });
 $swml->addAISWAIG({function => 'get_weather', purpose => "To determine what the current weather is in a provided location.",
 		   arugment => "The location or name of the city to get the weather from.", webHookURL => "$ENV{webHookURL}"
