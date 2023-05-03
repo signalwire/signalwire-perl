@@ -3,6 +3,7 @@ package SignalWire::ML;
 use strict;
 use warnings;
 use JSON;
+use YAML qw(Dump Bless);;
 use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
@@ -125,7 +126,7 @@ sub addAIhints {
 sub setVersion {
     my $self     = shift;
     my $version  = shift;
-    
+
     $self->{_content}->{version} = $version ? $version : $self->{_version};
 
     return;
@@ -184,12 +185,19 @@ sub setAIprompt {
     return;
 }
 
-# Render the ML > JSON;
+# Render the object to JSON;
 sub renderJSON {
     my $self = shift;
     my $json = JSON->new->allow_nonref;
 
     return $json->pretty->utf8->encode( $self->{_content} )
+}
+
+# Render the object to YAML;
+sub renderYAML {
+    my $self = shift;
+
+    return Dump $self->{_content};
 }
 
 1;
