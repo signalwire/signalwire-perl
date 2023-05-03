@@ -67,7 +67,7 @@ sub addApplication {
 sub setAIpostPromptURL {
     my $self = shift;
     my $post = shift;
-    print Dumper $post;
+
     while ( my ($k,$v) = each(%{$post}) ) {
 	$self->{"_$k"} = $post->{$k};
     }
