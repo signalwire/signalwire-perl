@@ -61,7 +61,7 @@ if ($post_data->{function} eq "get_weather") {
 } elsif ($post_data->{function} eq "get_world_time") {
     my $where = url_encode($post_data->{argument});
     
-    $jobj =  $json->decode( get "https://api.ipgeolocation.io/timezone?apiKey=22f09b331f0642e882277427af461992&location=${where}");
+    my $jobj =  $json->decode( get "https://api.ipgeolocation.io/timezone?apiKey=$ENV{geoAPIKey}&location=${where}");
     
     print  $json->pretty->utf8->encode( { response => "in $post_data->{argument} the current time is: $jobj->{time_12}" } );
 }
