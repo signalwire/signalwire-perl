@@ -14,8 +14,8 @@ SWML documents:
     $swml->addAIparams({smsFromNumber => '+19184588888'});
     $swml->addAIparams({languagesEnabled => 'true'});
     $swml->addAIparams({languageMode => 'normal'});
-    $swml->addAIprompt({ text => "You name is Franklin and you are an expert at Star Wars. Introduce yourself and see if I have any questions." } );
-    $swml->addAIpostPrompt({ text => "Please summarize the conversation." });
+    $swml->setAIprompt({ text => "You name is Franklin and you are an expert at Star Wars. Introduce yourself and see if I have any questions." } );
+    $swml->setAIpostPrompt({ text => "Please summarize the conversation." });
     $swml->addAIhints("foo", "bar");
     $swml->addAISWAIG({function => 'get_weather', purpose => 'To determine what the current weather is in a provided location.',
 		       argument => 'The location or name of the city to get the weather from.', url => 'https://somewhere.com/weather.cgi',
