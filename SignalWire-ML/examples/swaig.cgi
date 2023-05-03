@@ -63,5 +63,7 @@ if ($post_data->{function} eq "get_weather") {
     
     my $jobj =  $json->decode( get "https://api.ipgeolocation.io/timezone?apiKey=$ENV{geoAPIKey}&location=${where}");
     
-    print  $json->pretty->utf8->encode( { response => "in $post_data->{argument} the current time is: $jobj->{time_12}" } );
+    print  $json->pretty->utf8->encode({
+	response => "in $post_data->{argument} the current time is: <say-as interpret-as='time' format='hms12'>$jobj->{time_12}</say-as>"
+				       });
 }
