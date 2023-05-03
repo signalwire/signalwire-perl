@@ -16,18 +16,18 @@ sub new {
     my $class = ref($proto) || $proto;
     my $self  = {};
 
-    $self->{_version}      = $args->{version}       ||= '1.0.0';
-    $self->{_engine}       = $args->{engine}        ||= 'gcloud';
-    $self->{_voice}        = $args->{voice};
-    $self->{_params}       = $args->{params}        ||= {};
-    $self->{_prompt}       = $args->{prompt}        ||= {};
-    $self->{_hints}        = $args->{hints}         ||= [];
-    $self->{_postUrl}      = $args->{postUrl};
-    $self->{_postUser}     = $args->{postUser};
-    $self->{_postPassword} = $args->{postPassword};
-    $self->{_languages}    = $args->{lanuages}      ||= [];
-    $self->{_SWAIG}        = $args->{SWAIG}         ||= [];
-    
+    $self->{_version}       = $args->{version}       ||= '1.0.0';
+    $self->{_engine}        = $args->{engine}        ||= 'gcloud';
+    $self->{_voice}         = $args->{voice};
+    $self->{_params}        = $args->{params}        ||= {};
+    $self->{_prompt}        = $args->{prompt}        ||= {};
+    $self->{_hints}         = $args->{hints}         ||= [];
+    $self->{_postPromptURL} = $args->{postPromptURL};
+    $self->{_postUser}      = $args->{postUser}      ||= undef;
+    $self->{_postPassword}  = $args->{postPassword}  ||= undef;
+    $self->{_languages}     = $args->{lanuages}      ||= [];
+    $self->{_SWAIG}         = $args->{SWAIG};
+
     return bless($self, $class);
 }
 
@@ -40,7 +40,8 @@ sub addAIApplication {
     my $app      = "ai";
     my $args      = {};
 
-    foreach my $data ('postPrompt','voice', 'engine', 'postUrl', 'postUser', 'postPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
+    foreach my $data ('postPrompt','voice', 'engine', 'postPromptURL', 'postUser', 'postPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
+	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
     }
     push @{$self->{_content}->{sections}->{$section} },  { $app =>  $args };
@@ -56,21 +57,21 @@ sub addApplication {
     my $args    = shift;
 
     $self->setVersion($self->{_version});
-    
+
     push @{$self->{_content}->{sections}->{$section} },  { $app =>  $args };
 
     return;
 }
 
 # set postUrl and optionally pass in postUser and postPassword
-sub setAIpostUrl {
+sub setAIpostPromptURL {
     my $self = shift;
     my $post = shift;
-
+    print Dumper $post;
     while ( my ($k,$v) = each(%{$post}) ) {
-        $self->{"_$k"} = $post->{$k};
+	$self->{"_$k"} = $post->{$k};
     }
-    
+
     return;
 }
 
@@ -91,7 +92,7 @@ sub addAIparams {
     while ( my ($k,$v) = each(%{$params}) ) {
 	$self->{_params}->{$k} = $v;
     }
-    
+
     return;
 }
 
@@ -113,7 +114,7 @@ sub addAIhints {
 
     push  @{ $self->{_hints} }, @hints;
     @{ $self->{_hints} } = grep { !$seen{$_}++ } @{ $self->{_hints} };
-	   
+
     return;
 }
 
@@ -146,7 +147,7 @@ sub addAIlanguage {
     return;
 }
 
-# set lanugages overriding previous languages 
+# set lanugages overriding previous languages
 sub setAIlanguage {
     my $self     = shift;
     my $language = shift;
