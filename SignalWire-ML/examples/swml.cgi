@@ -13,6 +13,8 @@ $swml->addAIparams({languagesEnabled => 'false'});
 $swml->addAIparams({languageMode => 'normal'});
 
 $swml->setAIprompt({
+    temperature => "0.3",
+    topP => "0.4;",
     text => "You are a cable internet technical support agent at Vyve Broadband, Start the conversation with how may I help you and then talk the customer thru troubleshooting, Also for billing questions you can call 855 557 8983"
 		   } );
 $swml->setAIpostPrompt({
@@ -22,8 +24,8 @@ $swml->addAIhints("internet", "cable", "speed");
 
 $swml->setAIpostPromptURL({
     postPromptURL => $ENV{postPromptURL},
-    postPromptAuthUser => $ENV{postPromptAuthUser},
-    postPromptAuthPassword => $ENV{postPromptAuthPassword}
+#    postPromptAuthUser => $ENV{postPromptAuthUser},
+#    postPromptAuthPassword => $ENV{postPromptAuthPassword}
 			  });
 $swml->addAISWAIG({function => 'get_weather', purpose => "To determine what the current weather is in a provided location.",
 		   arugment => "The location or name of the city to get the weather from.", webHookURL => "$ENV{webHookURL}"
