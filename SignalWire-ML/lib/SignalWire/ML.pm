@@ -17,18 +17,10 @@ sub new {
     my $class = ref($proto) || $proto;
     my $self  = {};
 
-    $self->{_version}       = $args->{version}       ||= '1.0.0';
-    $self->{_engine}        = $args->{engine}        ||= 'gcloud';
-    $self->{_voice}         = $args->{voice};
-    $self->{_params}        = $args->{params}        ||= {};
-    $self->{_prompt}        = $args->{prompt}        ||= {};
-    $self->{_hints}         = $args->{hints}         ||= [];
-    $self->{_postPromptURL}          = $args->{postPromptURL};
-    $self->{_postPromptAuthUser}     = $args->{postPromptAuthUser};
-    $self->{_postPromptAuthPassword} = $args->{postPromptAuthPassword};
-    $self->{_languages}              = $args->{lanuages};
-    $self->{_SWAIG}                  = $args->{SWAIG}    ||= [];
-
+    $self->{_content}->{version} = $args->{version} ||= '1.0.0';
+    $self->{_content}->{engine}  = $args->{engine}  ||= 'gcloud';
+    $self->{_content}->{voice}   = $args->{voice}   ||= undef;
+    $self->{_SWAIG}              = [];
     return bless($self, $class);
 }
 
@@ -40,8 +32,6 @@ sub addAIApplication {
     my $section = shift;
     my $app     = "ai";
     my $args    = {};
-
-    $self->setVersion($self->{_version});
 
     foreach my $data ('postPrompt','voice', 'engine', 'postPromptURL', 'postPromptAuthUser',
 		      'postPromptAuthPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
@@ -59,8 +49,6 @@ sub addApplication {
     my $section = shift;
     my $app     = shift;
     my $args    = shift;
-
-    $self->setVersion($self->{_version});
 
     push @{$self->{_content}->{sections}->{$section} },  { $app =>  $args };
 
@@ -118,16 +106,6 @@ sub addAIhints {
 
     push  @{ $self->{_hints} }, @hints;
     @{ $self->{_hints} } = grep { !$seen{$_}++ } @{ $self->{_hints} };
-
-    return;
-}
-
-# Set document version
-sub setVersion {
-    my $self     = shift;
-    my $version  = shift;
-
-    $self->{_content}->{version} = $version ? $version : $self->{_version};
 
     return;
 }
