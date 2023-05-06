@@ -19,7 +19,8 @@ sub new {
 
     $self->{_content}->{version} = $args->{version} ||= '1.0.0';
     $self->{_voice}              = $args->{voice}   ||= undef;
-    $self->{_SWAIG}              = [];
+    $self->{_SWAIG}->{functions} = [];
+    $self->{_SWAIG}->{defaults}  = {};
     return bless($self, $class);
 }
 
@@ -109,11 +110,22 @@ sub addAIhints {
     return;
 }
 
-sub addAISWAIG {
+sub addAISWAIGdefaults {
     my $self  = shift;
     my $SWAIG = shift;
 
-    @{ $self->{_SWAIG} } = (@{ $self->{_SWAIG} }, $SWAIG);
+    while ( my ($k,$v) = each(%{$SWAIG}) ) {
+	$self->{_SWAIG}->{defaults}->{$k} = $v;
+    }
+
+    return;
+}
+
+sub addAISWAIGfunction {
+    my $self  = shift;
+    my $SWAIG = shift;
+
+    @{ $self->{_SWAIG}->{functions} } = (@{ $self->{_SWAIG}->{functions} }, $SWAIG);
 
     return;
 }
