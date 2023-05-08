@@ -18,6 +18,7 @@ sub new {
     my $self  = {};
 
     $self->{_content}->{version} = $args->{version} ||= '1.0.0';
+    $self->{_content}->{engine}  = $args->{engine}  ||= 'gcloud';
     $self->{_voice}              = $args->{voice}   ||= undef;
     $self->{_SWAIG}->{functions} = [];
     $self->{_SWAIG}->{defaults}  = {};
