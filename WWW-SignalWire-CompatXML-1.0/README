@@ -1,13 +1,12 @@
 WWW-SignalWire-CompatXML version 1.0
 =============================
 
-WWW::SignalWire::CompatXML is a small module for creating Twilio-compatible
-TwiML documents:
+WWW::SignalWire::CompatXML is a small module for creating SignalWire CompatXML documents:
 
-  my $tw = new WWW::SignalWire::CompatXML;
-  $tw->Response
+  my $sw = new WWW::SignalWire::CompatXML;
+  $sw->Response
     ->Say("Lookin' out my backdoor");
-  print $tw->to_string;
+  print $sw->to_string;
 
 becomes:
 
