@@ -1,4 +1,4 @@
-package WWW::SignalWire::CompatXML;
+package SignalWire::CompatXML;
 
 use 5.008001;
 use strict;
@@ -275,30 +275,30 @@ __END__
 
 =head1 NAME
 
-WWW::SignalWire::CompatXML - Light and fast CompatXML generator
+SignalWire::CompatXML - Light and fast CompatXML generator
 
 =head1 SYNOPSIS
 
-  use WWW::SignalWire::CompatXML;
+  use SignalWire::CompatXML;
 
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response->Dial("+1234567890");
   print $sw->to_string;
 
 =head1 DESCRIPTION
 
-B<WWW::SignalWire::CompatXML> creates SignalWire-compatible CompatXML
+B<SignalWire::CompatXML> creates SignalWire-compatible CompatXML
 documents. Documents can be built by creating and nesting one element
 at a time or by chaining objects. Elements can contain attributes,
 text content, or other elements.
 
 CompatXML, being XML, could be trivially generated with B<XML::LibXML> or
 any number of other XML parsers/generators. Philosophically,
-B<WWW::SignalWire::CompatXML> represents an I<economical> CompatXML generator. It
+B<SignalWire::CompatXML> represents an I<economical> CompatXML generator. It
 has a small footprint (CompatXML documents are typically small and simple)
 and means to make CompatXML creation straightforward and moderately fun.
 
-B<WWW::SignalWire::CompatXML>'s primary aim is for economy of
+B<SignalWire::CompatXML>'s primary aim is for economy of
 expression. Therefore, B<Any method you call on a CompatXML object (except
 those described below) will create new CompatXML objects by the name of
 the method you called.> By chaining method calls, you can create
@@ -321,38 +321,38 @@ different calling styles:
 
 The upside-down, piecemeal, verbose way:
 
-  my $say = new WWW::SignalWire::CompatXML;
+  my $say = new SignalWire::CompatXML;
   $say->name('Say');
   $say->content("Kilroy was here");
   $say->attributes({voice => "man"});
 
-  my $resp = new WWW::SignalWire::CompatXML;
+  my $resp = new SignalWire::CompatXML;
   $resp->name('Response');
   $resp->content($say);
 
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->content($resp);
   print $sw->to_string;
 
 The same thing, with a little more powerful constructor:
 
-  my $say = new WWW::SignalWire::CompatXML(name => 'Say',
+  my $say = new SignalWire::CompatXML(name => 'Say',
                                    content => "Kilroy was here",
                                    attributes => {voice => "man"});
 
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response->add_child($say);
   print $sw->to_string;
 
 The concise way:
 
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response->Say({voice => "man"}, "Kilroy was here");
   print $sw->to_string;
 
 And the obligatory one-liner (spread across 4 lines for readability):
 
-  print WWW::SignalWire::CompatXML->new
+  print SignalWire::CompatXML->new
     ->Response
     ->Say({voice => "man"}, "Kilroy was here")
     ->root->to_string;
@@ -443,11 +443,11 @@ call the constructor by the name of the element you want to create.
 
 Sets the content of an element. A CompatXML object's content can be
 I<either> a string or a listref of objects, but not both. If the
-argument is another B<WWW::SignalWire::CompatXML> object, the content of the
+argument is another B<SignalWire::CompatXML> object, the content of the
 element (if any) will be replaced with the object. Any other argument
 will be considered string content.
 
-  my $say = new WWW::SignalWire::CompatXML(name => 'Say');
+  my $say = new SignalWire::CompatXML(name => 'Say');
   $say->content("Eat at Joe's!");  ## a string as content
 
 becomes:
@@ -456,7 +456,7 @@ becomes:
 
 Now we can add I<$say> to another element:
 
-  my $parent = new WWW::SignalWire::CompatXML(name => 'Response');
+  my $parent = new SignalWire::CompatXML(name => 'Response');
   $parent->content($say);  ## an object as content
 
 which becomes:
@@ -486,15 +486,15 @@ not I<replace> the existing content, but I<appends> an object to the
 existing content. Also unlike B<content>, B<add_child> is not
 appropriate to use for setting text content of an element.
 
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   my $resp = $sw->Response;
-  $resp->add_child(new WWW::SignalWire::CompatXML(name => 'Say',
+  $resp->add_child(new SignalWire::CompatXML(name => 'Say',
                                           content => 'Soooey!'));
 
   my $email = uri_escape('biff@example.com');
   my $msg = uri_escape("Heeer piiiig!");
   my $url = "http://twimlets.com/voicemail?Email=$email&Message=$msg";
-  $resp->add_child(new WWW::SignalWire::CompatXML(name => 'Redirect',
+  $resp->add_child(new SignalWire::CompatXML(name => 'Redirect',
                                           content => $url));
 
   print $sw->to_string({'Content-type' => 'text/xml'});
@@ -515,7 +515,7 @@ becomes:
 Sets attributes for an element. If a hash reference is not supplied, a
 hashref of the existing attributes is returned.
 
-  my $elem = new WWW::SignalWire::CompatXML(name => 'Say');
+  my $elem = new SignalWire::CompatXML(name => 'Say');
   $elem->attributes({voice => 'woman'});
   $elem->content("gimme another donut");
 
@@ -527,7 +527,7 @@ becomes:
 
 Returns a handle to the root object.
 
-  print WWW::SignalWire::CompatXML->new
+  print SignalWire::CompatXML->new
     ->Response
     ->Say("All men are brothers,")
       ->parent
@@ -553,7 +553,7 @@ emitted as RFC 822 headers followed by a blank line.
 
 Example:
 
-  print WWW::SignalWire::CompatXML->new->to_string;
+  print SignalWire::CompatXML->new->to_string;
 
 prints:
 
@@ -561,7 +561,7 @@ prints:
 
 while this:
 
-  print WWW::SignalWire::CompatXML->new
+  print SignalWire::CompatXML->new
     ->Response
     ->Say("plugh")
     ->root->to_string;
@@ -575,7 +575,7 @@ prints:
 
 If we forget the call to B<root> in the previous example, like this:
 
-  print WWW::SignalWire::CompatXML->new
+  print SignalWire::CompatXML->new
     ->Response
     ->Say("plugh")
     ->to_string;
@@ -590,7 +590,7 @@ not B<$sw>.
 By specifying a hashref, you can add RFC 822 headers to your
 documents:
 
-  $sw = new WWW::SignalWire::CompatXML;
+  $sw = new SignalWire::CompatXML;
   $sw->Response->Say('Arf!');
   $sw->to_string({'Content-type' => 'text/xml'});
 
@@ -609,10 +609,10 @@ Sets the parent of the object; this done automatically by B<add_child>
 and B<content>. When no arguments are given, the existing parent
 object is returned.
 
-Because B<WWW::SignalWire::CompatXML> objects chain, B<parent> is useful for
+Because B<SignalWire::CompatXML> objects chain, B<parent> is useful for
 getting the previous object so you can add more content to it:
 
-  WWW::SignalWire::CompatXML->new
+  SignalWire::CompatXML->new
     ->Response
     ->Gather({action => "/process_gather.cgi", method => "GET"})
       ->Say("Please enter your account number.")
@@ -635,7 +635,7 @@ invoked, the next line should be outdented, as illustrated above.
 
 =head1 PACKAGE VARIABLES
 
-You may control the behavior of B<WWW::SignalWire::CompatXML> in several ways
+You may control the behavior of B<SignalWire::CompatXML> in several ways
 by setting package variables described in this section.
 
 =head2 Newlines
@@ -643,12 +643,12 @@ by setting package variables described in this section.
 You may change the default newline from "\n" to anything else by
 setting the I<$NL> package variable:
 
-  local $WWW::SignalWire::CompatXML::NL = "\r\n";
+  local $SignalWire::CompatXML::NL = "\r\n";
 
 =head2 Strict mode
 
-B<WWW:SignalWire::CompatXML> is capable of generating well-formed but invalid
-CompatXML documents. B<WWW::SignalWire::CompatXML> uses autoloaded methods to
+B<SignalWire::CompatXML> is capable of generating well-formed but invalid
+CompatXML documents. B<SignalWire::CompatXML> uses autoloaded methods to
 determine the name of CompatXML elements (Response, Say, Dial, Redirect,
 etc.); this means that if you specify an incorrectly named method,
 your CompatXML will be incorrect:
@@ -665,7 +665,7 @@ setting two package variables:
 
 =item $STRICT
 
-When true, B<WWW::SignalWire::CompatXML>'s autoloader will look up the
+When true, B<SignalWire::CompatXML>'s autoloader will look up the
 unhandled method call in the B<%TAGS> package variable (below). If the
 method name is not in that hash, the autoloader will die with an
 "Undefined subroutine" error.
@@ -679,13 +679,13 @@ to determine whether a method call is a valid CompatXML tag or not.
 
 For example:
 
-  local $WWW::SignalWire::CompatXML::STRICT = 1;
-  local %WWW::SignalWire::CompatXML::TAGS = (Response => 1, Say => 1, Dial => 1);
+  local $SignalWire::CompatXML::STRICT = 1;
+  local %SignalWire::CompatXML::TAGS = (Response => 1, Say => 1, Dial => 1);
 
-Now any methods invoked on B<WWW::SignalWire::CompatXML> objects that are not
+Now any methods invoked on B<SignalWire::CompatXML> objects that are not
 B<Response>, B<Say>, or B<Dial> will die with an error. E.g.:
 
-  WWW::SignalWire::CompatXML->Response->Saay("Let's play Twister!");
+  SignalWire::CompatXML->Response->Saay("Let's play Twister!");
 
 generates the following fatal error:
 
@@ -699,8 +699,8 @@ faster than B<map> over an array for building hashes):
   my @tags = qw(Response Say Play Gather Record Sms Dial Number
                 Client Conference Hangup Redirect Reject Pause);
 
-  local @WWW::SignalWire::CompatXML::TAGS{@tags} = (1) x @tags;
-  local $WWW::SignalWire::CompatXML::STRICT = 1;
+  local @SignalWire::CompatXML::TAGS{@tags} = (1) x @tags;
+  local $SignalWire::CompatXML::STRICT = 1;
 
   ## all method calls in this scope are now strict
   ...
@@ -708,11 +708,11 @@ faster than B<map> over an array for building hashes):
 =head1 EXAMPLES
 
 This section demonstrates a few things you can do with
-B<WWW::SignalWire::CompatXML>.
+B<SignalWire::CompatXML>.
 
 =head2 Example 1
 
-  $t = new WWW::SignalWire::CompatXML;
+  $t = new SignalWire::CompatXML;
   $t->Response->Say({voice => "woman"}, "This is Jenny");
   print $t->to_string({'Content-type' => 'text/xml'});
 
@@ -731,7 +731,7 @@ The following examples are from twilio.com's CompatXML documentation,
 listed by the primary verb they implement. Assume a CompatXML object
 I<$sw> for each of these examples has already been created:
 
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
 
 and consequently each example would be printed with:
 
@@ -911,7 +911,7 @@ package, also available on CPAN.
 
 =head1 COMPATIBILITY
 
-B<WWW::SignalWire::CompatXML> will likely be forward compatible with all
+B<SignalWire::CompatXML> will likely be forward compatible with all
 future revisions of SignalWire's CompatXML language. This is because method
 calls are constructors which generate CompatXML objects on the fly.
 
@@ -919,11 +919,11 @@ For example, say SignalWire began to support a B<Belch> verb (if only!),
 we could take advantage of it immediately by simply calling a B<Belch>
 method like this:
 
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response->Belch('Braaaaaap!');
   print $sw->to_string;
 
-Because there is no B<Belch> method, B<WWW::SignalWire::CompatXML> assumes you
+Because there is no B<Belch> method, B<SignalWire::CompatXML> assumes you
 want to create a node by that name and makes one for you:
 
   <?xml version="1.0" encoding="UTF-8" ?>
@@ -936,7 +936,7 @@ add B<Belch> to our B<%TAGS> hash and we're good to go.
 
 =head1 SEE ALSO
 
-L<WWW::SignalWire::CompatXML>
+L<SignalWire::CompatXML>
 
 =head1 AUTHOR
 

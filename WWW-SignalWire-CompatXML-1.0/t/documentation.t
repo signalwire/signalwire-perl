@@ -1,6 +1,6 @@
 #-*- mode: cperl -*-#
 use Test::More tests => 17;
-BEGIN { use_ok('WWW::SignalWire::CompatXML') };
+BEGIN { use_ok('SignalWire::CompatXML') };
 
 #########################
 
@@ -14,41 +14,41 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 !;
 
 {
-  my $say = new WWW::SignalWire::CompatXML;
+  my $say = new SignalWire::CompatXML;
   $say->name('Say');
   $say->content("Kilroy was here");
   $say->attributes({voice => "man"});
 
-  my $resp = new WWW::SignalWire::CompatXML;
+  my $resp = new SignalWire::CompatXML;
   $resp->name('Response');
   $resp->content($say);  ## see also add_child()
 
-  my $tw = new WWW::SignalWire::CompatXML;
+  my $tw = new SignalWire::CompatXML;
   $tw->content($resp);
 
   is( $tw->to_string, $ex_1, "new example 1" );
 }
 
 {
-    my $say = new WWW::SignalWire::CompatXML(name => 'Say',
+    my $say = new SignalWire::CompatXML(name => 'Say',
                                      content => "Kilroy was here",
                                      attributes => {voice => "man"});
 
-    my $tw = new WWW::SignalWire::CompatXML;
+    my $tw = new SignalWire::CompatXML;
     $tw->Response->add_child($say);
 
     is( $tw->to_string, $ex_1, "new example 2" );
 }
 
 {
-    my $tw = new WWW::SignalWire::CompatXML;
+    my $tw = new SignalWire::CompatXML;
     $tw->Response->Say({voice => "man"}, "Kilroy was here");
 
     is( $tw->to_string, $ex_1, "new example 3" );
 }
 
 {
-    is( WWW::SignalWire::CompatXML->new
+    is( SignalWire::CompatXML->new
         ->Response
         ->Say({voice => "man"}, "Kilroy was here")
         ->root->to_string, $ex_1, "new example 4" );
@@ -58,7 +58,7 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 ## any twiml verb
 ##
 {
-    my $tw = new WWW::SignalWire::CompatXML;
+    my $tw = new SignalWire::CompatXML;
     $tw->Response
       ->Say("I'm calling you.")
         ->parent
@@ -76,7 +76,7 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 ## name
 ##
 {
-    my $elem = new WWW::SignalWire::CompatXML;
+    my $elem = new SignalWire::CompatXML;
     $elem->name('Dial');
     $elem->content("+1234567890");
 
@@ -87,7 +87,7 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 ## content
 ##
 {
-    my $elem = new WWW::SignalWire::CompatXML(name => 'Say');
+    my $elem = new SignalWire::CompatXML(name => 'Say');
     $elem->content("Eat at Joe's!");
 
     is( $elem->to_string, '<Say>Eat at Joe&apos;s!</Say>', "content example 1" );
@@ -95,10 +95,10 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 
 
 {
-    my $elem = new WWW::SignalWire::CompatXML(name => 'Say');
+    my $elem = new SignalWire::CompatXML(name => 'Say');
     $elem->content("Eat at Joe's!");
 
-    my $parent = new WWW::SignalWire::CompatXML(name => 'Response');
+    my $parent = new SignalWire::CompatXML(name => 'Response');
     $parent->content($elem);
 
     is( $parent->to_string, q{<Response>
@@ -110,15 +110,15 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 ## add_child, content-type header
 ##
 {
-    my $tw = new WWW::SignalWire::CompatXML;
+    my $tw = new SignalWire::CompatXML;
     my $resp = $tw->Response;
-    $resp->add_child(new WWW::SignalWire::CompatXML(name => 'Say',
+    $resp->add_child(new SignalWire::CompatXML(name => 'Say',
                                             content => 'Soooey!'));
 
     my $email = uri_escape('biff@example.com');
     my $msg = uri_escape("Heeer piiiig!");
     my $url = "http://twimlets.com/voicemail?Email=$email&Message=$msg";
-    $resp->add_child(new WWW::SignalWire::CompatXML(name => 'Redirect',
+    $resp->add_child(new SignalWire::CompatXML(name => 'Redirect',
                                             content => $url));
 
     is( $tw->to_string({'Content-type' => 'text/xml'}),
@@ -136,7 +136,7 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 ## attributes
 ##
 {
-    my $elem = new WWW::SignalWire::CompatXML(name => 'Say');
+    my $elem = new SignalWire::CompatXML(name => 'Say');
     $elem->attributes({voice => 'woman'});
     $elem->content("gimme another donut");
 
@@ -147,7 +147,7 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 ## root
 ##
 {
-    is( WWW::SignalWire::CompatXML->new
+    is( SignalWire::CompatXML->new
         ->Response
         ->Say("All men are brothers,")
         ->parent
@@ -164,12 +164,12 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 ## to_string
 ##
 {
-    is( WWW::SignalWire::CompatXML->new->to_string, q!<?xml version="1.0" encoding="UTF-8" ?>
+    is( SignalWire::CompatXML->new->to_string, q!<?xml version="1.0" encoding="UTF-8" ?>
 !, "to_string example 1" );
 }
 
 {
-    my $tw = new WWW::SignalWire::CompatXML;
+    my $tw = new SignalWire::CompatXML;
     $tw->Response->Say('Arf!');
     is( $tw->to_string({'Content-type' => 'text/xml'}),
         q{Content-type: text/xml
@@ -182,7 +182,7 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 }
 
 {
-    is( WWW::SignalWire::CompatXML->new->Response->Say("plugh")->root->to_string,
+    is( SignalWire::CompatXML->new->Response->Say("plugh")->root->to_string,
         q!<?xml version="1.0" encoding="UTF-8" ?>
 <Response>
   <Say>plugh</Say>
@@ -191,7 +191,7 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 }
 
 {
-    is( WWW::SignalWire::CompatXML->new->Response->Say("plugh")->to_string,
+    is( SignalWire::CompatXML->new->Response->Say("plugh")->to_string,
         q!<Say>plugh</Say>!, "to_string example 4" );
 }
 
@@ -199,7 +199,7 @@ my $ex_1 = q!<?xml version="1.0" encoding="UTF-8" ?>
 ## parent
 ##
 {
-    is( WWW::SignalWire::CompatXML->new
+    is( SignalWire::CompatXML->new
         ->Response
         ->Gather({action => "/process_gather.php", method => "GET"})
         ->Say("Please enter your account number.")

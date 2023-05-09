@@ -1,11 +1,11 @@
 #-*- mode: cperl -*-#
 use Test::More tests => 26;
-use WWW::SignalWire::CompatXML;
+use SignalWire::CompatXML;
 
 #########################
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Connect()
       ->Room("my-room-name");
@@ -20,7 +20,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
   $sw->Response
       ->Denoise->parent
       ->Dial->Sip("sip:user@example.com;transport=udp");
@@ -36,7 +36,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Dial
        ->Number("858-987-6543")->parent
@@ -55,7 +55,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Echo({timeout => "120"})->parent
        ->Hangup();
@@ -69,7 +69,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Enqueue({waitUrl => "https://example.com/hold-music.xml"}, "support");
 
@@ -81,7 +81,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Dial
 	->Number("858-987-6543")->parent
@@ -100,7 +100,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Gather({action => "https://example.com/process_gather.php",
 		method => "GET"})
@@ -116,7 +116,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Hangup;
 
@@ -128,7 +128,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response->Hangup;
 
     is( $sw->to_string, q!<?xml version="1.0" encoding="UTF-8" ?>
@@ -140,7 +140,7 @@ use WWW::SignalWire::CompatXML;
 
 {
 
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Leave;
 
@@ -152,7 +152,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Say("I will pause 5 seconds starting now.")->parent
       ->Pause({length => 5})->parent
@@ -168,7 +168,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Play({ loop => 15 }, "rtmp://example.com/my-rtmp-stream");
 
@@ -180,7 +180,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-    my $sw = new WWW::SignalWire::CompatXML;
+    my $sw = new SignalWire::CompatXML;
     $sw->Response
       ->Say("Please leave a message at the beep. Press the star key when finished.")->parent
       ->Record({action => "http://your-application.com/handleRecording.cgi",
@@ -198,7 +198,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Dial("310-123-0000")->parent
     ->Redirect("http://www.your-application.com/next-instructions");
@@ -212,7 +212,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
       ->Refer({action => "https://example.com/refer-completed.xml",
 	       method => "GET"})
@@ -227,7 +227,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Reject({reason => "busy"});
 
@@ -239,7 +239,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Say({voice => "woman", loop => "2"}, "Hello");
 
@@ -251,7 +251,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-	my $sw = new WWW::SignalWire::CompatXML;
+	my $sw = new SignalWire::CompatXML;
 	$sw->Response
 	  ->Say("Our store is located at 123 East St.")->parent
 	  ->Sms({action => "/smsHandler.cgi", method => "POST"},
@@ -265,7 +265,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-	my $sw = new WWW::SignalWire::CompatXML;
+	my $sw = new SignalWire::CompatXML;
 	$sw->Response
 	  ->Start
 	  ->Stream({url => "wss://streamer.signalwire.com"});
@@ -280,7 +280,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Connect()
     ->AI({ postPromptURL => "https://webhook.site/10d7acdaf140" })
@@ -301,7 +301,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Dial
     ->Conference({startConferenceOnEnter => "true",
@@ -318,7 +318,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Dial
     ->Number({sendDigits => "www56476" }, "858-987-6543");
@@ -333,7 +333,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Connect
     ->Room("my-room-name");
@@ -348,7 +348,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Dial
     ->Sip('sip:alice@example.com;transport=udp');
@@ -363,7 +363,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Message({ action => "https://your-application.com/followup",
 		method => "GET" },
@@ -377,7 +377,7 @@ use WWW::SignalWire::CompatXML;
 }
 
 {
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Receive({ mediaType => "image/tiff" });
 

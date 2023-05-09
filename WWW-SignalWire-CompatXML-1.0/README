@@ -1,9 +1,9 @@
 WWW-SignalWire-CompatXML version 1.0
 =============================
 
-WWW::SignalWire::CompatXML is a small module for creating SignalWire CompatXML documents:
+SignalWire::CompatXML is a small module for creating SignalWire CompatXML documents:
 
-  my $sw = new WWW::SignalWire::CompatXML;
+  my $sw = new SignalWire::CompatXML;
   $sw->Response
     ->Say("Lookin' out my backdoor");
   print $sw->to_string;
