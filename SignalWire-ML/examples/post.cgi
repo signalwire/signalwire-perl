@@ -14,9 +14,8 @@ my $json_text = $q->param( 'POSTDATA' );
 if ($json_text) {
     my $post_data = $json->decode( $json_text );
     my $app_name  = $post_data->{"appName"};
-    $app_name =~ s/[^\w\d\-]//g;
-
-    my $uuid = uuid();
+    $app_name     =~ s/[^\w\d\-]//g;
+    my $uuid      = uuid();
 
     if ($app_name) {
 	open L, ">/var/www/html/public/aicgi/logs/${app_name}-${uuid}";

@@ -7,33 +7,29 @@ use Data::Dumper;
 
 my $q = CGI->new;
 
-my $swml = SignalWire::ML->new({version => '1.0.1', voice => 'en-US-Neural2-J' });
-
-$swml->addAIparams({languagesEnabled => 'false'});
-$swml->addAIparams({languageMode => 'normal'});
+my $swml = SignalWire::ML->new({version => '1.0.2', voice => 'en-GB-Neural2-F' });
 
 $swml->setAIprompt({
-    temperature => "0.3",
-    topP => "0.4;",
-    text => "You are a cable internet technical support agent at Vyve Broadband, Start the conversation with how may I help you and then talk the customer thru troubleshooting, Also for billing questions you can call 855 557 8983"
-		   } );
-$swml->setAIpostPrompt({
-    text => "Summarize the conversation"
-		       });
-$swml->addAIhints("internet", "cable", "speed");
+    temperature => "0.9",
+    topP => "1.0",
+    text => "Your name is Olivia, You are able to lookup weather and time for various locations." });
+$swml->setAIpostPrompt({ text => "Summarize the conversation" });
 
-$swml->setAIpostPromptURL({
-    postPromptURL => $ENV{postPromptURL},
-#    postPromptAuthUser => $ENV{postPromptAuthUser},
-#    postPromptAuthPassword => $ENV{postPromptAuthPassword}
-			  });
-$swml->addAISWAIG({function => 'get_weather', purpose => "To determine what the current weather is in a provided location.",
-		   arugment => "The location or name of the city to get the weather from.", webHookURL => "$ENV{webHookURL}"
-		  });
+$swml->addAIhints("jokes", "weather", "time");
 
-$swml->addAISWAIG({function => 'get_world_time', purpose => "To determine what the current time is in a provided location.",
-		   arugment => "The location or name of the city to get the time from.", webHookURL => "$ENV{webHookURL}"
-		  });
+$swml->setAIpostPromptURL({ postPromptURL => $ENV{postPromptURL} });
+
+$swml->addAISWAIGdefaults({ webHookURL => "$ENV{webHookURL}" });
+
+$swml->addAISWAIGfunction({
+    function => 'get_weather',
+    purpose => "To determine what the current weather is in a provided location.",
+    argument => "The location or name of the city to get the weather from." });
+
+$swml->addAISWAIGfunction({
+    function => 'get_world_time',
+    purpose => "To determine what the current time is in a provided location.",
+    argument => "The location or name of the city to get the time from." });
 
 $swml->addAIApplication("main");
 
