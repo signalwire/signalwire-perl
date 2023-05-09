@@ -1,4 +1,4 @@
-package WWW::SignalWire::LaML;
+package WWW::SignalWire::CompatXML;
 
 use 5.008001;
 use strict;
@@ -263,75 +263,55 @@ sub AUTOLOAD {
 
     my $meth_ref = $self->can($method);
     croak "Undefined subroutine $method\n"
-      unless $meth_ref;
+	unless $meth_ref;
 
     goto &$meth_ref;
 }
 
 sub DESTROY { }
 
-## resp_node = ( name       => 'Response',
-##               content    => [
-##                               dial_node = ( name       => 'Dial',
-##                                             content    => [
-##                                                             conf_node = ( name       => 'Conference',
-##                                                                           content    => '1234',
-##                                                                           attributes => { private => 1 },
-##                                                                           parent     => dial_node ),
-##                                                           ],
-##                                             attributes => {},
-##                                             parent     => resp_node ),
-##
-##                               say_node  = ( name       => 'Say',
-##                                             content    => "Thanks for conferencing.",
-##                                             attributes => { voice => 'woman' },
-##                                             parent     => resp_node ),
-##                             ],
-##              attributes => {},
-##              parent     => root )
-
 1;
 __END__
 
 =head1 NAME
 
-WWW::SignalWire::LaML - Light and fast TwiML generator
+WWW::SignalWire::CompatXML - Light and fast CompatXML generator
 
 =head1 SYNOPSIS
 
-  use WWW::SignalWire::LaML;
+  use WWW::SignalWire::CompatXML;
 
-  my $t = new WWW::SignalWire::LaML;
-  $t->Response->Dial("+1234567890");
-  print $t->to_string;
+  my $sw = new WWW::SignalWire::CompatXML;
+  $sw->Response->Dial("+1234567890");
+  print $sw->to_string;
 
 =head1 DESCRIPTION
 
-B<WWW::SignalWire::LaML> creates Twilio-compatible TwiML
+B<WWW::SignalWire::CompatXML> creates SignalWire-compatible CompatXML
 documents. Documents can be built by creating and nesting one element
 at a time or by chaining objects. Elements can contain attributes,
 text content, or other elements.
 
-TwiML, being XML, could be trivially generated with B<XML::LibXML> or
+CompatXML, being XML, could be trivially generated with B<XML::LibXML> or
 any number of other XML parsers/generators. Philosophically,
-B<WWW::SignalWire::LaML> represents an I<economical> TwiML generator. It
-has a small footprint (TwiML documents are typically small and simple)
-and means to make TwiML creation straightforward and moderately fun.
+B<WWW::SignalWire::CompatXML> represents an I<economical> CompatXML generator. It
+has a small footprint (CompatXML documents are typically small and simple)
+and means to make CompatXML creation straightforward and moderately fun.
 
-B<WWW::SignalWire::LaML>'s primary aim is for economy of
-expression. Therefore, B<Any method you call on a TwiML object (except
-those described below) will create new TwiML objects by the name of
+B<WWW::SignalWire::CompatXML>'s primary aim is for economy of
+expression. Therefore, B<Any method you call on a CompatXML object (except
+those described below) will create new CompatXML objects by the name of
 the method you called.> By chaining method calls, you can create
-robust TwiML documents with very little code.
+robust CompatXML documents with very little code.
 
 =head2 new( key => value, ... )
 
-Creates a new TwiML object. With no arguments, this will create a root
-for your TwiML document. You can also call B<new> with I<name>,
+Creates a new CompatXML object. With no arguments, this will create a root
+for your CompatXML document. You can also call B<new> with I<name>,
 I<content>, or I<attributes> arguments to create unattached
 elements.
 
-The following examples all create the this TwiML document using
+The following examples all create the this CompatXML document using
 different calling styles:
 
   <?xml version="1.0" encoding="UTF-8" ?>
@@ -341,38 +321,38 @@ different calling styles:
 
 The upside-down, piecemeal, verbose way:
 
-  my $say = new WWW::SignalWire::LaML;
+  my $say = new WWW::SignalWire::CompatXML;
   $say->name('Say');
   $say->content("Kilroy was here");
   $say->attributes({voice => "man"});
 
-  my $resp = new WWW::SignalWire::LaML;
+  my $resp = new WWW::SignalWire::CompatXML;
   $resp->name('Response');
   $resp->content($say);
 
-  my $tw = new WWW::SignalWire::LaML;
-  $tw->content($resp);
-  print $tw->to_string;
+  my $sw = new WWW::SignalWire::CompatXML;
+  $sw->content($resp);
+  print $sw->to_string;
 
 The same thing, with a little more powerful constructor:
 
-  my $say = new WWW::SignalWire::LaML(name => 'Say',
+  my $say = new WWW::SignalWire::CompatXML(name => 'Say',
                                    content => "Kilroy was here",
                                    attributes => {voice => "man"});
 
-  my $tw = new WWW::SignalWire::LaML;
-  $tw->Response->add_child($say);
-  print $tw->to_string;
+  my $sw = new WWW::SignalWire::CompatXML;
+  $sw->Response->add_child($say);
+  print $sw->to_string;
 
 The concise way:
 
-  my $tw = new WWW::SignalWire::LaML;
-  $tw->Response->Say({voice => "man"}, "Kilroy was here");
-  print $tw->to_string;
+  my $sw = new WWW::SignalWire::CompatXML;
+  $sw->Response->Say({voice => "man"}, "Kilroy was here");
+  print $sw->to_string;
 
 And the obligatory one-liner (spread across 4 lines for readability):
 
-  print WWW::SignalWire::LaML->new
+  print WWW::SignalWire::CompatXML->new
     ->Response
     ->Say({voice => "man"}, "Kilroy was here")
     ->root->to_string;
@@ -382,19 +362,20 @@ and B<Say> create and return objects with the names I<Response> and
 I<Say> respectively. When called in this way, methods can I<chain>,
 making for compact, yet readable expressions.
 
-=head2 Any TwiML Verb( string | { attributes } )
+=head2 Any CompatXML Verb( string | { attributes } )
 
-Constructor shortcuts. TwiML verbs are described at
+Constructor shortcuts. CompatXML verbs are described at
 L<http://www.twilio.com/docs/api/twiml>. Some examples include
-I<Response>, I<Say>, I<Play>, I<Gather>, I<Record>, I<Sms>, I<Dial>,
-I<Number>, I<Client>, I<Conference>, I<Hangup>, I<Redirect>,
-I<Reject>, and I<Pause> (this list may be out of date with respect to
-the official documentation).
+I<Connect>,I<Denoise>,I<Dial>,I<Echo>,I<Enqueue>,I<Gather>,I<Hangup>,
+I<Leave>,I<Pause>,I<Play>,I<Record>,I<Redirect>,I<Refer>,I<Reject>,
+I<Say>,I<Sms>,I<Stream>,I<AI>,I<Conference>,I<Number>,I<Queue>,
+I<Room>,I<Sip>,I<Message> and I<Receive> (this list may be out of
+date with respect to the official documentation).
 
-See Twilio's documentation for usage for these and other TwiML verbs.
+See SignalWire's documentation for usage for these and other CompatXML verbs.
 
-The B<(any TwiML verb)> shortcut is a constructor of a TwiML
-object. When you call B<(any TwiML verb)> on an existing TwiML object,
+The B<(any CompatXML verb)> shortcut is a constructor of a CompatXML
+object. When you call B<(any CompatXML verb)> on an existing CompatXML object,
 the following occurs:
 
 =over 4
@@ -404,9 +385,9 @@ the following occurs:
 A new object is created and named by the method you called. E.g., if
 you called:
 
-  $tw->Response;
+  $sw->Response;
 
-a TwiML object named 'Response' will be created.
+a CompatXML object named 'Response' will be created.
 
 =item *
 
@@ -420,16 +401,16 @@ The parent object has the new object added to its list of children.
 =back
 
 These last two items means the objects are "chained" to each
-other. Chaining objects allows concise expressions to create TwiML
+other. Chaining objects allows concise expressions to create CompatXML
 documents. We could add another object to the chain:
 
-  $tw->Response
+  $sw->Response
     ->Say("I'm calling you.")
       ->parent
     ->Dial("+17175558309");
 
 The B<parent> method returns the I<Say> object's parent (I<Response>
-object), and we chain a I<Dial> object from it. The resulting I<$tw>
+object), and we chain a I<Dial> object from it. The resulting I<$sw>
 object returns:
 
   <?xml version="1.0" encoding="UTF-8" ?>
@@ -460,13 +441,13 @@ call the constructor by the name of the element you want to create.
 
 =head2 content( string | object )
 
-Sets the content of an element. A TwiML object's content can be
+Sets the content of an element. A CompatXML object's content can be
 I<either> a string or a listref of objects, but not both. If the
-argument is another B<WWW::SignalWire::LaML> object, the content of the
+argument is another B<WWW::SignalWire::CompatXML> object, the content of the
 element (if any) will be replaced with the object. Any other argument
 will be considered string content.
 
-  my $say = new WWW::SignalWire::LaML(name => 'Say');
+  my $say = new WWW::SignalWire::CompatXML(name => 'Say');
   $say->content("Eat at Joe's!");  ## a string as content
 
 becomes:
@@ -475,7 +456,7 @@ becomes:
 
 Now we can add I<$say> to another element:
 
-  my $parent = new WWW::SignalWire::LaML(name => 'Response');
+  my $parent = new WWW::SignalWire::CompatXML(name => 'Response');
   $parent->content($say);  ## an object as content
 
 which becomes:
@@ -499,24 +480,24 @@ When no argument is supplied, the existing contents are returned.
 
 =head2 add_child( object )
 
-Adds an element to the content of the TwiML object. Returns a
+Adds an element to the content of the CompatXML object. Returns a
 reference to the added object. Unlike B<content>, B<add_child> does
 not I<replace> the existing content, but I<appends> an object to the
 existing content. Also unlike B<content>, B<add_child> is not
 appropriate to use for setting text content of an element.
 
-  my $tw = new WWW::SignalWire::LaML;
-  my $resp = $tw->Response;
-  $resp->add_child(new WWW::SignalWire::LaML(name => 'Say',
+  my $sw = new WWW::SignalWire::CompatXML;
+  my $resp = $sw->Response;
+  $resp->add_child(new WWW::SignalWire::CompatXML(name => 'Say',
                                           content => 'Soooey!'));
 
   my $email = uri_escape('biff@example.com');
   my $msg = uri_escape("Heeer piiiig!");
   my $url = "http://twimlets.com/voicemail?Email=$email&Message=$msg";
-  $resp->add_child(new WWW::SignalWire::LaML(name => 'Redirect',
+  $resp->add_child(new WWW::SignalWire::CompatXML(name => 'Redirect',
                                           content => $url));
 
-  print $tw->to_string({'Content-type' => 'text/xml'});
+  print $sw->to_string({'Content-type' => 'text/xml'});
 
 becomes:
 
@@ -534,7 +515,7 @@ becomes:
 Sets attributes for an element. If a hash reference is not supplied, a
 hashref of the existing attributes is returned.
 
-  my $elem = new WWW::SignalWire::LaML(name => 'Say');
+  my $elem = new WWW::SignalWire::CompatXML(name => 'Say');
   $elem->attributes({voice => 'woman'});
   $elem->content("gimme another donut");
 
@@ -546,7 +527,7 @@ becomes:
 
 Returns a handle to the root object.
 
-  print WWW::SignalWire::LaML->new
+  print WWW::SignalWire::CompatXML->new
     ->Response
     ->Say("All men are brothers,")
       ->parent
@@ -561,7 +542,7 @@ prints:
     <Say>Like Jacob and Esau.</Say>
   </Response>
 
-B<root> is a convenient way to get a handle to the root TwiML object
+B<root> is a convenient way to get a handle to the root CompatXML object
 when you're ready to print.
 
 =head2 to_string( { header => value } )
@@ -572,7 +553,7 @@ emitted as RFC 822 headers followed by a blank line.
 
 Example:
 
-  print WWW::SignalWire::LaML->new->to_string;
+  print WWW::SignalWire::CompatXML->new->to_string;
 
 prints:
 
@@ -580,7 +561,7 @@ prints:
 
 while this:
 
-  print WWW::SignalWire::LaML->new
+  print WWW::SignalWire::CompatXML->new
     ->Response
     ->Say("plugh")
     ->root->to_string;
@@ -594,7 +575,7 @@ prints:
 
 If we forget the call to B<root> in the previous example, like this:
 
-  print WWW::SignalWire::LaML->new
+  print WWW::SignalWire::CompatXML->new
     ->Response
     ->Say("plugh")
     ->to_string;
@@ -604,14 +585,14 @@ we get:
   <Say>plugh</Say>
 
 because B<to_string> is being applied to the object created by B<Say>,
-not B<$tw>.
+not B<$sw>.
 
 By specifying a hashref, you can add RFC 822 headers to your
 documents:
 
-  $tw = new WWW::SignalWire::LaML;
-  $tw->Response->Say('Arf!');
-  $tw->to_string({'Content-type' => 'text/xml'});
+  $sw = new WWW::SignalWire::CompatXML;
+  $sw->Response->Say('Arf!');
+  $sw->to_string({'Content-type' => 'text/xml'});
 
 which returns:
 
@@ -628,10 +609,10 @@ Sets the parent of the object; this done automatically by B<add_child>
 and B<content>. When no arguments are given, the existing parent
 object is returned.
 
-Because B<WWW::SignalWire::LaML> objects chain, B<parent> is useful for
+Because B<WWW::SignalWire::CompatXML> objects chain, B<parent> is useful for
 getting the previous object so you can add more content to it:
 
-  WWW::SignalWire::LaML->new
+  WWW::SignalWire::CompatXML->new
     ->Response
     ->Gather({action => "/process_gather.cgi", method => "GET"})
       ->Say("Please enter your account number.")
@@ -654,7 +635,7 @@ invoked, the next line should be outdented, as illustrated above.
 
 =head1 PACKAGE VARIABLES
 
-You may control the behavior of B<WWW::SignalWire::LaML> in several ways
+You may control the behavior of B<WWW::SignalWire::CompatXML> in several ways
 by setting package variables described in this section.
 
 =head2 Newlines
@@ -662,29 +643,29 @@ by setting package variables described in this section.
 You may change the default newline from "\n" to anything else by
 setting the I<$NL> package variable:
 
-  local $WWW::SignalWire::LaML::NL = "\r\n";
+  local $WWW::SignalWire::CompatXML::NL = "\r\n";
 
 =head2 Strict mode
 
-B<WWW:SignalWire::LaML> is capable of generating well-formed but invalid
-TwiML documents. B<WWW::SignalWire::LaML> uses autoloaded methods to
-determine the name of TwiML elements (Response, Say, Dial, Redirect,
+B<WWW:SignalWire::CompatXML> is capable of generating well-formed but invalid
+CompatXML documents. B<WWW::SignalWire::CompatXML> uses autoloaded methods to
+determine the name of CompatXML elements (Response, Say, Dial, Redirect,
 etc.); this means that if you specify an incorrectly named method,
-your TwiML will be incorrect:
+your CompatXML will be incorrect:
 
-  $tw->Response->Saay('plugh');
+  $sw->Response->Saay('plugh');
 
-B<Saay> is not a valid Twilio TwiML tag and you will not know it until
-Twilio's TwiML parser attempts to handle your TwiML document.
+B<Saay> is not a valid SignalWire CompatXML tag and you will not know it until
+SignalWire's CompatXML parser attempts to handle your CompatXML document.
 
-You may enable strict checks on the TwiML elements at runtime by
+You may enable strict checks on the CompatXML elements at runtime by
 setting two package variables:
 
 =over 4
 
 =item $STRICT
 
-When true, B<WWW::SignalWire::LaML>'s autoloader will look up the
+When true, B<WWW::SignalWire::CompatXML>'s autoloader will look up the
 unhandled method call in the B<%TAGS> package variable (below). If the
 method name is not in that hash, the autoloader will die with an
 "Undefined subroutine" error.
@@ -692,19 +673,19 @@ method name is not in that hash, the autoloader will die with an
 =item %TAGS
 
 Empty by default. When B<$STRICT> is true, this hash will be consulted
-to determine whether a method call is a valid TwiML tag or not.
+to determine whether a method call is a valid CompatXML tag or not.
 
 =back
 
 For example:
 
-  local $WWW::SignalWire::LaML::STRICT = 1;
-  local %WWW::SignalWire::LaML::TAGS = (Response => 1, Say => 1, Dial => 1);
+  local $WWW::SignalWire::CompatXML::STRICT = 1;
+  local %WWW::SignalWire::CompatXML::TAGS = (Response => 1, Say => 1, Dial => 1);
 
-Now any methods invoked on B<WWW::SignalWire::LaML> objects that are not
+Now any methods invoked on B<WWW::SignalWire::CompatXML> objects that are not
 B<Response>, B<Say>, or B<Dial> will die with an error. E.g.:
 
-  WWW::SignalWire::LaML->Response->Saay("Let's play Twister!");
+  WWW::SignalWire::CompatXML->Response->Saay("Let's play Twister!");
 
 generates the following fatal error:
 
@@ -714,12 +695,12 @@ You may wish to use the fast hash creation with hash slices (I learned
 this syntax from Damian Conway at a conference some years ago--it's
 faster than B<map> over an array for building hashes):
 
-  ## TwiML verbs taken from http://www.twilio.com/docs/api/twiml
+  ## CompatXML verbs taken from http://www.twilio.com/docs/api/twiml
   my @tags = qw(Response Say Play Gather Record Sms Dial Number
                 Client Conference Hangup Redirect Reject Pause);
 
-  local @WWW::SignalWire::LaML::TAGS{@tags} = (1) x @tags;
-  local $WWW::SignalWire::LaML::STRICT = 1;
+  local @WWW::SignalWire::CompatXML::TAGS{@tags} = (1) x @tags;
+  local $WWW::SignalWire::CompatXML::STRICT = 1;
 
   ## all method calls in this scope are now strict
   ...
@@ -727,11 +708,11 @@ faster than B<map> over an array for building hashes):
 =head1 EXAMPLES
 
 This section demonstrates a few things you can do with
-B<WWW::SignalWire::LaML>.
+B<WWW::SignalWire::CompatXML>.
 
 =head2 Example 1
 
-  $t = new WWW::SignalWire::LaML;
+  $t = new WWW::SignalWire::CompatXML;
   $t->Response->Say({voice => "woman"}, "This is Jenny");
   print $t->to_string({'Content-type' => 'text/xml'});
 
@@ -744,99 +725,182 @@ Output:
     <Say voice="woman">This is Jenny</Say>
   </Response>
 
-=head2 Examples from twilio.com
+=head2 Examples from signalwire.com
 
-The following examples are from twilio.com's TwiML documentation,
-listed by the primary verb they implement. Assume a TwiML object
-I<$tw> for each of these examples has already been created:
+The following examples are from twilio.com's CompatXML documentation,
+listed by the primary verb they implement. Assume a CompatXML object
+I<$sw> for each of these examples has already been created:
 
-  my $tw = new WWW::SignalWire::LaML;
+  my $sw = new WWW::SignalWire::CompatXML;
 
 and consequently each example would be printed with:
 
-  print $tw->to_string;
+  print $sw->to_string;
 
-See the F<t/twilio.t> test file distributed with this package for
+See the F<t/signalwire.t> test file distributed with this package for
 additional context for these examples.
 
 =over 4
 
-=item Say
+=item Connect
 
-  $tw->Response
-    ->Say({voice => "woman", loop => "2"}, "Hello");
+  $sw->Response
+      ->Connect
+      ->Room("my-room-name");
 
-=item Play
+=item Denoise
 
-  $tw->Response
-    ->Play("http://foo.com/cowbell.mp3");
-
-=item Gather
-
-  $tw->Response
-    ->Gather({action => "/process_gather.cgi", method => "GET"})
-      ->Say("Enter something, or not")
-        ->parent
-      ->parent
-    ->Redirect({method => "GET"}, "/process_gather.cgi?Digits=TIMEOUT");
-
-=item Record
-
-  $tw->Response
-    ->Say("Please leave a message at the beep. \
-           Press the star key when finished.")
-      ->parent
-    ->Record({action => "http://foo.edu/handleRecording.cgi",
-              method => "GET",
-              maxLength => "20",
-              finishOnKey => "*"});
-      ->parent
-    ->Say("I did not receive a recording");
-
-=item Sms
-
-  $tw->Response
-    ->Say("Our store is located at 123 East St.")
-      ->parent
-    ->Sms({action => "/smsHandler.cgi", method => "POST"},
-          "Store location: 123 East St.");
+  $sw->Response
+      ->Denoise->parent
+      ->Dial->Sip("sip:user@example.com;transport=udp");
 
 =item Dial
 
-  $tw->Response
-    ->Dial
-      ->Number("858-987-6543")->parent
-      ->Number("415-123-4567")->parent
-      ->Number("619-765-4321");
+  $sw->Response
+      ->Dial
+       ->Number("858-987-6543")->parent
+       ->Number("415-123-4567")->parent
+       ->Number("619-765-4321");
 
-=item Conference
+=item Echo
 
-  $tw->Response
-    ->Dial
-      ->Conference({startConferenceOnEnter => "true",
-                    endConferenceOnExit => "true"},
-                   "1234");
+  $sw->Response
+      ->Echo({timeout => "120"})->parent
+       ->Hangup();
+
+=item Enqueue
+
+  $sw->Response
+      ->Enqueue({waitUrl => "https://example.com/hold-music.xml"}, "support");
+
+=item Gather
+
+  $sw->Response
+      ->Gather({action => "https://example.com/process_gather.php",
+                method => "GET"})
+       ->Say("Please enter your account number, followed by the pound sign");
 
 =item Hangup
 
-  $tw->Response->Hangup;
+  $sw->Response
+      ->Hangup;
 
-=item Redirect
+=item Leave
 
-  $tw->Response
-    ->Dial("415-123-4567")->parent
-    ->Redirect("http://www.foo.com/nextInstructions");
-
-=item Reject
-
-  $tw->Response
-    ->Reject({reason => "busy"});
+  $sw->Response
+      ->Leave;
 
 =item Pause
 
-  $tw->Response
-    ->Pause({length => 5})->parent
-    ->Say("Hi there.");
+  $sw->Response
+      ->Say("I will pause 5 seconds starting now.")->parent
+      ->Pause({length => 5})->parent
+      ->Say("I just paused 5 seconds");
+
+=item Play
+
+  $sw->Response
+      ->Play({ loop => 15 }, "rtmp://example.com:1935/my-rtmp-stream");
+
+=item Record
+
+  $sw->Response
+      ->Say("Please leave a message at the beep. Press the star key when finished.")->parent
+      ->Record({action => "http://your-application.com/handleRecording.cgi",
+                method => "GET",
+                maxLength => "15",
+                finishOnKey => "#"});
+
+=item Redirect
+
+  $sw->Response
+      ->Dial("310-123-0000")->parent
+       ->Redirect("http://www.your-application.com/next-instructions");
+
+=item Refer
+
+  $sw->Response
+      ->Refer({action => "https://example.com/refer-completed.xml",
+               method => "GET"})
+       ->Sip("sip:transfer-target\@example.com");
+
+=item Reject
+
+  $sw->Response
+      ->Reject({reason => "busy"});
+
+=item Say
+
+  $sw->Response
+      ->Say({voice => "woman", loop => "2"}, "Hello");
+
+
+=item Sms
+
+  $sw->Response
+      ->Say("Our store is located at 123 East St.")->parent
+      ->Sms({action => "/smsHandler.cgi", method => "POST"},
+             "Store location: 123 East St.");
+
+=item Stream
+
+  $sw->Response
+      ->Start
+       ->Stream({url => "wss://streamer.signalwire.com"});
+		
+=item AI
+
+  $sw->Response
+      ->Connect()
+       ->AI({ postPromptURL => "https://webhook.site/10d7acdaf140" })
+        ->Prompt({ topP => '0.8', temperature => '1.0',
+                   confidence => "0.6" }, "Hello, how are you today?")->parent
+        ->postPrompt("Summarize the conversation.");
+
+=item Conference
+
+  $sw->Response
+      ->Dial
+       ->Conference({startConferenceOnEnter => "true",
+                     endConferenceOnExit => "true"},
+                     "1234");
+
+=item Number
+
+  $sw->Response
+      ->Dial
+       ->Number({sendDigits => "www56476" }, "858-987-6543");
+
+=item Queue
+
+  $sw->Response
+      ->Dial
+       ->Queue({ url="https://example.com/about_to_connect.xml" }, "support");
+
+=item Room
+
+  $sw->Response
+      ->Connect
+       ->Room("my-room-name");
+
+=item Sip
+
+  $sw->Response
+      ->Dial
+       ->Sip(sip:alice@example.com;transport=udp');
+
+=item Message
+
+  $sw->Response
+      ->Message({ action => "https://your-application.com/followup",
+                  method => "GET" },
+		  "Hello from SignalWire");
+
+=item Receive
+
+  $sw->Response
+      ->Receive({ mediaType => "image/tiff" });
+
 
 =back
 
@@ -847,19 +911,19 @@ package, also available on CPAN.
 
 =head1 COMPATIBILITY
 
-B<WWW::SignalWire::LaML> will likely be forward compatible with all
-future revisions of Twilio's TwiML language. This is because method
-calls are constructors which generate TwiML objects on the fly.
+B<WWW::SignalWire::CompatXML> will likely be forward compatible with all
+future revisions of SignalWire's CompatXML language. This is because method
+calls are constructors which generate CompatXML objects on the fly.
 
-For example, say Twilio began to support a B<Belch> verb (if only!),
+For example, say SignalWire began to support a B<Belch> verb (if only!),
 we could take advantage of it immediately by simply calling a B<Belch>
 method like this:
 
-  my $tw = new WWW::SignalWire::LaML;
-  $tw->Response->Belch('Braaaaaap!');
-  print $tw->to_string;
+  my $sw = new WWW::SignalWire::CompatXML;
+  $sw->Response->Belch('Braaaaaap!');
+  print $sw->to_string;
 
-Because there is no B<Belch> method, B<WWW::SignalWire::LaML> assumes you
+Because there is no B<Belch> method, B<WWW::SignalWire::CompatXML> assumes you
 want to create a node by that name and makes one for you:
 
   <?xml version="1.0" encoding="UTF-8" ?>
@@ -872,7 +936,7 @@ add B<Belch> to our B<%TAGS> hash and we're good to go.
 
 =head1 SEE ALSO
 
-L<WWW::SignalWire::LaML>
+L<WWW::SignalWire::CompatXML>
 
 =head1 AUTHOR
 

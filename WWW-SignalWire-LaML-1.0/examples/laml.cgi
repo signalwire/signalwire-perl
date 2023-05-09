@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 use Data::Dumper;
-use WWW::SignalWire::LaML;
+use WWW::SignalWire::CompatXML;
 use CGI;
 
 my $q = new CGI;
-my $sw = new WWW::SignalWire::LaML;
+my $sw = new WWW::SignalWire::CompatXML;
 
 print $q->header("text/xml");
 

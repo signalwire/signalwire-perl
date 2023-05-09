@@ -1,10 +1,10 @@
-WWW-SignalWire-LaML version 1.0
+WWW-SignalWire-CompatXML version 1.0
 =============================
 
-WWW::SignalWire::LaML is a small module for creating Twilio-compatible
+WWW::SignalWire::CompatXML is a small module for creating Twilio-compatible
 TwiML documents:
 
-  my $tw = new WWW::SignalWire::LaML;
+  my $tw = new WWW::SignalWire::CompatXML;
   $tw->Response
     ->Say("Lookin' out my backdoor");
   print $tw->to_string;
