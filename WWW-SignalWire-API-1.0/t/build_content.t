@@ -1,9 +1,9 @@
 #!perl
 use Test::More tests => 5;
-use WWW::SignalWire::API;
+use SignalWire::RestAPI;
 
 my $resp;
-my $t = WWW::SignalWire::API->new;
+my $t = SignalWire::RestAPI->new;
 
 {
     $resp = $t->_build_content(

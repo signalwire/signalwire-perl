@@ -1,4 +1,4 @@
-package WWW::SignalWire::API;
+package SignalWire::RestAPI;
 
 use 5.010001;
 use strict;
@@ -20,7 +20,7 @@ my %auth_token   = ();
 my %api_version  = ();
 my %lwp_callback = ();
 my %utf8         = ();
-my %api_url      = ();
+my %space        = ();
 
 sub new {
     my $class = shift;
@@ -28,13 +28,13 @@ sub new {
 
     my $self = bless \(my $ref), $class;
 
-    $account_sid  {$self} = $args{AccountSid}   || '';
-    $auth_token   {$self} = $args{AuthToken}    || '';
-    $api_version  {$self} = $args{API_VERSION}  || '2010-04-01';
-    $lwp_callback {$self} = $args{LWP_Callback} || undef;
-    $utf8         {$self} = $args{utf8}         || undef;
-    $api_url      {$self} = $args{API_URL}      || undef;
-    return $self;
+$account_sid  {$self} = $args{AccountSid}   || '';
+$auth_token   {$self} = $args{AuthToken}    || '';
+$api_version  {$self} = $args{API_VERSION}  || '2010-04-01';
+$lwp_callback {$self} = $args{LWP_Callback} || undef;
+$utf8         {$self} = $args{utf8}         || undef;
+$space        {$self} = $args{Space}        || undef;
+return $self;
 }
 
 sub GET {
@@ -66,14 +66,14 @@ sub _do_request {
 
     my $lwp = LWP::UserAgent->new;
     $lwp_callback{$self}->($lwp)
-      if ref($lwp_callback{$self}) eq 'CODE';
-    $lwp->agent("perl-WWW-SignalWire-API/$VERSION");
+	if ref($lwp_callback{$self}) eq 'CODE';
+    $lwp->agent("SignalWire-RestAPI/$VERSION");
 
     my $method = delete $args{METHOD};
-    my $url = $api_url{$self} . '/' . $api_version{$self};
-    my $api = delete $args{API} || '';
-    $url .= "/Accounts/" . $account_sid{$self};
-    $url .= ( $api eq 'Accounts' ? '' : "/$api" );
+    my $url    = 'https://' . $space{$self} . '.signalwire.com/api/laml/' . $api_version{$self};
+    my $api    = delete $args{API} || '';
+    $url      .= "/Accounts/" . $account_sid{$self};
+    $url      .= ( $api eq 'Accounts' ? '' : "/$api" );
 
     my $content = '';
     if( keys %args ) {
@@ -124,6 +124,7 @@ sub DESTROY {
     delete $api_version {$self};
     delete $lwp_callback{$self};
     delete $utf8        {$self};
+    delete $space       {$self};
 
     my $super = $self->can("SUPER::DESTROY");
     goto &$super if $super;
@@ -136,13 +137,13 @@ __END__
 
 =head1 NAME
 
-WWW::SignalWire::API - Accessing SignalWire's REST API with Perl
+SignalWire::RestAPI - Accessing SignalWire's REST API with Perl
 
 =head1 SYNOPSIS
 
-  use WWW::SignalWire::API;
+  use SignalWire::RestAPI;
 
-  my $twilio = WWW::SignalWire::API->new(AccountSid => 'AC12345...',
+  my $twilio = SignalWire::RestAPI->new(AccountSid => 'AC12345...',
                                      AuthToken  => '1234567...');
 
   ## make a phone call
@@ -155,12 +156,12 @@ WWW::SignalWire::API - Accessing SignalWire's REST API with Perl
 
 =head1 COMPATIBILITY NOTICE
 
-This section is for existing B<WWW::SignalWire::API> users considering an
-upgrade from B<WWW::SignalWire::API> versions prior to 0.15. If you're new
-to B<WWW::SignalWire::API> you may safely unconcern yourself with this
+This section is for existing B<SignalWire::RestAPI> users considering an
+upgrade from B<SignalWire::RestAPI> versions prior to 0.15. If you're new
+to B<SignalWire::RestAPI> you may safely unconcern yourself with this
 section and move on to L</DESCRIPTION> below.
 
-B<WWW::SignalWire::API> since version 0.15 defaults to SignalWire's
+B<SignalWire::RestAPI> since version 0.15 defaults to SignalWire's
 F<2010-04-01> API. That is the only substantive change from version
 0.14. If you are one of those types of people who I<must> have the
 latest version of everything, you have two options:
@@ -172,12 +173,12 @@ latest version of everything, you have two options:
 Before you upgrade to 0.15, change all of your B<new()> method calls
 to explicitly use I<API_VERSION> as '2008-08-01', like this:
 
-  my $twilio = WWW::SignalWire::API->new
+  my $twilio = SignalWire::RestAPI->new
     ( AccountSid  => 'AC12345...',
       AuthToken   => '1234567...',
       API_VERSION => '2008-08-01' );  ## <-- add this line here
 
-Now you may safely upgrade B<WWW::SignalWire::API> and stay current. You
+Now you may safely upgrade B<SignalWire::RestAPI> and stay current. You
 can then update your individual SignalWire API calls piecemeal at your
 leisure.
 
@@ -189,19 +190,19 @@ calls and make sure that they're up-to-date with SignalWire's new
 the 2008 version) and set the API_VERSION to '2010-04-01'. Test that
 your code all works with the new API.
 
-Now you can safely upgrade B<WWW::SignalWire::API>.
+Now you can safely upgrade B<SignalWire::RestAPI>.
 
 =back
 
 =head1 DESCRIPTION
 
-B<WWW::SignalWire::API> aims to make connecting to and making REST calls
+B<SignalWire::RestAPI> aims to make connecting to and making REST calls
 on the SignalWire API easy, reliable, and enjoyable.
 
 You should have ready access to SignalWire's API documentation in order to
-use B<WWW::SignalWire::API>.
+use B<SignalWire::RestAPI>.
 
-B<WWW::SignalWire::API> knows almost nothing about the SignalWire API itself
+B<SignalWire::RestAPI> knows almost nothing about the SignalWire API itself
 other than the authentication and basic format of the REST URIs.
 
 Users already familiar with the API may skip the following section
@@ -211,7 +212,7 @@ section. Beginners should definitely continue here.
 =head1 TWILIO API
 
 This section is meant to help you understand how to read the SignalWire
-API documentation and translate it into B<WWW::SignalWire::API> calls.
+API documentation and translate it into B<SignalWire::RestAPI> calls.
 
 The SignalWire API documentation is found here:
 
@@ -272,7 +273,7 @@ You can see the list of properties for the I<Calls> resource here:
   http://www.twilio.com/docs/api/rest/making_calls
 
 Further down in L</"METHODS"> we'll cover how this works using
-B<WWW::SignalWire::API>, but here's a teaser to help you see how easy your
+B<SignalWire::RestAPI>, but here's a teaser to help you see how easy your
 job as a budding SignalWire developer will be:
 
   ## call Jenny
@@ -326,15 +327,15 @@ document like this, telling us that everything went great:
   </SignalWireResponse>
 
 Don't let all this HTTP request/response (or XML) business worry you:
-B<WWW::SignalWire::API> makes requests and handles responses for you, so
+B<SignalWire::RestAPI> makes requests and handles responses for you, so
 you don't have to get involved with all the details. Besides, you can
 also opt to have SignalWire send its responses to you in CSV, JSON, or
 HTML.
 
-=head2 Using WWW::SignalWire::API
+=head2 Using SignalWire::RestAPI
 
 Now that we have a basic understanding of how SignalWire's REST API works,
-we can translate the API into B<WWW::SignalWire::API> method calls. Doing
+we can translate the API into B<SignalWire::RestAPI> method calls. Doing
 this is trivial:
 
 =over 4
@@ -396,7 +397,7 @@ See L</"Alternative resource representations"> below.
 
 =item 4.
 
-Create a B<WWW::SignalWire::API> object and make the call using the I<API
+Create a B<SignalWire::RestAPI> object and make the call using the I<API
 method>, I<API resource>, and I<resource parameters>. The pattern
 you'll follow looks like this:
 
@@ -411,7 +412,7 @@ documentation:
 Here are the examples:
 
   ## create an object
-  my $twilio = new WWW::SignalWire::API( AccountSid => '{your account sid}',
+  my $twilio = new SignalWire::RestAPI( AccountSid => '{your account sid}',
                                      AuthToken  => '{your auth token}' );
 
   ## view a list of calls we've made
@@ -609,8 +610,8 @@ updates their API, and b) you want to take advantage of it or c)
 you've coded against an older API version and need to set this for
 backward compatibility.
 
-NOTE: B<WWW::SignalWire::API> prior to version 0.15 defaulted to
-'2008-08-01'; if you're upgrading B<WWW::SignalWire::API>, see
+NOTE: B<SignalWire::RestAPI> prior to version 0.15 defaulted to
+'2008-08-01'; if you're upgrading B<SignalWire::RestAPI>, see
 L</"COMPATIBILITY"> section at the top of this documentation.
 
 =item B<LWP_Callback>
@@ -628,7 +629,7 @@ instead of C<uri_escape>.
 
 Example:
 
-  my $twilio = new WWW::SignalWire::API
+  my $twilio = new SignalWire::RestAPI
     ( AccountSid => 'AC...',
       AuthToken  => '...',
       API_VERSION => '2008-08-01',
@@ -645,9 +646,9 @@ where METHOD is one of B<GET>, B<POST>, B<PUT>, or B<DELETE>, and
 "/2010-04-01/Accounts/{YourAccountSid}/".
 
 Note that you do not need to URI encode the parameters;
-B<WWW::SignalWire::API> handles that for you (this just means that you
+B<SignalWire::RestAPI> handles that for you (this just means that you
 don't have to do anything special with the parameters you give the
-B<WWW::SignalWire::API> object).
+B<SignalWire::RestAPI> object).
 
   Note: There is one exception to URI encoding: when you are passing a
   I<Url> parameter (e.g., to the I<Calls> resource), and that URL
@@ -830,12 +831,12 @@ Example:
 
 =head1 API CHANGES
 
-Versions of B<WWW::SignalWire::API> prior to 0.15 defaulted to
-F<2008-08-01>. API calls since B<WWW::SignalWire::API> version 0.15 and
+Versions of B<SignalWire::RestAPI> prior to 0.15 defaulted to
+F<2008-08-01>. API calls since B<SignalWire::RestAPI> version 0.15 and
 later are against SignalWire's F<2010-04-01> API. If you need to call
 against a different API, you may pass it into the constructor:
 
-  $t = WWW::SignalWire::API->new( AccountSid  => '...',
+  $t = SignalWire::RestAPI->new( AccountSid  => '...',
                               AuthToken   => '...',
                               API_VERSION => 'YYYY-MM-DD' );
 

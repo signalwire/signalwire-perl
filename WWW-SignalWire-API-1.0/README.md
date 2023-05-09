@@ -1,7 +1,7 @@
-WWW-SignalWire-API version 1.0
+SignalWire-RestAPI version 1.0
 ===========================
 
-WWW::SignalWire::API is a flexible, extensible API for SignalWire written in
+SignalWire::RestAPI is a flexible, extensible API for SignalWire written in
 Perl. It's primary objective is reliability and robustness for
 SignalWire's RESTful API. The module should survive any future updates to
 the API without any changes whatsoever.
@@ -9,7 +9,7 @@ the API without any changes whatsoever.
 Make any SignalWire API call in two lines of code:
 
     ## make a SignalWire object
-    my $signalwire = new WWW::SignalWire::API( AccountSid => '(PROJECT KEY)',
+    my $signalwire = new SignalWire::RestAPI( AccountSid => '(PROJECT KEY)',
                                      AuthToken  => '(TOKEN)',
 				     API_URL    => 'https://SPACE.signalwire.com');
 

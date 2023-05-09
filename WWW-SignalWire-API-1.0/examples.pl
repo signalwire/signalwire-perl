@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use lib 'lib';
-use WWW::SignalWire::API;
+use SignalWire::RestAPI;
 
 ## usage: examples.pl account_sid authtoken action parameters (see examples)
 
@@ -11,7 +11,7 @@ my $account_sid = shift @ARGV;
 my $auth_token  = shift @ARGV;
 my $action      = shift @ARGV || 'Calls';
 
-my $signalwire = new WWW::SignalWire::API( AccountSid => $account_sid,
+my $signalwire = new SignalWire::RestAPI( AccountSid => $account_sid,
                                    AuthToken  => $auth_token, );
 
 ## view a list of calls in JSON format

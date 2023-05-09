@@ -1,5 +1,5 @@
 use Test::More tests => 1;
-BEGIN { use_ok('WWW::SignalWire::API') };
+BEGIN { use_ok('SignalWire::RestAPI') };
 
 #########################
 
