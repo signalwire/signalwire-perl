@@ -2,10 +2,10 @@ Changes
 Makefile.PL
 MANIFEST
 README
-t/WWW-SignalWire-CompatXML.t
+t/SignalWire-CompatXML.t
 t/documentation.t
 t/traps.t
 t/signalwire.t
-lib/WWW/SignalWire/CompatXML.pm
+lib/SignalWire/CompatXML.pm
 META.yml                                 Module meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
