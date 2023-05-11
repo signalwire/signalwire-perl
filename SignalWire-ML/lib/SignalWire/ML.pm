@@ -175,6 +175,19 @@ sub setAIprompt {
     return;
 }
 
+# Reply a SWAIG response with optional SWML if sections exist.
+sub SWAIGResponse {
+    my $self     = shift;
+    my $response = shift;
+    my $json     = JSON->new->allow_nonref;
+
+    if($self->{_content}->{sections}) {
+	$response->{SWML} = $self->{_content};
+    }
+
+    return $json->pretty->utf8->encode( $response )
+}
+
 # Render the object to JSON;
 sub renderJSON {
     my $self = shift;
