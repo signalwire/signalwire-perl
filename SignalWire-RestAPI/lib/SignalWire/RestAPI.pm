@@ -21,6 +21,7 @@ my %api_version  = ();
 my %lwp_callback = ();
 my %utf8         = ();
 my %space        = ();
+my %domain       = ();
 
 sub new {
     my $class = shift;
@@ -30,10 +31,14 @@ sub new {
 
 $account_sid  {$self} = $args{AccountSid}   || '';
 $auth_token   {$self} = $args{AuthToken}    || '';
-$api_version  {$self} = $args{API_VERSION}  || '2010-04-01';
+$api_version  {$self} = $args{API_VERSION}  || 'api/laml/2010-04-01';
 $lwp_callback {$self} = $args{LWP_Callback} || undef;
 $utf8         {$self} = $args{utf8}         || undef;
 $space        {$self} = $args{Space}        || undef;
+$domain       {$self} = $args{Domain}       || '.signalwire.com';
+
+	croak 'AccountSid and AuthToken are required'
+		unless $account_sid{$self} and $auth_token{$self};
 return $self;
 }
 
@@ -63,18 +68,24 @@ sub DELETE {
 sub _do_request {
     my $self = shift;
     my %args = @_;
-
+    my $content_type = 'application/x-www-form-urlencoded';
     my $lwp = LWP::UserAgent->new;
     $lwp_callback{$self}->($lwp)
 	if ref($lwp_callback{$self}) eq 'CODE';
     $lwp->agent("SignalWire-RestAPI/$VERSION");
 
     my $method = delete $args{METHOD};
-    my $url    = 'https://' . $space{$self} . '.signalwire.com/api/laml/' . $api_version{$self};
+    my $url    = 'https://' . $space{$self} . $domain{$self} ."/" . $api_version{$self};
     my $api    = delete $args{API} || '';
-    $url      .= "/Accounts/" . $account_sid{$self};
-    $url      .= ( $api eq 'Accounts' ? '' : "/$api" );
 
+    if ($api_version{$self} eq 'api/laml/2010-04-01') {
+	$url      .= "/Accounts/" . $account_sid{$self};
+	$url      .= ( $api eq 'Accounts' ? '' : "/$api" );
+    } else {
+	$url      .= "/$api";
+	$content_type = 'application/json';
+    }
+    print $url;
     my $content = '';
     if( keys %args ) {
         $content = $self->_build_content( %args );
@@ -87,7 +98,7 @@ sub _do_request {
     my $req = HTTP::Request->new( $method => $url );
     $req->authorization_basic( $account_sid{$self}, $auth_token{$self} );
     if( $content and $method ne 'GET' ) {
-        $req->content_type( 'application/x-www-form-urlencoded' );
+        $req->content_type( $content_type );
         $req->content( $content );
     }
 
