@@ -176,7 +176,7 @@ sub set_aiprompt {
 }
 
 # Reply a SWAIG response with optional SWML if sections exist.
-sub SWAIGResponse {
+sub swaig_response {
     my $self     = shift;
     my $response = shift;
     my $json     = JSON->new->allow_nonref;
