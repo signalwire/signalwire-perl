@@ -19,7 +19,7 @@ if ($id) {
   my $jtxt = read_file("$id");
   my $obj = $json->pretty->utf8->decode($jtxt);
   my $collected;
-  my $convo = $obj->{callLog};
+  my $convo = $obj->{call_log};
   my $tablecontent;
 
   print $q->a({ -href=>"$ENV{SCRIPT_NAME}" }, "<--back"),$q->h2("Conversation Log");
@@ -43,10 +43,10 @@ if ($id) {
 
   print $q->h2("Specific Collected Data");
 
-  if ($obj->{systemEnd} =~ /{/) {
-      push @{ $collected }, $q->td({-align => 'left', -valign => 'top' }, $q->pre("$obj->{systemEnd}"));
+  if ($obj->{system_end} =~ /{/) {
+      push @{ $collected }, $q->td({-align => 'left', -valign => 'top' }, $q->pre("$obj->{system_end}"));
   } else {
-      push @{ $collected }, $q->td({-align => 'left', -valign => 'top' }, "$obj->{systemEnd}");
+      push @{ $collected }, $q->td({-align => 'left', -valign => 'top' }, "$obj->{system_end}");
   }
 
   print $q->table({ -cellspacing => 1, -cellpadding => 5, -border => 0, -width => '100%', -style => "font-face:tahoma;font-size:18pt"},
@@ -61,8 +61,8 @@ if ($id) {
 	my $obj       = $json->pretty->utf8->decode($jtxt);
 	my $st        = stat("$_");
 	my $timestamp = strftime "%Y-%m-%d %H:%M", localtime($st->ctime);
-	my ($name)    = $obj->{callerIDName};
-	my ($num)     = $obj->{callerIDNum};
+	my ($name)    = $obj->{caller_id_name};
+	my ($num)     = $obj->{caller_id_num};
 
 	push @{ $tablecontent }, $q->td({-style => $style, -align => 'left', -valign => 'top' },
 					[$q->strong("$timestamp"), $name, $num,

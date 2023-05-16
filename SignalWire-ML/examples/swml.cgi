@@ -9,29 +9,29 @@ my $q = CGI->new;
 
 my $swml = SignalWire::ML->new({version => '1.0.2', voice => 'en-GB-Neural2-F' });
 
-$swml->setAIprompt({
+$swml->set_aiprompt({
     temperature => "0.9",
     topP => "1.0",
     text => "Your name is Olivia, You are able to lookup weather and time for various locations." });
-$swml->setAIpostPrompt({ text => "Summarize the conversation" });
+$swml->set_aipost_prompt({ text => "Summarize the conversation" });
 
-$swml->addAIhints("jokes", "weather", "time");
+$swml->add_aihints("jokes", "weather", "time");
 
-$swml->setAIpostPromptURL({ postPromptURL => $ENV{postPromptURL} });
+$swml->set_aipost_prompt_url({ post_prompt_url => $ENV{post_prompt_url} });
 
-$swml->addAISWAIGdefaults({ webHookURL => "$ENV{webHookURL}" });
+$swml->add_aiswaigdefaults({ web_hook_url => "$ENV{web_hook_url}" });
 
-$swml->addAISWAIGfunction({
+$swml->add_aiswaigfunction({
     function => 'get_weather',
     purpose => "To determine what the current weather is in a provided location.",
     argument => "The location or name of the city to get the weather from." });
 
-$swml->addAISWAIGfunction({
+$swml->add_aiswaigfunction({
     function => 'get_world_time',
     purpose => "To determine what the current time is in a provided location.",
     argument => "The location or name of the city to get the time from." });
 
-$swml->addAIApplication("main");
+$swml->add_aiapplication("main");
 
 print $q->header("application/json");
-print $swml->renderJSON;
+print $swml->render_json;

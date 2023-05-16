@@ -28,14 +28,14 @@ sub new {
 # This adds the ai application to the section provided in the args,
 # taking all the previously set params and options for the AI and
 # attaching them to the application.
-sub addAIApplication {
+sub add_aiapplication {
     my $self    = shift;
     my $section = shift;
     my $app     = "ai";
     my $args    = {};
 
-    foreach my $data ('postPrompt','voice', 'engine', 'postPromptURL', 'postPromptAuthUser',
-		      'postPromptAuthPassword', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
+    foreach my $data ('post_prompt','voice', 'engine', 'post_prompt_url', 'post_prompt_auth_user',
+		      'post_prompt_auth_password', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
 	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
     }
@@ -45,7 +45,7 @@ sub addAIApplication {
 }
 
 # add application to section, providing all the app args.
-sub addApplication {
+sub add_application {
     my $self    = shift;
     my $section = shift;
     my $app     = shift;
@@ -56,8 +56,8 @@ sub addApplication {
     return;
 }
 
-# set postUrl and optionally pass in postUser and postPassword
-sub setAIpostPromptURL {
+# set post_url and optionally pass in post_user and post_password
+sub set_aipost_prompt_url {
     my $self       = shift;
     my $postprompt = shift;
 
@@ -69,7 +69,7 @@ sub setAIpostPromptURL {
 }
 
 # Set params overriding any previously set params
-sub setAIparams {
+sub set_aiparams {
     my $self = shift;
 
     $self->{_params} = shift;
@@ -78,7 +78,7 @@ sub setAIparams {
 }
 
 # Add one or more params
-sub addAIparams {
+sub add_aiparams {
     my $self   = shift;
     my $params = shift;
 
@@ -90,7 +90,7 @@ sub addAIparams {
 }
 
 # Set hints overriding any previously set hints
-sub setAIhints {
+sub set_aihints {
     my $self  = shift;
     my @hints = @_;
 
@@ -100,7 +100,7 @@ sub setAIhints {
 }
 
 # Add hints, and make sure they are uniq
-sub addAIhints {
+sub add_aihints {
     my $self  = shift;
     my @hints = @_;
     my %seen;
@@ -111,7 +111,7 @@ sub addAIhints {
     return;
 }
 
-sub addAISWAIGdefaults {
+sub add_aiswaigdefaults {
     my $self  = shift;
     my $SWAIG = shift;
 
@@ -122,7 +122,7 @@ sub addAISWAIGdefaults {
     return;
 }
 
-sub addAISWAIGfunction {
+sub add_aiswaigfunction {
     my $self  = shift;
     my $SWAIG = shift;
 
@@ -132,7 +132,7 @@ sub addAISWAIGfunction {
 }
 
 # Add language appending to the list
-sub addAIlanguage {
+sub add_ailanguage {
     my $self     = shift;
     my $language = shift;
 
@@ -142,7 +142,7 @@ sub addAIlanguage {
 }
 
 # set lanugages overriding previous languages
-sub setAIlanguage {
+sub set_ailanguage {
     my $self     = shift;
     my $language = shift;
 
@@ -151,8 +151,8 @@ sub setAIlanguage {
     return;
 }
 
-#set postPrompt
-sub setAIpostPrompt {
+#set post_prompt
+sub set_aipost_prompt {
     my $self       = shift;
     my $postprompt = shift;
 
@@ -164,7 +164,7 @@ sub setAIpostPrompt {
 }
 
 # set prompt
-sub setAIprompt {
+sub set_aiprompt {
     my $self   = shift;
     my $prompt = shift;
 
@@ -189,7 +189,7 @@ sub SWAIGResponse {
 }
 
 # Render the object to JSON;
-sub renderJSON {
+sub render_json {
     my $self = shift;
     my $json = JSON->new->allow_nonref;
 
@@ -197,7 +197,7 @@ sub renderJSON {
 }
 
 # Render the object to YAML;
-sub renderYAML {
+sub render_yaml {
     my $self = shift;
 
     return Dump $self->{_content};
