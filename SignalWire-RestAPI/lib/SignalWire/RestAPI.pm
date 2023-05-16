@@ -85,7 +85,7 @@ sub _do_request {
 	$url      .= "/$api";
 	$content_type = 'application/json';
     }
-    print $url;
+
     my $content = '';
     if( keys %args ) {
         $content = $self->_build_content( %args );
