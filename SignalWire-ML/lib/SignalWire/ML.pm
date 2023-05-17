@@ -18,7 +18,6 @@ sub new {
     my $self  = {};
 
     $self->{_content}->{version} = $args->{version} ||= '1.0.0';
-    $self->{_content}->{engine}  = $args->{engine}  ||= 'gcloud';
     $self->{_voice}              = $args->{voice}   ||= undef;
     $self->{_languages}          = [];
     $self->{_SWAIG}->{functions} = [];
@@ -35,7 +34,7 @@ sub add_aiapplication {
     my $app     = "ai";
     my $args    = {};
 
-    foreach my $data ('post_prompt','voice', 'engine', 'post_prompt_url', 'post_prompt_auth_user',
+    foreach my $data ('post_prompt','voice', 'post_prompt_url', 'post_prompt_auth_user',
 		      'post_prompt_auth_password', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
 	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
@@ -158,7 +157,7 @@ sub set_aipost_prompt {
     my $postprompt = shift;
 
     while ( my ($k,$v) = each(%{$postprompt}) ) {
-	$self->{_postPrompt}->{$k} = $v;
+	$self->{_post_prompt}->{$k} = $v;
     }
 
     return;
