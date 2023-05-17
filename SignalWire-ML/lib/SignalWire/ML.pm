@@ -20,6 +20,7 @@ sub new {
     $self->{_content}->{version} = $args->{version} ||= '1.0.0';
     $self->{_content}->{engine}  = $args->{engine}  ||= 'gcloud';
     $self->{_voice}              = $args->{voice}   ||= undef;
+    $self->{_languages}          = [];
     $self->{_SWAIG}->{functions} = [];
     $self->{_SWAIG}->{defaults}  = {};
     return bless($self, $class);
