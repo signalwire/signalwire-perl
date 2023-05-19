@@ -49,7 +49,7 @@ sub add_application {
     my $self    = shift;
     my $section = shift;
     my $app     = shift;
-    my $args    = shift;
+    my $args    = shift || {};
 
     push @{$self->{_content}->{sections}->{$section} },  { $app =>  $args };
 
