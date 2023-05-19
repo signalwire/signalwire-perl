@@ -43,10 +43,10 @@ if ($id) {
 
   print $q->h2("Specific Collected Data");
 
-  if ($obj->{system_end} =~ /{/) {
-      push @{ $collected }, $q->td({-align => 'left', -valign => 'top' }, $q->pre("$obj->{system_end}"));
+  if ($obj->{post_prompt_data}->{raw} =~ /{/) {
+      push @{ $collected }, $q->td({-align => 'left', -valign => 'top' }, $q->pre("$obj->{post_prompt_data}->{parsed}[0]"));
   } else {
-      push @{ $collected }, $q->td({-align => 'left', -valign => 'top' }, "$obj->{system_end}");
+      push @{ $collected }, $q->td({-align => 'left', -valign => 'top' }, "$obj->{post_prompt_data}->{raw}");
   }
 
   print $q->table({ -cellspacing => 1, -cellpadding => 5, -border => 0, -width => '100%', -style => "font-face:tahoma;font-size:18pt"},
