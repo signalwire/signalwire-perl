@@ -19,7 +19,7 @@ if ($id) {
   my $jtxt = read_file("$id");
   my $obj = $json->pretty->utf8->decode($jtxt);
   my $collected;
-  my $convo = $obj->{call_log};
+  my $convo = $obj->{callLog};
   my $tablecontent;
 
   print $q->a({ -href=>"$ENV{SCRIPT_NAME}" }, "<--back"),$q->h2("Conversation Log");
@@ -61,8 +61,8 @@ if ($id) {
 	my $obj       = $json->pretty->utf8->decode($jtxt);
 	my $st        = stat("$_");
 	my $timestamp = strftime "%Y-%m-%d %H:%M", localtime($st->ctime);
-	my ($name)    = $obj->{caller_id_name};
-	my ($num)     = $obj->{caller_id_num};
+	my ($name)    = $obj->{callerIDName};
+	my ($num)     = $obj->{callerIDNum};
 
 	push @{ $tablecontent }, $q->td({-style => $style, -align => 'left', -valign => 'top' },
 					[$q->strong("$timestamp"), $name, $num,
