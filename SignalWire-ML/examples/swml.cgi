@@ -27,7 +27,7 @@ $swml->add_aiswaigfunction({
     argument => "The location or name of the city to get the weather from." });
 
 $swml->add_aiswaigfunction({
-    function => 'get_world_time',
+    function => 'get_time',
     purpose => "To determine what the current time is in a provided location.",
     argument => "The location or name of the city to get the time from." });
 
