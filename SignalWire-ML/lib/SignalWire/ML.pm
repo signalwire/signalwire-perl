@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.0';
+our $VERSION = '1.01';
 our $AUTOLOAD;
 
 sub new {
@@ -167,9 +167,14 @@ sub set_aipost_prompt {
 sub set_aiprompt {
     my $self   = shift;
     my $prompt = shift;
+    my @keys = ("confidence", "barge_confidence", "top_p", "temperature", "frequency_penalty", "presence_penalty");
 
     while ( my ($k,$v) = each(%{$prompt}) ) {
-	$self->{_prompt}->{$k} = $v;
+	if ( grep { $k } @keys ) {
+            $self->{_prompt}->{$k} = $v + 0;
+	} else {
+            $self->{_prompt}->{$k} = $v;
+	}
     }
 
     return;

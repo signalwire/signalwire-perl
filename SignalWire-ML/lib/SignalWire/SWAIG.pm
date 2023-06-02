@@ -9,7 +9,7 @@ use SignalWire::ML;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.0';
+our $VERSION = '1.01';
 our $AUTOLOAD;
 
 sub new {
@@ -57,10 +57,6 @@ sub SWMLVars {
 	return $self->{SWMLVars};
 }
 
-sub argument {
-	my $self = shift;
-	return $self->{argument};
-}
 sub argument {
 	my $self = shift;
 	return $self->{argument};
