@@ -81,9 +81,14 @@ sub set_aiparams {
 sub add_aiparams {
     my $self   = shift;
     my $params = shift;
+    my @keys = ("end_of_speech_timeout", "attention_timeout", "outbound_attention_timeout", "background_file_loops", "background_file_volume", "digit_timeout", "energy_level" );
 
-    while ( my ($k,$v) = each(%{$params}) ) {
-	$self->{_params}->{$k} = $v;
+    while ( my ($k,$v) = each(%{$prompt}) ) {
+	if ( grep { $k } @keys ) {
+            $self->{_prompt}->{$k} = $v + 0;
+	} else {
+            $self->{_prompt}->{$k} = $v;
+	}
     }
 
     return;
