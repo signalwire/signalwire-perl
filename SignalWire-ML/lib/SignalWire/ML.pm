@@ -155,9 +155,14 @@ sub set_ailanguage {
 sub set_aipost_prompt {
     my $self       = shift;
     my $postprompt = shift;
+    my @keys = ("confidence", "barge_confidence", "top_p", "temperature", "frequency_penalty", "presence_penalty");
 
-    while ( my ($k,$v) = each(%{$postprompt}) ) {
-	$self->{_post_prompt}->{$k} = $v;
+    while ( my ($k,$v) = each(%{$prompt}) ) {
+	if ( grep { $k } @keys ) {
+            $self->{_prompt}->{$k} = $v + 0;
+	} else {
+            $self->{_prompt}->{$k} = $v;
+	}
     }
 
     return;
