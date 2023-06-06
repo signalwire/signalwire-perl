@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.02';
+our $VERSION = '1.04';
 our $AUTOLOAD;
 
 sub new {
@@ -83,11 +83,11 @@ sub add_aiparams {
     my $params = shift;
     my @keys = ("end_of_speech_timeout", "attention_timeout", "outbound_attention_timeout", "background_file_loops", "background_file_volume", "digit_timeout", "energy_level" );
 
-    while ( my ($k,$v) = each(%{$prompt}) ) {
-	if ( grep { $k } @keys ) {
-            $self->{_prompt}->{$k} = $v + 0;
+    while ( my ($k,$v) = each(%{$params}) ) {
+	if ( grep { $_ eq $k } @keys ) {
+            $self->{_params}->{$k} = $v + 0;
 	} else {
-            $self->{_prompt}->{$k} = $v;
+            $self->{_params}->{$k} = $v;
 	}
     }
 
@@ -162,11 +162,11 @@ sub set_aipost_prompt {
     my $postprompt = shift;
     my @keys = ("confidence", "barge_confidence", "top_p", "temperature", "frequency_penalty", "presence_penalty");
 
-    while ( my ($k,$v) = each(%{$prompt}) ) {
-	if ( grep { $k } @keys ) {
-            $self->{_prompt}->{$k} = $v + 0;
+    while ( my ($k,$v) = each(%{$postprompt}) ) {
+	if ( grep { $_ eq $k } @keys ) {
+            $self->{_post_prompt}->{$k} = $v + 0;
 	} else {
-            $self->{_prompt}->{$k} = $v;
+            $self->{_post_prompt}->{$k} = $v;
 	}
     }
 
@@ -180,7 +180,7 @@ sub set_aiprompt {
     my @keys = ("confidence", "barge_confidence", "top_p", "temperature", "frequency_penalty", "presence_penalty");
 
     while ( my ($k,$v) = each(%{$prompt}) ) {
-	if ( grep { $k } @keys ) {
+	if ( grep { $_ eq $k } @keys ) {
             $self->{_prompt}->{$k} = $v + 0;
 	} else {
             $self->{_prompt}->{$k} = $v;
