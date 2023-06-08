@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 our $AUTOLOAD;
 
 sub new {
@@ -20,6 +20,7 @@ sub new {
     $self->{_content}->{version} = $args->{version} ||= '1.0.0';
     $self->{_voice}              = $args->{voice}   ||= undef;
     $self->{_languages}          = [];
+    $self->{_pronounce}          = [];
     $self->{_SWAIG}->{functions} = [];
     $self->{_SWAIG}->{defaults}  = {};
     return bless($self, $class);
@@ -116,6 +117,7 @@ sub add_aihints {
     return;
 }
 
+# set SWAIG defaults overriding previous defaults
 sub add_aiswaigdefaults {
     my $self  = shift;
     my $SWAIG = shift;
@@ -127,6 +129,7 @@ sub add_aiswaigdefaults {
     return;
 }
 
+# set SWAIG function
 sub add_aiswaigfunction {
     my $self  = shift;
     my $SWAIG = shift;
@@ -136,12 +139,22 @@ sub add_aiswaigfunction {
     return;
 }
 
-# Add language appending to the list
-sub add_ailanguage {
-    my $self     = shift;
-    my $language = shift;
+# set pronounces overriding previous pronounces
+sub set_aiprnounce {
+    my $self      = shift;
+    my $pronounce = shift;
+    
+    $self->{_pronounce} = $pronounce;
 
-    @{ $self->{_languages} } = (@{ $self->{_languages} }, $language);
+    return;
+}
+
+# add pronounces appending to the list
+sub add_aipronounce {
+    my $self      = shift;
+    my $pronounce = shift;
+
+    @{ $self->{_pronounce} } = (@{ $self->{_pronounce} }, $pronounce);
 
     return;
 }
@@ -152,6 +165,16 @@ sub set_ailanguage {
     my $language = shift;
 
     $self->{_languages} = $language;
+
+    return;
+}
+
+# Add language appending to the list
+sub add_ailanguage {
+    my $self     = shift;
+    my $language = shift;
+
+    @{ $self->{_languages} } = (@{ $self->{_languages} }, $language);
 
     return;
 }
