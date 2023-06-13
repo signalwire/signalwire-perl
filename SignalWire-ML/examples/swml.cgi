@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $q = CGI->new;
 
-my $swml = SignalWire::ML->new({version => '1.0.2', voice => 'en-GB-Neural2-F' });
+my $swml = SignalWire::ML->new({version => '1.0.0', voice => 'en-GB-Neural2-F' });
 
 $swml->set_aiprompt({
     temperature => "0.9",
@@ -20,6 +20,12 @@ $swml->add_aihints("jokes", "weather", "time");
 $swml->set_aipost_prompt_url({ post_prompt_url => $ENV{post_prompt_url} });
 
 $swml->add_aiswaigdefaults({ web_hook_url => "$ENV{web_hook_url}" });
+
+$swml->add_aiinclude({
+    url => "https://swml.herokuapp.com/swaig.cgi",
+    auth_user => "user",
+    auth_password => "pass",
+    functions => [ "get_joke", "get_weather", "get_time" ]  });
 
 $swml->add_aiswaigfunction({
     function => 'get_weather',
