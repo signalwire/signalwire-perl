@@ -21,6 +21,7 @@ sub new {
     $self->{_voice}              = $args->{voice}   ||= undef;
     $self->{_languages}          = [];
     $self->{_pronounce}          = [];
+    $self->{_SWAIG}->{include}   = [];
     $self->{_SWAIG}->{functions} = [];
     $self->{_SWAIG}->{defaults}  = {};
     return bless($self, $class);
@@ -178,6 +179,17 @@ sub add_ailanguage {
 
     return;
 }
+
+# Function included in SWAIG
+sub add_aiinclude {
+	my $self    = shift;
+	my $include = shift;
+
+	@{ $self->{_SWAIG}->{include} } = (@{ $self->{_SWAIG}->{include}}, $include);
+
+	return;
+}
+
 
 #set post_prompt
 sub set_aipost_prompt {
