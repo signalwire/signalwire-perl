@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.07';
+our $VERSION = '1.08';
 our $AUTOLOAD;
 
 sub new {
@@ -21,7 +21,7 @@ sub new {
     $self->{_voice}                     = $args->{voice}   ||= undef;
     $self->{_languages}                 = [];
     $self->{_pronounce}                 = [];
-    $self->{_SWAIG}->{include}          = [];
+    $self->{_SWAIG}->{includes}         = [];
     $self->{_SWAIG}->{functions}        = [];
     $self->{_SWAIG}->{native_functions} = [];
     $self->{_SWAIG}->{defaults}         = {};
@@ -183,12 +183,12 @@ sub add_ailanguage {
 
 # Function included in SWAIG
 sub add_aiinclude {
-	my $self    = shift;
-	my $include = shift;
+    my $self = shift;
+    my $include = shift;
 
-	@{ $self->{_SWAIG}->{include} } = (@{ $self->{_SWAIG}->{include}}, $include);
-
-	return;
+    @{ $self->{_SWAIG}->{includes} } = (@{ $self->{_SWAIG}->{includes}}, $include);
+    
+    return;
 }
 
 # Function included in native SWAIG
