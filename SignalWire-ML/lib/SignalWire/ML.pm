@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.06';
+our $VERSION = '1.07';
 our $AUTOLOAD;
 
 sub new {
@@ -17,13 +17,14 @@ sub new {
     my $class = ref($proto) || $proto;
     my $self  = {};
 
-    $self->{_content}->{version} = $args->{version} ||= '1.0.0';
-    $self->{_voice}              = $args->{voice}   ||= undef;
-    $self->{_languages}          = [];
-    $self->{_pronounce}          = [];
-    $self->{_SWAIG}->{include}   = [];
-    $self->{_SWAIG}->{functions} = [];
-    $self->{_SWAIG}->{defaults}  = {};
+    $self->{_content}->{version}        = $args->{version} ||= '1.0.0';
+    $self->{_voice}                     = $args->{voice}   ||= undef;
+    $self->{_languages}                 = [];
+    $self->{_pronounce}                 = [];
+    $self->{_SWAIG}->{include}          = [];
+    $self->{_SWAIG}->{functions}        = [];
+    $self->{_SWAIG}->{native_functions} = [];
+    $self->{_SWAIG}->{defaults}         = {};
     return bless($self, $class);
 }
 
@@ -190,6 +191,15 @@ sub add_aiinclude {
 	return;
 }
 
+# Function included in native SWAIG
+sub add_ainativefunction {
+	my $self   = shift;
+	my $native = shift;
+
+	@{ $self->{_SWAIG}->{native_functions} } = (@{ $self->{_SWAIG}->{native_functions}}, $native);
+
+	return;
+}
 
 #set post_prompt
 sub set_aipost_prompt {

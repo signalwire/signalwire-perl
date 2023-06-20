@@ -29,13 +29,28 @@ $swml->add_aiinclude({
 
 $swml->add_aiswaigfunction({
     function => 'get_weather',
-    purpose => "To determine what the current weather is in a provided location.",
-    argument => "The location or name of the city to get the weather from." });
+    purpose => "use when inquired about weather anywhere across the globe",
+    argument => {
+	type => "object",
+	properties => {
+	    location => {
+		type => "string",
+		description => "the location to check the weather in" } } } });
 
 $swml->add_aiswaigfunction({
     function => 'get_time',
     purpose => "To determine what the current time is in a provided location.",
-    argument => "The location or name of the city to get the time from." });
+    argument => {
+	type => "object",
+	properties => {
+	    location => {
+		type => "string",
+		description => "The location or name of the city to get the time from." } } } });
+
+
+$swml->add_ainativefunction("wait_seconds");
+$swml->add_ainativefunction("check_time");
+
 
 $swml->add_aiapplication("main");
 
