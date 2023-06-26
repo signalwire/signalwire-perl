@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.09';
+our $VERSION = '1.10';
 our $AUTOLOAD;
 
 sub new {
@@ -250,7 +250,8 @@ sub swaig_response {
 sub swaig_response_json {
     my $self     = shift;
     my $response = shift;
-
+    my $json = JSON->new->allow_nonref;
+    
     if($self->{_content}->{sections}) {
 	$response->{SWML} = $self->{_content};
     }
@@ -261,7 +262,6 @@ sub swaig_response_json {
 # Return oject as a perl ref
 sub render {
     my $self = shift;
-    my $json = JSON->new->allow_nonref;
 
     return $self->{_content};
 }
