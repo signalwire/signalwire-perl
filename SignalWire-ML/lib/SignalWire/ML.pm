@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.08';
+our $VERSION = '1.09';
 our $AUTOLOAD;
 
 sub new {
@@ -142,7 +142,7 @@ sub add_aiswaigfunction {
 }
 
 # set pronounces overriding previous pronounces
-sub set_aiprnounce {
+sub set_aipronounce {
     my $self      = shift;
     my $pronounce = shift;
     
@@ -235,17 +235,35 @@ sub set_aiprompt {
     return;
 }
 
-# Reply a SWAIG response with optional SWML if sections exist.
+# Return a SWAIG response with optional SWML if sections exist. 
 sub swaig_response {
     my $self     = shift;
     my $response = shift;
-    my $json     = JSON->new->allow_nonref;
 
     if($self->{_content}->{sections}) {
 	$response->{SWML} = $self->{_content};
     }
 
-    return $json->pretty->utf8->encode( $response )
+    return $response;
+}
+
+sub swaig_response_json {
+    my $self     = shift;
+    my $response = shift;
+
+    if($self->{_content}->{sections}) {
+	$response->{SWML} = $self->{_content};
+    }
+
+    return $json->pretty->utf8->encode( $response );
+}
+
+# Return oject as a perl ref
+sub render {
+    my $self = shift;
+    my $json = JSON->new->allow_nonref;
+
+    return $self->{_content};
 }
 
 # Render the object to JSON;
