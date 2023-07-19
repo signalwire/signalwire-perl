@@ -9,7 +9,7 @@ use SignalWire::ML;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.11';
+our $VERSION = '1.12';
 our $AUTOLOAD;
 
 sub new {

@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.11';
+our $VERSION = '1.12';
 our $AUTOLOAD;
 
 sub new {
@@ -38,7 +38,7 @@ sub add_aiapplication {
     my $args    = {};
 
     foreach my $data ('post_prompt','voice', 'post_prompt_url', 'post_prompt_auth_user',
-		      'post_prompt_auth_password', 'languages', 'hints', 'params', 'prompt', 'SWAIG') {
+		      'post_prompt_auth_password', 'languages', 'hints', 'params', 'prompt', 'SWAIG', 'pronounce') {
 	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
     }

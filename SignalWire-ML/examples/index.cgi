@@ -34,7 +34,7 @@ sub print_conversation_log {
 
     my $tablecontent;
     foreach (@{ $data->{call_log} }) {
-        my $style = $_->{role} eq "system" ? "background-color:#aa1111;color:white"
+        my $style = $_->{role} eq "system" ? "background-color:#aa1.12;color:white"
 	    : $_->{role} eq "user" ? "background-color:#2a4d69;color:white"
 	    : "background-color:#4b86b4;color:white";
 	
