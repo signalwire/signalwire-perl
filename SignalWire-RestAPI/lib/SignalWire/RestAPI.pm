@@ -4,7 +4,7 @@ use 5.010001;
 use strict;
 use warnings;
 
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 our $Debug   = 0;
 
 use LWP::UserAgent ();
@@ -29,17 +29,17 @@ sub new {
 
     my $self = bless \(my $ref), $class;
 
-$account_sid  {$self} = $args{AccountSid}   || '';
-$auth_token   {$self} = $args{AuthToken}    || '';
-$api_version  {$self} = $args{API_VERSION}  || 'api/laml/2010-04-01';
-$lwp_callback {$self} = $args{LWP_Callback} || undef;
-$utf8         {$self} = $args{utf8}         || undef;
-$space        {$self} = $args{Space}        || undef;
-$domain       {$self} = $args{Domain}       || '.signalwire.com';
+    $account_sid  {$self} = $args{AccountSid}   || $ENV{PROJECT_ID};
+    $auth_token   {$self} = $args{AuthToken}    || $ENV{REST_API_TOKEN};
+    $api_version  {$self} = $args{API_VERSION}  || 'api/laml/2010-04-01';
+    $lwp_callback {$self} = $args{LWP_Callback} || undef;
+    $utf8         {$self} = $args{utf8}         || undef;
+    $space        {$self} = $args{Space}        || $ENV{SIGNALWIRE_SPACE};
+    $domain       {$self} = $args{Domain}       || '.signalwire.com';
 
-	croak 'AccountSid and AuthToken are required'
-		unless $account_sid{$self} and $auth_token{$self};
-return $self;
+    croak 'AccountSid and AuthToken are required'
+	unless $account_sid{$self} and $auth_token{$self};
+    return $self;
 }
 
 sub GET {
