@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.13';
+our $VERSION = '1.15';
 our $AUTOLOAD;
 
 sub new {
@@ -18,13 +18,6 @@ sub new {
     my $self  = {};
 
     $self->{_content}->{version}        = $args->{version} ||= '1.0.0';
-    $self->{_voice}                     = $args->{voice}   ||= undef;
-    $self->{_languages}                 = [];
-    $self->{_pronounce}                 = [];
-    $self->{_SWAIG}->{includes}         = [];
-    $self->{_SWAIG}->{functions}        = [];
-    $self->{_SWAIG}->{native_functions} = [];
-    $self->{_SWAIG}->{defaults}         = {};
     return bless($self, $class);
 }
 
@@ -37,8 +30,7 @@ sub add_aiapplication {
     my $app     = "ai";
     my $args    = {};
 
-    foreach my $data ('post_prompt','voice', 'post_prompt_url', 'post_prompt_auth_user',
-		      'post_prompt_auth_password', 'languages', 'hints', 'params', 'prompt', 'SWAIG', 'pronounce') {
+    foreach my $data ('post_prompt', 'post_prompt_url', 'post_prompt_auth_user', 'post_prompt_auth_password', 'languages', 'hints', 'params', 'prompt', 'SWAIG', 'pronounce') {
 	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
     }
@@ -123,7 +115,8 @@ sub add_aihints {
 sub add_aiswaigdefaults {
     my $self  = shift;
     my $SWAIG = shift;
-
+    $self->{_SWAIG}->{defaults} //= {};
+    
     while ( my ($k,$v) = each(%{$SWAIG}) ) {
 	$self->{_SWAIG}->{defaults}->{$k} = $v;
     }
@@ -135,7 +128,8 @@ sub add_aiswaigdefaults {
 sub add_aiswaigfunction {
     my $self  = shift;
     my $SWAIG = shift;
-
+    $self->{_SWAIG}->{functions} //= [];
+    
     @{ $self->{_SWAIG}->{functions} } = (@{ $self->{_SWAIG}->{functions} }, $SWAIG);
 
     return;
@@ -145,6 +139,7 @@ sub add_aiswaigfunction {
 sub set_aipronounce {
     my $self      = shift;
     my $pronounce = shift;
+    $self->{_pronounce} //= [];
     
     $self->{_pronounce} = $pronounce;
 
@@ -155,7 +150,8 @@ sub set_aipronounce {
 sub add_aipronounce {
     my $self      = shift;
     my $pronounce = shift;
-
+    $self->{_pronounce} //= [];
+    
     @{ $self->{_pronounce} } = (@{ $self->{_pronounce} }, $pronounce);
 
     return;
@@ -165,7 +161,8 @@ sub add_aipronounce {
 sub set_ailanguage {
     my $self     = shift;
     my $language = shift;
-
+    $self->{_languages} //= [];
+    
     $self->{_languages} = $language;
 
     return;
@@ -175,7 +172,8 @@ sub set_ailanguage {
 sub add_ailanguage {
     my $self     = shift;
     my $language = shift;
-
+    $self->{_languages} //= [];
+    
     @{ $self->{_languages} } = (@{ $self->{_languages} }, $language);
 
     return;
@@ -185,7 +183,8 @@ sub add_ailanguage {
 sub add_aiinclude {
     my $self = shift;
     my $include = shift;
-
+    $self->{_SWAIG}->{includes} //= [];
+    
     @{ $self->{_SWAIG}->{includes} } = (@{ $self->{_SWAIG}->{includes}}, $include);
     
     return;
@@ -195,7 +194,8 @@ sub add_aiinclude {
 sub add_ainativefunction {
 	my $self   = shift;
 	my $native = shift;
-
+	$self->{_SWAIG}->{native_functions} //= [];
+	
 	@{ $self->{_SWAIG}->{native_functions} } = (@{ $self->{_SWAIG}->{native_functions}}, $native);
 
 	return;
@@ -206,7 +206,7 @@ sub set_aipost_prompt {
     my $self       = shift;
     my $postprompt = shift;
     my @keys = ("confidence", "barge_confidence", "top_p", "temperature", "frequency_penalty", "presence_penalty");
-
+    
     while ( my ($k,$v) = each(%{$postprompt}) ) {
 	if ( grep { $_ eq $k } @keys ) {
             $self->{_post_prompt}->{$k} = $v + 0;
