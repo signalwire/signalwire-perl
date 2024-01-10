@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-our $VERSION = '1.15';
+our $VERSION = '1.17';
 our $AUTOLOAD;
 
 sub new {
@@ -30,7 +30,7 @@ sub add_aiapplication {
     my $app     = "ai";
     my $args    = {};
 
-    foreach my $data ('post_prompt', 'post_prompt_url', 'post_prompt_auth_user', 'post_prompt_auth_password', 'languages', 'hints', 'params', 'prompt', 'SWAIG', 'pronounce') {
+    foreach my $data ('post_prompt', 'post_prompt_url', 'post_prompt_auth_user', 'post_prompt_auth_password', 'languages', 'hints', 'params', 'prompt', 'SWAIG', 'pronounce', 'agent_meta_data') {
 	next unless $self->{"_$data"};
 	$args->{$data} = $self->{"_$data"};
     }
@@ -59,6 +59,15 @@ sub set_aipost_prompt_url {
     while ( my ($k,$v) = each(%{$postprompt}) ) {
 	$self->{"_$k"} = $postprompt->{$k};
     }
+
+    return;
+}
+
+# Set agent_meta_data 
+sub set_agent_meta_data {
+    my $self = shift;
+
+    $self->{_agent_meta_data} = shift;
 
     return;
 }
