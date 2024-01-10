@@ -4,13 +4,14 @@ use 5.010001;
 use strict;
 use warnings;
 
-our $VERSION = '1.3';
+our $VERSION = '1.4';
 our $Debug   = 0;
 
 use LWP::UserAgent ();
 use URI::Escape qw(uri_escape uri_escape_utf8);
 use Carp 'croak';
 use List::Util '1.29', 'pairs';
+use JSON;
 
 ## NOTE: This is an inside-out object; remove members in
 ## NOTE: the DESTROY() sub if you add additional members.
@@ -87,8 +88,13 @@ sub _do_request {
     }
 
     my $content = '';
+    
     if( keys %args ) {
-        $content = $self->_build_content( %args );
+	if ($content_type eq 'application/json') {
+	    $content = $self->_build_json_content( %args );
+	} else {
+	    $content = $self->_build_content( %args );
+	}
 
         if( $method eq 'GET' ) {
             $url .= '?' . $content;
@@ -104,7 +110,6 @@ sub _do_request {
 
     local $ENV{HTTPS_DEBUG} = $Debug;
     my $res = $lwp->request($req);
-    print STDERR "Request sent: " . $req->as_string . "\n" if $Debug;
 
     return { code    => $res->code,
              message => $res->message,
@@ -125,6 +130,20 @@ sub _build_content {
     }
 
     return join('&', @args) || '';
+}
+
+sub _build_json_content {
+    my $self = shift;
+
+    my $json = JSON->new->allow_nonref;
+
+    my $args = ();
+    for my $pair (pairs @_) {
+        my ($key, $val) = @$pair;
+        $args->{$key} = $val;
+    }
+
+    return $json->encode( $args );;
 }
 
 sub DESTROY {
