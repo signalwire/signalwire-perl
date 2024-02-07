@@ -4,7 +4,7 @@ use 5.010001;
 use strict;
 use warnings;
 
-our $VERSION = '1.4';
+our $VERSION = '1.6';
 our $Debug   = 0;
 
 use LWP::UserAgent ();
@@ -90,7 +90,7 @@ sub _do_request {
     my $content = '';
     
     if( keys %args ) {
-	if ($content_type eq 'application/json') {
+	if ($content_type eq 'application/json' && ( $method eq 'POST' || $method eq 'PUT') ) {
 	    $content = $self->_build_json_content( %args );
 	} else {
 	    $content = $self->_build_content( %args );
