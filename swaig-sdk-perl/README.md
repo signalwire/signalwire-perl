@@ -79,3 +79,111 @@ This command calls the `get_weather` function with the city of Orlando, Florida 
 ## Conclusion
 
 You have successfully set up a SWAIG server using Dokku, configured it, and tested it using the SWAIG CLI. For further customization and adding more functions to your SWAIG server, refer to the SignalWire AI Agent documentation and the API Ninjas documentation for the APIs you wish to integrate.
+
+
+SWAIG Request:
+```
+{
+   "version" : "2.0",
+   "functions" : [],
+   "content_disposition" : "function signature request",
+   "action" : "get_signature",
+   "content_type" : "text/swaig"
+}
+```
+Response:
+```
+[
+    {	
+      "argument" : {
+         "properties" : {
+            "city" : {
+               "type" : "string",
+               "description" : "City name."
+            },
+            "state" : {
+               "type" : "string",
+               "description" : "US state for United States cities only. Optional"
+            }
+         },
+         "type" : "object",
+         "required" : [
+            "city"
+         ]
+      },
+      "purpose" : "latest weather information for any city",
+      "web_hook_auth_password" : "pass",
+      "function" : "get_weather",
+      "web_hook_auth_user" : "user",
+      "web_hook_url" : "https://swaig-server.signalwire.me/swaig"
+   },
+   {
+      "web_hook_auth_user" : "user",
+      "web_hook_url" : "https://swaig-server.signalwire.me/swaig",
+      "function" : "get_joke",
+      "purpose" : "get a joke to tell the user",
+      "web_hook_auth_password" : "pass",
+      "argument" : {
+         "type" : "object",
+         "requried" : [
+            "type"
+         ],
+         "properties" : {
+            "type" : {
+               "type" : "string",
+               "description" : "must either be 'jokes' or 'dadjokes'"
+            }
+         }
+      }
+   },
+   {
+      "purpose" : "get a trivia question",
+      "argument" : {
+         "properties" : {
+            "category" : {
+               "type" : "string",
+               "description" : "Valid options are artliterature, language, sciencenature, general, fooddrink, peopleplaces, geography, historyholidays, entertainment, toysgames, music, mathematics, religionmythology, sportsleisure. Pick a category at random if not asked for a specific category."
+            }
+         },
+         "required" : [
+            "category"
+         ],
+         "type" : "object"
+      },
+      "web_hook_url" : "https://swaig-server.signalwire.me/swaig",
+      "web_hook_auth_user" : "user",
+      "function" : "get_trivia",
+      "web_hook_auth_password" : "pass"
+   }
+]
+```
+
+
+SWAIG Request:
+```
+{
+   "argument_desc" : "dummy description",
+   "version" : "2.0",
+   "app_name" : "swml app",
+   "argument" : {
+      "parsed" : [
+         {
+            "state" : "Florida",
+            "city" : "Orlando"
+         }
+      ],
+      "raw" : "{\"city\":\"Orlando\",\"state\":\"Florida\"}",
+      "substituted" : ""
+   },
+   "purpose" : "dummy purpose",
+   "function" : "get_weather",
+   "content_type" : "Conversation/SWAIG-function"
+}
+```
+
+Response:
+```
+{
+   "response" : "The weather in Orlando is 78.8F, High of 82.4F, Low of 75.2F, Feels like 78.8F."
+}
+```
