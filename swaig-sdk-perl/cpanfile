@@ -1,0 +1,11 @@
+requires 'LWP::Protocol::https', '6.10';
+requires 'YAML::PP', 'v0.37.0';
+requires 'Plack', '1.0050';
+requires 'Data::Dumper', '2.174';
+requires 'LWP::UserAgent', '6.70';
+requires 'JSON::PP', '4.16';
+requires 'URL::Encode', '0.03';
+requires 'HTTP::Request::Common', '6.44';
+requires 'SignalWire::ML', '1.17';
+requires 'Env::C', '0.15';
+
