@@ -187,9 +187,7 @@ my $swaig_app = sub {
 	print STDERR Dumper(\@funcs) if $ENV{DEBUG};
 	
 	foreach my $func ( @funcs ) {
-	    $function->{$func}->{signature}->{web_hook_auth_user}     = $ENV{WEB_AUTH_USER};
-	    $function->{$func}->{signature}->{web_hook_auth_password} = $ENV{WEB_AUTH_PASS};
-	    $function->{$func}->{signature}->{web_hook_url}           = "https://$env->{HTTP_HOST}$env->{REQUEST_URI}";
+	    $function->{$func}->{signature}->{web_hook_url} = "https://$ENV{WEB_AUTH_USER}:$ENV{WEB_AUTH_PASS}\@$env->{HTTP_HOST}$env->{REQUEST_URI}";
 	    push @functions, $function->{$func}->{signature};
 	}
 	print STDERR Dumper(\@funcs) if $ENV{DEBUG};

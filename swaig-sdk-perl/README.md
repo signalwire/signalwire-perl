@@ -97,17 +97,13 @@ Response:
          ]
       },
       "purpose" : "latest weather information for any city",
-      "web_hook_auth_password" : "pass",
       "function" : "get_weather",
-      "web_hook_auth_user" : "user",
-      "web_hook_url" : "https://swaig-server.<domain>/swaig"
+      "web_hook_url" : "https://user:pass@swaig-server.<domain>/swaig"
    },
    {
-      "web_hook_auth_user" : "user",
-      "web_hook_url" : "https://swaig-server.<domain>/swaig",
+      "web_hook_url" : "https://user:pass@swaig-server.<domain>/swaig",
       "function" : "get_joke",
       "purpose" : "get a joke to tell the user",
-      "web_hook_auth_password" : "pass",
       "argument" : {
          "type" : "object",
          "requried" : [
@@ -135,10 +131,8 @@ Response:
          ],
          "type" : "object"
       },
-      "web_hook_url" : "https://swaig-server.<domain>/swaig",
-      "web_hook_auth_user" : "user",
+      "web_hook_url" : "https://user:pass@swaig-server.<domain>/swaig",
       "function" : "get_trivia",
-      "web_hook_auth_password" : "pass"
    }
 ]
 ```
@@ -199,8 +193,6 @@ Within your AI Agent SWML, locate or add an `includes` section under SWAIG. In t
         "get_weather",
         "get_joke"
       ],
-      "pass": "<WEB_AUTH_USER>",
-      "user": "<WEB_AUTH_PASS>",
       "url": "https://<WEB_AUTH_USER>:<WEB_AUTH_PASS>@<domain>/swaig"
     }
   ]
