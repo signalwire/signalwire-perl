@@ -189,7 +189,7 @@ To incorporate a SWAIG (SignalWire AI Agent) server into your AI Agent SWML conf
 
 ## AI SWML Includes Section
 
-Within your SWML configuration, locate or add an `includes` section. In this section, you will specify the SWAIG server along with the functions you intend to use, as well as authentication details. Below is an example configuration:
+Within your AI Agent SWML, locate or add an `includes` section under SWAIG. In this section, you will specify the SWAIG server along with the functions you intend to use, as well as authentication details. Below is an example configuration:
 
 ```json
 {
