@@ -67,7 +67,7 @@ Use the `swaig_cli` tool to test your setup. Here's an example of requesting a f
 Replace `<WEB_AUTH_USER>`, `<WEB_AUTH_PASS>`, and `<domain>` with your configured username, password, and domain, respectively.
 
 SWAIG Request:
-```
+```json
 {
    "version" : "2.0",
    "functions" : [],
@@ -77,7 +77,7 @@ SWAIG Request:
 }
 ```
 Response:
-```
+```json
 [
     {	
       "argument" : {
@@ -153,7 +153,7 @@ This command calls the `get_weather` function with the city of Orlando, Florida 
 
 
 SWAIG Request:
-```
+```json
 {
    "argument_desc" : "dummy description",
    "version" : "2.0",
@@ -175,13 +175,38 @@ SWAIG Request:
 ```
 
 Response:
-```
+```json
 {
    "response" : "The weather in Orlando is 78.8F, High of 82.4F, Low of 75.2F, Feels like 78.8F."
 }
 ```
 
 ---
+
+# Integrating SWAIG Server in AI Agent SWML
+
+To incorporate a SWAIG (SignalWire AI Agent) server into your AI Agent SWML configuration, you'll need to add the server details under the [SWAIG](https://developer.signalwire.com/sdks/reference/swml/methods/ai/ai_swaig/) `includes` section of your AI Agent SWML file. This allows your application to call external functions hosted on the SWAIG server. Here's how to do it:
+
+## AI SWML Includes Section
+
+Within your SWML configuration, locate or add an `includes` section. In this section, you will specify the SWAIG server along with the functions you intend to use, as well as authentication details. Below is an example configuration:
+
+```json
+{
+  "includes": [
+    {
+      "functions": [
+        "get_weather",
+        "get_joke"
+      ],
+      "pass": "<WEB_AUTH_USER>",
+      "user": "<WEB_AUTH_PASS>",
+      "url": "https://<WEB_AUTH_USER>:<WEB_AUTH_PASS>@<domain>/swaig"
+    }
+  ]
+}
+```
+
 
 ## Conclusion
 
