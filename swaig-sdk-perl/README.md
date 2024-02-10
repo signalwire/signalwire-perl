@@ -45,7 +45,7 @@ Make sure to replace `<your_api_key>`, `<your_password>`, and `<your_username>` 
 Push your application to Dokku:
 
 ```sh
-git push dokku master
+git push dokku main
 ```
 
 ## Step 6: Enable SSL
