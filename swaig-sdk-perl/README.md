@@ -66,21 +66,6 @@ Use the `swaig_cli` tool to test your setup. Here's an example of requesting a f
 
 Replace `<WEB_AUTH_USER>`, `<WEB_AUTH_PASS>`, and `<domain>` with your configured username, password, and domain, respectively.
 
-### Example of calling `get_weather` with `swaig_cli`:
-
-```sh
-./swaig_cli --url https://user:pass@swaig-server.signalwire.me/swaig --functions get_weather --arguments '{"city":"Orlando","state":"Florida"}'
-```
-
-This command calls the `get_weather` function with the city of Orlando, Florida as the argument.
-
----
-
-## Conclusion
-
-You have successfully set up a SWAIG server using Dokku, configured it, and tested it using the SWAIG CLI. For further customization and adding more functions to your SWAIG server, refer to the SignalWire AI Agent documentation and the API Ninjas documentation for the APIs you wish to integrate.
-
-
 SWAIG Request:
 ```
 {
@@ -115,11 +100,11 @@ Response:
       "web_hook_auth_password" : "pass",
       "function" : "get_weather",
       "web_hook_auth_user" : "user",
-      "web_hook_url" : "https://swaig-server.signalwire.me/swaig"
+      "web_hook_url" : "https://swaig-server.<domain>/swaig"
    },
    {
       "web_hook_auth_user" : "user",
-      "web_hook_url" : "https://swaig-server.signalwire.me/swaig",
+      "web_hook_url" : "https://swaig-server.<domain>/swaig",
       "function" : "get_joke",
       "purpose" : "get a joke to tell the user",
       "web_hook_auth_password" : "pass",
@@ -150,13 +135,21 @@ Response:
          ],
          "type" : "object"
       },
-      "web_hook_url" : "https://swaig-server.signalwire.me/swaig",
+      "web_hook_url" : "https://swaig-server.<domain>/swaig",
       "web_hook_auth_user" : "user",
       "function" : "get_trivia",
       "web_hook_auth_password" : "pass"
    }
 ]
 ```
+
+### Example of calling `get_weather` with `swaig_cli`:
+
+```sh
+./swaig_cli --url https://user:pass@swaig-server.signalwire.me/swaig --functions get_weather --arguments '{"city":"Orlando","state":"Florida"}'
+```
+
+This command calls the `get_weather` function with the city of Orlando, Florida as the argument.
 
 
 SWAIG Request:
@@ -187,3 +180,13 @@ Response:
    "response" : "The weather in Orlando is 78.8F, High of 82.4F, Low of 75.2F, Feels like 78.8F."
 }
 ```
+
+---
+
+## Conclusion
+
+You have successfully set up a SWAIG server using Dokku, configured it, and tested it using the SWAIG CLI. For further customization and adding more functions to your SWAIG server, refer to the SignalWire AI Agent documentation and the API Ninjas documentation for the APIs you wish to integrate.
+
+
+
+
