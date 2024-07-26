@@ -36,7 +36,7 @@ sub new {
     $lwp_callback {$self} = $args{LWP_Callback} || undef;
     $utf8         {$self} = $args{utf8}         || undef;
     $space        {$self} = $args{Space}        || $ENV{SIGNALWIRE_SPACE};
-    $domain       {$self} = $args{Domain}       || '.signalwire.com';
+    $domain       {$self} = $args{Domain}       || 'signalwire.com';
 
     croak 'AccountSid and AuthToken are required'
 	unless $account_sid{$self} and $auth_token{$self};
@@ -76,7 +76,7 @@ sub _do_request {
     $lwp->agent("SignalWire-RestAPI/$VERSION");
 
     my $method = delete $args{METHOD};
-    my $url    = 'https://' . $space{$self} . $domain{$self} ."/" . $api_version{$self};
+    my $url    = 'https://' . $space{$self} . '.' . $domain{$self} . '/' . $api_version{$self};
     my $api    = delete $args{API} || '';
 
     if ($api_version{$self} eq 'api/laml/2010-04-01') {
