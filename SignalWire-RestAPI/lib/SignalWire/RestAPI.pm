@@ -4,7 +4,7 @@ use 5.010001;
 use strict;
 use warnings;
 
-our $VERSION = '1.6';
+our $VERSION = '1.7';
 our $Debug   = 0;
 
 use LWP::UserAgent ();
