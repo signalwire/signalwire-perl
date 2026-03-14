@@ -120,6 +120,7 @@ sub _uri_encode {
 # --- Error class ---
 package SignalWire::Agents::REST::HttpClient::Error;
 use Moo;
+use JSON qw(encode_json);
 
 has 'status_code' => ( is => 'ro', required => 1 );
 has 'body'        => ( is => 'ro', default => sub { '' } );
