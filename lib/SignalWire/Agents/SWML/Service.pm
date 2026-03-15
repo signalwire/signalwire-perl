@@ -95,11 +95,18 @@ sub can {
 
 sub _random_hex {
     my ($len) = @_;
-    my $bytes = '';
-    for (1 .. $len) {
-        $bytes .= sprintf('%02x', int(rand(256)));
+    # Use /dev/urandom for cryptographically secure random bytes.
+    # Die on failure rather than falling back to weak randomness.
+    if (open my $fh, '<:raw', '/dev/urandom') {
+        my $bytes;
+        my $read = read($fh, $bytes, $len);
+        close $fh;
+        if (defined $read && $read == $len) {
+            return unpack('H*', $bytes);
+        }
     }
-    return $bytes;
+    die "FATAL: Cannot generate secure random bytes - /dev/urandom unavailable or read failed. "
+      . "Set SWML_BASIC_AUTH_USER and SWML_BASIC_AUTH_PASSWORD environment variables instead.\n";
 }
 
 sub _timing_safe_compare {

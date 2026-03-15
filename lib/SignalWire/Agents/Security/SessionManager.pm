@@ -24,11 +24,18 @@ has '_debug_mode' => (
 
 sub _random_hex {
     my ($len) = @_;
-    my $hex = '';
-    for (1 .. $len) {
-        $hex .= sprintf('%02x', int(rand(256)));
+    # Use /dev/urandom for cryptographically secure random bytes.
+    # Die on failure rather than falling back to weak randomness.
+    if (open my $fh, '<:raw', '/dev/urandom') {
+        my $bytes;
+        my $read = read($fh, $bytes, $len);
+        close $fh;
+        if (defined $read && $read == $len) {
+            return unpack('H*', $bytes);
+        }
     }
-    return $hex;
+    die "FATAL: Cannot generate secure random bytes - /dev/urandom unavailable. "
+      . "This is required for session security.\n";
 }
 
 sub _random_urlsafe {

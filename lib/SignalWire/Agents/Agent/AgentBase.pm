@@ -799,9 +799,38 @@ sub _build_psgi_app {
         return [404, ['Content-Type' => 'text/plain'], ['Not Found']];
     };
 
-    # Wrap with security headers middleware
-    my $app_with_headers = sub {
+    # Maximum request body size: 1MB
+    my $max_body_size = 1_048_576;
+
+    # Wrap with body size limit and security headers middleware
+    my $app_with_middleware = sub {
         my $env = shift;
+
+        # Enforce body size limit by actually reading the body
+        if ($env->{REQUEST_METHOD} eq 'POST' || $env->{REQUEST_METHOD} eq 'PUT') {
+            my $input = $env->{'psgi.input'};
+            if ($input) {
+                my $body = '';
+                my $total = 0;
+                my $buf;
+                while (my $read = $input->read($buf, 8192)) {
+                    $total += $read;
+                    if ($total > $max_body_size) {
+                        return [413, ['Content-Type' => 'application/json',
+                                      'X-Content-Type-Options' => 'nosniff',
+                                      'X-Frame-Options' => 'DENY',
+                                      'Cache-Control' => 'no-store'],
+                            [encode_json({ error => 'Request body too large' })]];
+                    }
+                    $body .= $buf;
+                }
+                # Replace psgi.input with the buffered content so handlers can re-read
+                open my $new_input, '<', \$body;
+                $env->{'psgi.input'} = $new_input;
+                $env->{CONTENT_LENGTH} = length($body);
+            }
+        }
+
         my $res = $core_app->($env);
         if (ref $res eq 'ARRAY') {
             push @{ $res->[1] },
@@ -812,7 +841,7 @@ sub _build_psgi_app {
         return $res;
     };
 
-    return $app_with_headers;
+    return $app_with_middleware;
 }
 
 sub _check_auth {
@@ -823,7 +852,7 @@ sub _check_auth {
     my ($user, $pass) = split(/:/, $decoded, 2);
     return 0 unless defined $user && defined $pass;
 
-    # Timing-safe comparison
+    # Timing-safe comparison using HMAC (constant-time, no length leak)
     my $expected_user = $self->basic_auth_user;
     my $expected_pass = $self->basic_auth_password;
 
@@ -835,12 +864,11 @@ sub _check_auth {
 
 sub _timing_safe_eq {
     my ($a, $b) = @_;
-    return 0 if length($a) != length($b);
-    my $result = 0;
-    for my $i (0 .. length($a) - 1) {
-        $result |= ord(substr($a, $i, 1)) ^ ord(substr($b, $i, 1));
-    }
-    return $result == 0 ? 1 : 0;
+    # HMAC-based constant-time comparison: no length leak
+    my $key = 'signalwire-timing-safe-comparison';
+    my $hmac_a = hmac_sha256_hex($a, $key);
+    my $hmac_b = hmac_sha256_hex($b, $key);
+    return $hmac_a eq $hmac_b;
 }
 
 sub _handle_swml {
@@ -999,12 +1027,43 @@ sub serve {
 # ---------- helpers ----------
 
 sub _generate_random_password {
-    my @chars = ('A'..'Z', 'a'..'z', '0'..'9');
-    my $pass = '';
-    for (1..32) {
-        $pass .= $chars[int(rand(@chars))];
+    # Use /dev/urandom for cryptographically secure random bytes.
+    # Die on failure rather than falling back to a weak password.
+    my $bytes = '';
+    if (open my $fh, '<:raw', '/dev/urandom') {
+        my $read = read($fh, $bytes, 32);
+        close $fh;
+        if (defined $read && $read == 32) {
+            # Convert to hex string (64 chars)
+            return unpack('H*', $bytes);
+        }
     }
-    return $pass;
+    die "FATAL: Cannot generate secure random password - /dev/urandom unavailable or read failed. "
+      . "Set SWML_BASIC_AUTH_PASSWORD environment variable instead.\n";
+}
+
+sub extract_sip_username {
+    my ($class_or_self, $body) = @_;
+    # Extract SIP username from a request body (hashref).
+    # Looks in standard SignalWire fields for the SIP caller identity.
+    return undef unless ref $body eq 'HASH';
+
+    # Check call.from field (e.g., "sip:user@domain")
+    my $from = $body->{call}{from}
+            // $body->{sip_from}
+            // $body->{from}
+            // '';
+
+    if ($from =~ m{^sip:([^@]+)\@}i) {
+        return $1;
+    }
+
+    # Check for a direct caller_id_number
+    if (my $cid = $body->{call}{caller_id_number} // $body->{caller_id_number}) {
+        return $cid;
+    }
+
+    return undef;
 }
 
 1;
