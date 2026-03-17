@@ -11,6 +11,7 @@ WriteMakefile(
         'Moo'               => '2.0',
         'JSON'              => '4.0',
         'Plack'             => '1.0',
+        'Plack::Request'    => 0,
         'HTTP::Tiny'        => 0,
         'Digest::SHA'       => 0,
         'MIME::Base64'      => 0,

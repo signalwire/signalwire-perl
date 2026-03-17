@@ -4,6 +4,7 @@ requires 'perl', '5.026';
 requires 'Moo', '2.0';
 requires 'JSON', '4.0';
 requires 'Plack', '1.0';
+requires 'Plack::Request';
 requires 'HTTP::Tiny';
 requires 'Digest::SHA';
 requires 'MIME::Base64';
