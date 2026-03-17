@@ -2,7 +2,7 @@ package SignalWire::Agents;
 use strict;
 use warnings;
 
-our $VERSION = '1.0.0';
+our $VERSION = '1.1.0';
 
 use SignalWire::Agents::Logging;
 use SignalWire::Agents::SWML::Document;
