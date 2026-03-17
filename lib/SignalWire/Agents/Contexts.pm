@@ -535,6 +535,11 @@ sub get_context {
     return $self->_contexts->{$name};
 }
 
+sub has_contexts {
+    my ($self) = @_;
+    return scalar(keys %{ $self->_contexts }) ? 1 : 0;
+}
+
 sub validate {
     my ($self) = @_;
     die "At least one context must be defined" unless keys %{ $self->_contexts };
