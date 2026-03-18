@@ -1,0 +1,40 @@
+name: Publish Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: '5.38'
+
+      - name: Install dependencies
+        run: cpanm --installdeps .
+
+      - name: Run tests
+        run: PERL5LIB="lib:t/lib" prove -r t/
+
+      - name: Build and upload to CPAN
+        env:
+          CPAN_USERNAME: ${{ secrets.CPAN_USERNAME }}
+          CPAN_PASSWORD: ${{ secrets.CPAN_PASSWORD }}
+        run: |
+          cpanm CPAN::Uploader
+          perl Makefile.PL
+          make
+          make dist
+          cpan-upload -u "$CPAN_USERNAME" -p "$CPAN_PASSWORD" SignalWire-Agents-*.tar.gz
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
