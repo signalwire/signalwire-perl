@@ -25,7 +25,14 @@ WriteMakefile(
     EXE_FILES => ['bin/swaig-test'],
     META_MERGE => {
         resources => {
-            repository => 'https://github.com/signalwire/signalwire-agents-perl',
+            repository => {
+                type => 'git',
+                url  => 'https://github.com/signalwire/signalwire-agents-perl.git',
+                web  => 'https://github.com/signalwire/signalwire-agents-perl',
+            },
+            bugtracker => {
+                web => 'https://github.com/signalwire/signalwire-agents-perl/issues',
+            },
         },
     },
 );
