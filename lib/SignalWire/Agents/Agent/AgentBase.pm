@@ -86,6 +86,10 @@ has session_manager => (is => 'rw');
 # Skill manager
 has skill_manager => (is => 'rw', lazy => 1, builder => '_build_skill_manager');
 
+# MCP integration
+has mcp_servers        => (is => 'rw', default => sub { [] });
+has mcp_server_enabled => (is => 'rw', default => sub { 0 });
+
 # ---------- builders ----------
 
 sub _build_basic_auth_user {
@@ -509,6 +513,149 @@ sub on_debug_event {
     return $self;
 }
 
+# ---------- MCP integration ----------
+
+sub add_mcp_server {
+    my ($self, $url, %opts) = @_;
+    my $server = { url => $url };
+    $server->{headers}       = $opts{headers}       if $opts{headers};
+    $server->{resources}     = JSON::true            if $opts{resources};
+    $server->{resource_vars} = $opts{resource_vars}  if $opts{resource_vars};
+    push @{ $self->mcp_servers }, $server;
+    return $self;
+}
+
+sub enable_mcp_server {
+    my ($self) = @_;
+    $self->mcp_server_enabled(1);
+    return $self;
+}
+
+sub _build_mcp_tool_list {
+    my ($self) = @_;
+    my @tools;
+    for my $fname (@{ $self->tool_order }) {
+        my $tool = $self->tools->{$fname};
+        next unless $tool;
+        my $t = {
+            name        => $fname,
+            description => $tool->{description} || $fname,
+        };
+        if ($tool->{parameters} && %{ $tool->{parameters} }) {
+            my $params = $tool->{parameters};
+            if ($params->{type} && $params->{type} eq 'object') {
+                $t->{inputSchema} = $params;
+            } else {
+                $t->{inputSchema} = { type => 'object', properties => $params };
+            }
+        } else {
+            $t->{inputSchema} = { type => 'object', properties => {} };
+        }
+        push @tools, $t;
+    }
+    return \@tools;
+}
+
+sub _handle_mcp_request {
+    my ($self, $body) = @_;
+    my $jsonrpc = $body->{jsonrpc} // '';
+    my $method  = $body->{method}  // '';
+    my $req_id  = $body->{id};
+    my $params  = $body->{params}  // {};
+
+    if ($jsonrpc ne '2.0') {
+        return _mcp_error($req_id, -32600, 'Invalid JSON-RPC version');
+    }
+
+    # Initialize
+    if ($method eq 'initialize') {
+        return {
+            jsonrpc => '2.0', id => $req_id,
+            result => {
+                protocolVersion => '2025-06-18',
+                capabilities   => { tools => {} },
+                serverInfo     => { name => $self->name, version => '1.0.0' },
+            },
+        };
+    }
+
+    # Initialized notification
+    if ($method eq 'notifications/initialized') {
+        return { jsonrpc => '2.0', id => $req_id, result => {} };
+    }
+
+    # List tools
+    if ($method eq 'tools/list') {
+        return {
+            jsonrpc => '2.0', id => $req_id,
+            result => { tools => $self->_build_mcp_tool_list },
+        };
+    }
+
+    # Call tool
+    if ($method eq 'tools/call') {
+        my $tool_name = $params->{name} // '';
+        my $arguments = $params->{arguments} // {};
+
+        my $tool = $self->tools->{$tool_name};
+        unless ($tool && $tool->{_handler}) {
+            return _mcp_error($req_id, -32602, "Unknown tool: $tool_name");
+        }
+
+        my $result = eval {
+            my $raw_data = {
+                function => $tool_name,
+                argument => { parsed => [$arguments] },
+            };
+            $tool->{_handler}->($arguments, $raw_data);
+        };
+
+        if ($@) {
+            return {
+                jsonrpc => '2.0', id => $req_id,
+                result => {
+                    content => [{ type => 'text', text => "Error: $@" }],
+                    isError => JSON::true,
+                },
+            };
+        }
+
+        my $response_text = '';
+        if (blessed($result) && $result->can('to_hash')) {
+            my $h = $result->to_hash;
+            $response_text = $h->{response} // '';
+        } elsif (ref $result eq 'HASH') {
+            $response_text = $result->{response} // '';
+        } elsif (defined $result) {
+            $response_text = "$result";
+        }
+
+        return {
+            jsonrpc => '2.0', id => $req_id,
+            result => {
+                content => [{ type => 'text', text => $response_text }],
+                isError => JSON::false,
+            },
+        };
+    }
+
+    # Ping
+    if ($method eq 'ping') {
+        return { jsonrpc => '2.0', id => $req_id, result => {} };
+    }
+
+    return _mcp_error($req_id, -32601, "Method not found: $method");
+}
+
+sub _mcp_error {
+    my ($req_id, $code, $message) = @_;
+    return {
+        jsonrpc => '2.0',
+        id      => $req_id,
+        error   => { code => $code, message => $message },
+    };
+}
+
 # ---------- URL construction ----------
 
 sub _build_webhook_url {
@@ -727,6 +874,11 @@ sub _build_ai_verb {
         $ai{context_switch} = $self->context_builder->to_hashref;
     }
 
+    # MCP servers
+    if (@{ $self->mcp_servers }) {
+        $ai{mcp_servers} = [ @{ $self->mcp_servers } ];
+    }
+
     return \%ai;
 }
 
@@ -769,6 +921,7 @@ sub _build_psgi_app {
         my $expected_route  = $route eq '' ? '/' : $route;
         my $is_swaig       = ($path eq "$route/swaig");
         my $is_post_prompt  = ($path eq "$route/post_prompt");
+        my $is_mcp          = ($path eq "$route/mcp");
         my $is_main         = ($path eq $expected_route || ($route ne '' && $path eq "$route/"));
 
         # Root agent: treat '/' as main
@@ -794,6 +947,9 @@ sub _build_psgi_app {
         }
         elsif ($is_post_prompt && $req->method eq 'POST') {
             return $agent->_handle_post_prompt($env, $req);
+        }
+        elsif ($is_mcp && $req->method eq 'POST') {
+            return $agent->_handle_mcp_endpoint($env, $req);
         }
 
         return [404, ['Content-Type' => 'text/plain'], ['Not Found']];
@@ -959,6 +1115,24 @@ sub _handle_post_prompt {
         [encode_json({ status => 'ok' })]];
 }
 
+sub _handle_mcp_endpoint {
+    my ($self, $env, $req) = @_;
+
+    unless ($self->mcp_server_enabled) {
+        return [404, ['Content-Type' => 'application/json'],
+            [encode_json({ error => 'MCP server not enabled' })]];
+    }
+
+    my $body = eval { decode_json($req->content) };
+    unless ($body && ref $body eq 'HASH') {
+        return [400, ['Content-Type' => 'application/json'],
+            [encode_json(_mcp_error(undef, -32700, 'Parse error'))]];
+    }
+
+    my $resp = $self->_handle_mcp_request($body);
+    return [200, ['Content-Type' => 'application/json'], [encode_json($resp)]];
+}
+
 # ---------- Clone for dynamic config ----------
 
 sub _clone_for_request {
@@ -996,6 +1170,8 @@ sub _clone_for_request {
     $init{internal_fillers}    = defined $self->internal_fillers
                                     ? dclone($self->internal_fillers) : undef;
     $init{session_manager}     = $self->session_manager;
+    $init{mcp_servers}         = dclone($self->mcp_servers);
+    $init{mcp_server_enabled}  = $self->mcp_server_enabled;
 
     my $clone = (ref $self)->new(%init);
     return $clone;
