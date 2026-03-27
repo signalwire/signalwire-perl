@@ -13,10 +13,10 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::SWML::Service;
+use SignalWire;
+use SignalWire::SWML::Service;
 
-my $svc = SignalWire::Agents::SWML::Service->new(
+my $svc = SignalWire::SWML::Service->new(
     route => '/main',
 );
 

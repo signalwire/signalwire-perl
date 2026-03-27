@@ -3,20 +3,20 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('weather_api');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('weather_api');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'w');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'w');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'weather_api', 'skill_name');
 };
 
 subtest 'registers DataMap tool' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'w_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'w_reg');
     my $skill = $factory->new(agent => $agent, params => { api_key => 'test' });
     $skill->setup;
     $skill->register_tools;
@@ -25,7 +25,7 @@ subtest 'registers DataMap tool' => sub {
 };
 
 subtest 'custom tool_name' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'w_custom');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'w_custom');
     my $skill = $factory->new(agent => $agent, params => { tool_name => 'my_weather', api_key => 'k' });
     $skill->setup;
     $skill->register_tools;
@@ -34,7 +34,7 @@ subtest 'custom tool_name' => sub {
 };
 
 subtest 'celsius unit' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'w_c');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'w_c');
     my $skill = $factory->new(agent => $agent, params => { api_key => 'k', temperature_unit => 'celsius' });
     $skill->setup;
     $skill->register_tools;

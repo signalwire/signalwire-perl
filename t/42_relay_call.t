@@ -3,15 +3,15 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Relay::Call;
-use SignalWire::Agents::Relay::Event;
-use SignalWire::Agents::Relay::Action;
+use SignalWire::Relay::Call;
+use SignalWire::Relay::Event;
+use SignalWire::Relay::Action;
 
 # ============================================================
 # 1. Construction
 # ============================================================
 subtest 'construction' => sub {
-    my $call = SignalWire::Agents::Relay::Call->new(
+    my $call = SignalWire::Relay::Call->new(
         call_id => 'c1',
         node_id => 'n1',
         tag     => 't1',
@@ -26,10 +26,10 @@ subtest 'construction' => sub {
 # 2. State transitions via events
 # ============================================================
 subtest 'state transitions' => sub {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'c2', node_id => 'n2');
+    my $call = SignalWire::Relay::Call->new(call_id => 'c2', node_id => 'n2');
 
     for my $state (qw(ringing answered ending ended)) {
-        my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+        my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
             call_id    => 'c2',
             call_state => $state,
         });
@@ -42,8 +42,8 @@ subtest 'state transitions' => sub {
 # 3. End reason
 # ============================================================
 subtest 'end reason' => sub {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'c3', node_id => 'n3');
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $call = SignalWire::Relay::Call->new(call_id => 'c3', node_id => 'n3');
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'c3',
         call_state => 'ended',
         end_reason => 'hangup',
@@ -56,11 +56,11 @@ subtest 'end reason' => sub {
 # 4. Event listener
 # ============================================================
 subtest 'event listener' => sub {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'c4', node_id => 'n4');
+    my $call = SignalWire::Relay::Call->new(call_id => 'c4', node_id => 'n4');
     my @received;
     $call->on(sub { push @received, $_[1] });
 
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'c4',
         call_state => 'ringing',
     });
@@ -73,15 +73,15 @@ subtest 'event listener' => sub {
 # 5. Actions resolved on call end
 # ============================================================
 subtest 'actions resolved on end' => sub {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'c5', node_id => 'n5');
-    my $action = SignalWire::Agents::Relay::Action::Play->new(
+    my $call = SignalWire::Relay::Call->new(call_id => 'c5', node_id => 'n5');
+    my $action = SignalWire::Relay::Action::Play->new(
         control_id => 'ctl-5',
         call_id    => 'c5',
         node_id    => 'n5',
     );
     $call->_actions->{'ctl-5'} = $action;
 
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'c5',
         call_state => 'ended',
     });
@@ -93,7 +93,7 @@ subtest 'actions resolved on end' => sub {
 # 6. All simple methods exist
 # ============================================================
 subtest 'simple methods' => sub {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'x', node_id => 'n');
+    my $call = SignalWire::Relay::Call->new(call_id => 'x', node_id => 'n');
     for my $m (qw(answer hangup pass connect disconnect hold unhold
                    denoise denoise_stop transfer join_conference leave_conference
                    echo join_room leave_room send_digits)) {
@@ -105,7 +105,7 @@ subtest 'simple methods' => sub {
 # 7. All action methods exist
 # ============================================================
 subtest 'action methods' => sub {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'x', node_id => 'n');
+    my $call = SignalWire::Relay::Call->new(call_id => 'x', node_id => 'n');
     for my $m (qw(play record detect collect play_and_collect
                    send_fax receive_fax tap stream pay transcribe ai)) {
         ok($call->can($m), "has action method: $m");
@@ -116,12 +116,12 @@ subtest 'action methods' => sub {
 # 8. Multiple listeners
 # ============================================================
 subtest 'multiple listeners' => sub {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'c8', node_id => 'n8');
+    my $call = SignalWire::Relay::Call->new(call_id => 'c8', node_id => 'n8');
     my ($a, $b) = (0, 0);
     $call->on(sub { $a++ });
     $call->on(sub { $b++ });
 
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'c8',
         call_state => 'ringing',
     });

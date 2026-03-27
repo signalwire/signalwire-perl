@@ -11,11 +11,11 @@ use strict;
 use warnings;
 use lib 'lib';
 use POSIX qw(strftime);
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'swaig_features',
     route => '/swaig_features',
 );
@@ -56,7 +56,7 @@ $agent->define_tool(
     handler => sub {
         my ($args, $raw) = @_;
         my $time = strftime('%H:%M:%S', localtime);
-        return SignalWire::Agents::SWAIG::FunctionResult->new("The current time is $time");
+        return SignalWire::SWAIG::FunctionResult->new("The current time is $time");
     },
 );
 
@@ -89,7 +89,7 @@ $agent->define_tool(
             endor    => 'Mild forest weather. Partly cloudy with a high of 22C.',
         );
         my $result = $weather{lc($location)} // "It's sunny and 72F";
-        return SignalWire::Agents::SWAIG::FunctionResult->new(
+        return SignalWire::SWAIG::FunctionResult->new(
             "The weather in $location: $result"
         );
     },
@@ -128,7 +128,7 @@ $agent->define_tool(
             }
         }
         my $text = join("\n", map { "$_->{day}: $_->{temp}$suffix, $_->{condition}" } @forecast);
-        return SignalWire::Agents::SWAIG::FunctionResult->new(
+        return SignalWire::SWAIG::FunctionResult->new(
             "3-day forecast for $location:\n$text"
         );
     },

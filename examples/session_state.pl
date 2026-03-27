@@ -10,12 +10,12 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
 use JSON qw(encode_json);
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'session-state-demo',
     route => '/session-state',
 );
@@ -76,7 +76,7 @@ $agent->define_tool(
     handler => sub {
         my ($args, $raw) = @_;
         my $id = $args->{identifier} // 'unknown';
-        my $result = SignalWire::Agents::SWAIG::FunctionResult->new(
+        my $result = SignalWire::SWAIG::FunctionResult->new(
             "Found account for $id: Premium tier, active since 2020."
         );
         # Update global data so the AI knows the customer
@@ -106,7 +106,7 @@ $agent->define_tool(
         push @prefs, 'email' if $args->{email_notifications};
         push @prefs, 'SMS'   if $args->{sms_notifications};
         my $pref_str = @prefs ? join(' and ', @prefs) : 'none';
-        return SignalWire::Agents::SWAIG::FunctionResult->new(
+        return SignalWire::SWAIG::FunctionResult->new(
             "Preferences updated: $pref_str notifications enabled."
         );
     },
@@ -119,7 +119,7 @@ $agent->define_tool(
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
         my ($args, $raw) = @_;
-        my $result = SignalWire::Agents::SWAIG::FunctionResult->new(
+        my $result = SignalWire::SWAIG::FunctionResult->new(
             'Thank you for calling. Goodbye!'
         );
         $result->hangup;

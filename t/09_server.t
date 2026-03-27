@@ -5,14 +5,14 @@ use Test::More;
 use JSON qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
-use_ok('SignalWire::Agents::Server::AgentServer');
-use_ok('SignalWire::Agents::Agent::AgentBase');
+use_ok('SignalWire::Server::AgentServer');
+use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
 # 1. Server construction
 # ============================================================
 subtest 'server construction' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
+    my $server = SignalWire::Server::AgentServer->new;
     is($server->host, '0.0.0.0', 'default host');
     ok($server->port, 'port has value');
     is(ref $server->agents, 'HASH', 'agents is hashref');
@@ -23,8 +23,8 @@ subtest 'server construction' => sub {
 # 2. Register agent
 # ============================================================
 subtest 'register agent' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
-    my $agent  = SignalWire::Agents::Agent::AgentBase->new(
+    my $server = SignalWire::Server::AgentServer->new;
+    my $agent  = SignalWire::Agent::AgentBase->new(
         name  => 'support',
         route => '/support',
     );
@@ -38,8 +38,8 @@ subtest 'register agent' => sub {
 # 3. Register with route override
 # ============================================================
 subtest 'register with route override' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
-    my $agent  = SignalWire::Agents::Agent::AgentBase->new(
+    my $server = SignalWire::Server::AgentServer->new;
+    my $agent  = SignalWire::Agent::AgentBase->new(
         name  => 'sales',
         route => '/original',
     );
@@ -53,9 +53,9 @@ subtest 'register with route override' => sub {
 # 4. Register duplicate route
 # ============================================================
 subtest 'register duplicate route' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
-    my $agent1 = SignalWire::Agents::Agent::AgentBase->new(name => 'a1', route => '/test');
-    my $agent2 = SignalWire::Agents::Agent::AgentBase->new(name => 'a2', route => '/test');
+    my $server = SignalWire::Server::AgentServer->new;
+    my $agent1 = SignalWire::Agent::AgentBase->new(name => 'a1', route => '/test');
+    my $agent2 = SignalWire::Agent::AgentBase->new(name => 'a2', route => '/test');
 
     $server->register($agent1);
     eval { $server->register($agent2) };
@@ -66,8 +66,8 @@ subtest 'register duplicate route' => sub {
 # 5. Unregister agent
 # ============================================================
 subtest 'unregister agent' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
-    my $agent  = SignalWire::Agents::Agent::AgentBase->new(name => 'temp', route => '/temp');
+    my $server = SignalWire::Server::AgentServer->new;
+    my $agent  = SignalWire::Agent::AgentBase->new(name => 'temp', route => '/temp');
 
     $server->register($agent);
     ok(exists $server->agents->{'/temp'}, 'agent registered');
@@ -80,12 +80,12 @@ subtest 'unregister agent' => sub {
 # 6. List agents
 # ============================================================
 subtest 'list agents' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
+    my $server = SignalWire::Server::AgentServer->new;
     $server->register(
-        SignalWire::Agents::Agent::AgentBase->new(name => 'a', route => '/a')
+        SignalWire::Agent::AgentBase->new(name => 'a', route => '/a')
     );
     $server->register(
-        SignalWire::Agents::Agent::AgentBase->new(name => 'b', route => '/b')
+        SignalWire::Agent::AgentBase->new(name => 'b', route => '/b')
     );
 
     my $list = $server->list_agents;
@@ -98,8 +98,8 @@ subtest 'list agents' => sub {
 # 7. Get agent
 # ============================================================
 subtest 'get agent' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'x', route => '/x');
+    my $server = SignalWire::Server::AgentServer->new;
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'x', route => '/x');
     $server->register($agent);
 
     my $found = $server->get_agent('/x');
@@ -113,9 +113,9 @@ subtest 'get agent' => sub {
 # 8. PSGI app construction
 # ============================================================
 subtest 'psgi_app construction' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
+    my $server = SignalWire::Server::AgentServer->new;
     $server->register(
-        SignalWire::Agents::Agent::AgentBase->new(name => 'test', route => '/test')
+        SignalWire::Agent::AgentBase->new(name => 'test', route => '/test')
     );
 
     my $app = $server->psgi_app;
@@ -126,9 +126,9 @@ subtest 'psgi_app construction' => sub {
 # 9. Health endpoint
 # ============================================================
 subtest 'health endpoint' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
+    my $server = SignalWire::Server::AgentServer->new;
     $server->register(
-        SignalWire::Agents::Agent::AgentBase->new(name => 'agent1', route => '/agent1')
+        SignalWire::Agent::AgentBase->new(name => 'agent1', route => '/agent1')
     );
 
     my $app = $server->psgi_app;
@@ -150,7 +150,7 @@ subtest 'health endpoint' => sub {
 # 10. Ready endpoint
 # ============================================================
 subtest 'ready endpoint' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
+    my $server = SignalWire::Server::AgentServer->new;
     my $app = $server->psgi_app;
     my $res = $app->({
         REQUEST_METHOD => 'GET',
@@ -169,8 +169,8 @@ subtest 'ready endpoint' => sub {
 # 11. Agent routing through server
 # ============================================================
 subtest 'agent routing' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
-    my $agent  = SignalWire::Agents::Agent::AgentBase->new(
+    my $server = SignalWire::Server::AgentServer->new;
+    my $agent  = SignalWire::Agent::AgentBase->new(
         name               => 'routed',
         route              => '/routed',
         basic_auth_user     => 'user',
@@ -201,7 +201,7 @@ subtest 'agent routing' => sub {
 # 12. 404 for unregistered route
 # ============================================================
 subtest '404 for unknown route' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
+    my $server = SignalWire::Server::AgentServer->new;
     my $app = $server->psgi_app;
     my $res = $app->({
         REQUEST_METHOD => 'GET',
@@ -217,7 +217,7 @@ subtest '404 for unknown route' => sub {
 # 13. Security headers on server responses
 # ============================================================
 subtest 'security headers' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
+    my $server = SignalWire::Server::AgentServer->new;
     my $app = $server->psgi_app;
     my $res = $app->({
         REQUEST_METHOD => 'GET',
@@ -237,14 +237,14 @@ subtest 'security headers' => sub {
 # 14. Multiple agents routing
 # ============================================================
 subtest 'multiple agents routing' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
-    my $agent_a = SignalWire::Agents::Agent::AgentBase->new(
+    my $server = SignalWire::Server::AgentServer->new;
+    my $agent_a = SignalWire::Agent::AgentBase->new(
         name               => 'alpha',
         route              => '/alpha',
         basic_auth_user     => 'user',
         basic_auth_password => 'pass',
     );
-    my $agent_b = SignalWire::Agents::Agent::AgentBase->new(
+    my $agent_b = SignalWire::Agent::AgentBase->new(
         name               => 'beta',
         route              => '/beta',
         basic_auth_user     => 'user',
@@ -274,8 +274,8 @@ subtest 'multiple agents routing' => sub {
 # 15. Route normalization
 # ============================================================
 subtest 'route normalization' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
-    my $agent  = SignalWire::Agents::Agent::AgentBase->new(name => 'norm');
+    my $server = SignalWire::Server::AgentServer->new;
+    my $agent  = SignalWire::Agent::AgentBase->new(name => 'norm');
 
     $server->register($agent, 'no_slash');
     ok(exists $server->agents->{'/no_slash'}, 'route normalized with leading /');
@@ -285,9 +285,9 @@ subtest 'route normalization' => sub {
 # 16. Method chaining on register
 # ============================================================
 subtest 'method chaining' => sub {
-    my $server = SignalWire::Agents::Server::AgentServer->new;
+    my $server = SignalWire::Server::AgentServer->new;
     my $ret = $server->register(
-        SignalWire::Agents::Agent::AgentBase->new(name => 'chain', route => '/chain')
+        SignalWire::Agent::AgentBase->new(name => 'chain', route => '/chain')
     );
     is($ret, $server, 'register returns server for chaining');
 };

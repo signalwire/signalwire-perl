@@ -9,12 +9,12 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::DataMap;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::DataMap;
+use SignalWire::SWAIG::FunctionResult;
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'datamap-demo',
     route => '/datamap-demo',
 );
@@ -25,12 +25,12 @@ $agent->prompt_add_section(
 );
 
 # 1. Simple weather API via DataMap
-my $weather = SignalWire::Agents::DataMap->new('get_weather')
+my $weather = SignalWire::DataMap->new('get_weather')
     ->description('Get weather for a location')
     ->parameter('location', 'string', 'City name or location', required => 1)
     ->webhook('GET', 'https://api.weather.com/v1/current?key=API_KEY&q=${args.location}')
     ->output(
-        SignalWire::Agents::SWAIG::FunctionResult->new(
+        SignalWire::SWAIG::FunctionResult->new(
             'Current weather in ${args.location}: ${response.current.condition.text}, ${response.current.temp_f}F'
         )
     );
@@ -38,15 +38,15 @@ my $weather = SignalWire::Agents::DataMap->new('get_weather')
 $agent->register_swaig_function($weather->to_swaig_function);
 
 # 2. Expression-based file control (no API calls)
-my $file_control = SignalWire::Agents::DataMap->new('file_control')
+my $file_control = SignalWire::DataMap->new('file_control')
     ->description('Control audio/video playback')
     ->parameter('command', 'string', 'Playback command', required => 1,
         enum => ['play', 'pause', 'stop', 'next', 'previous'])
     ->expression(
         '${args.command}',
         'play|resume',
-        SignalWire::Agents::SWAIG::FunctionResult->new('Playback started'),
-        nomatch_output => SignalWire::Agents::SWAIG::FunctionResult->new('Playback stopped'),
+        SignalWire::SWAIG::FunctionResult->new('Playback started'),
+        nomatch_output => SignalWire::SWAIG::FunctionResult->new('Playback stopped'),
     );
 
 $agent->register_swaig_function($file_control->to_swaig_function);
@@ -64,7 +64,7 @@ $agent->define_tool(
     handler => sub {
         my ($args, $raw) = @_;
         my $msg = $args->{message} // 'nothing';
-        return SignalWire::Agents::SWAIG::FunctionResult->new("Echo: $msg");
+        return SignalWire::SWAIG::FunctionResult->new("Echo: $msg");
     },
 );
 

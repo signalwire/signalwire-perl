@@ -15,16 +15,16 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
 
 my $mode = lc($ARGV[0] // 'support');
 
 my $agent;
 
 if ($mode eq 'precise') {
-    $agent = SignalWire::Agents::Agent::AgentBase->new(
+    $agent = SignalWire::Agent::AgentBase->new(
         name  => 'precise-assistant',
         route => '/precise',
     );
@@ -52,7 +52,7 @@ if ($mode eq 'precise') {
         description => 'Get technical system information',
         parameters  => { type => 'object', properties => {} },
         handler     => sub {
-            return SignalWire::Agents::SWAIG::FunctionResult->new(
+            return SignalWire::SWAIG::FunctionResult->new(
                 'System Status: CPU 45%, Memory 8GB, Disk 200GB free, Uptime 14 days'
             );
         },
@@ -60,7 +60,7 @@ if ($mode eq 'precise') {
     print "Starting Precise Assistant (low temperature, hard to interrupt)...\n";
 
 } elsif ($mode eq 'creative') {
-    $agent = SignalWire::Agents::Agent::AgentBase->new(
+    $agent = SignalWire::Agent::AgentBase->new(
         name  => 'creative-assistant',
         route => '/creative',
     );
@@ -100,7 +100,7 @@ if ($mode eq 'precise') {
                 mystery   => 'A library book that writes itself',
             );
             my $prompt = $prompts{lc($theme)} // 'An ordinary object with extraordinary powers';
-            return SignalWire::Agents::SWAIG::FunctionResult->new(
+            return SignalWire::SWAIG::FunctionResult->new(
                 "Story prompt for $theme: $prompt"
             );
         },
@@ -108,7 +108,7 @@ if ($mode eq 'precise') {
     print "Starting Creative Assistant (high temperature, easy to interrupt)...\n";
 
 } else {
-    $agent = SignalWire::Agents::Agent::AgentBase->new(
+    $agent = SignalWire::Agent::AgentBase->new(
         name  => 'customer-service',
         route => '/support',
     );
@@ -143,7 +143,7 @@ if ($mode eq 'precise') {
         handler => sub {
             my ($args, $raw) = @_;
             my $oid = $args->{order_id} // 'unknown';
-            return SignalWire::Agents::SWAIG::FunctionResult->new(
+            return SignalWire::SWAIG::FunctionResult->new(
                 "Order $oid status: Shipped - Expected delivery in 2 days"
             );
         },

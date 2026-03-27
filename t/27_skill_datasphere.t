@@ -4,21 +4,21 @@ use warnings;
 use Test::More;
 use JSON ();
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datasphere');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('datasphere');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ds');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ds');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'datasphere', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers tool' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ds_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ds_reg');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -26,7 +26,7 @@ subtest 'registers tool' => sub {
 };
 
 subtest 'custom tool_name' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ds_custom');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ds_custom');
     my $skill = $factory->new(agent => $agent, params => { tool_name => 'my_search' });
     $skill->setup;
     $skill->register_tools;
@@ -34,7 +34,7 @@ subtest 'custom tool_name' => sub {
 };
 
 subtest 'global data' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ds_gd');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ds_gd');
     my $skill = $factory->new(agent => $agent, params => { document_id => 'doc123' });
     my $gdata = $skill->get_global_data;
     ok(exists $gdata->{datasphere_enabled}, 'datasphere_enabled');
@@ -42,7 +42,7 @@ subtest 'global data' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ds_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ds_ps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     like($sections->[0]{title}, qr/Knowledge Search/, 'title');

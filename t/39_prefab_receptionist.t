@@ -3,10 +3,10 @@ use strict;
 use warnings;
 use Test::More;
 
-use_ok('SignalWire::Agents::Prefabs::Receptionist');
+use_ok('SignalWire::Prefabs::Receptionist');
 
 subtest 'construction defaults' => sub {
-    my $a = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [
             { name => 'sales',   description => 'Sales dept',   number => '+15551235555' },
             { name => 'support', description => 'Support dept', number => '+15551236666' },
@@ -14,25 +14,25 @@ subtest 'construction defaults' => sub {
     );
     is($a->name, 'receptionist', 'default name');
     is($a->route, '/receptionist', 'default route');
-    ok($a->isa('SignalWire::Agents::Agent::AgentBase'), 'isa AgentBase');
+    ok($a->isa('SignalWire::Agent::AgentBase'), 'isa AgentBase');
 };
 
 subtest 'tools registered' => sub {
-    my $a = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [{ name => 'sales', description => 'S', number => '+1' }],
     );
     ok(exists $a->tools->{transfer_to_department}, 'transfer tool');
 };
 
 subtest 'prompt section' => sub {
-    my $a = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [{ name => 'sales', description => 'S', number => '+1' }],
     );
     ok($a->prompt_has_section('Receptionist Role'), 'has role section');
 };
 
 subtest 'global data' => sub {
-    my $a = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [
             { name => 'sales', description => 'S', number => '+1' },
             { name => 'tech',  description => 'T', number => '+2' },
@@ -42,7 +42,7 @@ subtest 'global data' => sub {
 };
 
 subtest 'transfer tool execution - found' => sub {
-    my $a = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [{ name => 'sales', description => 'Sales', number => '+15551235555' }],
     );
     my $result = $a->on_function_call('transfer_to_department', { department => 'sales' }, {});
@@ -51,7 +51,7 @@ subtest 'transfer tool execution - found' => sub {
 };
 
 subtest 'transfer tool execution - not found' => sub {
-    my $a = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [{ name => 'sales', description => 'Sales', number => '+1' }],
     );
     my $result = $a->on_function_call('transfer_to_department', { department => 'unknown' }, {});
@@ -60,7 +60,7 @@ subtest 'transfer tool execution - not found' => sub {
 };
 
 subtest 'custom greeting' => sub {
-    my $a = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [{ name => 's', description => 'S', number => '+1' }],
         greeting    => 'Welcome to Acme!',
     );
@@ -70,7 +70,7 @@ subtest 'custom greeting' => sub {
 };
 
 subtest 'render_swml' => sub {
-    my $a = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [{ name => 's', description => 'S', number => '+1' }],
     );
     my $swml = $a->render_swml;

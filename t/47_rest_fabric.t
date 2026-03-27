@@ -3,9 +3,9 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::REST::SignalWireClient;
+use SignalWire::REST::RestClient;
 
-my $client = SignalWire::Agents::REST::SignalWireClient->new(
+my $client = SignalWire::REST::RestClient->new(
     project => 'p', token => 't', host => 'h',
 );
 
@@ -14,7 +14,7 @@ my $client = SignalWire::Agents::REST::SignalWireClient->new(
 # ============================================================
 subtest 'fabric namespace' => sub {
     my $f = $client->fabric;
-    isa_ok($f, 'SignalWire::Agents::REST::Namespaces::Fabric');
+    isa_ok($f, 'SignalWire::REST::Namespaces::Fabric');
 };
 
 # ============================================================
@@ -22,7 +22,7 @@ subtest 'fabric namespace' => sub {
 # ============================================================
 subtest 'swml_scripts' => sub {
     my $r = $client->fabric->swml_scripts;
-    isa_ok($r, 'SignalWire::Agents::REST::Namespaces::Fabric::ResourcePUT');
+    isa_ok($r, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
 };
 
 # ============================================================
@@ -30,7 +30,7 @@ subtest 'swml_scripts' => sub {
 # ============================================================
 subtest 'relay_applications' => sub {
     my $r = $client->fabric->relay_applications;
-    isa_ok($r, 'SignalWire::Agents::REST::Namespaces::Fabric::ResourcePUT');
+    isa_ok($r, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
 };
 
 # ============================================================
@@ -38,7 +38,7 @@ subtest 'relay_applications' => sub {
 # ============================================================
 subtest 'call_flows' => sub {
     my $cf = $client->fabric->call_flows;
-    isa_ok($cf, 'SignalWire::Agents::REST::Namespaces::Fabric::CallFlows');
+    isa_ok($cf, 'SignalWire::REST::Namespaces::Fabric::CallFlows');
     ok($cf->can('list_versions'), 'list_versions');
     ok($cf->can('deploy_version'), 'deploy_version');
 };
@@ -48,7 +48,7 @@ subtest 'call_flows' => sub {
 # ============================================================
 subtest 'conference_rooms' => sub {
     my $cr = $client->fabric->conference_rooms;
-    isa_ok($cr, 'SignalWire::Agents::REST::Namespaces::Fabric::ConferenceRooms');
+    isa_ok($cr, 'SignalWire::REST::Namespaces::Fabric::ConferenceRooms');
 };
 
 # ============================================================
@@ -56,7 +56,7 @@ subtest 'conference_rooms' => sub {
 # ============================================================
 subtest 'subscribers' => sub {
     my $s = $client->fabric->subscribers;
-    isa_ok($s, 'SignalWire::Agents::REST::Namespaces::Fabric::Subscribers');
+    isa_ok($s, 'SignalWire::REST::Namespaces::Fabric::Subscribers');
     ok($s->can('list_sip_endpoints'), 'list_sip_endpoints');
     ok($s->can('create_sip_endpoint'), 'create_sip_endpoint');
 };
@@ -66,16 +66,16 @@ subtest 'subscribers' => sub {
 # ============================================================
 subtest 'sip_endpoints' => sub {
     my $s = $client->fabric->sip_endpoints;
-    isa_ok($s, 'SignalWire::Agents::REST::Namespaces::Fabric::ResourcePUT');
+    isa_ok($s, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
 };
 
 # ============================================================
 # 8. CXML resources
 # ============================================================
 subtest 'cxml resources' => sub {
-    isa_ok($client->fabric->cxml_scripts, 'SignalWire::Agents::REST::Namespaces::Fabric::ResourcePUT');
+    isa_ok($client->fabric->cxml_scripts, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
     my $ca = $client->fabric->cxml_applications;
-    isa_ok($ca, 'SignalWire::Agents::REST::Namespaces::Fabric::CxmlApplications');
+    isa_ok($ca, 'SignalWire::REST::Namespaces::Fabric::CxmlApplications');
     eval { $ca->create(name => 'test') };
     like($@, qr/cannot be created/, 'cxml_applications create dies');
 };
@@ -85,7 +85,7 @@ subtest 'cxml resources' => sub {
 # ============================================================
 subtest 'generic resources' => sub {
     for my $r (qw(swml_webhooks ai_agents sip_gateways cxml_webhooks)) {
-        isa_ok($client->fabric->$r, 'SignalWire::Agents::REST::Namespaces::Fabric::Resource');
+        isa_ok($client->fabric->$r, 'SignalWire::REST::Namespaces::Fabric::Resource');
     }
 };
 
@@ -93,9 +93,9 @@ subtest 'generic resources' => sub {
 # 10. Addresses and tokens
 # ============================================================
 subtest 'addresses and tokens' => sub {
-    isa_ok($client->fabric->addresses, 'SignalWire::Agents::REST::Namespaces::Fabric::Addresses');
+    isa_ok($client->fabric->addresses, 'SignalWire::REST::Namespaces::Fabric::Addresses');
     my $tokens = $client->fabric->tokens;
-    isa_ok($tokens, 'SignalWire::Agents::REST::Namespaces::Fabric::Tokens');
+    isa_ok($tokens, 'SignalWire::REST::Namespaces::Fabric::Tokens');
     ok($tokens->can('create_subscriber_token'), 'subscriber token');
     ok($tokens->can('create_guest_token'), 'guest token');
     ok($tokens->can('create_embed_token'), 'embed token');
@@ -106,7 +106,7 @@ subtest 'addresses and tokens' => sub {
 # ============================================================
 subtest 'resources' => sub {
     my $r = $client->fabric->resources;
-    isa_ok($r, 'SignalWire::Agents::REST::Namespaces::Fabric::GenericResources');
+    isa_ok($r, 'SignalWire::REST::Namespaces::Fabric::GenericResources');
 };
 
 done_testing;

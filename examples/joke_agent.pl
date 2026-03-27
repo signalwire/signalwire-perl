@@ -10,8 +10,8 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
 
 my $api_key = $ENV{API_NINJAS_KEY};
 unless ($api_key) {
@@ -21,7 +21,7 @@ unless ($api_key) {
     exit 1;
 }
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'Joke Agent',
     route => '/joke-agent',
 );

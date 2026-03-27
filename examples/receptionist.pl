@@ -8,10 +8,10 @@ use strict;
 use warnings;
 use lib 'lib';
 use JSON qw(encode_json);
-use SignalWire::Agents;
-use SignalWire::Agents::Prefabs::Receptionist;
+use SignalWire;
+use SignalWire::Prefabs::Receptionist;
 
-my $agent = SignalWire::Agents::Prefabs::Receptionist->new(
+my $agent = SignalWire::Prefabs::Receptionist->new(
     name => 'acme-receptionist',
     route => '/reception',
     departments => [

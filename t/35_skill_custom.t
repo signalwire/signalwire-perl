@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('custom_skills');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('custom_skills');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'custom_skills', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers define_tool style' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs_define');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs_define');
     my $skill = $factory->new(agent => $agent, params => {
         tools => [
             { name => 'my_tool', description => 'Custom tool', handler => sub { {} } },
@@ -29,7 +29,7 @@ subtest 'registers define_tool style' => sub {
 };
 
 subtest 'registers swaig_function style' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs_swaig');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs_swaig');
     my $skill = $factory->new(agent => $agent, params => {
         tools => [
             {
@@ -46,7 +46,7 @@ subtest 'registers swaig_function style' => sub {
 };
 
 subtest 'mixed tools' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs_mix');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs_mix');
     my $skill = $factory->new(agent => $agent, params => {
         tools => [
             { name => 'tool_a', description => 'A' },
@@ -60,7 +60,7 @@ subtest 'mixed tools' => sub {
 };
 
 subtest 'empty tools array' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs_empty');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs_empty');
     my $skill = $factory->new(agent => $agent, params => { tools => [] });
     $skill->setup;
     $skill->register_tools;
@@ -68,7 +68,7 @@ subtest 'empty tools array' => sub {
 };
 
 subtest 'skips invalid entries' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs_skip');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs_skip');
     my $skill = $factory->new(agent => $agent, params => {
         tools => ['not_a_hash', undef, { name => 'valid', description => 'V' }],
     });

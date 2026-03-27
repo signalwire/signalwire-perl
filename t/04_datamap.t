@@ -4,19 +4,19 @@ use warnings;
 use Test::More;
 use JSON ();
 
-use SignalWire::Agents::DataMap;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire::DataMap;
+use SignalWire::SWAIG::FunctionResult;
 
 # =============================================
 # Test: Basic construction
 # =============================================
 subtest 'Construction' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('get_weather');
+    my $dm = SignalWire::DataMap->new('get_weather');
     ok($dm, 'DataMap created');
     is($dm->function_name, 'get_weather', 'function_name set');
 
     # Named args
-    $dm = SignalWire::Agents::DataMap->new(function_name => 'search');
+    $dm = SignalWire::DataMap->new(function_name => 'search');
     is($dm->function_name, 'search', 'named construction');
 };
 
@@ -24,7 +24,7 @@ subtest 'Construction' => sub {
 # Test: Fluent API
 # =============================================
 subtest 'Fluent API chaining' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('test');
+    my $dm = SignalWire::DataMap->new('test');
 
     my $ret = $dm->purpose('Test purpose');
     is($ret, $dm, 'purpose returns self');
@@ -38,7 +38,7 @@ subtest 'Fluent API chaining' => sub {
     $ret = $dm->webhook('GET', 'https://api.example.com');
     is($ret, $dm, 'webhook returns self');
 
-    $ret = $dm->output(SignalWire::Agents::SWAIG::FunctionResult->new('result'));
+    $ret = $dm->output(SignalWire::SWAIG::FunctionResult->new('result'));
     is($ret, $dm, 'output returns self');
 };
 
@@ -46,11 +46,11 @@ subtest 'Fluent API chaining' => sub {
 # Test: Simple API tool
 # =============================================
 subtest 'Simple API tool' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('get_weather')
+    my $dm = SignalWire::DataMap->new('get_weather')
         ->purpose('Get weather for a location')
         ->parameter('location', 'string', 'City name', required => 1)
         ->webhook('GET', 'https://api.weather.com/v1?q=${location}')
-        ->output(SignalWire::Agents::SWAIG::FunctionResult->new('Weather: ${response.temp}'));
+        ->output(SignalWire::SWAIG::FunctionResult->new('Weather: ${response.temp}'));
 
     my $func = $dm->to_swaig_function;
     is($func->{function}, 'get_weather', 'function name');
@@ -76,18 +76,18 @@ subtest 'Simple API tool' => sub {
 # Test: Expression-based tool
 # =============================================
 subtest 'Expression-based tool' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('file_control')
+    my $dm = SignalWire::DataMap->new('file_control')
         ->purpose('Control file playback')
         ->parameter('command', 'string', 'Playback command', required => 1)
         ->expression(
             '${args.command}',
             'start.*',
-            SignalWire::Agents::SWAIG::FunctionResult->new('Starting playback'),
+            SignalWire::SWAIG::FunctionResult->new('Starting playback'),
         )
         ->expression(
             '${args.command}',
             'stop.*',
-            SignalWire::Agents::SWAIG::FunctionResult->new('Stopping playback'),
+            SignalWire::SWAIG::FunctionResult->new('Stopping playback'),
         );
 
     my $func = $dm->to_swaig_function;
@@ -105,13 +105,13 @@ subtest 'Expression-based tool' => sub {
 # Test: Webhook with body and headers
 # =============================================
 subtest 'Webhook with body and headers' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('search')
+    my $dm = SignalWire::DataMap->new('search')
         ->purpose('Search docs')
         ->parameter('query', 'string', 'Search query', required => 1)
         ->webhook('POST', 'https://api.docs.com/search',
                   headers => { 'Authorization' => 'Bearer TOKEN' })
         ->body({ query => '${query}', limit => 3 })
-        ->output(SignalWire::Agents::SWAIG::FunctionResult->new('Found: ${response.title}'));
+        ->output(SignalWire::SWAIG::FunctionResult->new('Found: ${response.title}'));
 
     my $func = $dm->to_swaig_function;
     my $wh = $func->{data_map}{webhooks}[0];
@@ -125,14 +125,14 @@ subtest 'Webhook with body and headers' => sub {
 # Test: Multiple webhooks with fallback
 # =============================================
 subtest 'Multiple webhooks and fallback' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('search_multi')
+    my $dm = SignalWire::DataMap->new('search_multi')
         ->purpose('Search with fallback')
         ->parameter('query', 'string', 'Search query', required => 1)
         ->webhook('GET', 'https://api.primary.com/search?q=${query}')
-        ->output(SignalWire::Agents::SWAIG::FunctionResult->new('Primary: ${response.title}'))
+        ->output(SignalWire::SWAIG::FunctionResult->new('Primary: ${response.title}'))
         ->webhook('GET', 'https://api.fallback.com/search?q=${query}')
-        ->output(SignalWire::Agents::SWAIG::FunctionResult->new('Fallback: ${response.title}'))
-        ->fallback_output(SignalWire::Agents::SWAIG::FunctionResult->new('All APIs unavailable'));
+        ->output(SignalWire::SWAIG::FunctionResult->new('Fallback: ${response.title}'))
+        ->fallback_output(SignalWire::SWAIG::FunctionResult->new('All APIs unavailable'));
 
     my $func = $dm->to_swaig_function;
     my $data_map = $func->{data_map};
@@ -146,17 +146,17 @@ subtest 'Multiple webhooks and fallback' => sub {
 # Test: Error keys
 # =============================================
 subtest 'Error keys' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('test')
+    my $dm = SignalWire::DataMap->new('test')
         ->purpose('Test')
         ->webhook('GET', 'https://api.example.com')
-        ->output(SignalWire::Agents::SWAIG::FunctionResult->new('ok'))
+        ->output(SignalWire::SWAIG::FunctionResult->new('ok'))
         ->error_keys(['error', 'err']);
 
     my $func = $dm->to_swaig_function;
     is_deeply($func->{data_map}{webhooks}[0]{error_keys}, ['error', 'err'], 'webhook error_keys');
 
     # Global error keys
-    $dm = SignalWire::Agents::DataMap->new('test2')
+    $dm = SignalWire::DataMap->new('test2')
         ->purpose('Test')
         ->global_error_keys(['global_err']);
 
@@ -168,12 +168,12 @@ subtest 'Error keys' => sub {
 # Test: Foreach
 # =============================================
 subtest 'Foreach' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('search_docs')
+    my $dm = SignalWire::DataMap->new('search_docs')
         ->purpose('Search docs')
         ->parameter('query', 'string', 'Search query', required => 1)
         ->webhook('POST', 'https://api.docs.com/search')
         ->body({ query => '${query}' })
-        ->output(SignalWire::Agents::SWAIG::FunctionResult->new('Results: ${formatted}'))
+        ->output(SignalWire::SWAIG::FunctionResult->new('Results: ${formatted}'))
         ->foreach({
             input_key  => 'results',
             output_key => 'formatted',
@@ -192,7 +192,7 @@ subtest 'Foreach' => sub {
 # Test: Parameter with enum
 # =============================================
 subtest 'Parameter with enum' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('test')
+    my $dm = SignalWire::DataMap->new('test')
         ->purpose('Test')
         ->parameter('unit', 'string', 'Temperature unit',
                     required => 1,
@@ -207,14 +207,14 @@ subtest 'Parameter with enum' => sub {
 # Test: Error handling
 # =============================================
 subtest 'Error handling' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('test');
+    my $dm = SignalWire::DataMap->new('test');
 
     # body without webhook
     eval { $dm->body({ key => 'value' }) };
     ok($@, 'body without webhook dies');
 
     # output without webhook
-    eval { $dm->output(SignalWire::Agents::SWAIG::FunctionResult->new('x')) };
+    eval { $dm->output(SignalWire::SWAIG::FunctionResult->new('x')) };
     ok($@, 'output without webhook dies');
 
     # foreach without webhook
@@ -231,7 +231,7 @@ subtest 'Error handling' => sub {
 # Test: Default description
 # =============================================
 subtest 'Default description' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('my_tool');
+    my $dm = SignalWire::DataMap->new('my_tool');
     my $func = $dm->to_swaig_function;
     is($func->{description}, 'Execute my_tool', 'default description when none set');
 };
@@ -240,7 +240,7 @@ subtest 'Default description' => sub {
 # Test: No parameters
 # =============================================
 subtest 'No parameters' => sub {
-    my $dm = SignalWire::Agents::DataMap->new('simple')
+    my $dm = SignalWire::DataMap->new('simple')
         ->purpose('Simple tool');
     my $func = $dm->to_swaig_function;
     is($func->{parameters}{type}, 'object', 'empty params has type object');

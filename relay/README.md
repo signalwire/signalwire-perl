@@ -6,9 +6,9 @@ Real-time call control and messaging over WebSocket. The RELAY client connects t
 
 ```perl
 use lib 'lib';
-use SignalWire::Agents::Relay::Client;
+use SignalWire::Relay::Client;
 
-my $client = SignalWire::Agents::Relay::Client->new(
+my $client = SignalWire::Relay::Client->new(
     project  => $ENV{SIGNALWIRE_PROJECT_ID},
     token    => $ENV{SIGNALWIRE_API_TOKEN},
     host     => $ENV{SIGNALWIRE_SPACE} // 'relay.signalwire.com',
@@ -70,7 +70,7 @@ $client->run;
 ## Module Structure
 
 ```
-lib/SignalWire/Agents/Relay/
+lib/SignalWire/Relay/
     Client.pm       # RelayClient -- WebSocket connection, auth, event dispatch
     Call.pm         # Call object -- all calling methods
     Action.pm       # Action classes for controllable operations

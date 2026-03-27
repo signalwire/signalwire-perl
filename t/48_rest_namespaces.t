@@ -3,9 +3,9 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::REST::SignalWireClient;
+use SignalWire::REST::RestClient;
 
-my $client = SignalWire::Agents::REST::SignalWireClient->new(
+my $client = SignalWire::REST::RestClient->new(
     project => 'p', token => 't', host => 'h',
 );
 
@@ -30,7 +30,7 @@ subtest 'all namespaces' => sub {
 subtest 'datasphere documents' => sub {
     my $ds = $client->datasphere;
     my $docs = $ds->documents;
-    isa_ok($docs, 'SignalWire::Agents::REST::Namespaces::Datasphere::Documents');
+    isa_ok($docs, 'SignalWire::REST::Namespaces::Datasphere::Documents');
     for my $m (qw(search list_chunks get_chunk delete_chunk)) {
         ok($docs->can($m), "documents has $m");
     }
@@ -41,13 +41,13 @@ subtest 'datasphere documents' => sub {
 # ============================================================
 subtest 'video sub-resources' => sub {
     my $v = $client->video;
-    isa_ok($v->rooms, 'SignalWire::Agents::REST::Namespaces::Video::Rooms');
-    isa_ok($v->room_tokens, 'SignalWire::Agents::REST::Namespaces::Video::RoomTokens');
-    isa_ok($v->room_sessions, 'SignalWire::Agents::REST::Namespaces::Video::RoomSessions');
-    isa_ok($v->room_recordings, 'SignalWire::Agents::REST::Namespaces::Video::RoomRecordings');
-    isa_ok($v->conferences, 'SignalWire::Agents::REST::Namespaces::Video::Conferences');
-    isa_ok($v->conference_tokens, 'SignalWire::Agents::REST::Namespaces::Video::ConferenceTokens');
-    isa_ok($v->streams, 'SignalWire::Agents::REST::Namespaces::Video::Streams');
+    isa_ok($v->rooms, 'SignalWire::REST::Namespaces::Video::Rooms');
+    isa_ok($v->room_tokens, 'SignalWire::REST::Namespaces::Video::RoomTokens');
+    isa_ok($v->room_sessions, 'SignalWire::REST::Namespaces::Video::RoomSessions');
+    isa_ok($v->room_recordings, 'SignalWire::REST::Namespaces::Video::RoomRecordings');
+    isa_ok($v->conferences, 'SignalWire::REST::Namespaces::Video::Conferences');
+    isa_ok($v->conference_tokens, 'SignalWire::REST::Namespaces::Video::ConferenceTokens');
+    isa_ok($v->streams, 'SignalWire::REST::Namespaces::Video::Streams');
     ok($v->rooms->can('list_streams'), 'rooms has list_streams');
     ok($v->room_sessions->can('list_events'), 'sessions has list_events');
 };

@@ -22,7 +22,7 @@ PERL5LIB="lib" prove t/unit/core/agent_base.t
 PERL5LIB="lib" prove -v t/
 
 # Syntax check a single file
-PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c lib/SignalWire/Agents/Agent/AgentBase.pm
+PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c lib/SignalWire/Agent/AgentBase.pm
 
 # Syntax check an example
 PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c examples/simple_agent.pl
@@ -49,14 +49,14 @@ PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib script.pl
 ## Architecture Overview
 
 ### Core Components
-1. **AgentBase** (`lib/SignalWire/Agents/Agent/AgentBase.pm`) -- Base class for all AI agents (Moo-based)
-2. **SWML::Service** (`lib/SignalWire/Agents/SWML/Service.pm`) -- Foundation for SWML document management
-3. **AgentServer** (`lib/SignalWire/Agents/Server/AgentServer.pm`) -- Multi-agent hosting server
-4. **Skills System** (`lib/SignalWire/Agents/Skills/`) -- Modular capabilities framework
-5. **Contexts** (`lib/SignalWire/Agents/Contexts/ContextBuilder.pm`) -- Structured workflow management
-6. **DataMap** (`lib/SignalWire/Agents/DataMap.pm`) -- Server-side API integration without webhooks
-7. **Relay Client** (`lib/SignalWire/Agents/Relay/`) -- Real-time WebSocket call control
-8. **REST Client** (`lib/SignalWire/Agents/REST/`) -- Synchronous HTTP API client
+1. **AgentBase** (`lib/SignalWire/Agent/AgentBase.pm`) -- Base class for all AI agents (Moo-based)
+2. **SWML::Service** (`lib/SignalWire/SWML/Service.pm`) -- Foundation for SWML document management
+3. **AgentServer** (`lib/SignalWire/Server/AgentServer.pm`) -- Multi-agent hosting server
+4. **Skills System** (`lib/SignalWire/Skills/`) -- Modular capabilities framework
+5. **Contexts** (`lib/SignalWire/Contexts/ContextBuilder.pm`) -- Structured workflow management
+6. **DataMap** (`lib/SignalWire/DataMap.pm`) -- Server-side API integration without webhooks
+7. **Relay Client** (`lib/SignalWire/Relay/`) -- Real-time WebSocket call control
+8. **REST Client** (`lib/SignalWire/REST/`) -- Synchronous HTTP API client
 
 ### Key Patterns
 
@@ -65,7 +65,7 @@ Agents use Moo `extends` from `AgentBase` and configure in BUILD:
 ```perl
 package MyAgent;
 use Moo;
-extends 'SignalWire::Agents::Agent::AgentBase';
+extends 'SignalWire::Agent::AgentBase';
 
 sub BUILD {
     my ($self) = @_;
@@ -76,8 +76,8 @@ sub BUILD {
         parameters  => { type => 'object', properties => {} },
         handler     => sub {
             my ($args, $raw) = @_;
-            require SignalWire::Agents::SWAIG::FunctionResult;
-            return SignalWire::Agents::SWAIG::FunctionResult->new("The time is " . localtime);
+            require SignalWire::SWAIG::FunctionResult;
+            return SignalWire::SWAIG::FunctionResult->new("The time is " . localtime);
         },
     );
 }
@@ -98,17 +98,17 @@ $self->define_tool(
     },
     handler => sub {
         my ($args, $raw_data) = @_;
-        return SignalWire::Agents::SWAIG::FunctionResult->new("Result: $args->{param1}");
+        return SignalWire::SWAIG::FunctionResult->new("Result: $args->{param1}");
     },
 );
 ```
 
 #### FunctionResult
 ```perl
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire::SWAIG::FunctionResult;
 
 # Simple response
-my $result = SignalWire::Agents::SWAIG::FunctionResult->new("Response text");
+my $result = SignalWire::SWAIG::FunctionResult->new("Response text");
 
 # With actions
 $result->add_action('set_global_data', { key => 'value' });
@@ -118,13 +118,13 @@ $result->connect('+15551234567');
 
 #### DataMap Tools
 ```perl
-use SignalWire::Agents::DataMap;
+use SignalWire::DataMap;
 
-my $tool = SignalWire::Agents::DataMap->new('get_weather')
+my $tool = SignalWire::DataMap->new('get_weather')
     ->description('Get weather for a location')
     ->parameter('city', 'string', 'City name', required => 1)
     ->webhook('GET', 'https://api.weather.com/v1?q=${args.city}')
-    ->output(SignalWire::Agents::SWAIG::FunctionResult->new('Weather: ${response.temp}'));
+    ->output(SignalWire::SWAIG::FunctionResult->new('Weather: ${response.temp}'));
 
 $agent->register_swaig_function($tool->to_swaig_function);
 ```
@@ -147,9 +147,9 @@ $agent->add_skill('web_search', {
 
 #### RELAY Client
 ```perl
-use SignalWire::Agents::Relay::Client;
+use SignalWire::Relay::Client;
 
-my $client = SignalWire::Agents::Relay::Client->new(
+my $client = SignalWire::Relay::Client->new(
     project  => $ENV{SIGNALWIRE_PROJECT_ID},
     token    => $ENV{SIGNALWIRE_API_TOKEN},
     host     => $ENV{SIGNALWIRE_SPACE} // 'relay.signalwire.com',
@@ -170,9 +170,9 @@ $client->run;
 
 #### REST Client
 ```perl
-use SignalWire::Agents::REST::SignalWireClient;
+use SignalWire::REST::RestClient;
 
-my $client = SignalWire::Agents::REST::SignalWireClient->new(
+my $client = SignalWire::REST::RestClient->new(
     project => $ENV{SIGNALWIRE_PROJECT_ID},
     token   => $ENV{SIGNALWIRE_API_TOKEN},
     host    => $ENV{SIGNALWIRE_SPACE},
@@ -206,7 +206,7 @@ my $agent   = $client->fabric->ai_agents->create(name => 'Bot', prompt => { text
 
 ### Module Loading
 - `use lib 'lib'` in scripts to find SDK modules
-- `use SignalWire::Agents` loads core modules
+- `use SignalWire` loads core modules
 - Relay and REST clients loaded separately as needed
 
 ### Security
@@ -215,11 +215,11 @@ my $agent   = $client->fabric->ai_agents->create(name => 'Bot', prompt => { text
 - Session management via `SessionManager`
 
 ## File Locations
-- Core: `lib/SignalWire/Agents/` (Agent, SWML, SWAIG, DataMap, Contexts, etc.)
-- Skills: `lib/SignalWire/Agents/Skills/Builtin/` (datetime, math, web_search, etc.)
-- Prefabs: `lib/SignalWire/Agents/Prefabs/` (InfoGatherer, Survey, Receptionist, etc.)
-- Relay: `lib/SignalWire/Agents/Relay/` (Client, Call, Action, Event, etc.)
-- REST: `lib/SignalWire/Agents/REST/` (SignalWireClient, HttpClient, Namespaces/)
+- Core: `lib/SignalWire/` (Agent, SWML, SWAIG, DataMap, Contexts, etc.)
+- Skills: `lib/SignalWire/Skills/Builtin/` (datetime, math, web_search, etc.)
+- Prefabs: `lib/SignalWire/Prefabs/` (InfoGatherer, Survey, Receptionist, etc.)
+- Relay: `lib/SignalWire/Relay/` (Client, Call, Action, Event, etc.)
+- REST: `lib/SignalWire/REST/` (RestClient, HttpClient, Namespaces/)
 - Examples: `examples/` (agent examples)
 - Relay examples: `relay/examples/` (RELAY client examples)
 - REST examples: `rest/examples/` (REST client examples)

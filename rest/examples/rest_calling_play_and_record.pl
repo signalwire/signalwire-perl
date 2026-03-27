@@ -12,9 +12,9 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents::REST::SignalWireClient;
+use SignalWire::REST::RestClient;
 
-my $client = SignalWire::Agents::REST::SignalWireClient->new(
+my $client = SignalWire::REST::RestClient->new(
     project => $ENV{SIGNALWIRE_PROJECT_ID} // die("Set SIGNALWIRE_PROJECT_ID\n"),
     token   => $ENV{SIGNALWIRE_API_TOKEN}  // die("Set SIGNALWIRE_API_TOKEN\n"),
     host    => $ENV{SIGNALWIRE_SPACE}      // die("Set SIGNALWIRE_SPACE\n"),

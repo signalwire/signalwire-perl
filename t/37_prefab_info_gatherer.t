@@ -4,10 +4,10 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json decode_json);
 
-use_ok('SignalWire::Agents::Prefabs::InfoGatherer');
+use_ok('SignalWire::Prefabs::InfoGatherer');
 
 subtest 'construction defaults' => sub {
-    my $a = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $a = SignalWire::Prefabs::InfoGatherer->new(
         questions => [
             { key_name => 'name', question_text => 'What is your name?' },
             { key_name => 'email', question_text => 'What is your email?', confirm => 1 },
@@ -15,11 +15,11 @@ subtest 'construction defaults' => sub {
     );
     is($a->name, 'info_gatherer', 'default name');
     is($a->route, '/info_gatherer', 'default route');
-    ok($a->isa('SignalWire::Agents::Agent::AgentBase'), 'isa AgentBase');
+    ok($a->isa('SignalWire::Agent::AgentBase'), 'isa AgentBase');
 };
 
 subtest 'tools registered' => sub {
-    my $a = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $a = SignalWire::Prefabs::InfoGatherer->new(
         questions => [{ key_name => 'n', question_text => 'N?' }],
     );
     ok(exists $a->tools->{start_questions}, 'start_questions');
@@ -27,14 +27,14 @@ subtest 'tools registered' => sub {
 };
 
 subtest 'prompt section' => sub {
-    my $a = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $a = SignalWire::Prefabs::InfoGatherer->new(
         questions => [{ key_name => 'n', question_text => 'N?' }],
     );
     ok($a->prompt_has_section('Information Gathering'), 'has section');
 };
 
 subtest 'global data' => sub {
-    my $a = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $a = SignalWire::Prefabs::InfoGatherer->new(
         questions => [
             { key_name => 'n', question_text => 'Name?' },
             { key_name => 'e', question_text => 'Email?' },
@@ -47,7 +47,7 @@ subtest 'global data' => sub {
 };
 
 subtest 'tool execution' => sub {
-    my $a = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $a = SignalWire::Prefabs::InfoGatherer->new(
         questions => [{ key_name => 'name', question_text => 'What is your name?' }],
     );
     my $start = $a->on_function_call('start_questions', {}, {});
@@ -60,7 +60,7 @@ subtest 'tool execution' => sub {
 };
 
 subtest 'render_swml' => sub {
-    my $a = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $a = SignalWire::Prefabs::InfoGatherer->new(
         questions => [{ key_name => 'n', question_text => 'N?' }],
     );
     my $swml = $a->render_swml;
@@ -71,7 +71,7 @@ subtest 'render_swml' => sub {
 };
 
 subtest 'custom name and route' => sub {
-    my $a = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $a = SignalWire::Prefabs::InfoGatherer->new(
         name      => 'intake',
         route     => '/intake',
         questions => [{ key_name => 'n', question_text => 'N?' }],
@@ -81,7 +81,7 @@ subtest 'custom name and route' => sub {
 };
 
 subtest 'psgi_app' => sub {
-    my $a = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $a = SignalWire::Prefabs::InfoGatherer->new(
         questions => [{ key_name => 'n', question_text => 'N?' }],
     );
     my $app = $a->psgi_app;

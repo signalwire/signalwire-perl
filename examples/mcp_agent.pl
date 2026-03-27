@@ -10,10 +10,10 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'mcp-demo',
     route => '/mcp-demo',
 );
@@ -46,7 +46,7 @@ $agent->define_tool(
     handler     => sub {
         my ($args, $raw_data) = @_;
         my $location = $args->{location} || 'unknown';
-        return SignalWire::Agents::SWAIG::FunctionResult->new(
+        return SignalWire::SWAIG::FunctionResult->new(
             response => "72F and sunny in $location"
         );
     },

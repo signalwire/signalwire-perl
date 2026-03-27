@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('info_gatherer');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('info_gatherer');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ig');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'info_gatherer', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers tools' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ig_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_reg');
     my $skill = $factory->new(agent => $agent, params => {
         questions => [{ key_name => 'name', question_text => 'Your name?' }],
     });
@@ -28,7 +28,7 @@ subtest 'registers tools' => sub {
 };
 
 subtest 'prefix option' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ig_prefix');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_prefix');
     my $skill = $factory->new(agent => $agent, params => {
         prefix    => 'intake',
         questions => [{ key_name => 'x', question_text => 'Q?' }],
@@ -40,7 +40,7 @@ subtest 'prefix option' => sub {
 };
 
 subtest 'global data' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ig_gd');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_gd');
     my $skill = $factory->new(agent => $agent, params => {
         questions => [{ key_name => 'n', question_text => 'Name?' }],
     });
@@ -52,7 +52,7 @@ subtest 'global data' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ig_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_ps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     ok(scalar @$sections > 0, 'has sections');

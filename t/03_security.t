@@ -4,13 +4,13 @@ use warnings;
 use Test::More;
 use JSON ();
 
-use SignalWire::Agents::Security::SessionManager;
+use SignalWire::Security::SessionManager;
 
 # =============================================
 # Test: Session creation
 # =============================================
 subtest 'Session creation' => sub {
-    my $sm = SignalWire::Agents::Security::SessionManager->new();
+    my $sm = SignalWire::Security::SessionManager->new();
     ok($sm, 'session manager created');
     is($sm->token_expiry_secs, 900, 'default expiry 900 seconds');
     ok(length($sm->secret_key) > 0, 'secret key auto-generated');
@@ -28,7 +28,7 @@ subtest 'Session creation' => sub {
 # Test: Token generation and validation
 # =============================================
 subtest 'Token generate and validate' => sub {
-    my $sm = SignalWire::Agents::Security::SessionManager->new(
+    my $sm = SignalWire::Security::SessionManager->new(
         secret_key => 'test-secret-key-12345',
     );
 
@@ -54,7 +54,7 @@ subtest 'Token generate and validate' => sub {
 # Test: Token validation failures
 # =============================================
 subtest 'Token validation failures' => sub {
-    my $sm = SignalWire::Agents::Security::SessionManager->new(
+    my $sm = SignalWire::Security::SessionManager->new(
         secret_key => 'test-secret-key-12345',
     );
 
@@ -86,7 +86,7 @@ subtest 'Token validation failures' => sub {
 # =============================================
 subtest 'Token expiry' => sub {
     # Create with very short expiry so it's already expired
-    my $sm = SignalWire::Agents::Security::SessionManager->new(
+    my $sm = SignalWire::Security::SessionManager->new(
         secret_key       => 'test-secret-key-12345',
         token_expiry_secs => 0,  # expires immediately
     );
@@ -102,8 +102,8 @@ subtest 'Token expiry' => sub {
 # Test: Different secret keys
 # =============================================
 subtest 'Different secret keys' => sub {
-    my $sm1 = SignalWire::Agents::Security::SessionManager->new(secret_key => 'key-one');
-    my $sm2 = SignalWire::Agents::Security::SessionManager->new(secret_key => 'key-two');
+    my $sm1 = SignalWire::Security::SessionManager->new(secret_key => 'key-one');
+    my $sm2 = SignalWire::Security::SessionManager->new(secret_key => 'key-two');
 
     my $token = $sm1->generate_token('func', 'call-1');
     ok($sm1->validate_token('call-1', 'func', $token), 'correct key validates');
@@ -114,13 +114,13 @@ subtest 'Different secret keys' => sub {
 # Test: Timing-safe comparison
 # =============================================
 subtest 'Timing-safe comparison' => sub {
-    ok(SignalWire::Agents::Security::SessionManager::_timing_safe_compare('abc', 'abc'),
+    ok(SignalWire::Security::SessionManager::_timing_safe_compare('abc', 'abc'),
        'same strings match');
-    ok(!SignalWire::Agents::Security::SessionManager::_timing_safe_compare('abc', 'def'),
+    ok(!SignalWire::Security::SessionManager::_timing_safe_compare('abc', 'def'),
        'different strings do not match');
-    ok(!SignalWire::Agents::Security::SessionManager::_timing_safe_compare('abc', 'ab'),
+    ok(!SignalWire::Security::SessionManager::_timing_safe_compare('abc', 'ab'),
        'different length strings do not match');
-    ok(SignalWire::Agents::Security::SessionManager::_timing_safe_compare('', ''),
+    ok(SignalWire::Security::SessionManager::_timing_safe_compare('', ''),
        'empty strings match');
 };
 
@@ -128,7 +128,7 @@ subtest 'Timing-safe comparison' => sub {
 # Test: Legacy methods
 # =============================================
 subtest 'Legacy methods' => sub {
-    my $sm = SignalWire::Agents::Security::SessionManager->new();
+    my $sm = SignalWire::Security::SessionManager->new();
     ok($sm->activate_session('call-1'), 'activate_session returns true');
     ok($sm->end_session('call-1'), 'end_session returns true');
     is_deeply($sm->get_session_metadata('call-1'), {}, 'get_session_metadata returns empty hash');
@@ -139,7 +139,7 @@ subtest 'Legacy methods' => sub {
 # Test: Debug token
 # =============================================
 subtest 'Debug token' => sub {
-    my $sm = SignalWire::Agents::Security::SessionManager->new(
+    my $sm = SignalWire::Security::SessionManager->new(
         secret_key => 'debug-key',
     );
 

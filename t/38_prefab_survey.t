@@ -4,10 +4,10 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json decode_json);
 
-use_ok('SignalWire::Agents::Prefabs::Survey');
+use_ok('SignalWire::Prefabs::Survey');
 
 subtest 'construction defaults' => sub {
-    my $a = SignalWire::Agents::Prefabs::Survey->new(
+    my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Test Survey',
         survey_questions => [
             { id => 'q1', text => 'Rate us', type => 'rating', scale => 5, required => 1 },
@@ -15,11 +15,11 @@ subtest 'construction defaults' => sub {
     );
     is($a->name, 'survey', 'default name');
     is($a->route, '/survey', 'default route');
-    ok($a->isa('SignalWire::Agents::Agent::AgentBase'), 'isa AgentBase');
+    ok($a->isa('SignalWire::Agent::AgentBase'), 'isa AgentBase');
 };
 
 subtest 'tools registered' => sub {
-    my $a = SignalWire::Agents::Prefabs::Survey->new(
+    my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'S',
         survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
     );
@@ -27,7 +27,7 @@ subtest 'tools registered' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $a = SignalWire::Agents::Prefabs::Survey->new(
+    my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Test',
         survey_questions => [{ id => 'q1', text => 'Q?', type => 'open_ended', required => 0 }],
     );
@@ -36,7 +36,7 @@ subtest 'prompt sections' => sub {
 };
 
 subtest 'global data' => sub {
-    my $a = SignalWire::Agents::Prefabs::Survey->new(
+    my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Satisfaction',
         survey_questions => [
             { id => 'q1', text => 'Q1?', type => 'rating', scale => 5, required => 1 },
@@ -49,7 +49,7 @@ subtest 'global data' => sub {
 };
 
 subtest 'tool execution' => sub {
-    my $a = SignalWire::Agents::Prefabs::Survey->new(
+    my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'S',
         survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
     );
@@ -59,7 +59,7 @@ subtest 'tool execution' => sub {
 };
 
 subtest 'render_swml' => sub {
-    my $a = SignalWire::Agents::Prefabs::Survey->new(
+    my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'S',
         survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
     );
@@ -68,7 +68,7 @@ subtest 'render_swml' => sub {
 };
 
 subtest 'custom introduction' => sub {
-    my $a = SignalWire::Agents::Prefabs::Survey->new(
+    my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'S',
         survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
         introduction     => 'Welcome to our custom survey!',

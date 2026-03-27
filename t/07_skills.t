@@ -3,17 +3,17 @@ use strict;
 use warnings;
 use Test::More;
 
-use_ok('SignalWire::Agents::Skills::SkillBase');
-use_ok('SignalWire::Agents::Skills::SkillManager');
-use_ok('SignalWire::Agents::Skills::SkillRegistry');
-use_ok('SignalWire::Agents::Agent::AgentBase');
+use_ok('SignalWire::Skills::SkillBase');
+use_ok('SignalWire::Skills::SkillManager');
+use_ok('SignalWire::Skills::SkillRegistry');
+use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
 # 1. SkillRegistry - list all 18 skills
 # ============================================================
 subtest 'registry lists 18 skills' => sub {
-    SignalWire::Agents::Skills::SkillRegistry->clear_registry;
-    my $skills = SignalWire::Agents::Skills::SkillRegistry->list_skills;
+    SignalWire::Skills::SkillRegistry->clear_registry;
+    my $skills = SignalWire::Skills::SkillRegistry->list_skills;
     is(scalar @$skills, 18, '18 built-in skills registered');
 
     my @expected = sort qw(
@@ -29,11 +29,11 @@ subtest 'registry lists 18 skills' => sub {
 # 2. SkillRegistry - get_factory
 # ============================================================
 subtest 'registry get_factory' => sub {
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datetime');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('datetime');
     ok(defined $factory, 'datetime factory found');
-    is($factory, 'SignalWire::Agents::Skills::Builtin::Datetime', 'correct class');
+    is($factory, 'SignalWire::Skills::Builtin::Datetime', 'correct class');
 
-    my $missing = SignalWire::Agents::Skills::SkillRegistry->get_factory('nonexistent_skill');
+    my $missing = SignalWire::Skills::SkillRegistry->get_factory('nonexistent_skill');
     ok(!defined $missing, 'nonexistent skill returns undef');
 };
 
@@ -41,8 +41,8 @@ subtest 'registry get_factory' => sub {
 # 3. SkillBase construction
 # ============================================================
 subtest 'skill construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'skill_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datetime');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'skill_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('datetime');
 
     my $skill = $factory->new(
         agent  => $agent,
@@ -58,8 +58,8 @@ subtest 'skill construction' => sub {
 # 4. SkillBase - setup and register_tools
 # ============================================================
 subtest 'skill setup and register' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'skill_reg_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datetime');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'skill_reg_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('datetime');
     my $skill = $factory->new(agent => $agent, params => {});
 
     ok($skill->setup, 'setup returns true');
@@ -73,8 +73,8 @@ subtest 'skill setup and register' => sub {
 # 5. SkillBase - get_hints
 # ============================================================
 subtest 'skill hints' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'hint_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('google_maps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'hint_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('google_maps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $hints = $skill->get_hints;
     ok(scalar @$hints > 0, 'google_maps has hints');
@@ -85,8 +85,8 @@ subtest 'skill hints' => sub {
 # 6. SkillBase - get_global_data
 # ============================================================
 subtest 'skill global data' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'gdata_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datasphere');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'gdata_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('datasphere');
     my $skill = $factory->new(
         agent  => $agent,
         params => { document_id => 'doc123' },
@@ -100,8 +100,8 @@ subtest 'skill global data' => sub {
 # 7. SkillBase - get_prompt_sections
 # ============================================================
 subtest 'skill prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'prompt_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datetime');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'prompt_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('datetime');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     ok(scalar @$sections > 0, 'datetime has prompt sections');
@@ -112,8 +112,8 @@ subtest 'skill prompt sections' => sub {
 # 8. SkillBase - skip_prompt
 # ============================================================
 subtest 'skill skip_prompt' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'skip_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datetime');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'skip_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('datetime');
     my $skill = $factory->new(agent => $agent, params => { skip_prompt => 1 });
     my $sections = $skill->get_prompt_sections;
     is(scalar @$sections, 0, 'sections empty when skip_prompt is set');
@@ -123,8 +123,8 @@ subtest 'skill skip_prompt' => sub {
 # 9. SkillBase - get_instance_key
 # ============================================================
 subtest 'skill instance key' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'key_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('api_ninjas_trivia');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'key_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('api_ninjas_trivia');
 
     my $skill1 = $factory->new(agent => $agent, params => {});
     is($skill1->get_instance_key, 'api_ninjas_trivia', 'default instance key');
@@ -137,7 +137,7 @@ subtest 'skill instance key' => sub {
 # 10. SkillBase - get_parameter_schema
 # ============================================================
 subtest 'skill parameter schema' => sub {
-    my $schema = SignalWire::Agents::Skills::Builtin::Datetime->get_parameter_schema;
+    my $schema = SignalWire::Skills::Builtin::Datetime->get_parameter_schema;
     ok(exists $schema->{swaig_fields}, 'base schema has swaig_fields');
     ok(exists $schema->{skip_prompt}, 'base schema has skip_prompt');
     ok(exists $schema->{tool_name}, 'base schema has tool_name');
@@ -147,8 +147,8 @@ subtest 'skill parameter schema' => sub {
 # 11. SkillManager - load_skill
 # ============================================================
 subtest 'manager load_skill' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'mgr_test');
-    my $mgr = SignalWire::Agents::Skills::SkillManager->new(agent => $agent);
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'mgr_test');
+    my $mgr = SignalWire::Skills::SkillManager->new(agent => $agent);
 
     my ($ok, $err) = $mgr->load_skill('datetime');
     ok($ok, 'datetime loaded successfully') or diag($err);
@@ -164,8 +164,8 @@ subtest 'manager load_skill' => sub {
 # 12. SkillManager - duplicate prevention
 # ============================================================
 subtest 'manager duplicate prevention' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dup_test');
-    my $mgr = SignalWire::Agents::Skills::SkillManager->new(agent => $agent);
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dup_test');
+    my $mgr = SignalWire::Skills::SkillManager->new(agent => $agent);
 
     my ($ok1, $err1) = $mgr->load_skill('datetime');
     ok($ok1, 'first load succeeds');
@@ -179,8 +179,8 @@ subtest 'manager duplicate prevention' => sub {
 # 13. SkillManager - multiple instances
 # ============================================================
 subtest 'manager multiple instances' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'multi_test');
-    my $mgr = SignalWire::Agents::Skills::SkillManager->new(agent => $agent);
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'multi_test');
+    my $mgr = SignalWire::Skills::SkillManager->new(agent => $agent);
 
     my ($ok1, $err1) = $mgr->load_skill('api_ninjas_trivia', undef, { tool_name => 'trivia1' });
     ok($ok1, 'first trivia instance loaded') or diag($err1);
@@ -193,8 +193,8 @@ subtest 'manager multiple instances' => sub {
 # 14. SkillManager - list and has_skill
 # ============================================================
 subtest 'manager list and has' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'list_test');
-    my $mgr = SignalWire::Agents::Skills::SkillManager->new(agent => $agent);
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'list_test');
+    my $mgr = SignalWire::Skills::SkillManager->new(agent => $agent);
 
     $mgr->load_skill('math');
     my $list = $mgr->list_skills;
@@ -207,8 +207,8 @@ subtest 'manager list and has' => sub {
 # 15. SkillManager - unload_skill
 # ============================================================
 subtest 'manager unload' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'unload_test');
-    my $mgr = SignalWire::Agents::Skills::SkillManager->new(agent => $agent);
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'unload_test');
+    my $mgr = SignalWire::Skills::SkillManager->new(agent => $agent);
 
     $mgr->load_skill('math');
     ok($mgr->has_skill('math'), 'math loaded');
@@ -222,8 +222,8 @@ subtest 'manager unload' => sub {
 # 16. SkillManager - nonexistent skill
 # ============================================================
 subtest 'manager nonexistent skill' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'noexist_test');
-    my $mgr = SignalWire::Agents::Skills::SkillManager->new(agent => $agent);
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'noexist_test');
+    my $mgr = SignalWire::Skills::SkillManager->new(agent => $agent);
 
     my ($ok, $err) = $mgr->load_skill('totally_fake_skill');
     ok(!$ok, 'nonexistent skill fails to load');
@@ -234,7 +234,7 @@ subtest 'manager nonexistent skill' => sub {
 # 17. Agent add_skill integration
 # ============================================================
 subtest 'agent add_skill' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'add_skill_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'add_skill_test');
     my ($ok, $err) = $agent->add_skill('datetime');
     ok($ok, 'add_skill succeeds') or diag($err);
     ok($agent->has_skill('datetime'), 'agent has_skill returns true');
@@ -245,8 +245,8 @@ subtest 'agent add_skill' => sub {
 # 18. SkillManager - hints and global data merged
 # ============================================================
 subtest 'manager merges hints and global data' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'merge_test');
-    my $mgr = SignalWire::Agents::Skills::SkillManager->new(agent => $agent);
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'merge_test');
+    my $mgr = SignalWire::Skills::SkillManager->new(agent => $agent);
 
     $mgr->load_skill('google_maps');
     ok(grep({ $_ eq 'address' } @{$agent->hints}), 'google_maps hints merged');
@@ -256,8 +256,8 @@ subtest 'manager merges hints and global data' => sub {
 # 19. SkillManager - prompt sections merged
 # ============================================================
 subtest 'manager merges prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'sec_merge_test');
-    my $mgr = SignalWire::Agents::Skills::SkillManager->new(agent => $agent);
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'sec_merge_test');
+    my $mgr = SignalWire::Skills::SkillManager->new(agent => $agent);
 
     $mgr->load_skill('datetime');
     ok($agent->prompt_has_section('Date and Time Information'), 'datetime prompt section added to agent');
@@ -275,8 +275,8 @@ subtest 'all 18 skills instantiate' => sub {
     );
 
     for my $name (@skill_names) {
-        my $agent = SignalWire::Agents::Agent::AgentBase->new(name => "test_$name");
-        my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory($name);
+        my $agent = SignalWire::Agent::AgentBase->new(name => "test_$name");
+        my $factory = SignalWire::Skills::SkillRegistry->get_factory($name);
         ok(defined $factory, "$name: factory found");
 
         my $skill = eval { $factory->new(agent => $agent, params => {}) };
@@ -295,8 +295,8 @@ subtest 'all 18 skills instantiate' => sub {
 # 21. Skills with tool_name override
 # ============================================================
 subtest 'skill tool_name override' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'override_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('weather_api');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'override_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('weather_api');
     my $skill = $factory->new(
         agent  => $agent,
         params => { tool_name => 'my_weather', api_key => 'test-key' },
@@ -311,8 +311,8 @@ subtest 'skill tool_name override' => sub {
 # 22. SkillBase - swaig_fields extraction
 # ============================================================
 subtest 'swaig_fields extraction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'swaig_fields_test');
-    my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datetime');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'swaig_fields_test');
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('datetime');
     my $skill = $factory->new(
         agent  => $agent,
         params => { swaig_fields => { fillers => { en => ['one moment'] } } },

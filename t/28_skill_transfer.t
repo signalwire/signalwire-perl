@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('swml_transfer');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('swml_transfer');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'tr');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'tr');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'swml_transfer', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers DataMap expressions' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'tr_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'tr_reg');
     my $skill = $factory->new(agent => $agent, params => {
         transfers => {
             sales   => { url => 'https://example.com/sales', message => 'To sales' },
@@ -33,7 +33,7 @@ subtest 'registers DataMap expressions' => sub {
 };
 
 subtest 'custom tool and parameter names' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'tr_custom');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'tr_custom');
     my $skill = $factory->new(agent => $agent, params => {
         tool_name      => 'route_call',
         parameter_name => 'destination',
@@ -46,7 +46,7 @@ subtest 'custom tool and parameter names' => sub {
 };
 
 subtest 'hints include transfer patterns' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'tr_hints');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'tr_hints');
     my $skill = $factory->new(agent => $agent, params => {
         transfers => { sales => { url => 'http://x.com' } },
     });
@@ -56,7 +56,7 @@ subtest 'hints include transfer patterns' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'tr_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'tr_ps');
     my $skill = $factory->new(agent => $agent, params => {
         transfers => { sales => { url => 'http://x.com' } },
     });

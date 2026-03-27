@@ -4,17 +4,17 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json decode_json);
 
-use_ok('SignalWire::Agents::Prefabs::InfoGatherer');
-use_ok('SignalWire::Agents::Prefabs::Survey');
-use_ok('SignalWire::Agents::Prefabs::Receptionist');
-use_ok('SignalWire::Agents::Prefabs::FAQBot');
-use_ok('SignalWire::Agents::Prefabs::Concierge');
+use_ok('SignalWire::Prefabs::InfoGatherer');
+use_ok('SignalWire::Prefabs::Survey');
+use_ok('SignalWire::Prefabs::Receptionist');
+use_ok('SignalWire::Prefabs::FAQBot');
+use_ok('SignalWire::Prefabs::Concierge');
 
 # ============================================================
 # 1. InfoGatherer construction
 # ============================================================
 subtest 'InfoGatherer construction' => sub {
-    my $agent = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $agent = SignalWire::Prefabs::InfoGatherer->new(
         questions => [
             { key_name => 'full_name', question_text => 'What is your full name?' },
             { key_name => 'email',     question_text => 'What is your email?', confirm => 1 },
@@ -36,7 +36,7 @@ subtest 'InfoGatherer construction' => sub {
 # 2. InfoGatherer SWML rendering
 # ============================================================
 subtest 'InfoGatherer render_swml' => sub {
-    my $agent = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $agent = SignalWire::Prefabs::InfoGatherer->new(
         questions => [
             { key_name => 'name', question_text => 'Your name?' },
         ],
@@ -52,7 +52,7 @@ subtest 'InfoGatherer render_swml' => sub {
 # 3. InfoGatherer tool execution
 # ============================================================
 subtest 'InfoGatherer tool execution' => sub {
-    my $agent = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $agent = SignalWire::Prefabs::InfoGatherer->new(
         questions => [
             { key_name => 'name', question_text => 'What is your name?' },
         ],
@@ -69,7 +69,7 @@ subtest 'InfoGatherer tool execution' => sub {
 # 4. Survey construction
 # ============================================================
 subtest 'Survey construction' => sub {
-    my $agent = SignalWire::Agents::Prefabs::Survey->new(
+    my $agent = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Satisfaction Survey',
         survey_questions => [
             { id => 'q1', text => 'Rate our service', type => 'rating', scale => 5, required => 1 },
@@ -88,7 +88,7 @@ subtest 'Survey construction' => sub {
 # 5. Survey SWML rendering
 # ============================================================
 subtest 'Survey render_swml' => sub {
-    my $agent = SignalWire::Agents::Prefabs::Survey->new(
+    my $agent = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Test Survey',
         survey_questions => [
             { id => 'q1', text => 'Question?', type => 'rating', scale => 5, required => 1 },
@@ -104,7 +104,7 @@ subtest 'Survey render_swml' => sub {
 # 6. Receptionist construction
 # ============================================================
 subtest 'Receptionist construction' => sub {
-    my $agent = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $agent = SignalWire::Prefabs::Receptionist->new(
         departments => [
             { name => 'sales',   description => 'For purchasing',    number => '+15551235555' },
             { name => 'support', description => 'For tech help',     number => '+15551236666' },
@@ -124,7 +124,7 @@ subtest 'Receptionist construction' => sub {
 # 7. Receptionist transfer tool
 # ============================================================
 subtest 'Receptionist transfer' => sub {
-    my $agent = SignalWire::Agents::Prefabs::Receptionist->new(
+    my $agent = SignalWire::Prefabs::Receptionist->new(
         departments => [
             { name => 'sales', description => 'Sales dept', number => '+15551235555' },
         ],
@@ -138,7 +138,7 @@ subtest 'Receptionist transfer' => sub {
 # 8. FAQBot construction
 # ============================================================
 subtest 'FAQBot construction' => sub {
-    my $agent = SignalWire::Agents::Prefabs::FAQBot->new(
+    my $agent = SignalWire::Prefabs::FAQBot->new(
         faqs => [
             { question => 'What is SignalWire?', answer => 'A cloud comms platform.' },
             { question => 'How much?',           answer => 'Pay-as-you-go pricing.' },
@@ -157,7 +157,7 @@ subtest 'FAQBot construction' => sub {
 # 9. FAQBot lookup
 # ============================================================
 subtest 'FAQBot lookup' => sub {
-    my $agent = SignalWire::Agents::Prefabs::FAQBot->new(
+    my $agent = SignalWire::Prefabs::FAQBot->new(
         faqs => [
             { question => 'What is SignalWire?', answer => 'Cloud comms platform.' },
         ],
@@ -171,7 +171,7 @@ subtest 'FAQBot lookup' => sub {
 # 10. Concierge construction
 # ============================================================
 subtest 'Concierge construction' => sub {
-    my $agent = SignalWire::Agents::Prefabs::Concierge->new(
+    my $agent = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Grand Hotel',
         services   => ['room service', 'spa bookings', 'restaurant reservations'],
         amenities  => {
@@ -198,7 +198,7 @@ subtest 'Concierge construction' => sub {
 # 11. Concierge SWML rendering
 # ============================================================
 subtest 'Concierge render_swml' => sub {
-    my $agent = SignalWire::Agents::Prefabs::Concierge->new(
+    my $agent = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Test Hotel',
         services   => ['room service'],
         amenities  => { pool => { hours => '9-5' } },
@@ -216,20 +216,20 @@ subtest 'Concierge render_swml' => sub {
 # ============================================================
 subtest 'all prefabs have psgi_app' => sub {
     my @prefabs = (
-        SignalWire::Agents::Prefabs::InfoGatherer->new(
+        SignalWire::Prefabs::InfoGatherer->new(
             questions => [{ key_name => 'n', question_text => 'Name?' }],
         ),
-        SignalWire::Agents::Prefabs::Survey->new(
+        SignalWire::Prefabs::Survey->new(
             survey_name      => 'Test',
             survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
         ),
-        SignalWire::Agents::Prefabs::Receptionist->new(
+        SignalWire::Prefabs::Receptionist->new(
             departments => [{ name => 'sales', description => 'Sales', number => '+1555' }],
         ),
-        SignalWire::Agents::Prefabs::FAQBot->new(
+        SignalWire::Prefabs::FAQBot->new(
             faqs => [{ question => 'Q?', answer => 'A.' }],
         ),
-        SignalWire::Agents::Prefabs::Concierge->new(
+        SignalWire::Prefabs::Concierge->new(
             venue_name => 'Hotel',
             services   => ['room service'],
             amenities  => { pool => {} },
@@ -248,10 +248,10 @@ subtest 'all prefabs have psgi_app' => sub {
 # 13. Prefabs inherit from AgentBase
 # ============================================================
 subtest 'prefabs inherit AgentBase' => sub {
-    my $agent = SignalWire::Agents::Prefabs::InfoGatherer->new(
+    my $agent = SignalWire::Prefabs::InfoGatherer->new(
         questions => [{ key_name => 'n', question_text => 'Name?' }],
     );
-    ok($agent->isa('SignalWire::Agents::Agent::AgentBase'), 'InfoGatherer isa AgentBase');
+    ok($agent->isa('SignalWire::Agent::AgentBase'), 'InfoGatherer isa AgentBase');
     ok($agent->can('render_swml'), 'has render_swml');
     ok($agent->can('add_skill'), 'has add_skill');
     ok($agent->can('define_tool'), 'has define_tool');
@@ -261,7 +261,7 @@ subtest 'prefabs inherit AgentBase' => sub {
 # 14. Prefab with custom name/route
 # ============================================================
 subtest 'prefab custom name/route' => sub {
-    my $agent = SignalWire::Agents::Prefabs::FAQBot->new(
+    my $agent = SignalWire::Prefabs::FAQBot->new(
         name  => 'my_faq',
         route => '/my_faq',
         faqs  => [{ question => 'Q?', answer => 'A.' }],

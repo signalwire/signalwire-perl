@@ -1,9 +1,9 @@
-# SignalWireClient Reference
+# RestClient Reference
 
 ## Constructor
 
 ```python
-SignalWireClient(
+RestClient(
     project: str = None,   # SIGNALWIRE_PROJECT_ID
     token: str = None,     # SIGNALWIRE_API_TOKEN
     host: str = None,      # SIGNALWIRE_SPACE

@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('wikipedia_search');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('wikipedia_search');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'wiki');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'wiki');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'wikipedia_search', 'skill_name');
     ok(!$skill->supports_multiple_instances, 'no multi-instance');
 };
 
 subtest 'registers tool' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'wiki_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'wiki_reg');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -25,7 +25,7 @@ subtest 'registers tool' => sub {
 };
 
 subtest 'tool execution' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'wiki_exec');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'wiki_exec');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -35,7 +35,7 @@ subtest 'tool execution' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'wiki_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'wiki_ps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     is($sections->[0]{title}, 'Wikipedia Search', 'title');

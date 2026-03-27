@@ -3,15 +3,15 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('datetime');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('datetime');
 ok(defined $factory, 'factory found');
-is($factory, 'SignalWire::Agents::Skills::Builtin::Datetime', 'correct class');
+is($factory, 'SignalWire::Skills::Builtin::Datetime', 'correct class');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dt');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dt');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'datetime', 'skill_name');
     is($skill->skill_version, '1.0.0', 'version');
@@ -19,7 +19,7 @@ subtest 'construction' => sub {
 };
 
 subtest 'setup and register_tools' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dt_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dt_reg');
     my $skill = $factory->new(agent => $agent, params => {});
     ok($skill->setup, 'setup');
     $skill->register_tools;
@@ -28,7 +28,7 @@ subtest 'setup and register_tools' => sub {
 };
 
 subtest 'tool execution' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dt_exec');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dt_exec');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -38,7 +38,7 @@ subtest 'tool execution' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dt_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dt_ps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     ok(scalar @$sections > 0, 'has prompt sections');
@@ -46,7 +46,7 @@ subtest 'prompt sections' => sub {
 };
 
 subtest 'skip_prompt' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dt_skip');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dt_skip');
     my $skill = $factory->new(agent => $agent, params => { skip_prompt => 1 });
     my $sections = $skill->get_prompt_sections;
     is(scalar @$sections, 0, 'no sections when skip_prompt');

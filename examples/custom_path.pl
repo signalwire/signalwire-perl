@@ -16,10 +16,10 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name        => 'Chat Assistant',
     route       => '/chat',
     auto_answer => 1,

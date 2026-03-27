@@ -5,13 +5,13 @@ use Test::More;
 use JSON qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
-use_ok('SignalWire::Agents::Agent::AgentBase');
+use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
 # 1. Construction and defaults
 # ============================================================
 subtest 'construction defaults' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'test_agent');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'test_agent');
     is($agent->name,  'test_agent', 'name set');
     is($agent->route, '/',          'default route is /');
     is($agent->host,  '0.0.0.0',   'default host');
@@ -32,7 +32,7 @@ subtest 'construction defaults' => sub {
 # 2. Route normalization
 # ============================================================
 subtest 'route normalization' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(
+    my $agent = SignalWire::Agent::AgentBase->new(
         name  => 'test',
         route => '/agent/',
     );
@@ -43,7 +43,7 @@ subtest 'route normalization' => sub {
 # 3. Prompt methods (POM mode)
 # ============================================================
 subtest 'prompt POM mode' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'pom_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'pom_test');
 
     $agent->prompt_add_section('Personality', 'You are helpful.',
         bullets => ['Be concise', 'Be accurate']);
@@ -67,7 +67,7 @@ subtest 'prompt POM mode' => sub {
 # 4. Prompt methods (raw text mode)
 # ============================================================
 subtest 'prompt raw text mode' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(
+    my $agent = SignalWire::Agent::AgentBase->new(
         name    => 'raw_test',
         use_pom => 0,
     );
@@ -79,7 +79,7 @@ subtest 'prompt raw text mode' => sub {
 # 5. Prompt subsection and add_to_section
 # ============================================================
 subtest 'prompt subsection' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'sub_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'sub_test');
     $agent->prompt_add_section('Parent', 'Parent body');
     $agent->prompt_add_subsection('Parent', 'Child', 'Child body');
     $agent->prompt_add_to_section('Parent', bullets => ['extra bullet']);
@@ -94,7 +94,7 @@ subtest 'prompt subsection' => sub {
 # 6. Tool registration
 # ============================================================
 subtest 'tool registration' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'tool_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'tool_test');
 
     $agent->define_tool(
         name        => 'get_weather',
@@ -131,7 +131,7 @@ subtest 'tool registration' => sub {
 # 7. register_swaig_function (DataMap style)
 # ============================================================
 subtest 'register_swaig_function' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'swaig_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'swaig_test');
     $agent->register_swaig_function({
         function    => 'get_joke',
         description => 'Get a joke',
@@ -146,7 +146,7 @@ subtest 'register_swaig_function' => sub {
 # 8. define_tools (multiple)
 # ============================================================
 subtest 'define_tools multiple' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'multi_tool');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'multi_tool');
     $agent->define_tools(
         { name => 'tool_a', description => 'A' },
         { function => 'tool_b', description => 'B', parameters => {} },
@@ -160,7 +160,7 @@ subtest 'define_tools multiple' => sub {
 # 9. AI config methods
 # ============================================================
 subtest 'AI config methods' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'config_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'config_test');
 
     # Method chaining
     my $ret = $agent->add_hint('SignalWire');
@@ -202,7 +202,7 @@ subtest 'AI config methods' => sub {
 # 10. Verb management
 # ============================================================
 subtest 'verb management' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'verb_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'verb_test');
 
     $agent->add_pre_answer_verb('play', { url => 'ringback.wav' });
     is(scalar @{$agent->pre_answer_verbs}, 1, 'pre-answer verb added');
@@ -227,7 +227,7 @@ subtest 'verb management' => sub {
 # 11. render_swml (5-phase pipeline)
 # ============================================================
 subtest 'render_swml' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(
+    my $agent = SignalWire::Agent::AgentBase->new(
         name           => 'render_test',
         route          => '/test',
         auto_answer    => 1,
@@ -298,7 +298,7 @@ subtest 'render_swml' => sub {
 # 12. render_swml with raw text prompt
 # ============================================================
 subtest 'render_swml raw text' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(
+    my $agent = SignalWire::Agent::AgentBase->new(
         name    => 'raw_render',
         use_pom => 0,
     );
@@ -313,7 +313,7 @@ subtest 'render_swml raw text' => sub {
 # 13. Post prompt
 # ============================================================
 subtest 'post_prompt' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'pp_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'pp_test');
     $agent->set_post_prompt('Summarize the conversation.');
     my $swml = $agent->render_swml;
     my @ai_verbs = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
@@ -325,7 +325,7 @@ subtest 'post_prompt' => sub {
 # 14. Webhook/callback setters
 # ============================================================
 subtest 'callback setters' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cb_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cb_test');
 
     $agent->set_web_hook_url('https://example.com/swaig');
     is($agent->webhook_url, 'https://example.com/swaig', 'webhook_url set');
@@ -347,7 +347,7 @@ subtest 'callback setters' => sub {
 # 15. Dynamic config callback
 # ============================================================
 subtest 'dynamic config callback' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dynamic_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dynamic_test');
     my $called = 0;
     $agent->set_dynamic_config_callback(sub {
         my ($q, $b, $h, $clone) = @_;
@@ -361,7 +361,7 @@ subtest 'dynamic config callback' => sub {
 # 16. Summary callback
 # ============================================================
 subtest 'summary callback' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'summary_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'summary_test');
     my $summary_data;
     $agent->on_summary(sub {
         my ($summary, $raw) = @_;
@@ -374,7 +374,7 @@ subtest 'summary callback' => sub {
 # 17. PSGI app construction
 # ============================================================
 subtest 'psgi_app construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'psgi_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'psgi_test');
     my $app = $agent->psgi_app;
     is(ref $app, 'CODE', 'psgi_app returns coderef');
 
@@ -416,7 +416,7 @@ subtest 'psgi_app construction' => sub {
 # 18. PSGI app with auth
 # ============================================================
 subtest 'psgi_app with auth' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(
+    my $agent = SignalWire::Agent::AgentBase->new(
         name               => 'auth_test',
         basic_auth_user     => 'testuser',
         basic_auth_password => 'testpass',
@@ -442,7 +442,7 @@ subtest 'psgi_app with auth' => sub {
 # 19. Security headers in response
 # ============================================================
 subtest 'security headers' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'sec_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'sec_test');
     my $app = $agent->psgi_app;
 
     my $res = $app->({
@@ -462,7 +462,7 @@ subtest 'security headers' => sub {
 # 20. Context builder (lazy)
 # ============================================================
 subtest 'context builder' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ctx_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ctx_test');
     my $builder = $agent->define_contexts;
     ok(defined $builder, 'context builder returned');
     $builder->add_context('default');
@@ -473,7 +473,7 @@ subtest 'context builder' => sub {
 # 21. Clone for dynamic config
 # ============================================================
 subtest 'clone for request' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'clone_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'clone_test');
     $agent->add_hint('original');
     $agent->set_global_data({ key => 'original' });
     $agent->define_tool(name => 'tool1', description => 'T1');
@@ -497,7 +497,7 @@ subtest 'clone for request' => sub {
 # 22. get_full_url
 # ============================================================
 subtest 'get_full_url' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(
+    my $agent = SignalWire::Agent::AgentBase->new(
         name               => 'url_test',
         route              => '/myagent',
         host               => 'localhost',
@@ -516,7 +516,7 @@ subtest 'get_full_url' => sub {
 # 23. Method chaining
 # ============================================================
 subtest 'method chaining' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'chain_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'chain_test');
     my $result = $agent
         ->set_prompt_text('Hello')
         ->set_post_prompt('Goodbye')
@@ -539,7 +539,7 @@ subtest 'method chaining' => sub {
 # 24. Internal fillers in render_swml
 # ============================================================
 subtest 'internal fillers in render' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'filler_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'filler_test');
     $agent->set_internal_fillers(['one moment']);
     my $swml = $agent->render_swml;
     my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
@@ -550,7 +550,7 @@ subtest 'internal fillers in render' => sub {
 # 25. Debug events in render_swml
 # ============================================================
 subtest 'debug events in render' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'debug_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'debug_test');
     $agent->enable_debug_events(2);
     my $swml = $agent->render_swml;
     my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
@@ -561,7 +561,7 @@ subtest 'debug events in render' => sub {
 # 26. Native functions in SWAIG
 # ============================================================
 subtest 'native functions in SWAIG' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'native_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'native_test');
     $agent->set_native_functions(['check_for_input']);
     my $swml = $agent->render_swml;
     my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
@@ -572,7 +572,7 @@ subtest 'native functions in SWAIG' => sub {
 # 27. Function includes in SWAIG
 # ============================================================
 subtest 'function includes' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'include_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'include_test');
     $agent->add_function_include({ url => 'https://example.com/swaig', functions => ['func1'] });
     my $swml = $agent->render_swml;
     my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
@@ -583,7 +583,7 @@ subtest 'function includes' => sub {
 # 28. Pre/post answer verbs in render_swml
 # ============================================================
 subtest 'verb phases in render' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'phases_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'phases_test');
     $agent->add_pre_answer_verb('play', { url => 'ring.wav' });
     $agent->add_post_answer_verb('play', { url => 'welcome.wav' });
     $agent->add_post_ai_verb('hangup', {});
@@ -602,7 +602,7 @@ subtest 'verb phases in render' => sub {
 # 29. Prompt LLM params in render
 # ============================================================
 subtest 'LLM params in render' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'llm_test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'llm_test');
     $agent->set_prompt_text('test');
     $agent->set_prompt_llm_params(temperature => 0.7, top_p => 0.9);
     my $swml = $agent->render_swml;
@@ -615,9 +615,9 @@ subtest 'LLM params in render' => sub {
 # 30. Timing-safe auth comparison
 # ============================================================
 subtest 'timing safe comparison' => sub {
-    ok(SignalWire::Agents::Agent::AgentBase::_timing_safe_eq('abc', 'abc'), 'equal strings');
-    ok(!SignalWire::Agents::Agent::AgentBase::_timing_safe_eq('abc', 'def'), 'different strings');
-    ok(!SignalWire::Agents::Agent::AgentBase::_timing_safe_eq('abc', 'abcd'), 'different lengths');
+    ok(SignalWire::Agent::AgentBase::_timing_safe_eq('abc', 'abc'), 'equal strings');
+    ok(!SignalWire::Agent::AgentBase::_timing_safe_eq('abc', 'def'), 'different strings');
+    ok(!SignalWire::Agent::AgentBase::_timing_safe_eq('abc', 'abcd'), 'different lengths');
 };
 
 done_testing;

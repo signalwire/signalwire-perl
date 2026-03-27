@@ -7,10 +7,10 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Prefabs::Survey;
+use SignalWire;
+use SignalWire::Prefabs::Survey;
 
-my $agent = SignalWire::Agents::Prefabs::Survey->new(
+my $agent = SignalWire::Prefabs::Survey->new(
     name        => 'customer-satisfaction',
     route       => '/survey',
     survey_name => 'Customer Satisfaction Survey',

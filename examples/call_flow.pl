@@ -7,11 +7,11 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name        => 'call-flow-demo',
     route       => '/call-flow',
     auto_answer => 1,
@@ -71,7 +71,7 @@ $agent->define_tool(
         my $dept = lc($args->{department} // 'support');
         my $num  = $numbers{$dept} // $numbers{support};
 
-        my $result = SignalWire::Agents::SWAIG::FunctionResult->new(
+        my $result = SignalWire::SWAIG::FunctionResult->new(
             "Transferring you to $dept now."
         );
         $result->connect($num);
@@ -92,7 +92,7 @@ $agent->define_tool(
     },
     handler => sub {
         my ($args, $raw) = @_;
-        my $result = SignalWire::Agents::SWAIG::FunctionResult->new(
+        my $result = SignalWire::SWAIG::FunctionResult->new(
             "SMS notification sent."
         );
         $result->send_sms(
@@ -111,7 +111,7 @@ $agent->define_tool(
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
         my ($args, $raw) = @_;
-        my $result = SignalWire::Agents::SWAIG::FunctionResult->new(
+        my $result = SignalWire::SWAIG::FunctionResult->new(
             'Placing you on hold for a moment.'
         );
         $result->hold(30);

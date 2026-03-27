@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('spider');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('spider');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'sp');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'sp');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'spider', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers 3 tools' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'sp_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'sp_reg');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -27,7 +27,7 @@ subtest 'registers 3 tools' => sub {
 };
 
 subtest 'hints' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'sp_hints');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'sp_hints');
     my $skill = $factory->new(agent => $agent, params => {});
     my $hints = $skill->get_hints;
     ok(scalar @$hints > 0, 'has hints');
@@ -36,7 +36,7 @@ subtest 'hints' => sub {
 };
 
 subtest 'tool execution' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'sp_exec');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'sp_exec');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;

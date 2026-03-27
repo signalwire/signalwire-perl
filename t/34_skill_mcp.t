@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('mcp_gateway');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('mcp_gateway');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'mcp');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'mcp');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'mcp_gateway', 'skill_name');
     ok(!$skill->supports_multiple_instances, 'no multi-instance');
 };
 
 subtest 'registers tools per service' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'mcp_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'mcp_reg');
     my $skill = $factory->new(agent => $agent, params => {
         services => [
             { name => 'weather' },
@@ -31,7 +31,7 @@ subtest 'registers tools per service' => sub {
 };
 
 subtest 'custom prefix' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'mcp_prefix');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'mcp_prefix');
     my $skill = $factory->new(agent => $agent, params => {
         tool_prefix => 'gateway_',
         services    => [{ name => 'test' }],
@@ -42,7 +42,7 @@ subtest 'custom prefix' => sub {
 };
 
 subtest 'hints include service names' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'mcp_hints');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'mcp_hints');
     my $skill = $factory->new(agent => $agent, params => {
         services => [{ name => 'myservice' }],
     });
@@ -52,7 +52,7 @@ subtest 'hints include service names' => sub {
 };
 
 subtest 'global data' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'mcp_gd');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'mcp_gd');
     my $skill = $factory->new(agent => $agent, params => {
         gateway_url => 'https://gw.example.com',
     });
@@ -61,7 +61,7 @@ subtest 'global data' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'mcp_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'mcp_ps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     like($sections->[0]{title}, qr/MCP/, 'title mentions MCP');

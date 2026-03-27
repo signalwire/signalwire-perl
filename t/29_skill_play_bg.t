@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('play_background_file');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('play_background_file');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'pbg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'pbg');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'play_background_file', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers DataMap tool with files' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'pbg_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'pbg_reg');
     my $skill = $factory->new(agent => $agent, params => {
         files => [
             { key => 'music', description => 'Music', url => 'http://x.com/music.mp3' },
@@ -36,7 +36,7 @@ subtest 'registers DataMap tool with files' => sub {
 };
 
 subtest 'custom tool_name' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'pbg_custom');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'pbg_custom');
     my $skill = $factory->new(agent => $agent, params => {
         tool_name => 'bg_player',
         files     => [],

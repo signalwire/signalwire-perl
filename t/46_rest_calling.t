@@ -3,9 +3,9 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::REST::SignalWireClient;
+use SignalWire::REST::RestClient;
 
-my $client = SignalWire::Agents::REST::SignalWireClient->new(
+my $client = SignalWire::REST::RestClient->new(
     project => 'p', token => 't', host => 'h',
 );
 
@@ -14,7 +14,7 @@ my $client = SignalWire::Agents::REST::SignalWireClient->new(
 # ============================================================
 subtest 'calling namespace' => sub {
     my $c = $client->calling;
-    isa_ok($c, 'SignalWire::Agents::REST::Namespaces::Calling');
+    isa_ok($c, 'SignalWire::REST::Namespaces::Calling');
     is($c->_base_path, '/api/calling/calls', 'base path');
 };
 

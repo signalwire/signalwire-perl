@@ -5,20 +5,20 @@ use Test::More;
 use JSON qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
-use_ok('SignalWire::Agents::Agent::AgentBase');
+use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
 # 1. Webhook URL setters
 # ============================================================
 subtest 'set_web_hook_url' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'wh');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'wh');
     my $ret = $a->set_web_hook_url('https://example.com/swaig');
     is($ret, $a, 'returns self');
     is($a->webhook_url, 'https://example.com/swaig', 'webhook_url set');
 };
 
 subtest 'set_post_prompt_url' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pp');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pp');
     my $ret = $a->set_post_prompt_url('https://example.com/post_prompt');
     is($ret, $a, 'returns self');
     is($a->post_prompt_url, 'https://example.com/post_prompt', 'post_prompt_url set');
@@ -28,7 +28,7 @@ subtest 'set_post_prompt_url' => sub {
 # 2. Proxy URL
 # ============================================================
 subtest 'manual_set_proxy_url' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'proxy');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'proxy');
     my $ret = $a->manual_set_proxy_url('https://proxy.example.com');
     is($ret, $a, 'returns self');
     is($a->proxy_url_base, 'https://proxy.example.com', 'proxy_url_base set');
@@ -36,7 +36,7 @@ subtest 'manual_set_proxy_url' => sub {
 
 subtest 'proxy URL from env' => sub {
     local $ENV{SWML_PROXY_URL_BASE} = 'https://env-proxy.example.com';
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'env_proxy');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'env_proxy');
     is($a->proxy_url_base, 'https://env-proxy.example.com', 'proxy from env');
 };
 
@@ -44,7 +44,7 @@ subtest 'proxy URL from env' => sub {
 # 3. Query params
 # ============================================================
 subtest 'add_swaig_query_params' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'qp');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'qp');
     my $ret = $a->add_swaig_query_params(key1 => 'val1', key2 => 'val2');
     is($ret, $a, 'returns self');
     is($a->swaig_query_params->{key1}, 'val1', 'key1 set');
@@ -52,7 +52,7 @@ subtest 'add_swaig_query_params' => sub {
 };
 
 subtest 'add_swaig_query_params merge' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'qpm');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'qpm');
     $a->add_swaig_query_params(k1 => 'v1');
     $a->add_swaig_query_params(k2 => 'v2');
     is($a->swaig_query_params->{k1}, 'v1', 'first param preserved');
@@ -60,7 +60,7 @@ subtest 'add_swaig_query_params merge' => sub {
 };
 
 subtest 'clear_swaig_query_params' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'cqp');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'cqp');
     $a->add_swaig_query_params(k => 'v');
     my $ret = $a->clear_swaig_query_params;
     is($ret, $a, 'returns self');
@@ -71,7 +71,7 @@ subtest 'clear_swaig_query_params' => sub {
 # 4. Query params in webhook URL
 # ============================================================
 subtest 'query params in webhook URL' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'qp_url',
         basic_auth_user    => 'u',
         basic_auth_password => 'p',
@@ -89,7 +89,7 @@ subtest 'query params in webhook URL' => sub {
 # 5. Dynamic config callback
 # ============================================================
 subtest 'set_dynamic_config_callback' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'dc');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'dc');
     my $cb = sub { 1 };
     my $ret = $a->set_dynamic_config_callback($cb);
     is($ret, $a, 'returns self');
@@ -97,7 +97,7 @@ subtest 'set_dynamic_config_callback' => sub {
 };
 
 subtest 'dynamic config callback invoked via PSGI' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'dc_psgi',
         basic_auth_user    => 'u',
         basic_auth_password => 'p',
@@ -131,7 +131,7 @@ subtest 'dynamic config callback invoked via PSGI' => sub {
 # 6. Proxy detection from headers
 # ============================================================
 subtest 'proxy detection X-Forwarded' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'proxy_detect');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'proxy_detect');
     my $url = $a->_detect_proxy_url({
         HTTP_X_FORWARDED_PROTO => 'https',
         HTTP_X_FORWARDED_HOST  => 'proxy.example.com',
@@ -140,7 +140,7 @@ subtest 'proxy detection X-Forwarded' => sub {
 };
 
 subtest 'proxy detection X-Original-URL' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'proxy_orig');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'proxy_orig');
     my $url = $a->_detect_proxy_url({
         HTTP_X_ORIGINAL_URL => 'https://original.example.com',
     });
@@ -148,7 +148,7 @@ subtest 'proxy detection X-Original-URL' => sub {
 };
 
 subtest 'proxy detection fallback' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'proxy_fb', host => 'myhost', port => 5000);
+    my $a = SignalWire::Agent::AgentBase->new(name => 'proxy_fb', host => 'myhost', port => 5000);
     my $url = $a->_detect_proxy_url({});
     is($url, 'http://myhost:5000', 'fallback to host:port');
 };
@@ -157,7 +157,7 @@ subtest 'proxy detection fallback' => sub {
 # 7. get_full_url
 # ============================================================
 subtest 'get_full_url' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'full_url',
         route              => '/myagent',
         host               => 'localhost',
@@ -177,7 +177,7 @@ subtest 'get_full_url' => sub {
 # 8. Summary callback
 # ============================================================
 subtest 'on_summary' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'sum');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'sum');
     my $cb = sub { 1 };
     my $ret = $a->on_summary($cb);
     is($ret, $a, 'returns self');
@@ -188,7 +188,7 @@ subtest 'on_summary' => sub {
 # 9. Debug event handler
 # ============================================================
 subtest 'on_debug_event' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'dbg');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'dbg');
     my $cb = sub { 1 };
     my $ret = $a->on_debug_event($cb);
     is($ret, $a, 'returns self');
@@ -199,7 +199,7 @@ subtest 'on_debug_event' => sub {
 # 10. Custom webhook URL overrides default
 # ============================================================
 subtest 'custom webhook URL in SWML' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'custom_wh');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'custom_wh');
     $a->set_web_hook_url('https://custom.example.com/swaig');
     $a->define_tool(name => 'tool1', description => 'T', handler => sub { {} });
     my $swml = $a->render_swml;

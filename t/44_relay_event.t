@@ -3,19 +3,19 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Relay::Event;
-BEGIN { use SignalWire::Agents::Relay::Constants ':all' }
+use SignalWire::Relay::Event;
+BEGIN { use SignalWire::Relay::Constants ':all' }
 
 # ============================================================
 # 1. CallState event
 # ============================================================
 subtest 'CallState event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $e = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'c1',
         node_id    => 'n1',
         call_state => 'answered',
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::CallState');
+    isa_ok($e, 'SignalWire::Relay::Event::CallState');
     is($e->call_state, 'answered', 'call_state');
     is($e->call_id, 'c1', 'call_id');
 };
@@ -24,12 +24,12 @@ subtest 'CallState event' => sub {
 # 2. CallPlay event
 # ============================================================
 subtest 'CallPlay event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('calling.call.play', {
+    my $e = SignalWire::Relay::Event->parse_event('calling.call.play', {
         call_id    => 'c2',
         control_id => 'ctl1',
         state      => 'finished',
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::CallPlay');
+    isa_ok($e, 'SignalWire::Relay::Event::CallPlay');
     is($e->state, 'finished', 'state');
     is($e->control_id, 'ctl1', 'control_id');
 };
@@ -38,7 +38,7 @@ subtest 'CallPlay event' => sub {
 # 3. CallRecord event
 # ============================================================
 subtest 'CallRecord event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('calling.call.record', {
+    my $e = SignalWire::Relay::Event->parse_event('calling.call.record', {
         call_id    => 'c3',
         control_id => 'ctl2',
         state      => 'finished',
@@ -46,7 +46,7 @@ subtest 'CallRecord event' => sub {
         duration   => 30,
         size       => 96000,
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::CallRecord');
+    isa_ok($e, 'SignalWire::Relay::Event::CallRecord');
     is($e->url, 'https://example.com/rec.mp3', 'url');
     is($e->duration, 30, 'duration');
     is($e->size, 96000, 'size');
@@ -56,12 +56,12 @@ subtest 'CallRecord event' => sub {
 # 4. CallCollect event
 # ============================================================
 subtest 'CallCollect event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('calling.call.collect', {
+    my $e = SignalWire::Relay::Event->parse_event('calling.call.collect', {
         call_id    => 'c4',
         control_id => 'ctl3',
         result     => { type => 'digit', params => { digits => '1234' } },
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::CallCollect');
+    isa_ok($e, 'SignalWire::Relay::Event::CallCollect');
     is($e->result->{type}, 'digit', 'result type');
 };
 
@@ -69,12 +69,12 @@ subtest 'CallCollect event' => sub {
 # 5. CallDetect event
 # ============================================================
 subtest 'CallDetect event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('calling.call.detect', {
+    my $e = SignalWire::Relay::Event->parse_event('calling.call.detect', {
         call_id    => 'c5',
         control_id => 'ctl4',
         detect     => { type => 'machine', params => { event => 'HUMAN' } },
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::CallDetect');
+    isa_ok($e, 'SignalWire::Relay::Event::CallDetect');
     is($e->detect->{type}, 'machine', 'detect type');
 };
 
@@ -82,14 +82,14 @@ subtest 'CallDetect event' => sub {
 # 6. MessageReceive event
 # ============================================================
 subtest 'MessageReceive event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('messaging.receive', {
+    my $e = SignalWire::Relay::Event->parse_event('messaging.receive', {
         message_id  => 'm1',
         from_number => '+15551111111',
         to_number   => '+15552222222',
         body        => 'Hello',
         direction   => 'inbound',
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::MessageReceive');
+    isa_ok($e, 'SignalWire::Relay::Event::MessageReceive');
     is($e->body, 'Hello', 'body');
     is($e->from_number, '+15551111111', 'from_number');
 };
@@ -98,11 +98,11 @@ subtest 'MessageReceive event' => sub {
 # 7. MessageState event
 # ============================================================
 subtest 'MessageState event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('messaging.state', {
+    my $e = SignalWire::Relay::Event->parse_event('messaging.state', {
         message_id    => 'm2',
         message_state => 'delivered',
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::MessageState');
+    isa_ok($e, 'SignalWire::Relay::Event::MessageState');
     is($e->message_state, 'delivered', 'message_state');
 };
 
@@ -110,10 +110,10 @@ subtest 'MessageState event' => sub {
 # 8. AuthorizationState event
 # ============================================================
 subtest 'AuthorizationState event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('signalwire.authorization.state', {
+    my $e = SignalWire::Relay::Event->parse_event('signalwire.authorization.state', {
         authorization_state => 'enc:tag',
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::AuthorizationState');
+    isa_ok($e, 'SignalWire::Relay::Event::AuthorizationState');
     is($e->authorization_state, 'enc:tag', 'authorization_state');
 };
 
@@ -121,10 +121,10 @@ subtest 'AuthorizationState event' => sub {
 # 9. Disconnect event
 # ============================================================
 subtest 'Disconnect event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('signalwire.disconnect', {
+    my $e = SignalWire::Relay::Event->parse_event('signalwire.disconnect', {
         restart => 1,
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::Disconnect');
+    isa_ok($e, 'SignalWire::Relay::Event::Disconnect');
     is($e->restart, 1, 'restart');
 };
 
@@ -132,12 +132,12 @@ subtest 'Disconnect event' => sub {
 # 10. CallReceive event
 # ============================================================
 subtest 'CallReceive event' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('calling.call.receive', {
+    my $e = SignalWire::Relay::Event->parse_event('calling.call.receive', {
         call_id => 'inbound-1',
         node_id => 'n1',
         context => 'office',
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event::CallReceive');
+    isa_ok($e, 'SignalWire::Relay::Event::CallReceive');
     is($e->context, 'office', 'context');
 };
 
@@ -145,10 +145,10 @@ subtest 'CallReceive event' => sub {
 # 11. Unknown event fallback
 # ============================================================
 subtest 'unknown event type' => sub {
-    my $e = SignalWire::Agents::Relay::Event->parse_event('calling.call.future_thing', {
+    my $e = SignalWire::Relay::Event->parse_event('calling.call.future_thing', {
         foo => 'bar',
     });
-    isa_ok($e, 'SignalWire::Agents::Relay::Event');
+    isa_ok($e, 'SignalWire::Relay::Event');
     is($e->event_type, 'calling.call.future_thing', 'type preserved');
     is($e->params->{foo}, 'bar', 'params preserved');
 };
@@ -168,9 +168,9 @@ subtest 'all event types parse' => sub {
         signalwire.authorization.state signalwire.disconnect
     );
     for my $type (@types) {
-        my $e = SignalWire::Agents::Relay::Event->parse_event($type, {});
+        my $e = SignalWire::Relay::Event->parse_event($type, {});
         ok($e, "parsed: $type");
-        isa_ok($e, 'SignalWire::Agents::Relay::Event');
+        isa_ok($e, 'SignalWire::Relay::Event');
     }
 };
 

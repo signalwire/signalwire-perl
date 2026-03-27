@@ -5,7 +5,7 @@ use Test::More;
 use JSON qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
-use_ok('SignalWire::Agents::Agent::AgentBase');
+use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
 # 1. Auto-generated credentials
@@ -15,7 +15,7 @@ subtest 'auto-generated credentials' => sub {
     local $ENV{SWML_BASIC_AUTH_PASSWORD};
     delete $ENV{SWML_BASIC_AUTH_USER};
     delete $ENV{SWML_BASIC_AUTH_PASSWORD};
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'auto');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'auto');
     ok(length($a->basic_auth_user) > 0, 'user auto-generated');
     ok(length($a->basic_auth_password) > 0, 'password auto-generated');
     # Default user is the agent name when no env var
@@ -26,7 +26,7 @@ subtest 'auto-generated credentials' => sub {
 # 2. Explicit credentials
 # ============================================================
 subtest 'explicit credentials' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'explicit',
         basic_auth_user    => 'myuser',
         basic_auth_password => 'mypass',
@@ -41,7 +41,7 @@ subtest 'explicit credentials' => sub {
 subtest 'env var credentials' => sub {
     local $ENV{SWML_BASIC_AUTH_USER} = 'envuser';
     local $ENV{SWML_BASIC_AUTH_PASSWORD} = 'envpass';
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'env');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'env');
     is($a->basic_auth_user, 'envuser', 'user from env');
     is($a->basic_auth_password, 'envpass', 'password from env');
 };
@@ -50,17 +50,17 @@ subtest 'env var credentials' => sub {
 # 4. Timing-safe comparison
 # ============================================================
 subtest 'timing-safe comparison' => sub {
-    ok(SignalWire::Agents::Agent::AgentBase::_timing_safe_eq('abc', 'abc'), 'same strings match');
-    ok(!SignalWire::Agents::Agent::AgentBase::_timing_safe_eq('abc', 'def'), 'different strings fail');
-    ok(!SignalWire::Agents::Agent::AgentBase::_timing_safe_eq('abc', 'abcd'), 'different lengths fail');
-    ok(SignalWire::Agents::Agent::AgentBase::_timing_safe_eq('', ''), 'empty strings match');
+    ok(SignalWire::Agent::AgentBase::_timing_safe_eq('abc', 'abc'), 'same strings match');
+    ok(!SignalWire::Agent::AgentBase::_timing_safe_eq('abc', 'def'), 'different strings fail');
+    ok(!SignalWire::Agent::AgentBase::_timing_safe_eq('abc', 'abcd'), 'different lengths fail');
+    ok(SignalWire::Agent::AgentBase::_timing_safe_eq('', ''), 'empty strings match');
 };
 
 # ============================================================
 # 5. Auth check on PSGI app
 # ============================================================
 subtest 'auth check - no auth header' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'auth_no',
         basic_auth_user    => 'user',
         basic_auth_password => 'pass',
@@ -78,7 +78,7 @@ subtest 'auth check - no auth header' => sub {
 };
 
 subtest 'auth check - correct auth' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'auth_ok',
         basic_auth_user    => 'user',
         basic_auth_password => 'pass',
@@ -98,7 +98,7 @@ subtest 'auth check - correct auth' => sub {
 };
 
 subtest 'auth check - wrong password' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'auth_bad',
         basic_auth_user    => 'user',
         basic_auth_password => 'pass',
@@ -118,7 +118,7 @@ subtest 'auth check - wrong password' => sub {
 };
 
 subtest 'auth check - wrong user' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'auth_bad_u',
         basic_auth_user    => 'user',
         basic_auth_password => 'pass',
@@ -141,7 +141,7 @@ subtest 'auth check - wrong user' => sub {
 # 6. Health/ready endpoints bypass auth
 # ============================================================
 subtest 'health bypasses auth' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'health');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'health');
     my $app = $a->psgi_app;
     my $res = $app->({
         REQUEST_METHOD => 'GET',
@@ -154,7 +154,7 @@ subtest 'health bypasses auth' => sub {
 };
 
 subtest 'ready bypasses auth' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'ready');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'ready');
     my $app = $a->psgi_app;
     my $res = $app->({
         REQUEST_METHOD => 'GET',
@@ -170,7 +170,7 @@ subtest 'ready bypasses auth' => sub {
 # 7. Security headers
 # ============================================================
 subtest 'security headers present' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'sec');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'sec');
     my $app = $a->psgi_app;
     my $res = $app->({
         REQUEST_METHOD => 'GET',
@@ -189,7 +189,7 @@ subtest 'security headers present' => sub {
 # 8. Malformed auth header
 # ============================================================
 subtest 'malformed auth header' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'malformed',
         basic_auth_user    => 'u',
         basic_auth_password => 'p',

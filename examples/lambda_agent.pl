@@ -16,11 +16,11 @@ use strict;
 use warnings;
 use lib 'lib';
 use POSIX qw(strftime);
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'lambda-agent',
     route => '/',
 );
@@ -52,7 +52,7 @@ $agent->define_tool(
     handler => sub {
         my ($args, $raw) = @_;
         my $name = $args->{name} // 'friend';
-        return SignalWire::Agents::SWAIG::FunctionResult->new(
+        return SignalWire::SWAIG::FunctionResult->new(
             "Hello $name! I'm running in AWS Lambda!"
         );
     },
@@ -65,7 +65,7 @@ $agent->define_tool(
     handler     => sub {
         my ($args, $raw) = @_;
         my $time = strftime('%Y-%m-%dT%H:%M:%S', localtime);
-        return SignalWire::Agents::SWAIG::FunctionResult->new(
+        return SignalWire::SWAIG::FunctionResult->new(
             "Current time: $time"
         );
     },

@@ -7,13 +7,13 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
 use POSIX qw(strftime);
 
 # Create an agent
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'simple',
     route => '/simple',
     host  => '0.0.0.0',
@@ -94,7 +94,7 @@ $agent->define_tool(
     handler     => sub {
         my ($args, $raw_data) = @_;
         my $time = strftime('%H:%M:%S', localtime);
-        return SignalWire::Agents::SWAIG::FunctionResult->new("The current time is $time");
+        return SignalWire::SWAIG::FunctionResult->new("The current time is $time");
     },
 );
 
@@ -110,7 +110,7 @@ $agent->define_tool(
     handler => sub {
         my ($args, $raw_data) = @_;
         my $location = $args->{location} // 'Unknown location';
-        my $result = SignalWire::Agents::SWAIG::FunctionResult->new(
+        my $result = SignalWire::SWAIG::FunctionResult->new(
             "It's sunny and 72F in $location."
         );
         $result->add_action('set_global_data', { weather_location => $location });

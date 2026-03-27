@@ -4,16 +4,16 @@ use warnings;
 use Test::More;
 use JSON ();
 
-use SignalWire::Agents::SWML::Document;
-use SignalWire::Agents::SWML::Schema;
-use SignalWire::Agents::SWML::Service;
-use SignalWire::Agents::Logging;
+use SignalWire::SWML::Document;
+use SignalWire::SWML::Schema;
+use SignalWire::SWML::Service;
+use SignalWire::Logging;
 
 # =============================================
 # Test: Logging
 # =============================================
 subtest 'Logging' => sub {
-    my $logger = SignalWire::Agents::Logging->get_logger('test');
+    my $logger = SignalWire::Logging->get_logger('test');
     ok($logger, 'get_logger returns an object');
     is($logger->name, 'test', 'logger name correct');
     ok($logger->can('debug'), 'has debug method');
@@ -35,7 +35,7 @@ subtest 'Logging' => sub {
     ok($logger->_should_log('error'),  'warn level passes error');
 
     # Singleton behavior
-    my $same = SignalWire::Agents::Logging->get_logger('test');
+    my $same = SignalWire::Logging->get_logger('test');
     is($same, $logger, 'same logger returned for same name');
 };
 
@@ -43,7 +43,7 @@ subtest 'Logging' => sub {
 # Test: SWML Document
 # =============================================
 subtest 'SWML Document' => sub {
-    my $doc = SignalWire::Agents::SWML::Document->new();
+    my $doc = SignalWire::SWML::Document->new();
     is($doc->version, '1.0.0', 'default version');
     is(ref $doc->sections, 'HASH', 'sections is hashref');
 
@@ -84,7 +84,7 @@ subtest 'SWML Document' => sub {
 # Test: Schema
 # =============================================
 subtest 'Schema loading' => sub {
-    my $schema = SignalWire::Agents::SWML::Schema->instance();
+    my $schema = SignalWire::SWML::Schema->instance();
     ok($schema, 'schema singleton created');
     ok($schema->verb_count >= 38, "schema has >= 38 verbs (got " . $schema->verb_count . ")");
 
@@ -112,7 +112,7 @@ subtest 'Schema loading' => sub {
 # Test: Service
 # =============================================
 subtest 'Service basic' => sub {
-    my $svc = SignalWire::Agents::SWML::Service->new(
+    my $svc = SignalWire::SWML::Service->new(
         basic_auth_user     => 'testuser',
         basic_auth_password => 'testpass',
     );
@@ -121,13 +121,13 @@ subtest 'Service basic' => sub {
     is($svc->basic_auth_password, 'testpass', 'auth password set');
 
     # Auto-generated credentials
-    my $svc2 = SignalWire::Agents::SWML::Service->new();
+    my $svc2 = SignalWire::SWML::Service->new();
     ok(length($svc2->basic_auth_user) > 0, 'auto-generated user');
     ok(length($svc2->basic_auth_password) > 0, 'auto-generated password');
 };
 
 subtest 'Service AUTOLOAD verb methods' => sub {
-    my $svc = SignalWire::Agents::SWML::Service->new();
+    my $svc = SignalWire::SWML::Service->new();
 
     # Make sure document starts with main section
     $svc->document->add_section('main');
@@ -154,7 +154,7 @@ subtest 'Service AUTOLOAD verb methods' => sub {
 };
 
 subtest 'Service PSGI app' => sub {
-    my $svc = SignalWire::Agents::SWML::Service->new(
+    my $svc = SignalWire::SWML::Service->new(
         basic_auth_user     => 'user',
         basic_auth_password => 'pass',
         route               => '/agent',
@@ -219,10 +219,10 @@ subtest 'Service PSGI app' => sub {
 subtest 'Service timing-safe comparison' => sub {
     # This tests that the comparison works correctly (not that it's constant-time,
     # which would require timing analysis)
-    ok(SignalWire::Agents::SWML::Service::_timing_safe_compare('abc', 'abc'), 'same strings match');
-    ok(!SignalWire::Agents::SWML::Service::_timing_safe_compare('abc', 'def'), 'different strings do not match');
-    ok(!SignalWire::Agents::SWML::Service::_timing_safe_compare('abc', 'ab'), 'different lengths do not match');
-    ok(SignalWire::Agents::SWML::Service::_timing_safe_compare('', ''), 'empty strings match');
+    ok(SignalWire::SWML::Service::_timing_safe_compare('abc', 'abc'), 'same strings match');
+    ok(!SignalWire::SWML::Service::_timing_safe_compare('abc', 'def'), 'different strings do not match');
+    ok(!SignalWire::SWML::Service::_timing_safe_compare('abc', 'ab'), 'different lengths do not match');
+    ok(SignalWire::SWML::Service::_timing_safe_compare('', ''), 'empty strings match');
 };
 
 done_testing;

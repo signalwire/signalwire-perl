@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json decode_json);
 
-use SignalWire::Agents::Agent::AgentBase;
+use SignalWire::Agent::AgentBase;
 
 # ============================================================
 # POM Builder tests - structured prompt generation
@@ -22,7 +22,7 @@ sub get_pom {
 # 1. Single section POM
 # ============================================================
 subtest 'single section' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom1');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom1');
     $a->prompt_add_section('Role', 'You are helpful.');
     my $pom = get_pom($a);
     is(ref $pom, 'ARRAY', 'POM is array');
@@ -35,7 +35,7 @@ subtest 'single section' => sub {
 # 2. Section with bullets
 # ============================================================
 subtest 'section with bullets' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom2');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom2');
     $a->prompt_add_section('Rules', 'Follow these:', bullets => ['Rule 1', 'Rule 2', 'Rule 3']);
     my $pom = get_pom($a);
     is_deeply($pom->[0]{bullets}, ['Rule 1', 'Rule 2', 'Rule 3'], 'bullets in POM');
@@ -45,7 +45,7 @@ subtest 'section with bullets' => sub {
 # 3. Multiple sections ordering
 # ============================================================
 subtest 'multiple sections order' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom3');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom3');
     $a->prompt_add_section('Alpha', 'First');
     $a->prompt_add_section('Beta', 'Second');
     $a->prompt_add_section('Gamma', 'Third');
@@ -60,7 +60,7 @@ subtest 'multiple sections order' => sub {
 # 4. Subsections
 # ============================================================
 subtest 'subsections' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom4');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom4');
     $a->prompt_add_section('Main', 'Main body');
     $a->prompt_add_subsection('Main', 'Sub1', 'Sub body 1');
     $a->prompt_add_subsection('Main', 'Sub2', 'Sub body 2', bullets => ['b1']);
@@ -75,7 +75,7 @@ subtest 'subsections' => sub {
 # 5. Add to section
 # ============================================================
 subtest 'add_to_section' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom5');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom5');
     $a->prompt_add_section('Sec', 'Initial', bullets => ['b1']);
     $a->prompt_add_to_section('Sec', bullets => ['b2', 'b3']);
     my $pom = get_pom($a);
@@ -86,7 +86,7 @@ subtest 'add_to_section' => sub {
 # 6. Complex POM with skills
 # ============================================================
 subtest 'POM with skills integration' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom6');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom6');
     $a->prompt_add_section('Role', 'You are a customer service agent.');
     $a->add_skill('datetime');
     my $pom = get_pom($a);
@@ -98,7 +98,7 @@ subtest 'POM with skills integration' => sub {
 # 7. POM preserved through clone
 # ============================================================
 subtest 'POM preserved through clone' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom7');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom7');
     $a->prompt_add_section('Original', 'Body');
     my $clone = $a->_clone_for_request;
     $clone->prompt_add_section('Clone', 'Extra');
@@ -113,7 +113,7 @@ subtest 'POM preserved through clone' => sub {
 # 8. Empty POM falls back to text
 # ============================================================
 subtest 'empty POM fallback' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom8');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom8');
     $a->set_prompt_text('Fallback text');
     # No POM sections added
     my $swml = $a->render_swml;
@@ -126,7 +126,7 @@ subtest 'empty POM fallback' => sub {
 # 9. POM with LLM params
 # ============================================================
 subtest 'POM with LLM params' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom9');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom9');
     $a->prompt_add_section('Role', 'Agent');
     $a->set_prompt_llm_params(temperature => 0.5);
     my $swml = $a->render_swml;
@@ -139,7 +139,7 @@ subtest 'POM with LLM params' => sub {
 # 10. JSON roundtrip of POM SWML
 # ============================================================
 subtest 'POM SWML JSON roundtrip' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom10');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom10');
     $a->prompt_add_section('Title', 'Body', bullets => ['b1', 'b2']);
     $a->prompt_add_subsection('Title', 'Sub', 'Sub body');
     my $swml = $a->render_swml;

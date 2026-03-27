@@ -15,11 +15,11 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents::Relay::Client;
+use SignalWire::Relay::Client;
 
 my $AGENT_NUMBER = '+19184238080';
 
-my $client = SignalWire::Agents::Relay::Client->new(
+my $client = SignalWire::Relay::Client->new(
     project  => $ENV{SIGNALWIRE_PROJECT_ID} // die("Set SIGNALWIRE_PROJECT_ID\n"),
     token    => $ENV{SIGNALWIRE_API_TOKEN}  // die("Set SIGNALWIRE_API_TOKEN\n"),
     host     => $ENV{SIGNALWIRE_SPACE}      // 'relay.signalwire.com',

@@ -4,14 +4,14 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json decode_json);
 
-use_ok('SignalWire::Agents::Agent::AgentBase');
-use_ok('SignalWire::Agents::SWAIG::FunctionResult');
+use_ok('SignalWire::Agent::AgentBase');
+use_ok('SignalWire::SWAIG::FunctionResult');
 
 # ============================================================
 # Helper: create an MCP-enabled agent with a tool
 # ============================================================
 sub make_mcp_agent {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(
+    my $agent = SignalWire::Agent::AgentBase->new(
         name  => 'test-mcp',
         route => '/test',
     );
@@ -26,7 +26,7 @@ sub make_mcp_agent {
         handler => sub {
             my ($args, $raw) = @_;
             my $loc = $args->{location} // 'unknown';
-            return SignalWire::Agents::SWAIG::FunctionResult->new("72F sunny in $loc");
+            return SignalWire::SWAIG::FunctionResult->new("72F sunny in $loc");
         },
     );
 
@@ -167,7 +167,7 @@ subtest 'invalid jsonrpc version' => sub {
 # ============================================================
 
 subtest 'add_mcp_server basic' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'test');
     $agent->add_mcp_server('https://mcp.example.com/tools');
 
     is(scalar @{ $agent->mcp_servers }, 1, 'one server');
@@ -175,7 +175,7 @@ subtest 'add_mcp_server basic' => sub {
 };
 
 subtest 'add_mcp_server with headers' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'test');
     $agent->add_mcp_server(
         'https://mcp.example.com/tools',
         headers => { Authorization => 'Bearer sk-xxx' },
@@ -185,7 +185,7 @@ subtest 'add_mcp_server with headers' => sub {
 };
 
 subtest 'add_mcp_server with resources' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'test');
     $agent->add_mcp_server(
         'https://mcp.example.com/crm',
         resources     => 1,
@@ -197,7 +197,7 @@ subtest 'add_mcp_server with resources' => sub {
 };
 
 subtest 'add multiple servers' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'test');
     $agent->add_mcp_server('https://mcp1.example.com');
     $agent->add_mcp_server('https://mcp2.example.com');
 
@@ -205,13 +205,13 @@ subtest 'add multiple servers' => sub {
 };
 
 subtest 'method chaining' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'test');
     my $result = $agent->add_mcp_server('https://mcp.example.com');
     is($result, $agent, 'returns self');
 };
 
 subtest 'enable_mcp_server' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'test');
     ok(!$agent->mcp_server_enabled, 'disabled by default');
 
     my $result = $agent->enable_mcp_server;
@@ -220,7 +220,7 @@ subtest 'enable_mcp_server' => sub {
 };
 
 subtest 'mcp_servers in swml' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'test', route => '/test');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'test', route => '/test');
     $agent->add_mcp_server(
         'https://mcp.example.com/tools',
         headers => { Authorization => 'Bearer key' },

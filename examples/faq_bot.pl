@@ -9,10 +9,10 @@ use strict;
 use warnings;
 use lib 'lib';
 use JSON qw(encode_json);
-use SignalWire::Agents;
-use SignalWire::Agents::Prefabs::FAQBot;
+use SignalWire;
+use SignalWire::Prefabs::FAQBot;
 
-my $agent = SignalWire::Agents::Prefabs::FAQBot->new(
+my $agent = SignalWire::Prefabs::FAQBot->new(
     name    => 'signalwire_faq',
     route   => '/faq',
     persona => 'You are a helpful FAQ assistant for SignalWire.',

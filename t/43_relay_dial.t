@@ -4,10 +4,10 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json);
 
-use SignalWire::Agents::Relay::Client;
-use SignalWire::Agents::Relay::Call;
-use SignalWire::Agents::Relay::Event;
-BEGIN { use SignalWire::Agents::Relay::Constants ':all' }
+use SignalWire::Relay::Client;
+use SignalWire::Relay::Call;
+use SignalWire::Relay::Event;
+BEGIN { use SignalWire::Relay::Constants ':all' }
 
 # ============================================================
 # 1. Dial states constants
@@ -22,7 +22,7 @@ subtest 'dial state constants' => sub {
 # 2. Successful dial via client
 # ============================================================
 subtest 'dial answered' => sub {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -64,7 +64,7 @@ subtest 'dial answered' => sub {
 # 3. Failed dial
 # ============================================================
 subtest 'dial failed' => sub {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -88,12 +88,12 @@ subtest 'dial failed' => sub {
 # 4. Dial event parsing
 # ============================================================
 subtest 'dial event parsing' => sub {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.dial', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.dial', {
         tag        => 'tag-1',
         dial_state => 'answered',
         call       => { call_id => 'winner', dial_winner => 1 },
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::CallDial');
+    isa_ok($event, 'SignalWire::Relay::Event::CallDial');
     is($event->dial_state, 'answered', 'dial_state');
     is($event->call->{call_id}, 'winner', 'nested call');
 };
@@ -102,7 +102,7 @@ subtest 'dial event parsing' => sub {
 # 5. Dial with unmatched tag
 # ============================================================
 subtest 'unmatched dial tag' => sub {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
     # No pending dials - should not crash

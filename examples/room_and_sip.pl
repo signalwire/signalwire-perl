@@ -12,21 +12,21 @@ use strict;
 use warnings;
 use lib 'lib';
 use JSON ();
-use SignalWire::Agents;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::SWAIG::FunctionResult;
 
 my $json = JSON->new->utf8->canonical->pretty;
 
 # 1. Basic room join
 print "=== Basic Room Join ===\n";
-my $room = SignalWire::Agents::SWAIG::FunctionResult->new('Joining the support team room')
+my $room = SignalWire::SWAIG::FunctionResult->new('Joining the support team room')
     ->join_room('support_team_room')
     ->say('Welcome to the support team collaboration room');
 print $json->encode($room->to_hash), "\n";
 
 # 2. Conference room with metadata
 print "=== Conference Room ===\n";
-my $conf = SignalWire::Agents::SWAIG::FunctionResult->new('Setting up daily standup meeting')
+my $conf = SignalWire::SWAIG::FunctionResult->new('Setting up daily standup meeting')
     ->join_room('daily_standup_room')
     ->set_metadata({
         meeting_type   => 'daily_standup',
@@ -42,14 +42,14 @@ print $json->encode($conf->to_hash), "\n";
 
 # 3. Basic SIP REFER
 print "=== Basic SIP REFER ===\n";
-my $sip = SignalWire::Agents::SWAIG::FunctionResult->new('Transferring your call to support')
+my $sip = SignalWire::SWAIG::FunctionResult->new('Transferring your call to support')
     ->say('Please hold while I transfer you')
     ->sip_refer('sip:support@company.com');
 print $json->encode($sip->to_hash), "\n";
 
 # 4. Advanced SIP REFER with metadata
 print "=== Advanced SIP REFER ===\n";
-my $adv_sip = SignalWire::Agents::SWAIG::FunctionResult->new('Transferring to technical support')
+my $adv_sip = SignalWire::SWAIG::FunctionResult->new('Transferring to technical support')
     ->set_metadata({
         transfer_type   => 'technical_support',
         priority        => 'high',
@@ -65,7 +65,7 @@ print $json->encode($adv_sip->to_hash), "\n";
 
 # 5. Customer service escalation workflow
 print "=== Customer Service Escalation ===\n";
-my $join = SignalWire::Agents::SWAIG::FunctionResult->new('Connecting to customer service')
+my $join = SignalWire::SWAIG::FunctionResult->new('Connecting to customer service')
     ->join_room('customer_service_room')
     ->set_metadata({
         service_type  => 'billing_inquiry',
@@ -74,7 +74,7 @@ my $join = SignalWire::Agents::SWAIG::FunctionResult->new('Connecting to custome
     ->say('You have been connected to our customer service team');
 print "Join:\n" . $json->encode($join->to_hash) . "\n";
 
-my $escalate = SignalWire::Agents::SWAIG::FunctionResult->new('Escalating to manager')
+my $escalate = SignalWire::SWAIG::FunctionResult->new('Escalating to manager')
     ->say('Let me connect you with a manager')
     ->sip_refer('sip:manager@customer-service.company.com')
     ->update_global_data({
@@ -85,7 +85,7 @@ print "Escalate:\n" . $json->encode($escalate->to_hash) . "\n";
 
 # 6. Join conference
 print "=== Join Conference ===\n";
-my $simple_conf = SignalWire::Agents::SWAIG::FunctionResult->new('Joining team conference')
+my $simple_conf = SignalWire::SWAIG::FunctionResult->new('Joining team conference')
     ->join_conference('daily_standup')
     ->say('Welcome to the daily standup conference');
 print $json->encode($simple_conf->to_hash), "\n";

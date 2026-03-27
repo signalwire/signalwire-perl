@@ -7,10 +7,10 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Prefabs::InfoGatherer;
+use SignalWire;
+use SignalWire::Prefabs::InfoGatherer;
 
-my $agent = SignalWire::Agents::Prefabs::InfoGatherer->new(
+my $agent = SignalWire::Prefabs::InfoGatherer->new(
     name  => 'registration',
     route => '/register',
     questions => [

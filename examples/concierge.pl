@@ -7,10 +7,10 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Prefabs::Concierge;
+use SignalWire;
+use SignalWire::Prefabs::Concierge;
 
-my $agent = SignalWire::Agents::Prefabs::Concierge->new(
+my $agent = SignalWire::Prefabs::Concierge->new(
     venue_name => 'Oceanview Resort',
     services   => [
         'room service',

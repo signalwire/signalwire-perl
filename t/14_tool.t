@@ -4,13 +4,13 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json decode_json);
 
-use_ok('SignalWire::Agents::Agent::AgentBase');
+use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
 # 1. define_tool basic registration
 # ============================================================
 subtest 'define_tool basic' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'tool');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'tool');
     my $ret = $agent->define_tool(
         name        => 'greet',
         description => 'Greet someone',
@@ -32,7 +32,7 @@ subtest 'define_tool basic' => sub {
 # 2. define_tool without handler
 # ============================================================
 subtest 'define_tool no handler' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'no_handler');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'no_handler');
     $agent->define_tool(name => 'stub', description => 'stub tool');
     ok(exists $agent->tools->{stub}, 'tool registered');
     ok(!exists $agent->tools->{stub}{_handler}, 'no handler');
@@ -44,7 +44,7 @@ subtest 'define_tool no handler' => sub {
 # 3. define_tool requires name
 # ============================================================
 subtest 'define_tool requires name' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'noname');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'noname');
     eval { $agent->define_tool(description => 'No name') };
     ok($@, 'dies without name');
 };
@@ -53,7 +53,7 @@ subtest 'define_tool requires name' => sub {
 # 4. on_function_call dispatch
 # ============================================================
 subtest 'on_function_call dispatch' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dispatch');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dispatch');
     $agent->define_tool(
         name    => 'add',
         handler => sub { { response => "sum=" . ($_[0]->{a} + $_[0]->{b}) } },
@@ -63,7 +63,7 @@ subtest 'on_function_call dispatch' => sub {
 };
 
 subtest 'on_function_call missing function' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'missing');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'missing');
     my $result = $agent->on_function_call('nonexistent', {}, {});
     ok(!defined $result, 'returns undef for missing');
 };
@@ -72,7 +72,7 @@ subtest 'on_function_call missing function' => sub {
 # 5. on_function_call with raw_data
 # ============================================================
 subtest 'on_function_call raw data' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'raw');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'raw');
     $agent->define_tool(
         name    => 'check',
         handler => sub {
@@ -88,7 +88,7 @@ subtest 'on_function_call raw data' => sub {
 # 6. register_swaig_function (DataMap style)
 # ============================================================
 subtest 'register_swaig_function' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'swaig');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'swaig');
     $agent->register_swaig_function({
         function    => 'weather',
         description => 'Get weather',
@@ -101,7 +101,7 @@ subtest 'register_swaig_function' => sub {
 };
 
 subtest 'register_swaig_function requires function key' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'no_func');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'no_func');
     eval { $agent->register_swaig_function({ description => 'No function key' }) };
     ok($@, 'dies without function key');
 };
@@ -110,7 +110,7 @@ subtest 'register_swaig_function requires function key' => sub {
 # 7. define_tools (multiple)
 # ============================================================
 subtest 'define_tools multiple' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'multi');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'multi');
     $agent->define_tools(
         { name => 'tool_a', description => 'A' },
         { function => 'tool_b', description => 'B', parameters => {} },
@@ -124,7 +124,7 @@ subtest 'define_tools multiple' => sub {
 # 8. Tool order preservation
 # ============================================================
 subtest 'tool order preserved' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'order');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'order');
     $agent->define_tool(name => 'first',  description => '1');
     $agent->define_tool(name => 'second', description => '2');
     $agent->define_tool(name => 'third',  description => '3');
@@ -135,7 +135,7 @@ subtest 'tool order preserved' => sub {
 # 9. Duplicate tool name does not duplicate order
 # ============================================================
 subtest 'duplicate tool name no order dup' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dup');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dup');
     $agent->define_tool(name => 'tool1', description => 'v1');
     $agent->define_tool(name => 'tool1', description => 'v2');
     is(scalar @{$agent->tool_order}, 1, 'no duplicate in tool_order');
@@ -146,7 +146,7 @@ subtest 'duplicate tool name no order dup' => sub {
 # 10. Extra fields in define_tool
 # ============================================================
 subtest 'extra fields in define_tool' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'extra');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'extra');
     $agent->define_tool(
         name         => 'tool_x',
         description  => 'X',
@@ -161,7 +161,7 @@ subtest 'extra fields in define_tool' => sub {
 # 11. Tools in rendered SWML
 # ============================================================
 subtest 'tools in SWML' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'swml_tools');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'swml_tools');
     $agent->define_tool(
         name        => 'my_tool',
         description => 'My tool',
@@ -181,7 +181,7 @@ subtest 'tools in SWML' => sub {
 # 12. DataMap tool in SWML (no handler, has data_map)
 # ============================================================
 subtest 'DataMap tool in SWML' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'dm_swml');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dm_swml');
     $agent->register_swaig_function({
         function    => 'dm_tool',
         description => 'DM tool',

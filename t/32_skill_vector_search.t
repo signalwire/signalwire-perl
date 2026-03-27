@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('native_vector_search');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('native_vector_search');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'vs');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'vs');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'native_vector_search', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers tool' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'vs_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'vs_reg');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -25,7 +25,7 @@ subtest 'registers tool' => sub {
 };
 
 subtest 'custom tool_name and description' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'vs_custom');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'vs_custom');
     my $skill = $factory->new(agent => $agent, params => {
         tool_name   => 'find_docs',
         description => 'Find documentation',
@@ -37,7 +37,7 @@ subtest 'custom tool_name and description' => sub {
 };
 
 subtest 'hints' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'vs_hints');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'vs_hints');
     my $skill = $factory->new(agent => $agent, params => { hints => ['tutorial', 'guide'] });
     my $hints = $skill->get_hints;
     ok(grep({ $_ eq 'search' } @$hints), 'base hint search');
@@ -45,7 +45,7 @@ subtest 'hints' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'vs_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'vs_ps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     is($sections->[0]{title}, 'Knowledge Search', 'title');

@@ -13,14 +13,14 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::SWAIG::FunctionResult;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
 
 # Port from environment or default 8080
 my $port = $ENV{PORT} || 8080;
 
-my $agent = SignalWire::Agents::Agent::AgentBase->new(
+my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'k8s-agent',
     route => '/',
     host  => '0.0.0.0',
@@ -43,7 +43,7 @@ $agent->define_tool(
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
         my ($args, $raw) = @_;
-        return SignalWire::Agents::SWAIG::FunctionResult->new(
+        return SignalWire::SWAIG::FunctionResult->new(
             "Agent k8s-agent is healthy, running on port $port in Kubernetes."
         );
     },

@@ -3,14 +3,14 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('web_search');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('web_search');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ws');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'web_search', 'skill_name');
     is($skill->skill_version, '2.0.0', 'version 2.0.0');
@@ -18,7 +18,7 @@ subtest 'construction' => sub {
 };
 
 subtest 'registers tool' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ws_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_reg');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -26,7 +26,7 @@ subtest 'registers tool' => sub {
 };
 
 subtest 'custom tool_name' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ws_custom');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_custom');
     my $skill = $factory->new(agent => $agent, params => { tool_name => 'search' });
     $skill->setup;
     $skill->register_tools;
@@ -34,7 +34,7 @@ subtest 'custom tool_name' => sub {
 };
 
 subtest 'global data' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ws_gd');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_gd');
     my $skill = $factory->new(agent => $agent, params => {});
     my $gdata = $skill->get_global_data;
     ok(exists $gdata->{web_search_enabled}, 'web_search_enabled');
@@ -42,7 +42,7 @@ subtest 'global data' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'ws_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_ps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     like($sections->[0]{title}, qr/Web Search/, 'title');

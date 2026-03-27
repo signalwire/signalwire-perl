@@ -51,8 +51,8 @@ subtest 'swaig-test requires action' => sub {
 # ============================================================
 subtest 'swaig-test integration with live agent' => sub {
     # Use the agent PSGI app directly to simulate HTTP without needing a real server
-    require SignalWire::Agents::Agent::AgentBase;
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(
+    require SignalWire::Agent::AgentBase;
+    my $agent = SignalWire::Agent::AgentBase->new(
         name               => 'cli_test_agent',
         route              => '/',
         basic_auth_user    => 'testuser',

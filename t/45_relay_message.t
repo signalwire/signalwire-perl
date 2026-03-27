@@ -3,16 +3,16 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Relay::Message;
-use SignalWire::Agents::Relay::Event;
-use SignalWire::Agents::Relay::Client;
-BEGIN { use SignalWire::Agents::Relay::Constants ':all' }
+use SignalWire::Relay::Message;
+use SignalWire::Relay::Event;
+use SignalWire::Relay::Client;
+BEGIN { use SignalWire::Relay::Constants ':all' }
 
 # ============================================================
 # 1. Message construction
 # ============================================================
 subtest 'construction' => sub {
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id  => 'm1',
         from_number => '+15551111111',
         to_number   => '+15552222222',
@@ -29,14 +29,14 @@ subtest 'construction' => sub {
 # 2. Terminal state delivery
 # ============================================================
 subtest 'terminal state: delivered' => sub {
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id => 'm2',
         direction  => 'outbound',
     );
     my $cb_fired = 0;
     $msg->on_completed(sub { $cb_fired = 1 });
 
-    my $event = SignalWire::Agents::Relay::Event->parse_event('messaging.state', {
+    my $event = SignalWire::Relay::Event->parse_event('messaging.state', {
         message_id    => 'm2',
         message_state => 'delivered',
     });
@@ -50,11 +50,11 @@ subtest 'terminal state: delivered' => sub {
 # 3. Terminal state: failed
 # ============================================================
 subtest 'terminal state: failed' => sub {
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id => 'm3',
         direction  => 'outbound',
     );
-    my $event = SignalWire::Agents::Relay::Event->parse_event('messaging.state', {
+    my $event = SignalWire::Relay::Event->parse_event('messaging.state', {
         message_id    => 'm3',
         message_state => 'failed',
     });
@@ -67,11 +67,11 @@ subtest 'terminal state: failed' => sub {
 # 4. Non-terminal state
 # ============================================================
 subtest 'non-terminal state' => sub {
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id => 'm4',
         direction  => 'outbound',
     );
-    my $event = SignalWire::Agents::Relay::Event->parse_event('messaging.state', {
+    my $event = SignalWire::Relay::Event->parse_event('messaging.state', {
         message_id    => 'm4',
         message_state => 'sent',
     });
@@ -102,11 +102,11 @@ subtest 'message terminal states' => sub {
 # 6. Client message tracking
 # ============================================================
 subtest 'client message tracking' => sub {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id => 'track-1',
         direction  => 'outbound',
     );
@@ -133,7 +133,7 @@ subtest 'client message tracking' => sub {
 # 7. Inbound message via client
 # ============================================================
 subtest 'inbound message via client' => sub {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
     my $received;
@@ -149,7 +149,7 @@ subtest 'inbound message via client' => sub {
         },
     });
     ok($received, 'on_message fired');
-    isa_ok($received, 'SignalWire::Agents::Relay::Event::MessageReceive');
+    isa_ok($received, 'SignalWire::Relay::Event::MessageReceive');
 };
 
 done_testing;

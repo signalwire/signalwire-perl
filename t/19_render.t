@@ -4,13 +4,13 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json decode_json);
 
-use_ok('SignalWire::Agents::Agent::AgentBase');
+use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
 # 1. Basic document structure
 # ============================================================
 subtest 'basic SWML structure' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'basic');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'basic');
     my $swml = $a->render_swml;
     is($swml->{version}, '1.0.0', 'version');
     ok(exists $swml->{sections}{main}, 'main section exists');
@@ -21,7 +21,7 @@ subtest 'basic SWML structure' => sub {
 # 2. Phase 1: Pre-answer verbs
 # ============================================================
 subtest 'phase 1: pre-answer' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'p1');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'p1');
     $a->add_pre_answer_verb('play', { url => 'ring.wav' });
     my $swml = $a->render_swml;
     my @main = @{$swml->{sections}{main}};
@@ -33,7 +33,7 @@ subtest 'phase 1: pre-answer' => sub {
 # 3. Phase 2: Answer verb
 # ============================================================
 subtest 'phase 2: answer' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'p2', auto_answer => 1);
+    my $a = SignalWire::Agent::AgentBase->new(name => 'p2', auto_answer => 1);
     my $swml = $a->render_swml;
     my @main = @{$swml->{sections}{main}};
     my @answers = grep { exists $_->{answer} } @main;
@@ -45,7 +45,7 @@ subtest 'phase 2: answer' => sub {
 # 4. Phase 2b: record_call
 # ============================================================
 subtest 'phase 2b: record_call' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name          => 'p2b',
         record_call   => 1,
         record_format => 'wav',
@@ -62,7 +62,7 @@ subtest 'phase 2b: record_call' => sub {
 # 5. Phase 3: Post-answer verbs
 # ============================================================
 subtest 'phase 3: post-answer' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'p3');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'p3');
     $a->add_post_answer_verb('play', { url => 'welcome.wav' });
     my $swml = $a->render_swml;
     my @main = @{$swml->{sections}{main}};
@@ -81,7 +81,7 @@ subtest 'phase 3: post-answer' => sub {
 # 6. Phase 4: AI verb
 # ============================================================
 subtest 'phase 4: AI verb' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'p4');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'p4');
     $a->prompt_add_section('Role', 'Test agent');
     $a->add_hint('test');
     $a->set_param('temperature', 0.5);
@@ -105,7 +105,7 @@ subtest 'phase 4: AI verb' => sub {
 # 7. Phase 5: Post-AI verbs
 # ============================================================
 subtest 'phase 5: post-AI' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'p5');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'p5');
     $a->add_post_ai_verb('hangup', {});
     my $swml = $a->render_swml;
     my @main = @{$swml->{sections}{main}};
@@ -116,7 +116,7 @@ subtest 'phase 5: post-AI' => sub {
 # 8. All 5 phases together
 # ============================================================
 subtest 'all 5 phases' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'all5', record_call => 1);
+    my $a = SignalWire::Agent::AgentBase->new(name => 'all5', record_call => 1);
     $a->add_pre_answer_verb('play', { url => 'pre.wav' });
     $a->add_post_answer_verb('play', { url => 'post.wav' });
     $a->prompt_add_section('Role', 'Agent');
@@ -144,7 +144,7 @@ subtest 'all 5 phases' => sub {
 # 9. POM mode prompt rendering
 # ============================================================
 subtest 'POM mode rendering' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pom_r');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pom_r');
     $a->prompt_add_section('Role', 'Helpful', bullets => ['Be nice']);
     my $swml = $a->render_swml;
     my @ai = grep { exists $_->{ai} } @{$swml->{sections}{main}};
@@ -158,7 +158,7 @@ subtest 'POM mode rendering' => sub {
 # 10. Raw text prompt rendering
 # ============================================================
 subtest 'raw text rendering' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'raw_r', use_pom => 0);
+    my $a = SignalWire::Agent::AgentBase->new(name => 'raw_r', use_pom => 0);
     $a->set_prompt_text('Hello');
     my $swml = $a->render_swml;
     my @ai = grep { exists $_->{ai} } @{$swml->{sections}{main}};
@@ -169,7 +169,7 @@ subtest 'raw text rendering' => sub {
 # 11. Post prompt URL in AI verb
 # ============================================================
 subtest 'post_prompt_url in AI' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'pp_url');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'pp_url');
     $a->set_post_prompt('Summarize');
     my $swml = $a->render_swml;
     my @ai = grep { exists $_->{ai} } @{$swml->{sections}{main}};
@@ -180,7 +180,7 @@ subtest 'post_prompt_url in AI' => sub {
 # 12. Webhook URL embedded in functions
 # ============================================================
 subtest 'webhook URL in functions' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(
+    my $a = SignalWire::Agent::AgentBase->new(
         name               => 'wh_func',
         basic_auth_user    => 'u',
         basic_auth_password => 'p',
@@ -197,7 +197,7 @@ subtest 'webhook URL in functions' => sub {
 # 13. Empty agent renders valid SWML
 # ============================================================
 subtest 'empty agent renders valid SWML' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'empty');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'empty');
     my $swml = $a->render_swml;
     is($swml->{version}, '1.0.0', 'version valid');
     ok(exists $swml->{sections}{main}, 'main section exists');
@@ -210,7 +210,7 @@ subtest 'empty agent renders valid SWML' => sub {
 # 14. Context switch in AI verb
 # ============================================================
 subtest 'context_switch in AI verb' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'ctx_r');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'ctx_r');
     my $builder = $a->define_contexts;
     $builder->add_context('default');
     my $swml = $a->render_swml;
@@ -222,7 +222,7 @@ subtest 'context_switch in AI verb' => sub {
 # 15. JSON roundtrip
 # ============================================================
 subtest 'SWML JSON roundtrip' => sub {
-    my $a = SignalWire::Agents::Agent::AgentBase->new(name => 'rt');
+    my $a = SignalWire::Agent::AgentBase->new(name => 'rt');
     $a->prompt_add_section('Role', 'Agent');
     $a->add_hint('test');
     $a->define_tool(name => 't1', description => 'T', handler => sub { {} });

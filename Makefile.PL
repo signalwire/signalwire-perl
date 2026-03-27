@@ -1,8 +1,8 @@
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-    NAME         => 'SignalWire::Agents',
-    VERSION_FROM => 'lib/SignalWire/Agents.pm',
+    NAME         => 'SignalWire',
+    VERSION_FROM => 'lib/SignalWire.pm',
     ABSTRACT     => 'SignalWire AI Agents SDK for Perl',
     AUTHOR       => 'SignalWire <support@signalwire.com>',
     LICENSE      => 'mit',

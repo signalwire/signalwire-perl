@@ -12,13 +12,13 @@
 use strict;
 use warnings;
 use lib 'lib';
-use SignalWire::Agents;
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Server::AgentServer;
+use SignalWire;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Server::AgentServer;
 
 # --- Healthcare Agent ---
 
-my $healthcare = SignalWire::Agents::Agent::AgentBase->new(
+my $healthcare = SignalWire::Agent::AgentBase->new(
     name        => 'Healthcare AI Assistant',
     route       => '/healthcare',
     auto_answer => 1,
@@ -64,7 +64,7 @@ $healthcare->set_dynamic_config_callback(sub {
 
 # --- Finance Agent ---
 
-my $finance = SignalWire::Agents::Agent::AgentBase->new(
+my $finance = SignalWire::Agent::AgentBase->new(
     name        => 'Financial Services AI',
     route       => '/finance',
     auto_answer => 1,
@@ -110,7 +110,7 @@ $finance->set_dynamic_config_callback(sub {
 
 # --- Retail Agent ---
 
-my $retail = SignalWire::Agents::Agent::AgentBase->new(
+my $retail = SignalWire::Agent::AgentBase->new(
     name        => 'Retail Customer Service AI',
     route       => '/retail',
     auto_answer => 1,
@@ -155,7 +155,7 @@ $retail->set_dynamic_config_callback(sub {
 
 # --- Server Setup ---
 
-my $server = SignalWire::Agents::Server::AgentServer->new(
+my $server = SignalWire::Server::AgentServer->new(
     host => '0.0.0.0',
     port => 3000,
 );

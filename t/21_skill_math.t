@@ -3,14 +3,14 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('math');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('math');
 ok(defined $factory, 'factory found');
 
 subtest 'construction and registration' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'math');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'math');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'math', 'skill_name');
     ok($skill->setup, 'setup');
@@ -19,7 +19,7 @@ subtest 'construction and registration' => sub {
 };
 
 subtest 'calculate valid expression' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'math_exec');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'math_exec');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -29,7 +29,7 @@ subtest 'calculate valid expression' => sub {
 };
 
 subtest 'calculate invalid expression' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'math_bad');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'math_bad');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -38,7 +38,7 @@ subtest 'calculate invalid expression' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'math_ps');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'math_ps');
     my $skill = $factory->new(agent => $agent, params => {});
     my $sections = $skill->get_prompt_sections;
     ok(scalar @$sections > 0, 'has sections');

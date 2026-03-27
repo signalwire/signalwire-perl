@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use JSON ();
 
-use SignalWire::Agents::Contexts;
+use SignalWire::Contexts;
 
 # Helper to roundtrip through JSON for comparison
 sub jrt {
@@ -15,7 +15,7 @@ sub jrt {
 # Test: Step basics
 # =============================================
 subtest 'Step basics' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'greeting');
+    my $step = SignalWire::Contexts::Step->new(name => 'greeting');
     is($step->name, 'greeting', 'step name');
 
     $step->set_text('Say hello to the user');
@@ -25,7 +25,7 @@ subtest 'Step basics' => sub {
 };
 
 subtest 'Step POM sections' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'greet');
+    my $step = SignalWire::Contexts::Step->new(name => 'greet');
     $step->add_section('Task', 'Greet the user');
     $step->add_bullets('Process', ['Say hello', 'Ask name']);
 
@@ -37,19 +37,19 @@ subtest 'Step POM sections' => sub {
 };
 
 subtest 'Step cannot mix text and POM' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'test');
+    my $step = SignalWire::Contexts::Step->new(name => 'test');
     $step->set_text('direct text');
     eval { $step->add_section('Title', 'Body') };
     ok($@, 'cannot add POM after set_text');
 
-    $step = SignalWire::Agents::Contexts::Step->new(name => 'test2');
+    $step = SignalWire::Contexts::Step->new(name => 'test2');
     $step->add_section('Title', 'Body');
     eval { $step->set_text('direct') };
     ok($@, 'cannot set_text after POM');
 };
 
 subtest 'Step criteria and functions' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'collect');
+    my $step = SignalWire::Contexts::Step->new(name => 'collect');
     $step->set_text('Collect info')
          ->set_step_criteria('User has provided name and email')
          ->set_functions(['get_name', 'get_email'])
@@ -64,7 +64,7 @@ subtest 'Step criteria and functions' => sub {
 };
 
 subtest 'Step with none functions' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'readonly');
+    my $step = SignalWire::Contexts::Step->new(name => 'readonly');
     $step->set_text('Read only step')
          ->set_functions('none');
     my $h = jrt($step->to_hash);
@@ -72,7 +72,7 @@ subtest 'Step with none functions' => sub {
 };
 
 subtest 'Step behavior flags' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'flags');
+    my $step = SignalWire::Contexts::Step->new(name => 'flags');
     $step->set_text('Flags test')
          ->set_end(1)
          ->set_skip_user_turn(1)
@@ -85,7 +85,7 @@ subtest 'Step behavior flags' => sub {
 };
 
 subtest 'Step reset object' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'reset');
+    my $step = SignalWire::Contexts::Step->new(name => 'reset');
     $step->set_text('Reset step')
          ->set_reset_system_prompt('New prompt')
          ->set_reset_user_prompt('User msg')
@@ -102,7 +102,7 @@ subtest 'Step reset object' => sub {
 };
 
 subtest 'Step clear_sections' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'clear');
+    my $step = SignalWire::Contexts::Step->new(name => 'clear');
     $step->add_section('Task', 'Original');
     $step->clear_sections;
     $step->set_text('Replaced');
@@ -114,7 +114,7 @@ subtest 'Step clear_sections' => sub {
 # Test: GatherInfo
 # =============================================
 subtest 'GatherInfo' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'gather');
+    my $step = SignalWire::Contexts::Step->new(name => 'gather');
     $step->set_text('Gather user info')
          ->set_gather_info(
              output_key       => 'user_data',
@@ -145,7 +145,7 @@ subtest 'GatherInfo' => sub {
 };
 
 subtest 'GatherInfo without set_gather_info' => sub {
-    my $step = SignalWire::Agents::Contexts::Step->new(name => 'test');
+    my $step = SignalWire::Contexts::Step->new(name => 'test');
     eval { $step->add_gather_question(key => 'x', question => 'q') };
     ok($@, 'add_gather_question without set_gather_info dies');
 };
@@ -154,7 +154,7 @@ subtest 'GatherInfo without set_gather_info' => sub {
 # Test: Context
 # =============================================
 subtest 'Context basics' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     is($ctx->name, 'default', 'context name');
 
     my $step1 = $ctx->add_step('greet');
@@ -170,7 +170,7 @@ subtest 'Context basics' => sub {
 };
 
 subtest 'Context add_step with options' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     my $step = $ctx->add_step('greet',
         task        => 'Greet the user warmly',
         bullets     => ['Say hello', 'Introduce yourself'],
@@ -188,14 +188,14 @@ subtest 'Context add_step with options' => sub {
 };
 
 subtest 'Context duplicate step' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     $ctx->add_step('greet')->set_text('Hello');
     eval { $ctx->add_step('greet') };
     ok($@, 'duplicate step name dies');
 };
 
 subtest 'Context get_step and remove_step' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     $ctx->add_step('greet')->set_text('Hello');
     $ctx->add_step('collect')->set_text('Info');
 
@@ -212,7 +212,7 @@ subtest 'Context get_step and remove_step' => sub {
 };
 
 subtest 'Context move_step' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     $ctx->add_step('a')->set_text('A');
     $ctx->add_step('b')->set_text('B');
     $ctx->add_step('c')->set_text('C');
@@ -225,7 +225,7 @@ subtest 'Context move_step' => sub {
 };
 
 subtest 'Context system prompt' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'support');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'support');
     $ctx->add_step('greet')->set_text('Hello');
     $ctx->set_system_prompt('You are a support agent');
     $ctx->set_consolidate(1);
@@ -242,7 +242,7 @@ subtest 'Context system prompt' => sub {
 };
 
 subtest 'Context prompt' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     $ctx->add_step('s1')->set_text('step');
     $ctx->set_prompt('Context-level prompt');
 
@@ -251,7 +251,7 @@ subtest 'Context prompt' => sub {
 };
 
 subtest 'Context POM sections' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     $ctx->add_step('s1')->set_text('step');
     $ctx->add_section('Personality', 'You are friendly');
     $ctx->add_bullets('Rules', ['Be nice', 'Be helpful']);
@@ -262,7 +262,7 @@ subtest 'Context POM sections' => sub {
 };
 
 subtest 'Context fillers' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     $ctx->add_step('s1')->set_text('step');
     $ctx->set_enter_fillers({ 'en-US' => ['Welcome!', 'Hello!'] });
     $ctx->add_exit_filler('en-US', ['Goodbye!']);
@@ -273,7 +273,7 @@ subtest 'Context fillers' => sub {
 };
 
 subtest 'Context valid_contexts and valid_steps' => sub {
-    my $ctx = SignalWire::Agents::Contexts::Context->new(name => 'default');
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
     $ctx->add_step('s1')->set_text('step');
     $ctx->set_valid_contexts(['support', 'sales']);
     $ctx->set_valid_steps(['s1']);
@@ -289,7 +289,7 @@ subtest 'Context valid_contexts and valid_steps' => sub {
 # Test: ContextBuilder
 # =============================================
 subtest 'ContextBuilder single default context' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     my $ctx = $builder->add_context('default');
     $ctx->add_step('greet')->set_text('Hello');
     $ctx->add_step('help')->set_text('How can I help?');
@@ -300,7 +300,7 @@ subtest 'ContextBuilder single default context' => sub {
 };
 
 subtest 'ContextBuilder multiple contexts' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
 
     my $sales = $builder->add_context('sales');
     $sales->add_step('intro')->set_text('Welcome to sales');
@@ -316,13 +316,13 @@ subtest 'ContextBuilder multiple contexts' => sub {
 };
 
 subtest 'ContextBuilder validation - no contexts' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     eval { $builder->to_hash };
     ok($@, 'no contexts dies');
 };
 
 subtest 'ContextBuilder validation - single non-default' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     $builder->add_context('other')->add_step('s1')->set_text('step');
     eval { $builder->to_hash };
     ok($@, 'single non-default context dies');
@@ -330,14 +330,14 @@ subtest 'ContextBuilder validation - single non-default' => sub {
 };
 
 subtest 'ContextBuilder validation - empty context' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     $builder->add_context('default');
     eval { $builder->to_hash };
     ok($@, 'empty context dies');
 };
 
 subtest 'ContextBuilder validation - invalid step reference' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     my $ctx = $builder->add_context('default');
     $ctx->add_step('s1')->set_text('step')->set_valid_steps(['nonexistent']);
     eval { $builder->to_hash };
@@ -346,7 +346,7 @@ subtest 'ContextBuilder validation - invalid step reference' => sub {
 };
 
 subtest 'ContextBuilder validation - invalid context reference' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     my $ctx = $builder->add_context('default');
     $ctx->add_step('s1')->set_text('step');
     $ctx->set_valid_contexts(['nonexistent']);
@@ -357,7 +357,7 @@ subtest 'ContextBuilder validation - invalid context reference' => sub {
 
 subtest 'ContextBuilder validation - gather_info' => sub {
     # Gather with no questions
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     my $ctx = $builder->add_context('default');
     my $step = $ctx->add_step('gather')->set_text('gather');
     $step->set_gather_info();
@@ -365,7 +365,7 @@ subtest 'ContextBuilder validation - gather_info' => sub {
     ok($@, 'gather_info with no questions dies');
 
     # Duplicate question keys
-    $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    $builder = SignalWire::Contexts::ContextBuilder->new();
     $ctx = $builder->add_context('default');
     $step = $ctx->add_step('gather')->set_text('gather');
     $step->set_gather_info()
@@ -377,7 +377,7 @@ subtest 'ContextBuilder validation - gather_info' => sub {
 };
 
 subtest 'ContextBuilder validation - next_step at end' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     my $ctx = $builder->add_context('default');
     my $step = $ctx->add_step('last')->set_text('last step');
     $step->set_gather_info(completion_action => 'next_step')
@@ -387,7 +387,7 @@ subtest 'ContextBuilder validation - next_step at end' => sub {
 };
 
 subtest 'ContextBuilder get_context' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     $builder->add_context('default')->add_step('s1')->set_text('step');
     my $ctx = $builder->get_context('default');
     ok($ctx, 'get_context returns context');
@@ -396,7 +396,7 @@ subtest 'ContextBuilder get_context' => sub {
 };
 
 subtest 'ContextBuilder duplicate context' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     $builder->add_context('default');
     eval { $builder->add_context('default') };
     ok($@, 'duplicate context dies');
@@ -406,7 +406,7 @@ subtest 'ContextBuilder duplicate context' => sub {
 # Test: valid_steps "next" is allowed
 # =============================================
 subtest 'valid_steps with next' => sub {
-    my $builder = SignalWire::Agents::Contexts::ContextBuilder->new();
+    my $builder = SignalWire::Contexts::ContextBuilder->new();
     my $ctx = $builder->add_context('default');
     $ctx->add_step('s1')->set_text('step 1')->set_valid_steps(['next']);
     $ctx->add_step('s2')->set_text('step 2');
@@ -419,10 +419,10 @@ subtest 'valid_steps with next' => sub {
 # Test: create_simple_context
 # =============================================
 subtest 'create_simple_context' => sub {
-    my $ctx = SignalWire::Agents::Contexts->create_simple_context();
+    my $ctx = SignalWire::Contexts->create_simple_context();
     is($ctx->name, 'default', 'default name');
 
-    $ctx = SignalWire::Agents::Contexts->create_simple_context('custom');
+    $ctx = SignalWire::Contexts->create_simple_context('custom');
     is($ctx->name, 'custom', 'custom name');
 };
 

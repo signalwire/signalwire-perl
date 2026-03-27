@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('claude_skills');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('claude_skills');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'claude_skills', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers stub tool' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs_reg');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -25,7 +25,7 @@ subtest 'registers stub tool' => sub {
 };
 
 subtest 'custom prefix' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs_prefix');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs_prefix');
     my $skill = $factory->new(agent => $agent, params => { tool_prefix => 'my_' });
     $skill->setup;
     $skill->register_tools;
@@ -33,7 +33,7 @@ subtest 'custom prefix' => sub {
 };
 
 subtest 'hints' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'cs_hints');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'cs_hints');
     my $skill = $factory->new(agent => $agent, params => {});
     my $hints = $skill->get_hints;
     ok(grep({ $_ eq 'claude' } @$hints), 'claude hint');

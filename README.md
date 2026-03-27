@@ -19,9 +19,9 @@ A Perl framework for building, deploying, and managing AI agents as microservice
 ## Quick Start
 
 ```perl
-use SignalWire::Agents;
+use SignalWire;
 
-my $agent = SignalWire::Agents::AgentBase->new(name => 'my-agent');
+my $agent = SignalWire::AgentBase->new(name => 'my-agent');
 
 $agent->set_prompt_text("You are a helpful assistant.");
 
@@ -31,7 +31,7 @@ $agent->define_tool(
     parameters  => {},
     handler     => sub {
         my ($args, $raw_data) = @_;
-        return SignalWire::Agents::FunctionResult->new(
+        return SignalWire::FunctionResult->new(
             response => "The current time is " . localtime()
         );
     },
@@ -44,7 +44,7 @@ $agent->run;
 
 ```bash
 # From CPAN
-cpanm SignalWire::Agents
+cpanm SignalWire
 
 # From source
 cpanm --installdeps .
@@ -57,9 +57,9 @@ make install
 
 ```perl
 # app.psgi
-use SignalWire::Agents;
+use SignalWire;
 
-my $agent = SignalWire::Agents::AgentBase->new(name => 'my-agent');
+my $agent = SignalWire::AgentBase->new(name => 'my-agent');
 $agent->set_prompt_text("You are a helpful assistant.");
 
 $agent->psgi_app;

@@ -4,21 +4,21 @@ use warnings;
 use Test::More;
 use JSON qw(encode_json decode_json);
 
-use_ok('SignalWire::Agents::Prefabs::Concierge');
+use_ok('SignalWire::Prefabs::Concierge');
 
 subtest 'construction defaults' => sub {
-    my $a = SignalWire::Agents::Prefabs::Concierge->new(
+    my $a = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Grand Hotel',
         services   => ['room service'],
         amenities  => { pool => { hours => '9-5' } },
     );
     is($a->name, 'concierge', 'default name');
     is($a->route, '/concierge', 'default route');
-    ok($a->isa('SignalWire::Agents::Agent::AgentBase'), 'isa AgentBase');
+    ok($a->isa('SignalWire::Agent::AgentBase'), 'isa AgentBase');
 };
 
 subtest 'tools registered' => sub {
-    my $a = SignalWire::Agents::Prefabs::Concierge->new(
+    my $a = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Hotel',
         services   => ['room service'],
         amenities  => { pool => {} },
@@ -27,7 +27,7 @@ subtest 'tools registered' => sub {
 };
 
 subtest 'prompt sections' => sub {
-    my $a = SignalWire::Agents::Prefabs::Concierge->new(
+    my $a = SignalWire::Prefabs::Concierge->new(
         venue_name           => 'Hotel',
         services             => ['room service', 'spa'],
         amenities            => { pool => { hours => '9-5', location => '2F' } },
@@ -42,7 +42,7 @@ subtest 'prompt sections' => sub {
 };
 
 subtest 'global data' => sub {
-    my $a = SignalWire::Agents::Prefabs::Concierge->new(
+    my $a = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Test Hotel',
         services   => ['room service'],
         amenities  => { pool => {} },
@@ -51,7 +51,7 @@ subtest 'global data' => sub {
 };
 
 subtest 'tool execution' => sub {
-    my $a = SignalWire::Agents::Prefabs::Concierge->new(
+    my $a = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Hotel',
         services   => ['room service'],
         amenities  => { pool => {} },
@@ -62,7 +62,7 @@ subtest 'tool execution' => sub {
 };
 
 subtest 'render_swml' => sub {
-    my $a = SignalWire::Agents::Prefabs::Concierge->new(
+    my $a = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Hotel',
         services   => ['room service'],
         amenities  => { pool => {} },
@@ -74,7 +74,7 @@ subtest 'render_swml' => sub {
 };
 
 subtest 'custom welcome message' => sub {
-    my $a = SignalWire::Agents::Prefabs::Concierge->new(
+    my $a = SignalWire::Prefabs::Concierge->new(
         venue_name      => 'Hotel',
         services        => ['rs'],
         amenities       => {},
@@ -86,7 +86,7 @@ subtest 'custom welcome message' => sub {
 };
 
 subtest 'no optional sections' => sub {
-    my $a = SignalWire::Agents::Prefabs::Concierge->new(
+    my $a = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Minimal',
         services   => [],
         amenities  => {},

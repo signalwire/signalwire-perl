@@ -3,21 +3,21 @@ use strict;
 use warnings;
 use Test::More;
 
-use SignalWire::Agents::Agent::AgentBase;
-use SignalWire::Agents::Skills::SkillRegistry;
+use SignalWire::Agent::AgentBase;
+use SignalWire::Skills::SkillRegistry;
 
-my $factory = SignalWire::Agents::Skills::SkillRegistry->get_factory('api_ninjas_trivia');
+my $factory = SignalWire::Skills::SkillRegistry->get_factory('api_ninjas_trivia');
 ok(defined $factory, 'factory found');
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'trivia');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'trivia');
     my $skill = $factory->new(agent => $agent, params => {});
     is($skill->skill_name, 'api_ninjas_trivia', 'skill_name');
     ok($skill->supports_multiple_instances, 'multi-instance');
 };
 
 subtest 'registers tool' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'trivia_reg');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'trivia_reg');
     my $skill = $factory->new(agent => $agent, params => {});
     $skill->setup;
     $skill->register_tools;
@@ -27,7 +27,7 @@ subtest 'registers tool' => sub {
 };
 
 subtest 'custom tool_name and categories' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'trivia_custom');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'trivia_custom');
     my $skill = $factory->new(agent => $agent, params => {
         tool_name  => 'quiz',
         categories => ['music', 'sportsleisure'],
@@ -40,7 +40,7 @@ subtest 'custom tool_name and categories' => sub {
 };
 
 subtest 'instance key with tool_name' => sub {
-    my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'trivia_key');
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'trivia_key');
     my $skill = $factory->new(agent => $agent, params => { tool_name => 'my_trivia' });
     is($skill->get_instance_key, 'api_ninjas_trivia:my_trivia', 'custom instance key');
 };

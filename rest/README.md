@@ -6,9 +6,9 @@ Synchronous REST client for managing SignalWire resources, controlling live call
 
 ```perl
 use lib 'lib';
-use SignalWire::Agents::REST::SignalWireClient;
+use SignalWire::REST::RestClient;
 
-my $client = SignalWire::Agents::REST::SignalWireClient->new(
+my $client = SignalWire::REST::RestClient->new(
     project => $ENV{SIGNALWIRE_PROJECT_ID},
     token   => $ENV{SIGNALWIRE_API_TOKEN},
     host    => $ENV{SIGNALWIRE_SPACE},
@@ -33,7 +33,7 @@ $client->calling->dial(
 
 ## Features
 
-- Single `SignalWireClient` with namespaced sub-objects for every API
+- Single `RestClient` with namespaced sub-objects for every API
 - All calling commands: dial, play, record, collect, detect, tap, stream, AI, transcribe, and more
 - Full Fabric API: resource types with CRUD + addresses, tokens, and generic resources
 - Datasphere: document management and semantic search
@@ -46,7 +46,7 @@ $client->calling->dial(
 ## Documentation
 
 - [Getting Started](docs/getting-started.md) -- installation, configuration, first API call
-- [Client Reference](docs/client-reference.md) -- SignalWireClient constructor, namespaces, error handling
+- [Client Reference](docs/client-reference.md) -- RestClient constructor, namespaces, error handling
 - [Fabric Resources](docs/fabric.md) -- managing AI agents, SWML scripts, subscribers, call flows, and more
 - [Calling Commands](docs/calling.md) -- REST-based call control (dial, play, record, collect, AI, etc.)
 - [Compatibility API](docs/compat.md) -- Twilio-compatible LAML endpoints
@@ -81,8 +81,8 @@ $client->calling->dial(
 ## Module Structure
 
 ```
-lib/SignalWire/Agents/REST/
-    SignalWireClient.pm    # Main client -- namespace wiring, lazy builders
+lib/SignalWire/REST/
+    RestClient.pm    # Main client -- namespace wiring, lazy builders
     HttpClient.pm          # HTTP::Tiny wrapper with auth, JSON, error handling
     Namespaces/
         Fabric.pm          # AI agents, SWML scripts, subscribers, call flows, etc.

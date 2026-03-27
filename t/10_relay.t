@@ -5,7 +5,7 @@ use Test::More;
 
 # ===== Constants =====
 # Must use BEGIN block so constants are available at compile time
-BEGIN { use_ok('SignalWire::Agents::Relay::Constants', ':all') }
+BEGIN { use_ok('SignalWire::Relay::Constants', ':all') }
 
 # Protocol version
 {
@@ -83,17 +83,17 @@ BEGIN { use_ok('SignalWire::Agents::Relay::Constants', ':all') }
 }
 
 # ===== Event =====
-use_ok('SignalWire::Agents::Relay::Event');
+use_ok('SignalWire::Relay::Event');
 
 # Parse known event type
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'c1',
         node_id    => 'n1',
         tag        => 't1',
         call_state => 'ringing',
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::CallState');
+    isa_ok($event, 'SignalWire::Relay::Event::CallState');
     is($event->event_type, 'calling.call.state', 'event_type set');
     is($event->call_id, 'c1', 'call_id set');
     is($event->node_id, 'n1', 'node_id set');
@@ -103,13 +103,13 @@ use_ok('SignalWire::Agents::Relay::Event');
 
 # Parse dial event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.dial', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.dial', {
         tag        => 'dial-tag',
         dial_state => 'answered',
         node_id    => 'n2',
         call       => { call_id => 'winner-id', dial_winner => 1 },
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::CallDial');
+    isa_ok($event, 'SignalWire::Relay::Event::CallDial');
     is($event->tag, 'dial-tag', 'dial tag');
     is($event->dial_state, 'answered', 'dial_state');
     is($event->call->{call_id}, 'winner-id', 'nested call_id');
@@ -117,19 +117,19 @@ use_ok('SignalWire::Agents::Relay::Event');
 
 # Parse play event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.play', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.play', {
         call_id    => 'c3',
         control_id => 'ctl1',
         state      => 'finished',
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::CallPlay');
+    isa_ok($event, 'SignalWire::Relay::Event::CallPlay');
     is($event->control_id, 'ctl1', 'control_id set');
     is($event->state, 'finished', 'state set');
 }
 
 # Parse record event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.record', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.record', {
         call_id    => 'c4',
         control_id => 'ctl2',
         state      => 'finished',
@@ -137,7 +137,7 @@ use_ok('SignalWire::Agents::Relay::Event');
         duration   => 15,
         size       => 48000,
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::CallRecord');
+    isa_ok($event, 'SignalWire::Relay::Event::CallRecord');
     is($event->url, 'https://example.com/rec.mp3', 'record url');
     is($event->duration, 15, 'record duration');
     is($event->size, 48000, 'record size');
@@ -145,29 +145,29 @@ use_ok('SignalWire::Agents::Relay::Event');
 
 # Parse collect event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.collect', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.collect', {
         call_id    => 'c5',
         control_id => 'ctl3',
         result     => { type => 'digit', params => { digits => '1234', terminator => '#' } },
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::CallCollect');
+    isa_ok($event, 'SignalWire::Relay::Event::CallCollect');
     is($event->result->{type}, 'digit', 'collect result type');
 }
 
 # Parse detect event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.detect', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.detect', {
         call_id    => 'c6',
         control_id => 'ctl4',
         detect     => { type => 'machine', params => { event => 'HUMAN' } },
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::CallDetect');
+    isa_ok($event, 'SignalWire::Relay::Event::CallDetect');
     is($event->detect->{type}, 'machine', 'detect type');
 }
 
 # Parse message receive event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('messaging.receive', {
+    my $event = SignalWire::Relay::Event->parse_event('messaging.receive', {
         message_id    => 'msg-1',
         context       => 'office',
         direction     => 'inbound',
@@ -178,7 +178,7 @@ use_ok('SignalWire::Agents::Relay::Event');
         segments      => 1,
         message_state => 'received',
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::MessageReceive');
+    isa_ok($event, 'SignalWire::Relay::Event::MessageReceive');
     is($event->message_id, 'msg-1', 'message_id set');
     is($event->from_number, '+15551111111', 'from_number set');
     is($event->body, 'Hello', 'body set');
@@ -186,55 +186,55 @@ use_ok('SignalWire::Agents::Relay::Event');
 
 # Parse message state event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('messaging.state', {
+    my $event = SignalWire::Relay::Event->parse_event('messaging.state', {
         message_id    => 'msg-2',
         message_state => 'delivered',
         direction     => 'outbound',
         from_number   => '+15551111111',
         to_number     => '+15552222222',
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::MessageState');
+    isa_ok($event, 'SignalWire::Relay::Event::MessageState');
     is($event->message_state, 'delivered', 'message_state set');
 }
 
 # Parse authorization state event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('signalwire.authorization.state', {
+    my $event = SignalWire::Relay::Event->parse_event('signalwire.authorization.state', {
         authorization_state => 'enc-blob:tag-blob',
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::AuthorizationState');
+    isa_ok($event, 'SignalWire::Relay::Event::AuthorizationState');
     is($event->authorization_state, 'enc-blob:tag-blob', 'authorization_state set');
 }
 
 # Parse disconnect event
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('signalwire.disconnect', {
+    my $event = SignalWire::Relay::Event->parse_event('signalwire.disconnect', {
         restart => 1,
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::Disconnect');
+    isa_ok($event, 'SignalWire::Relay::Event::Disconnect');
     is($event->restart, 1, 'restart flag set');
 }
 
 # Parse inbound call
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.receive', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.receive', {
         call_id    => 'inbound-1',
         node_id    => 'n3',
         context    => 'support',
         call_state => 'ringing',
         device     => { type => 'phone', params => { from_number => '+15553333333', to_number => '+15554444444' } },
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event::CallReceive');
+    isa_ok($event, 'SignalWire::Relay::Event::CallReceive');
     is($event->call_id, 'inbound-1', 'inbound call_id');
     is($event->context, 'support', 'inbound context');
 }
 
 # Unknown event type falls back to base
 {
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.unknown_future_thing', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.unknown_future_thing', {
         foo => 'bar',
     });
-    isa_ok($event, 'SignalWire::Agents::Relay::Event');
+    isa_ok($event, 'SignalWire::Relay::Event');
     is($event->event_type, 'calling.call.unknown_future_thing', 'unknown event type preserved');
     is($event->params->{foo}, 'bar', 'params preserved for unknown event');
 }
@@ -252,18 +252,18 @@ use_ok('SignalWire::Agents::Relay::Event');
         signalwire.authorization.state signalwire.disconnect
     );
     for my $type (@all_types) {
-        my $event = SignalWire::Agents::Relay::Event->parse_event($type, {});
+        my $event = SignalWire::Relay::Event->parse_event($type, {});
         ok($event, "parsed event type: $type");
-        isa_ok($event, 'SignalWire::Agents::Relay::Event');
+        isa_ok($event, 'SignalWire::Relay::Event');
     }
 }
 
 # ===== Action =====
-use_ok('SignalWire::Agents::Relay::Action');
+use_ok('SignalWire::Relay::Action');
 
 # Base action construction and wait
 {
-    my $action = SignalWire::Agents::Relay::Action->new(control_id => 'ctl-test');
+    my $action = SignalWire::Relay::Action->new(control_id => 'ctl-test');
     is($action->control_id, 'ctl-test', 'action control_id');
     ok(!$action->is_done, 'action not done initially');
     is($action->state, 'created', 'action initial state');
@@ -281,7 +281,7 @@ use_ok('SignalWire::Agents::Relay::Action');
 # Action on_completed callback
 {
     my $called = 0;
-    my $action = SignalWire::Agents::Relay::Action->new(control_id => 'ctl-cb');
+    my $action = SignalWire::Relay::Action->new(control_id => 'ctl-cb');
     $action->on_completed(sub { $called = 1 });
     is($called, 0, 'callback not called yet');
     $action->_resolve('done');
@@ -291,7 +291,7 @@ use_ok('SignalWire::Agents::Relay::Action');
 # on_completed callback when already done
 {
     my $called = 0;
-    my $action = SignalWire::Agents::Relay::Action->new(control_id => 'ctl-cb2');
+    my $action = SignalWire::Relay::Action->new(control_id => 'ctl-cb2');
     $action->_resolve('already');
     $action->on_completed(sub { $called = 1 });
     is($called, 1, 'callback called immediately when already done');
@@ -300,7 +300,7 @@ use_ok('SignalWire::Agents::Relay::Action');
 # Double resolve is ignored
 {
     my $count = 0;
-    my $action = SignalWire::Agents::Relay::Action->new(control_id => 'ctl-dbl');
+    my $action = SignalWire::Relay::Action->new(control_id => 'ctl-dbl');
     $action->on_completed(sub { $count++ });
     $action->_resolve('first');
     $action->_resolve('second');
@@ -310,9 +310,9 @@ use_ok('SignalWire::Agents::Relay::Action');
 
 # PlayAction subclass
 {
-    my $action = SignalWire::Agents::Relay::Action::Play->new(control_id => 'play-1');
-    isa_ok($action, 'SignalWire::Agents::Relay::Action::Play');
-    isa_ok($action, 'SignalWire::Agents::Relay::Action');
+    my $action = SignalWire::Relay::Action::Play->new(control_id => 'play-1');
+    isa_ok($action, 'SignalWire::Relay::Action::Play');
+    isa_ok($action, 'SignalWire::Relay::Action');
     is($action->_stop_method, 'calling.play.stop', 'play stop method');
     ok($action->can('pause'), 'play can pause');
     ok($action->can('resume'), 'play can resume');
@@ -321,8 +321,8 @@ use_ok('SignalWire::Agents::Relay::Action');
 
 # RecordAction subclass
 {
-    my $action = SignalWire::Agents::Relay::Action::Record->new(control_id => 'rec-1');
-    isa_ok($action, 'SignalWire::Agents::Relay::Action::Record');
+    my $action = SignalWire::Relay::Action::Record->new(control_id => 'rec-1');
+    isa_ok($action, 'SignalWire::Relay::Action::Record');
     is($action->_stop_method, 'calling.record.stop', 'record stop method');
     ok($action->can('pause'), 'record can pause');
     ok($action->can('resume'), 'record can resume');
@@ -330,18 +330,18 @@ use_ok('SignalWire::Agents::Relay::Action');
 
 # DetectAction
 {
-    my $action = SignalWire::Agents::Relay::Action::Detect->new(control_id => 'det-1');
+    my $action = SignalWire::Relay::Action::Detect->new(control_id => 'det-1');
     is($action->_stop_method, 'calling.detect.stop', 'detect stop method');
 }
 
 # CollectAction -- filters play events
 {
-    my $action = SignalWire::Agents::Relay::Action::Collect->new(control_id => 'coll-1');
+    my $action = SignalWire::Relay::Action::Collect->new(control_id => 'coll-1');
     is($action->_stop_method, 'calling.collect.stop', 'collect stop method');
     ok($action->can('start_input_timers'), 'collect can start_input_timers');
 
     # Play event should be ignored
-    my $play_event = SignalWire::Agents::Relay::Event->parse_event('calling.call.play', {
+    my $play_event = SignalWire::Relay::Event->parse_event('calling.call.play', {
         control_id => 'coll-1',
         state      => 'finished',
     });
@@ -351,13 +351,13 @@ use_ok('SignalWire::Agents::Relay::Action');
 
 # FaxAction
 {
-    my $send_action = SignalWire::Agents::Relay::Action::Fax->new(
+    my $send_action = SignalWire::Relay::Action::Fax->new(
         control_id => 'fax-s',
         _fax_type  => 'send',
     );
     is($send_action->_stop_method, 'calling.send_fax.stop', 'send fax stop method');
 
-    my $recv_action = SignalWire::Agents::Relay::Action::Fax->new(
+    my $recv_action = SignalWire::Relay::Action::Fax->new(
         control_id => 'fax-r',
         _fax_type  => 'receive',
     );
@@ -366,28 +366,28 @@ use_ok('SignalWire::Agents::Relay::Action');
 
 # TapAction, StreamAction, PayAction, TranscribeAction, AIAction
 {
-    my $tap = SignalWire::Agents::Relay::Action::Tap->new(control_id => 'tap-1');
+    my $tap = SignalWire::Relay::Action::Tap->new(control_id => 'tap-1');
     is($tap->_stop_method, 'calling.tap.stop', 'tap stop method');
 
-    my $stream = SignalWire::Agents::Relay::Action::Stream->new(control_id => 'str-1');
+    my $stream = SignalWire::Relay::Action::Stream->new(control_id => 'str-1');
     is($stream->_stop_method, 'calling.stream.stop', 'stream stop method');
 
-    my $pay = SignalWire::Agents::Relay::Action::Pay->new(control_id => 'pay-1');
+    my $pay = SignalWire::Relay::Action::Pay->new(control_id => 'pay-1');
     is($pay->_stop_method, 'calling.pay.stop', 'pay stop method');
 
-    my $transcribe = SignalWire::Agents::Relay::Action::Transcribe->new(control_id => 'tx-1');
+    my $transcribe = SignalWire::Relay::Action::Transcribe->new(control_id => 'tx-1');
     is($transcribe->_stop_method, 'calling.transcribe.stop', 'transcribe stop method');
 
-    my $ai = SignalWire::Agents::Relay::Action::AI->new(control_id => 'ai-1');
+    my $ai = SignalWire::Relay::Action::AI->new(control_id => 'ai-1');
     is($ai->_stop_method, 'calling.ai.stop', 'ai stop method');
 }
 
 # ===== Call =====
-use_ok('SignalWire::Agents::Relay::Call');
+use_ok('SignalWire::Relay::Call');
 
 # Call construction
 {
-    my $call = SignalWire::Agents::Relay::Call->new(
+    my $call = SignalWire::Relay::Call->new(
         call_id => 'call-1',
         node_id => 'node-1',
         tag     => 'tag-1',
@@ -400,12 +400,12 @@ use_ok('SignalWire::Agents::Relay::Call');
 
 # Call event dispatch -- state changes
 {
-    my $call = SignalWire::Agents::Relay::Call->new(
+    my $call = SignalWire::Relay::Call->new(
         call_id => 'call-2',
         node_id => 'node-2',
     );
 
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'call-2',
         call_state => 'answered',
     });
@@ -415,7 +415,7 @@ use_ok('SignalWire::Agents::Relay::Call');
 
 # Call event listener
 {
-    my $call = SignalWire::Agents::Relay::Call->new(
+    my $call = SignalWire::Relay::Call->new(
         call_id => 'call-3',
         node_id => 'node-3',
     );
@@ -426,7 +426,7 @@ use_ok('SignalWire::Agents::Relay::Call');
         $received_event = $e;
     });
 
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'call-3',
         call_state => 'ringing',
     });
@@ -437,7 +437,7 @@ use_ok('SignalWire::Agents::Relay::Call');
 
 # Call methods exist
 {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'x', node_id => 'n');
+    my $call = SignalWire::Relay::Call->new(call_id => 'x', node_id => 'n');
     my @simple_methods = qw(answer hangup pass connect disconnect hold unhold
         denoise denoise_stop transfer join_conference leave_conference echo
         bind_digit clear_digit_bindings live_transcribe live_translate
@@ -456,9 +456,9 @@ use_ok('SignalWire::Agents::Relay::Call');
 
 # Call ended resolves all actions
 {
-    my $call = SignalWire::Agents::Relay::Call->new(call_id => 'call-end', node_id => 'n');
+    my $call = SignalWire::Relay::Call->new(call_id => 'call-end', node_id => 'n');
     # Manually add an action
-    my $action = SignalWire::Agents::Relay::Action::Play->new(
+    my $action = SignalWire::Relay::Action::Play->new(
         control_id => 'ctl-end-test',
         call_id    => 'call-end',
         node_id    => 'n',
@@ -466,7 +466,7 @@ use_ok('SignalWire::Agents::Relay::Call');
     $call->_actions->{'ctl-end-test'} = $action;
 
     # Dispatch ended event
-    my $event = SignalWire::Agents::Relay::Event->parse_event('calling.call.state', {
+    my $event = SignalWire::Relay::Event->parse_event('calling.call.state', {
         call_id    => 'call-end',
         call_state => 'ended',
         end_reason => 'hangup',
@@ -479,11 +479,11 @@ use_ok('SignalWire::Agents::Relay::Call');
 }
 
 # ===== Message =====
-use_ok('SignalWire::Agents::Relay::Message');
+use_ok('SignalWire::Relay::Message');
 
 # Message construction and state tracking
 {
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id  => 'msg-test',
         from_number => '+15551111111',
         to_number   => '+15552222222',
@@ -498,7 +498,7 @@ use_ok('SignalWire::Agents::Relay::Message');
 
 # Message dispatch -- terminal state
 {
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id => 'msg-del',
         direction  => 'outbound',
     );
@@ -506,7 +506,7 @@ use_ok('SignalWire::Agents::Relay::Message');
     my $cb_fired = 0;
     $msg->on_completed(sub { $cb_fired = 1 });
 
-    my $event = SignalWire::Agents::Relay::Event->parse_event('messaging.state', {
+    my $event = SignalWire::Relay::Event->parse_event('messaging.state', {
         message_id    => 'msg-del',
         message_state => 'delivered',
         direction     => 'outbound',
@@ -520,12 +520,12 @@ use_ok('SignalWire::Agents::Relay::Message');
 
 # Message dispatch -- non-terminal state
 {
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id => 'msg-prog',
         direction  => 'outbound',
     );
 
-    my $event = SignalWire::Agents::Relay::Event->parse_event('messaging.state', {
+    my $event = SignalWire::Relay::Event->parse_event('messaging.state', {
         message_id    => 'msg-prog',
         message_state => 'sent',
     });
@@ -536,11 +536,11 @@ use_ok('SignalWire::Agents::Relay::Message');
 }
 
 # ===== Client =====
-use_ok('SignalWire::Agents::Relay::Client');
+use_ok('SignalWire::Relay::Client');
 
 # Client construction
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project  => 'proj-123',
         token    => 'tok-abc',
         host     => 'example.signalwire.com',
@@ -557,7 +557,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client correlation maps initialization
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
     is(ref $client->_pending, 'HASH', 'pending map is hash');
@@ -570,7 +570,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client handler registration
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -589,7 +589,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_event -- authorization state
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
     $client->_handle_event({
@@ -601,7 +601,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_event -- inbound call
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -620,7 +620,7 @@ use_ok('SignalWire::Agents::Relay::Client');
     });
 
     ok($received_call, 'on_call handler fired');
-    isa_ok($received_call, 'SignalWire::Agents::Relay::Call');
+    isa_ok($received_call, 'SignalWire::Relay::Call');
     is($received_call->call_id, 'inbound-test', 'inbound call call_id');
     is($received_call->context, 'office', 'inbound call context');
     ok(exists $client->_calls->{'inbound-test'}, 'call registered in calls map');
@@ -628,7 +628,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_event -- inbound message
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -647,17 +647,17 @@ use_ok('SignalWire::Agents::Relay::Client');
     });
 
     ok($received_msg, 'on_message handler fired');
-    isa_ok($received_msg, 'SignalWire::Agents::Relay::Event::MessageReceive');
+    isa_ok($received_msg, 'SignalWire::Relay::Event::MessageReceive');
 }
 
 # Client _handle_event -- message state tracking
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
     # Manually add a tracked message
-    my $msg = SignalWire::Agents::Relay::Message->new(
+    my $msg = SignalWire::Relay::Message->new(
         message_id => 'msg-track',
         direction  => 'outbound',
     );
@@ -689,12 +689,12 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_event -- call state routing
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
     # Register a call
-    my $call = SignalWire::Agents::Relay::Call->new(
+    my $call = SignalWire::Relay::Call->new(
         call_id => 'c-route',
         node_id => 'n',
         _client => $client,
@@ -719,7 +719,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_event -- dial completion
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -752,7 +752,7 @@ use_ok('SignalWire::Agents::Relay::Client');
         },
     });
     ok($resolved_call, 'dial resolved');
-    isa_ok($resolved_call, 'SignalWire::Agents::Relay::Call');
+    isa_ok($resolved_call, 'SignalWire::Relay::Call');
     is($resolved_call->call_id, 'dial-call-1', 'resolved call_id');
     is($resolved_call->state, 'answered', 'resolved call state');
     ok($resolved_call->dial_winner, 'dial_winner flag set');
@@ -760,7 +760,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_event -- dial failed
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -782,7 +782,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_disconnect
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
     $client->protocol('old-proto');
@@ -801,7 +801,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_message -- JSON-RPC response matching
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -825,7 +825,7 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_message -- JSON-RPC error
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
 
@@ -848,14 +848,14 @@ use_ok('SignalWire::Agents::Relay::Client');
 # Client _handle_message -- signalwire.ping pong
 {
     # Just verify it does not crash
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
     # Provide a mock _send that captures output
     my @sent;
     {
         no warnings 'redefine';
-        *SignalWire::Agents::Relay::Client::_send = sub {
+        *SignalWire::Relay::Client::_send = sub {
             my ($self, $msg) = @_;
             push @sent, $msg;
         };
@@ -875,13 +875,13 @@ use_ok('SignalWire::Agents::Relay::Client');
 
 # Client _handle_message -- signalwire.event ACK
 {
-    my $client = SignalWire::Agents::Relay::Client->new(
+    my $client = SignalWire::Relay::Client->new(
         project => 'p', token => 't', host => 'h',
     );
     my @sent;
     {
         no warnings 'redefine';
-        *SignalWire::Agents::Relay::Client::_send = sub {
+        *SignalWire::Relay::Client::_send = sub {
             my ($self, $msg) = @_;
             push @sent, $msg;
         };

@@ -3,15 +3,15 @@ use strict;
 use warnings;
 use Test::More;
 
-use_ok('SignalWire::Agents::SWML::Schema');
-use_ok('SignalWire::Agents::SWML::Document');
+use_ok('SignalWire::SWML::Schema');
+use_ok('SignalWire::SWML::Document');
 
 # ============================================================
 # 1. Schema singleton
 # ============================================================
 subtest 'schema singleton' => sub {
-    my $s1 = SignalWire::Agents::SWML::Schema->instance;
-    my $s2 = SignalWire::Agents::SWML::Schema->instance;
+    my $s1 = SignalWire::SWML::Schema->instance;
+    my $s2 = SignalWire::SWML::Schema->instance;
     is($s1, $s2, 'same instance returned');
 };
 
@@ -19,7 +19,7 @@ subtest 'schema singleton' => sub {
 # 2. Verb count
 # ============================================================
 subtest 'verb count' => sub {
-    my $s = SignalWire::Agents::SWML::Schema->instance;
+    my $s = SignalWire::SWML::Schema->instance;
     ok($s->verb_count >= 38, 'at least 38 verbs');
 };
 
@@ -27,7 +27,7 @@ subtest 'verb count' => sub {
 # 3. Known verbs exist
 # ============================================================
 subtest 'known verbs' => sub {
-    my $s = SignalWire::Agents::SWML::Schema->instance;
+    my $s = SignalWire::SWML::Schema->instance;
     for my $verb (qw(answer ai hangup connect sleep play record
                      sip_refer send_sms pay tap)) {
         ok($s->has_verb($verb), "has verb: $verb");
@@ -38,7 +38,7 @@ subtest 'known verbs' => sub {
 # 4. Verb details
 # ============================================================
 subtest 'verb details' => sub {
-    my $s = SignalWire::Agents::SWML::Schema->instance;
+    my $s = SignalWire::SWML::Schema->instance;
     my $answer = $s->get_verb('answer');
     ok($answer, 'answer verb details');
     is($answer->{verb_name}, 'answer', 'verb_name');
@@ -49,7 +49,7 @@ subtest 'verb details' => sub {
 # 5. Unknown verb
 # ============================================================
 subtest 'unknown verb' => sub {
-    my $s = SignalWire::Agents::SWML::Schema->instance;
+    my $s = SignalWire::SWML::Schema->instance;
     ok(!$s->has_verb('nonexistent'), 'unknown verb not found');
     ok(!defined $s->get_verb('nonexistent'), 'get_verb returns undef');
 };
@@ -58,7 +58,7 @@ subtest 'unknown verb' => sub {
 # 6. get_verb_names
 # ============================================================
 subtest 'get_verb_names' => sub {
-    my $s = SignalWire::Agents::SWML::Schema->instance;
+    my $s = SignalWire::SWML::Schema->instance;
     my @names = $s->get_verb_names;
     ok(scalar @names >= 38, 'enough verb names');
     ok(grep({ $_ eq 'answer' } @names), 'includes answer');
@@ -69,7 +69,7 @@ subtest 'get_verb_names' => sub {
 # 7. Document creation and sections
 # ============================================================
 subtest 'document sections' => sub {
-    my $doc = SignalWire::Agents::SWML::Document->new;
+    my $doc = SignalWire::SWML::Document->new;
     is($doc->version, '1.0.0', 'default version');
     $doc->add_section('main');
     ok($doc->has_section('main'), 'has main');
@@ -80,7 +80,7 @@ subtest 'document sections' => sub {
 # 8. Document verbs
 # ============================================================
 subtest 'document verbs' => sub {
-    my $doc = SignalWire::Agents::SWML::Document->new;
+    my $doc = SignalWire::SWML::Document->new;
     $doc->add_section('main');
     $doc->add_verb('main', 'answer', { max_duration => 3600 });
     $doc->add_verb('main', 'hangup', {});
@@ -93,7 +93,7 @@ subtest 'document verbs' => sub {
 # 9. Document to_hash and to_json
 # ============================================================
 subtest 'document serialization' => sub {
-    my $doc = SignalWire::Agents::SWML::Document->new;
+    my $doc = SignalWire::SWML::Document->new;
     $doc->add_section('main');
     $doc->add_verb('main', 'answer', {});
 
@@ -111,7 +111,7 @@ subtest 'document serialization' => sub {
 # 10. Document clear_section
 # ============================================================
 subtest 'clear_section' => sub {
-    my $doc = SignalWire::Agents::SWML::Document->new;
+    my $doc = SignalWire::SWML::Document->new;
     $doc->add_section('main');
     $doc->add_verb('main', 'answer', {});
     $doc->clear_section('main');
@@ -122,7 +122,7 @@ subtest 'clear_section' => sub {
 # 11. Document add_raw_verb
 # ============================================================
 subtest 'add_raw_verb' => sub {
-    my $doc = SignalWire::Agents::SWML::Document->new;
+    my $doc = SignalWire::SWML::Document->new;
     $doc->add_section('main');
     $doc->add_raw_verb('main', { custom_verb => { key => 'value' } });
     is_deeply($doc->get_section('main')->[0], { custom_verb => { key => 'value' } }, 'raw verb added');
