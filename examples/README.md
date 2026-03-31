@@ -31,6 +31,7 @@ PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c examples/simple_agent.pl
 | [simple_agent.pl](simple_agent.pl) | Full-featured agent with POM prompts, SWAIG tools, multilingual support, and LLM parameter tuning |
 | [simple_static.pl](simple_static.pl) | Traditional static agent with fixed configuration (no dynamic callback) |
 | [simple_dynamic_agent.pl](simple_dynamic_agent.pl) | Agent with per-request dynamic configuration callback |
+| [simple_dynamic_enhanced.pl](simple_dynamic_enhanced.pl) | Enhanced dynamic config: VIP, department, customer ID, language |
 | [declarative.pl](declarative.pl) | Declarative prompt definition with subsections and post-prompt summaries |
 | [custom_path.pl](custom_path.pl) | Agent at a custom route (/chat) with mood-based personalization |
 | [multi_agent_server.pl](multi_agent_server.pl) | Multiple agents on one server: healthcare, finance, retail |
@@ -59,6 +60,7 @@ PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c examples/simple_agent.pl
 
 | File | Description |
 |------|-------------|
+| [auto_vivified.pl](auto_vivified.pl) | Auto-vivified verb methods on SWMLService |
 | [swml_service.pl](swml_service.pl) | Basic SWML service: voicemail, IVR menu, call transfer, call recording |
 | [dynamic_swml_service.pl](dynamic_swml_service.pl) | Dynamic SWML with per-request document generation (greeting/router) |
 | [swml_service_routing.pl](swml_service_routing.pl) | Path-based routing with multiple SWML sections |
@@ -68,9 +70,14 @@ PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c examples/simple_agent.pl
 | File | Description |
 |------|-------------|
 | [skills_demo.pl](skills_demo.pl) | Loading and configuring built-in skills (datetime, math, web_search) |
+| [joke_skill.pl](joke_skill.pl) | Joke skill via the modular skills system with DataMap |
 | [web_search.pl](web_search.pl) | Web search agent using Google Custom Search API skill |
+| [web_search_multi_instance.pl](web_search_multi_instance.pl) | Multiple web search instances (general, news, quick) |
 | [wikipedia.pl](wikipedia.pl) | Wikipedia search skill for factual information retrieval |
 | [datasphere.pl](datasphere.pl) | DataSphere skill with multiple instances and custom tool names |
+| [datasphere_multi_instance.pl](datasphere_multi_instance.pl) | DataSphere multi-instance with custom tool names |
+| [datasphere_serverless_env.pl](datasphere_serverless_env.pl) | DataSphere serverless from environment variables |
+| [datasphere_webhook_env.pl](datasphere_webhook_env.pl) | Webhook-based DataSphere from environment variables |
 | [mcp_gateway.pl](mcp_gateway.pl) | MCP Gateway skill for bridging Model Context Protocol tools |
 
 ### SWAIG Features
@@ -125,6 +132,7 @@ PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c examples/simple_agent.pl
 
 | File | Description |
 |------|-------------|
+| [dynamic_info_gatherer.pl](dynamic_info_gatherer.pl) | Dynamic InfoGatherer with callback-based question selection |
 | [prefab_info_gatherer.pl](prefab_info_gatherer.pl) | InfoGatherer prefab for structured data collection |
 | [prefab_survey.pl](prefab_survey.pl) | Survey prefab for conducting structured surveys |
 | [concierge.pl](concierge.pl) | Concierge prefab for venue amenities, services, and hours |
