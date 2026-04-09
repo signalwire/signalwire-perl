@@ -6,6 +6,21 @@ use JSON ();
 our $MAX_CONTEXTS        = 50;
 our $MAX_STEPS_PER_CONTEXT = 100;
 
+# Reserved tool names auto-injected by the runtime when contexts/steps are
+# present. User-defined SWAIG tools must not collide with these names:
+#   - next_step / change_context are injected when valid_steps or
+#     valid_contexts is set so the model can navigate the flow.
+#   - gather_submit is injected while a step's gather_info is collecting
+#     answers.
+# ContextBuilder->validate rejects any agent that registers a user tool
+# sharing one of these names (see the validation in
+# SignalWire::Contexts::ContextBuilder::validate below).
+our %RESERVED_NATIVE_TOOL_NAMES = (
+    next_step       => 1,
+    change_context  => 1,
+    gather_submit   => 1,
+);
+
 # ==========================================================================
 # GatherQuestion
 # ==========================================================================
@@ -119,6 +134,36 @@ sub set_step_criteria {
     return $self;
 }
 
+#
+# set_functions — set which non-internal functions are callable while this
+# step is active.
+#
+# IMPORTANT — inheritance behavior:
+#   If you do NOT call this method, the step inherits whichever function
+#   set was active on the previous step (or the previous context's last
+#   step). The server-side runtime only resets the active set when a step
+#   explicitly declares its `functions` field. This is the most common
+#   source of bugs in multi-step agents: forgetting set_functions on a
+#   later step lets the previous step's tools leak through. Best practice
+#   is to call set_functions explicitly on every step that should differ
+#   from the previous one.
+#
+# Keep the per-step active set small: LLM tool selection accuracy
+# degrades noticeably past ~7-8 simultaneously-active tools per call.
+# Use per-step whitelisting to partition large tool collections.
+#
+# Arguments:
+#   $functions — one of:
+#     - arrayref of function names (whitelist)
+#     - empty arrayref []         (explicit disable-all)
+#     - the string "none"         (synonym for [])
+#
+# Internal functions (e.g. gather_submit, hangup_hook) are ALWAYS protected
+# and cannot be deactivated by this whitelist. The native navigation tools
+# next_step and change_context are injected automatically when
+# set_valid_steps / set_valid_contexts is used; they are not affected by
+# this list and do not need to appear in it.
+#
 sub set_functions {
     my ($self, $functions) = @_;
     $self->_functions($functions);
@@ -137,6 +182,18 @@ sub set_valid_contexts {
     return $self;
 }
 
+#
+# set_end — mark this step as terminal for the step flow.
+#
+# IMPORTANT: end=1 does NOT end the conversation or hang up the call.
+# It exits step mode entirely after this step executes — clearing the
+# steps list, current step index, valid_steps, and valid_contexts. The
+# agent keeps running, but operates only under the base system prompt
+# and the context-level prompt; no more step instructions are injected
+# and no more next_step tool is offered.
+#
+# To actually end the call, call a hangup tool or define a hangup hook.
+#
 sub set_end {
     my ($self, $end) = @_;
     $self->_end($end ? 1 : 0);
@@ -165,6 +222,26 @@ sub set_gather_info {
     return $self;
 }
 
+#
+# add_gather_question — add a question to this step's gather_info.
+# set_gather_info() must be called before this method.
+#
+# IMPORTANT — gather mode locks function access:
+#   While the model is asking gather questions, the runtime forcibly
+#   deactivates ALL of the step's other functions. The only callable
+#   tools during a gather question are:
+#
+#     - gather_submit (the native answer-submission tool)
+#     - Whatever names you pass in this question's `functions` option
+#
+#   next_step and change_context are also filtered out — the model
+#   cannot navigate away until the gather completes. This is by design:
+#   it forces a tight ask → submit → next-question loop.
+#
+#   If a question needs to call out to a tool (e.g. validate an email,
+#   geocode a ZIP), list that tool name in this question's `functions`
+#   option. Functions listed here are active ONLY for this question.
+#
 sub add_gather_question {
     my ($self, %opts) = @_;
     die "Must call set_gather_info() before add_gather_question()"
@@ -367,6 +444,25 @@ sub set_user_prompt {
     return $self;
 }
 
+#
+# set_isolated — mark this context as isolated. Entering it wipes
+# conversation history.
+#
+# When isolated=1 and the context is entered via change_context, the
+# runtime wipes the conversation array. The model starts fresh with only
+# the new context's system_prompt + step instructions, with no memory of
+# prior turns.
+#
+# EXCEPTION — reset overrides the wipe:
+#   If the context also has a reset configuration (via set_consolidate
+#   or set_full_reset), the wipe is skipped in favor of the reset
+#   behavior. Use reset with consolidate=1 to summarize prior history
+#   into a single message instead of dropping it entirely.
+#
+# Use cases: switching to a sensitive billing flow that should not see
+# prior small-talk; handing off to a different agent persona; resetting
+# after a long off-topic detour.
+#
 sub set_isolated {
     my ($self, $iso) = @_;
     $self->_isolated($iso ? 1 : 0);
@@ -511,12 +607,55 @@ sub to_hash {
 # ==========================================================================
 # ContextBuilder
 # ==========================================================================
+#
+# SignalWire::Contexts::ContextBuilder
+#
+# Builder for multi-step, multi-context AI agent workflows.
+#
+# A ContextBuilder owns one or more Contexts; each Context owns an ordered
+# list of Steps. Only one context and one step is active at a time. Per
+# chat turn, the runtime injects the current step's instructions as a
+# system message, then asks the LLM for a response.
+#
+# Native tools auto-injected by the runtime:
+#
+#   When a step (or its enclosing context) declares valid_steps or
+#   valid_contexts, the runtime auto-injects two native tools so the
+#   model can navigate the flow:
+#
+#     - next_step(step => enum)       — present when valid_steps is set
+#     - change_context(context => enum) — present when valid_contexts is set
+#
+#   A third native tool — gather_submit — is injected during gather_info
+#   questioning. These three names are reserved: ContextBuilder->validate
+#   rejects any agent that defines a SWAIG tool with one of these names.
+#   See %SignalWire::Contexts::RESERVED_NATIVE_TOOL_NAMES.
+#
+# Function whitelisting (Step->set_functions):
+#
+#   Each step may declare a functions whitelist. The whitelist is applied
+#   in-memory at the start of each LLM turn. CRITICALLY: if a step does
+#   NOT declare a functions field, it INHERITS the previous step's active
+#   set. See Step->set_functions for details and examples.
+#
 package SignalWire::Contexts::ContextBuilder;
 use Moo;
 use JSON ();
+use Scalar::Util ();
 
 has '_contexts'      => (is => 'rw', default => sub { {} });
 has '_context_order' => (is => 'rw', default => sub { [] });
+# Weak reference to the owning agent so validate() can check
+# user-defined tool names against RESERVED_NATIVE_TOOL_NAMES. Set via
+# attach_agent(); AgentBase->define_contexts wires this up automatically.
+has '_agent' => (is => 'rw', default => sub { undef });
+
+sub attach_agent {
+    my ($self, $agent) = @_;
+    $self->_agent($agent);
+    Scalar::Util::weaken($self->{_agent}) if defined $agent;
+    return $self;
+}
 
 sub add_context {
     my ($self, $name) = @_;
@@ -616,13 +755,51 @@ sub validate {
                         for my $i (0 .. $#order) {
                             if ($order[$i] eq $sname) { $idx = $i; last }
                         }
-                        die "Step '$sname' in context '$cname' has gather_info completion_action='next_step' but it is the last step"
+                        die "Step '$sname' in context '$cname' has gather_info "
+                            . "completion_action='next_step' but it is the last "
+                            . "step in the context. Either "
+                            . "(1) add another step after '$sname', "
+                            . "(2) set completion_action to the name of an "
+                            . "existing step in this context to jump to it, or "
+                            . "(3) set completion_action=undef (default) to "
+                            . "stay in '$sname' after gathering completes."
                             if defined $idx && $idx >= $#order;
                     } elsif (!exists $ctx->_steps->{$action}) {
-                        die "Step '$sname' in context '$cname' has gather_info completion_action='$action' but step '$action' does not exist";
+                        my @available = sort keys %{ $ctx->_steps };
+                        die "Step '$sname' in context '$cname' has gather_info "
+                            . "completion_action='$action' but '$action' is not "
+                            . "a step in this context. Valid options: "
+                            . "'next_step' (advance to the next sequential "
+                            . "step), undef (stay in the current step), or "
+                            . "one of [" . join(', ', map { "'$_'" } @available) . "].";
                     }
                 }
             }
+        }
+    }
+
+    # Validate that user-defined tools do not collide with reserved
+    # native tool names. The runtime auto-injects next_step /
+    # change_context / gather_submit when contexts/steps are present, so
+    # user tools sharing those names would never be called.
+    if (defined $self->_agent && $self->_agent->can('list_tool_names')) {
+        my @registered = $self->_agent->list_tool_names;
+        my @colliding;
+        for my $name (@registered) {
+            push @colliding, $name
+                if exists $SignalWire::Contexts::RESERVED_NATIVE_TOOL_NAMES{$name};
+        }
+        if (@colliding) {
+            my @sorted = sort @colliding;
+            my @reserved = sort keys %SignalWire::Contexts::RESERVED_NATIVE_TOOL_NAMES;
+            die "Tool name(s) ["
+                . join(', ', map { "'$_'" } @sorted)
+                . "] collide with reserved native tools auto-injected by "
+                . "contexts/steps. The names ["
+                . join(', ', map { "'$_'" } @reserved)
+                . "] are reserved and cannot be used for user-defined SWAIG "
+                . "tools when contexts/steps are in use. Rename your "
+                . "tool(s) to avoid the collision.";
         }
     }
 }
