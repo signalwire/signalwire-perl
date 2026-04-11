@@ -344,6 +344,7 @@ has '_steps'           => (is => 'rw', default => sub { {} });
 has '_step_order'      => (is => 'rw', default => sub { [] });
 has '_valid_contexts'  => (is => 'rw', default => sub { undef });
 has '_valid_steps'     => (is => 'rw', default => sub { undef });
+has '_initial_step'    => (is => 'rw', default => sub { undef });
 has '_post_prompt'     => (is => 'rw', default => sub { undef });
 has '_system_prompt'   => (is => 'rw', default => sub { undef });
 has '_system_prompt_sections' => (is => 'rw', default => sub { [] });
@@ -397,6 +398,18 @@ sub move_step {
     my @order = grep { $_ ne $name } @{ $self->_step_order };
     splice @order, $position, 0, $name;
     $self->_step_order(\@order);
+    return $self;
+}
+
+#
+# set_initial_step — set which step the context starts on when entered.
+#
+# By default, a context starts on its first step (index 0). Use this
+# to skip a preamble step on re-entry via change_context.
+#
+sub set_initial_step {
+    my ($self, $step_name) = @_;
+    $self->_initial_step($step_name);
     return $self;
 }
 
@@ -582,6 +595,7 @@ sub to_hash {
 
     $d{valid_contexts} = $self->_valid_contexts if defined $self->_valid_contexts;
     $d{valid_steps}    = $self->_valid_steps    if defined $self->_valid_steps;
+    $d{initial_step}   = $self->_initial_step   if defined $self->_initial_step;
     $d{post_prompt}    = $self->_post_prompt    if defined $self->_post_prompt;
 
     my $sp = $self->_render_system_prompt;
@@ -657,6 +671,13 @@ sub attach_agent {
     return $self;
 }
 
+sub reset {
+    my ($self) = @_;
+    $self->_contexts({});
+    $self->_context_order([]);
+    return $self;
+}
+
 sub add_context {
     my ($self, $name) = @_;
     die "Context '$name' already exists" if exists $self->_contexts->{$name};
@@ -695,6 +716,18 @@ sub validate {
         my $ctx = $self->_contexts->{$cname};
         die "Context '$cname' must have at least one step"
             unless keys %{ $ctx->_steps };
+    }
+
+    # Validate initial_step references a real step in the context
+    for my $cname (keys %{ $self->_contexts }) {
+        my $ctx = $self->_contexts->{$cname};
+        if (defined $ctx->_initial_step) {
+            die "Context '$cname' has initial_step='${\$ctx->_initial_step}' "
+                . "but that step does not exist. Available steps: ["
+                . join(', ', map { "'$_'" } sort keys %{ $ctx->_steps })
+                . "]"
+                unless exists $ctx->_steps->{ $ctx->_initial_step };
+        }
     }
 
     # Validate step references in valid_steps

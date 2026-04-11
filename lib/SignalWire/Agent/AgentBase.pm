@@ -606,6 +606,20 @@ sub define_contexts {
 }
 
 #
+# reset_contexts — remove all contexts, returning the agent to a
+# no-contexts state. Convenience wrapper around
+# define_contexts()->reset(). Use in a dynamic config callback when
+# you need to rebuild contexts from scratch for a specific request.
+#
+sub reset_contexts {
+    my ($self) = @_;
+    if ($self->context_builder->can('reset')) {
+        $self->context_builder->reset;
+    }
+    return $self;
+}
+
+#
 # list_tool_names — return the names of every registered SWAIG tool in
 # insertion order. Used by SignalWire::Contexts::ContextBuilder->validate
 # to detect collisions with reserved native tool names.
