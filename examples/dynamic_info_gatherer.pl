@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use lib 'lib';
 use SignalWire;
-use SignalWire::Prefabs::InfoGathererAgent;
+use SignalWire::Prefabs::InfoGatherer;
 
 my %question_sets = (
     default => [
@@ -37,7 +37,7 @@ my %question_sets = (
     ],
 );
 
-my $agent = SignalWire::Prefabs::InfoGathererAgent->new(
+my $agent = SignalWire::Prefabs::InfoGatherer->new(
     questions => undef,    # dynamic mode
     name      => 'dynamic-intake',
     route     => '/contact',

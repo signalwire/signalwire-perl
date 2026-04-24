@@ -8,10 +8,10 @@ use strict;
 use warnings;
 use lib 'lib';
 use SignalWire;
-use SignalWire::SWML::SWMLService;
+use SignalWire::SWML::Service;
 
 # --- Voicemail Service ---
-my $voicemail = SignalWire::SWML::SWMLService->new(
+my $voicemail = SignalWire::SWML::Service->new(
     name  => 'voicemail',
     route => '/voicemail',
 );
@@ -32,7 +32,7 @@ $voicemail->play(url => 'say:Thank you for your message. Goodbye!');
 $voicemail->add_hangup_verb;
 
 # --- IVR Menu Service ---
-my $ivr = SignalWire::SWML::SWMLService->new(
+my $ivr = SignalWire::SWML::Service->new(
     name  => 'ivr',
     route => '/ivr',
 );
@@ -55,7 +55,7 @@ $ivr->add_verb_to_section('main_menu', 'switch', {
 $ivr->add_verb('transfer', { dest => 'main_menu' });
 
 # --- Call Transfer Service ---
-my $transfer = SignalWire::SWML::SWMLService->new(
+my $transfer = SignalWire::SWML::Service->new(
     name  => 'transfer',
     route => '/transfer',
 );

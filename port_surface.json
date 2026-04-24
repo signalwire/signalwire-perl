@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 000ed9c2823071c98bc6d5dea4ccd019820331c3",
+   "generated_from" : "signalwire-perl @ 65cf2c3af863f1e7c4f750dbb914645115ecb8d9",
    "modules" : {
       "signalwire.agent_server" : {
          "classes" : {
@@ -871,6 +871,8 @@
             "NumberGroupsResource" : [
                "__init__",
                "add_membership",
+               "delete_membership",
+               "get_membership",
                "list_memberships"
             ]
          },
