@@ -202,3 +202,5 @@ t/48_rest_namespaces.t
 t/49_schema_utils.t
 t/50_pom_builder.t
 t/52_rest_phone_binding.t
+t/54_doc_audit.t
+DOC_AUDIT_IGNORE.md

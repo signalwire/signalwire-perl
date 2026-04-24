@@ -79,6 +79,16 @@ sub add_membership {
     return $self->_http->post($self->_path($group_id, 'number_group_memberships'), body => \%kwargs);
 }
 
+sub get_membership {
+    my ($self, $membership_id) = @_;
+    return $self->_http->get("/api/relay/rest/number_group_memberships/$membership_id");
+}
+
+sub delete_membership {
+    my ($self, $membership_id) = @_;
+    return $self->_http->delete_request("/api/relay/rest/number_group_memberships/$membership_id");
+}
+
 # --- VerifiedCallers ---
 package SignalWire::REST::Namespaces::VerifiedCallers;
 use Moo;

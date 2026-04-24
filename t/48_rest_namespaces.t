@@ -138,6 +138,9 @@ subtest 'relay REST resource methods' => sub {
     ok($client->queues->can('list_members'), 'queues list_members');
     ok($client->queues->can('get_next_member'), 'queues get_next_member');
     ok($client->number_groups->can('list_memberships'), 'number_groups list_memberships');
+    ok($client->number_groups->can('add_membership'), 'number_groups add_membership');
+    ok($client->number_groups->can('get_membership'), 'number_groups get_membership');
+    ok($client->number_groups->can('delete_membership'), 'number_groups delete_membership');
     ok($client->verified_callers->can('redial_verification'), 'verified_callers redial_verification');
     ok($client->sip_profile->can('get'), 'sip_profile get');
     ok($client->lookup->can('phone_number'), 'lookup phone_number');
