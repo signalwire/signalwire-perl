@@ -118,25 +118,51 @@ client.fabric.cxml_applications.delete("app-uuid")
 
 Operate on any resource type by ID:
 
-```python
+```perl
 # List all resources across all types
-all_resources = client.fabric.resources.list()
+my $all = $client->fabric->resources->list;
 
 # Get any resource by ID
-resource = client.fabric.resources.get("resource-uuid")
+my $resource = $client->fabric->resources->get("resource-uuid");
 
 # Delete any resource
-client.fabric.resources.delete("resource-uuid")
+$client->fabric->resources->delete_resource("resource-uuid");
 
 # List addresses for any resource
-addresses = client.fabric.resources.list_addresses("resource-uuid")
-
-# Assign a resource to a phone route
-client.fabric.resources.assign_phone_route("resource-uuid", phone_route_id="route-uuid")
+my $addresses = $client->fabric->resources->list_addresses("resource-uuid");
 
 # Assign a resource as a domain application handler
-client.fabric.resources.assign_domain_application("resource-uuid", domain_application_id="da-uuid")
+$client->fabric->resources->assign_domain_application(
+    "resource-uuid", domain_application_id => "da-uuid",
+);
 ```
+
+### Binding phone numbers — use `phone_numbers->set_*`, not `assign_phone_route`
+
+To bind an inbound phone number to a webhook / AI agent / call flow, set
+`call_handler` on the phone number directly. The server auto-materializes
+the matching Fabric resource. See [phone-binding.md](phone-binding.md)
+for the full model and
+[../examples/rest_bind_phone_to_swml_webhook.pl](../examples/rest_bind_phone_to_swml_webhook.pl).
+
+```perl
+# Idiomatic — one line:
+$client->phone_numbers->set_swml_webhook($pn_sid, url => "https://example.com/swml");
+
+# Other handlers:
+$client->phone_numbers->set_cxml_webhook($pn_sid, url => "https://example.com/voice.xml");
+$client->phone_numbers->set_ai_agent($pn_sid, agent_id => "agent-uuid");
+$client->phone_numbers->set_call_flow($pn_sid, flow_id => "flow-uuid");
+$client->phone_numbers->set_relay_application($pn_sid, name => "my-app");
+$client->phone_numbers->set_relay_topic($pn_sid, topic => "office");
+```
+
+`fabric->resources->assign_phone_route` is kept for backwards compatibility
+with legacy resource types but emits a deprecation warning and **does not
+bind** `swml_webhook` / `cxml_webhook` / `ai_agent` bindings. Likewise
+`fabric->swml_webhooks->create` and `fabric->cxml_webhooks->create`
+produce orphan resources not bound to any phone number; the correct path
+is via `phone_numbers->set_swml_webhook` / `set_cxml_webhook`.
 
 ## Fabric Addresses
 

@@ -87,6 +87,7 @@ lib/SignalWire/Agents/REST/Namespaces/Registry.pm
 lib/SignalWire/Agents/REST/Namespaces/Resources.pm
 lib/SignalWire/Agents/REST/Namespaces/Video.pm
 lib/SignalWire/Agents/REST/SignalWireClient.pm
+lib/SignalWire/REST/PhoneCallHandler.pm
 lib/SignalWire/Agents/Security/SessionManager.pm
 lib/SignalWire/Agents/Server/AgentServer.pm
 lib/SignalWire/Agents/Skills/Builtin/ApiNinjasTrivia.pm
@@ -135,7 +136,9 @@ rest/docs/compat.md
 rest/docs/fabric.md
 rest/docs/getting-started.md
 rest/docs/namespaces.md
+rest/docs/phone-binding.md
 rest/examples/rest_10dlc_registration.pl
+rest/examples/rest_bind_phone_to_swml_webhook.pl
 rest/examples/rest_calling_ivr_and_ai.pl
 rest/examples/rest_calling_play_and_record.pl
 rest/examples/rest_compat_laml.pl
@@ -198,3 +201,4 @@ t/47_rest_fabric.t
 t/48_rest_namespaces.t
 t/49_schema_utils.t
 t/50_pom_builder.t
+t/52_rest_phone_binding.t
