@@ -93,19 +93,17 @@ if ($resources && $resources->{data} && @{ $resources->{data} }) {
     }
 }
 
-# 8. Assign a phone route (demo)
-print "\nAssigning phone route (demo)...\n";
-safe('Phone route', sub {
-    $client->fabric->resources->assign_phone_route($relay_id, phone_number => '+15551234567');
-});
-
-# 9. Assign a domain application (demo)
+# 8. Assign a domain application (demo)
 print "\nAssigning domain application (demo)...\n";
 safe('Domain app', sub {
     $client->fabric->resources->assign_domain_application($relay_id, domain => 'app.example.com');
 });
 
-# 10. Generate tokens
+# NOTE: To bind a phone number to a webhook/agent/flow, set call_handler
+# on the phone number directly — see rest_bind_phone_to_swml_webhook.pl.
+# assign_phone_route does NOT work for swml_webhook / cxml_webhook / ai_agent.
+
+# 9. Generate tokens
 print "\nGenerating tokens...\n";
 safe('Guest token', sub {
     my $guest = $client->fabric->tokens->create_guest_token(resource_id => $relay_id);
@@ -123,7 +121,7 @@ safe('Embed token', sub {
     print "  Embed token: " . substr($t, 0, 40) . "...\n" if $t;
 });
 
-# 11. Clean up
+# 10. Clean up
 print "\nCleaning up...\n";
 $client->fabric->relay_applications->delete($relay_id);
 print "  Deleted relay application $relay_id\n";

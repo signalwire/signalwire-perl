@@ -90,6 +90,21 @@ subtest 'generic resources' => sub {
 };
 
 # ============================================================
+# 9a. Auto-materialized webhook deprecation (phone-binding helpers)
+# ============================================================
+subtest 'swml_webhooks and cxml_webhooks use deprecated create subclass' => sub {
+    # See phone-binding.md and t/52_rest_phone_binding.t for the full story.
+    # The create() method on these classes carps a deprecation message
+    # pointing at phone_numbers->set_swml_webhook / set_cxml_webhook.
+    isa_ok($client->fabric->swml_webhooks,
+        'SignalWire::REST::Namespaces::Fabric::SwmlWebhooks',
+        'swml_webhooks is SwmlWebhooks (deprecated-create subclass)');
+    isa_ok($client->fabric->cxml_webhooks,
+        'SignalWire::REST::Namespaces::Fabric::CxmlWebhooks',
+        'cxml_webhooks is CxmlWebhooks (deprecated-create subclass)');
+};
+
+# ============================================================
 # 10. Addresses and tokens
 # ============================================================
 subtest 'addresses and tokens' => sub {

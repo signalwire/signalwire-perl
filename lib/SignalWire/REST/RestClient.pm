@@ -4,6 +4,7 @@ use warnings;
 use Moo;
 
 use SignalWire::REST::HttpClient;
+use SignalWire::REST::PhoneCallHandler;
 use SignalWire::REST::Namespaces::Base;
 use SignalWire::REST::Namespaces::Fabric;
 use SignalWire::REST::Namespaces::Calling;
