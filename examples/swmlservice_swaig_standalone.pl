@@ -32,11 +32,23 @@ use SignalWire::SWML::Service;
 sub build_service {
     my %opts = @_;
     my %args = (
-        name                => 'standalone-swaig',
-        route               => '/standalone',
-        basic_auth_user     => $opts{user} // 'user',
-        basic_auth_password => $opts{pass} // 'pass',
+        name  => 'standalone-swaig',
+        route => '/standalone',
     );
+    # Auth: honor SWML_BASIC_AUTH_USER / SWML_BASIC_AUTH_PASSWORD env
+    # vars (Service's defaults), or accept caller-supplied creds, or
+    # fall back to a stable demo pair so the curl invocations in the
+    # docstring keep working out of the box.
+    if (defined $opts{user}) {
+        $args{basic_auth_user} = $opts{user};
+    } elsif (!defined $ENV{SWML_BASIC_AUTH_USER}) {
+        $args{basic_auth_user} = 'user';
+    }
+    if (defined $opts{pass}) {
+        $args{basic_auth_password} = $opts{pass};
+    } elsif (!defined $ENV{SWML_BASIC_AUTH_PASSWORD}) {
+        $args{basic_auth_password} = 'pass';
+    }
     # Only override host/port when caller provides one - otherwise the
     # Service constructor honors SWML_HOST / SWML_PORT environment vars.
     $args{host} = $opts{host} if defined $opts{host};
@@ -81,7 +93,19 @@ sub build_service {
 # false in script context, true when this file is loaded via `require`
 # (e.g. by tests).
 unless (caller) {
-    my $svc = build_service();
+    # Honor `PORT` env var (preferred — matches audit_http_swml fixture
+    # contract and 12-factor convention) or first positional arg, falling
+    # back to SWML_PORT (which the Service constructor reads) and finally
+    # to 3000 via Service's own default.
+    my $cli_port = $ARGV[0];
+    my $env_port = $ENV{PORT};
+    my %svc_args;
+    $svc_args{port} = $cli_port if defined $cli_port && $cli_port =~ /^\d+$/;
+    $svc_args{port} = $env_port if !defined $svc_args{port}
+                                && defined $env_port
+                                && $env_port =~ /^\d+$/;
+
+    my $svc = build_service(%svc_args);
     print "SWML::Service standalone SWAIG host\n";
     print "Route:      " . $svc->route . "\n";
     print "Basic auth: " . $svc->basic_auth_user . ":" . $svc->basic_auth_password . "\n";
