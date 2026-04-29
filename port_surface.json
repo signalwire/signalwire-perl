@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 65cf2c3af863f1e7c4f750dbb914645115ecb8d9",
+   "generated_from" : "signalwire-perl @ 71241fa0d58536a9b729b812f2aabe5596955015",
    "modules" : {
       "signalwire.agent_server" : {
          "classes" : {
@@ -19,7 +19,6 @@
       "signalwire.core.agent_base" : {
          "classes" : {
             "AgentBase" : [
-               "__init__",
                "add_post_ai_verb",
                "add_post_answer_verb",
                "add_pre_answer_verb",
@@ -77,7 +76,6 @@
                "has_contexts",
                "reset",
                "to_dict",
-               "to_hashref",
                "validate"
             ],
             "GatherInfo" : [
@@ -261,17 +259,6 @@
          },
          "functions" : []
       },
-      "signalwire.core.mixins.tool_mixin" : {
-         "classes" : {
-            "ToolMixin" : [
-               "define_tool",
-               "define_tools",
-               "on_function_call",
-               "register_swaig_function"
-            ]
-         },
-         "functions" : []
-      },
       "signalwire.core.mixins.web_mixin" : {
          "classes" : {
             "WebMixin" : [
@@ -353,8 +340,17 @@
             "SWMLService" : [
                "__init__",
                "can",
+               "define_tool",
+               "define_tools",
                "extract_sip_username",
+               "handle_additional_route",
+               "list_tool_names",
+               "on_function_call",
+               "register_routing_callback",
+               "register_swaig_function",
+               "render_main_swml",
                "render_swml",
+               "swaig_pre_dispatch",
                "to_psgi_app"
             ]
          },
@@ -1068,6 +1064,7 @@
                "get_hints",
                "get_parameter_schema",
                "register_tools",
+               "search_knowledge",
                "setup"
             ]
          },
@@ -1196,6 +1193,7 @@
                "get_hints",
                "get_parameter_schema",
                "register_tools",
+               "scrape_url",
                "setup"
             ]
          },
@@ -1229,6 +1227,7 @@
                "get_global_data",
                "get_parameter_schema",
                "register_tools",
+               "search_web",
                "setup"
             ]
          },
@@ -1239,6 +1238,7 @@
             "WikipediaSearchSkill" : [
                "get_parameter_schema",
                "register_tools",
+               "search_wiki",
                "setup"
             ]
          },

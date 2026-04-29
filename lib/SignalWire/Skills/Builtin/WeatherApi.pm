@@ -23,6 +23,21 @@ sub register_tools {
     my $feels_field = $unit eq 'celsius' ? 'feelslike_c' : 'feelslike_f';
     my $unit_label  = $unit eq 'celsius' ? 'C' : 'F';
 
+    # Honor WEATHER_API_BASE_URL env var so the audit fixture
+    # (audit_skills_dispatch.py) can redirect us at a local HTTP server.
+    # When unset we use the canonical
+    # https://api.weatherapi.com/v1/current.json URL. Either way the
+    # `current.json` path component is preserved (the audit's
+    # expected_path_substring is `current.json`).
+    my $base = $ENV{WEATHER_API_BASE_URL};
+    my $url;
+    if ($base) {
+        $base =~ s{/+$}{};
+        $url = "$base/v1/current.json?key=${api_key}&q=\${lc:enc:args.location}&aqi=no";
+    } else {
+        $url = "https://api.weatherapi.com/v1/current.json?key=${api_key}&q=\${lc:enc:args.location}&aqi=no";
+    }
+
     $self->agent->register_swaig_function({
         function    => $tool_name,
         description => 'Get current weather information for any location',
@@ -36,7 +51,7 @@ sub register_tools {
         data_map => {
             webhooks => [{
                 method => 'GET',
-                url    => "https://api.weatherapi.com/v1/current.json?key=${api_key}&q=\${lc:enc:args.location}&aqi=no",
+                url    => $url,
                 output => {
                     response => "Temperature: \${current.${temp_field}}${unit_label}, "
                               . "Feels like: \${current.${feels_field}}${unit_label}, "

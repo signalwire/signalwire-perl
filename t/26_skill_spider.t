@@ -35,14 +35,76 @@ subtest 'hints' => sub {
     ok(grep({ $_ eq 'scrape' } @$hints), 'includes scrape');
 };
 
-subtest 'tool execution' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'sp_exec');
-    my $skill = $factory->new(agent => $agent, params => {});
-    $skill->setup;
-    $skill->register_tools;
-    my $result = $agent->on_function_call('scrape_url', { url => 'https://example.com' }, {});
-    ok(defined $result, 'scrape returns result');
-    like($result->response, qr/example\.com/, 'mentions URL');
+subtest 'tool execution against fixture' => sub {
+    # Spider issues real outbound HTTP. To verify the dispatch path
+    # deterministically — without depending on example.com being up
+    # and serving stable text — point the skill at a local HTTP::Tiny
+    # fixture by setting SPIDER_BASE_URL.
+    require Plack::Test;
+    require Plack::Request;
+    my $app = sub {
+        my $env = shift;
+        return [
+            200,
+            ['Content-Type', 'text/html'],
+            ["<html><body>Test page sentinel zazzle</body></html>"],
+        ];
+    };
+    require HTTP::Server::PSGI;
+    require IO::Socket::INET;
+    my $listen = IO::Socket::INET->new(
+        Listen    => 5,
+        LocalAddr => '127.0.0.1',
+        LocalPort => 0,
+        Proto     => 'tcp',
+        ReuseAddr => 1,
+    );
+    my $port = $listen->sockport;
+    close $listen;
+
+    my $pid = fork;
+    die "fork: $!" unless defined $pid;
+    if ($pid == 0) {
+        my $server = HTTP::Server::PSGI->new(
+            host => '127.0.0.1',
+            port => $port,
+        );
+        $server->run($app);
+        exit 0;
+    }
+
+    # Wait for the server to come up.
+    my $up = 0;
+    for (1..30) {
+        my $sock = IO::Socket::INET->new(
+            PeerAddr => '127.0.0.1',
+            PeerPort => $port,
+            Timeout  => 1,
+        );
+        if ($sock) { $up = 1; close $sock; last }
+        select(undef, undef, undef, 0.1);
+    }
+
+    eval {
+        local $ENV{SPIDER_BASE_URL} = "http://127.0.0.1:$port";
+        my $agent = SignalWire::Agent::AgentBase->new(name => 'sp_exec');
+        my $skill = $factory->new(agent => $agent, params => {});
+        $skill->setup;
+        $skill->register_tools;
+        my $result = $agent->on_function_call(
+            'scrape_url',
+            { url => 'https://upstream.invalid/somepage' },
+            {},
+        );
+        ok(defined $result, 'scrape returns result');
+        like($result->response, qr/zazzle/, 'mentions fixture sentinel from real HTTP');
+    };
+    my $err = $@;
+
+    # Always reap.
+    kill 'TERM', $pid;
+    waitpid($pid, 0);
+    die $err if $err;
 };
 
 subtest 'parameter schema' => sub {
