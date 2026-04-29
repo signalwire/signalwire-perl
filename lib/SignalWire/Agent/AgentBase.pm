@@ -5,6 +5,8 @@ package SignalWire::Agent::AgentBase;
 use strict;
 use warnings;
 use Moo;
+use SignalWire::SWML::Service;
+extends 'SignalWire::SWML::Service';
 use JSON qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64 decode_base64);
 use Digest::SHA qw(hmac_sha256_hex);
@@ -15,12 +17,19 @@ use Carp qw(croak carp);
 
 # ---------- attributes ----------
 
-has name               => (is => 'rw', default => sub { 'agent' });
-has route              => (is => 'rw', default => sub { '/' });
-has host               => (is => 'rw', default => sub { '0.0.0.0' });
-has port               => (is => 'rw', default => sub { $ENV{PORT} || 3000 });
-has basic_auth_user    => (is => 'rw', lazy => 1, builder => '_build_basic_auth_user');
-has basic_auth_password => (is => 'rw', lazy => 1, builder => '_build_basic_auth_password');
+# name, route, host, port, basic_auth_user, basic_auth_password, document,
+# tools, tool_order, routing_callbacks are inherited from Service.
+# Override AgentBase's defaults where they diverge from Service's:
+has '+name' => (default => sub { 'agent' });
+has '+port' => (default => sub { $ENV{PORT} || 3000 });
+has '+basic_auth_user' => (
+    lazy => 1,
+    builder => '_build_basic_auth_user',
+);
+has '+basic_auth_password' => (
+    lazy => 1,
+    builder => '_build_basic_auth_password',
+);
 
 # Call settings
 has auto_answer   => (is => 'rw', default => sub { 1 });
@@ -34,9 +43,8 @@ has post_prompt         => (is => 'rw', default => sub { '' });
 has use_pom             => (is => 'rw', default => sub { 1 });
 has pom_sections        => (is => 'rw', default => sub { [] });
 
-# Tool registry
-has tools      => (is => 'rw', default => sub { {} });
-has tool_order => (is => 'rw', default => sub { [] });
+# Tool registry — `tools` and `tool_order` are now declared on Service
+# (lifted so non-agent SWML services can host SWAIG functions). Inherited.
 
 # AI config
 has hints              => (is => 'rw', default => sub { [] });
@@ -273,63 +281,8 @@ sub get_prompt {
 # partition tools across steps so only the relevant subset is active at
 # any moment. See SignalWire::Contexts.
 #
-sub define_tool {
-    my ($self, %opts) = @_;
-    my $name        = $opts{name}        // croak("define_tool requires 'name'");
-    my $description = $opts{description} // '';
-    my $parameters  = $opts{parameters}  // { type => 'object', properties => {} };
-    my $handler     = $opts{handler};
-
-    my $tool_def = {
-        function    => $name,
-        description => $description,
-        parameters  => $parameters,
-        (defined $handler ? (_handler => $handler) : ()),
-    };
-
-    # Merge any extra fields (fillers, meta_data_token, etc.)
-    for my $k (keys %opts) {
-        next if $k =~ /^(name|description|parameters|handler)$/;
-        $tool_def->{$k} = $opts{$k};
-    }
-
-    $self->tools->{$name} = $tool_def;
-    # Maintain insertion order
-    push @{ $self->tool_order }, $name
-        unless grep { $_ eq $name } @{ $self->tool_order };
-
-    return $self;
-}
-
-sub register_swaig_function {
-    my ($self, $func_def) = @_;
-    my $name = $func_def->{function} // croak("register_swaig_function needs 'function' key");
-    $self->tools->{$name} = $func_def;
-    push @{ $self->tool_order }, $name
-        unless grep { $_ eq $name } @{ $self->tool_order };
-    return $self;
-}
-
-sub define_tools {
-    my ($self, @tool_defs) = @_;
-    for my $t (@tool_defs) {
-        if (ref $t eq 'HASH') {
-            if (exists $t->{function}) {
-                $self->register_swaig_function($t);
-            } else {
-                $self->define_tool(%$t);
-            }
-        }
-    }
-    return $self;
-}
-
-sub on_function_call {
-    my ($self, $name, $args, $raw_data) = @_;
-    my $tool = $self->tools->{$name};
-    return undef unless $tool && $tool->{_handler};
-    return $tool->{_handler}->($args, $raw_data);
-}
+# define_tool, register_swaig_function, define_tools, on_function_call are
+# provided by SignalWire::SWML::Service (parent). Inherited via `extends`.
 
 # ---------- AI Config methods ----------
 

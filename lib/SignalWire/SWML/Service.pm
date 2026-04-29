@@ -5,9 +5,15 @@ use Moo;
 use JSON ();
 use Digest::SHA qw(hmac_sha256_hex);
 use MIME::Base64 ();
+use Scalar::Util ();
 use SignalWire::SWML::Document;
 use SignalWire::SWML::Schema;
 use SignalWire::Logging;
+
+has 'name' => (
+    is      => 'rw',
+    default => sub { 'service' },
+);
 
 has 'route' => (
     is      => 'rw',
@@ -39,10 +45,30 @@ has 'document' => (
     default => sub { SignalWire::SWML::Document->new() },
 );
 
+# SWAIG tool registry — lifted from AgentBase so any Service (sidecar,
+# non-agent verb host) can register and dispatch SWAIG functions.
+has 'tools' => (
+    is      => 'rw',
+    default => sub { {} },
+);
+
+has 'tool_order' => (
+    is      => 'rw',
+    default => sub { [] },
+);
+
+has 'routing_callbacks' => (
+    is      => 'rw',
+    default => sub { {} },
+);
+
 has '_logger' => (
     is      => 'ro',
     default => sub { SignalWire::Logging->get_logger('signalwire.swml_service') },
 );
+
+# Function-name validation pattern matches the other ports.
+my $SWAIG_FN_NAME = qr/\A[a-zA-Z_][a-zA-Z0-9_]*\z/;
 
 # Schema-driven verb auto-vivification via AUTOLOAD
 our $AUTOLOAD;
@@ -206,18 +232,171 @@ sub to_psgi_app {
 
 sub _handle_swml_request {
     my ($self, $env) = @_;
-    my $doc = $self->render_swml($env);
+    my $doc = $self->render_main_swml($env);
     return _json_response(200, $doc);
 }
 
-sub render_swml {
+# Extension point: render the SWML document for the main path or for
+# GET /swaig. Default returns the currently-built Document. AgentBase
+# overrides to emit prompt + AI verb at request time.
+sub render_main_swml {
     my ($self, $env) = @_;
     return $self->document->to_hash;
 }
 
+# Backwards-compatible alias kept for subclasses that override render_swml.
+sub render_swml {
+    my ($self, $env) = @_;
+    return $self->render_main_swml($env);
+}
+
+# ------------------------------------------------------------------
+# SWAIG tool registry (lifted from AgentBase)
+# ------------------------------------------------------------------
+
+# Define a SWAIG function the AI can call. Tool descriptions and
+# parameter descriptions are LLM-facing prompt engineering — see
+# PORTING_GUIDE for guidance.
+sub define_tool {
+    my ($self, %opts) = @_;
+    my $name        = $opts{name}
+        // die("define_tool requires 'name'");
+    my $description = $opts{description} // '';
+    my $parameters  = $opts{parameters}  // { type => 'object', properties => {} };
+    my $handler     = $opts{handler};
+
+    my $tool_def = {
+        function    => $name,
+        description => $description,
+        parameters  => $parameters,
+        (defined $handler ? (_handler => $handler) : ()),
+    };
+    for my $k (keys %opts) {
+        next if $k =~ /^(name|description|parameters|handler)$/;
+        $tool_def->{$k} = $opts{$k};
+    }
+    $self->tools->{$name} = $tool_def;
+    push @{ $self->tool_order }, $name
+        unless grep { $_ eq $name } @{ $self->tool_order };
+    return $self;
+}
+
+# Register a raw SWAIG function definition (e.g. from DataMap).
+sub register_swaig_function {
+    my ($self, $func_def) = @_;
+    my $name = $func_def->{function} // die("register_swaig_function needs 'function' key");
+    $self->tools->{$name} = $func_def;
+    push @{ $self->tool_order }, $name
+        unless grep { $_ eq $name } @{ $self->tool_order };
+    return $self;
+}
+
+# Register multiple tool definitions at once.
+sub define_tools {
+    my ($self, @tool_defs) = @_;
+    for my $t (@tool_defs) {
+        if (ref $t eq 'HASH') {
+            if (exists $t->{function}) {
+                $self->register_swaig_function($t);
+            } else {
+                $self->define_tool(%$t);
+            }
+        }
+    }
+    return $self;
+}
+
+# Dispatch a function call to the registered handler. Default plain
+# implementation. AgentBase may override to add token validation.
+sub on_function_call {
+    my ($self, $name, $args, $raw_data) = @_;
+    my $tool = $self->tools->{$name};
+    return undef unless $tool && $tool->{_handler};
+    return $tool->{_handler}->($args, $raw_data);
+}
+
+# List registered SWAIG tool names in registration order.
+sub list_tool_names {
+    my ($self) = @_;
+    return @{ $self->tool_order };
+}
+
+# Extension point: invoked between argument parsing and function dispatch
+# on POST /swaig. Returns ($target, $short_circuit). If $short_circuit is
+# defined, it's encoded as the SWAIG response without calling
+# on_function_call. AgentBase may override to add session-token validation.
+sub swaig_pre_dispatch {
+    my ($self, $request_data, $func_name, $env) = @_;
+    return ($self, undef);
+}
+
+# Extension point: subclasses may override to add /post_prompt, /mcp etc.
+# Receives the relative sub-path (after the route prefix) and parsed body.
+# Returns a PSGI response triple, or undef if not handled.
+sub handle_additional_route {
+    my ($self, $sub_path, $request_data, $env) = @_;
+    return undef;
+}
+
+# Register a routing callback at a given sub-path under the service route.
+sub register_routing_callback {
+    my ($self, $path, $cb) = @_;
+    $self->routing_callbacks->{$path} = $cb;
+    return $self;
+}
+
 sub _handle_swaig_request {
     my ($self, $env) = @_;
-    return _json_response(200, { response => 'SWAIG endpoint' });
+    my $method = $env->{REQUEST_METHOD} // 'GET';
+
+    if ($method eq 'GET') {
+        my $doc = $self->render_main_swml($env);
+        return _json_response(200, $doc);
+    }
+
+    my $body = _read_body($env);
+    my $payload;
+    eval { $payload = JSON::decode_json($body) if length($body) };
+    if ($@ || !$payload || ref $payload ne 'HASH') {
+        return _json_response(400, { error => 'Invalid JSON' });
+    }
+
+    my $func_name = $payload->{function};
+    if (!defined $func_name || $func_name eq '') {
+        return _json_response(400, { error => 'Missing function name' });
+    }
+    if ($func_name !~ $SWAIG_FN_NAME) {
+        return _json_response(400, { error => "Invalid function name format: '$func_name'" });
+    }
+
+    # Argument extraction: nested {argument:{parsed:[...]}} OR flat {arguments}
+    my $args = {};
+    if (ref $payload->{argument} eq 'HASH') {
+        my $parsed = $payload->{argument}{parsed};
+        $args = $parsed->[0] if ref $parsed eq 'ARRAY' && @$parsed;
+    } elsif (ref $payload->{arguments} eq 'HASH') {
+        $args = $payload->{arguments};
+    }
+    $args //= {};
+
+    my ($target, $short_circuit) = $self->swaig_pre_dispatch($payload, $func_name, $env);
+    return _json_response(200, $short_circuit) if defined $short_circuit;
+
+    my $result = $target->on_function_call($func_name, $args, $payload);
+    return _json_response(404, { error => "Unknown function: $func_name" })
+        unless defined $result;
+
+    # FunctionResult-like objects respond to to_hash; handlers may also
+    # return plain hashrefs.
+    my $result_hash;
+    if (ref $result eq 'HASH') {
+        $result_hash = $result;
+    } elsif (Scalar::Util::blessed($result) && $result->can('to_hash')) {
+        $result_hash = $result->to_hash;
+    } else {
+        $result_hash = { response => "$result" };
+    }
+    return _json_response(200, $result_hash);
 }
 
 sub _handle_post_prompt {
