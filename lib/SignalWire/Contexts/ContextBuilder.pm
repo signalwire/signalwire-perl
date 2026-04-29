@@ -1,28 +1,19 @@
 package SignalWire::Contexts::ContextBuilder;
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
-# Stub: full implementation provided by another agent.
+#
+# This file is a thin loader: the real SignalWire::Contexts::ContextBuilder
+# package (along with Context, Step, GatherInfo, GatherQuestion, and helpers)
+# is defined inside lib/SignalWire/Contexts.pm. Loading the parent module
+# defines all of those packages in one shot.
+#
+# Earlier this file shipped a 28-line stub that overrode the real
+# implementation when AgentBase did `require SignalWire::Contexts::ContextBuilder`.
+# Now we just re-load the canonical source so the require yields the full DSL.
 
 use strict;
 use warnings;
-use Moo;
 
-has _contexts => (is => 'rw', default => sub { {} });
-
-sub add_context {
-    my ($self, $name, %opts) = @_;
-    $self->_contexts->{$name} = \%opts;
-    return $self;
-}
-
-sub has_contexts {
-    my ($self) = @_;
-    return scalar(keys %{ $self->_contexts }) ? 1 : 0;
-}
-
-sub to_hashref {
-    my ($self) = @_;
-    return $self->_contexts;
-}
+require SignalWire::Contexts;
 
 1;

@@ -207,15 +207,28 @@ subtest 'empty agent renders valid SWML' => sub {
 };
 
 # ============================================================
-# 14. Context switch in AI verb
+# 14. Contexts rendered under ai.prompt.contexts (per Python parity:
+#     signalwire-python /core/agent/prompt/manager.py + swml_handler.py
+#     build_config — contexts attach to the ai.prompt object, not as a
+#     standalone ai.context_switch sibling).
 # ============================================================
-subtest 'context_switch in AI verb' => sub {
+subtest 'contexts rendered under ai.prompt' => sub {
     my $a = SignalWire::Agent::AgentBase->new(name => 'ctx_r');
     my $builder = $a->define_contexts;
-    $builder->add_context('default');
+    my $ctx = $builder->add_context('default');
+    # ContextBuilder.validate (called by to_hash) requires every context to
+    # have at least one step, so add a real step.
+    my $step = $ctx->add_step('greet');
+    $step->set_text('Hello.');
+
     my $swml = $a->render_swml;
     my @ai = grep { exists $_->{ai} } @{$swml->{sections}{main}};
-    ok(exists $ai[0]{ai}{context_switch}, 'context_switch in AI verb');
+    ok(exists $ai[0]{ai}{prompt}{contexts}, 'contexts attached to ai.prompt');
+    ok(exists $ai[0]{ai}{prompt}{contexts}{default}, 'default context present');
+    ok(
+        exists $ai[0]{ai}{prompt}{contexts}{default}{steps},
+        'context has steps',
+    );
 };
 
 # ============================================================

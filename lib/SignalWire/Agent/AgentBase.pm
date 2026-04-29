@@ -1016,9 +1016,12 @@ sub _build_ai_verb {
         $ai{params}{debug_events} = $self->debug_events_level;
     }
 
-    # Contexts
+    # Contexts — go under ai.prompt.contexts per Python's
+    # PromptManager.to_dict() behavior (signalwire-python /core/swml_handler.py
+    # build_config:172, /core/agent/prompt/manager.py:_contexts).
     if ($self->context_builder && $self->context_builder->has_contexts) {
-        $ai{context_switch} = $self->context_builder->to_hashref;
+        $ai{prompt} //= {};
+        $ai{prompt}{contexts} = $self->context_builder->to_hash;
     }
 
     # MCP servers
