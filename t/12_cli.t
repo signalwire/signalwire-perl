@@ -35,7 +35,8 @@ subtest 'swaig-test --help' => sub {
 # ============================================================
 subtest 'swaig-test requires --url' => sub {
     my $output = `PERL5LIB="lib:\$PERL5LIB" $^X bin/swaig-test --dump-swml 2>&1`;
-    like($output, qr/--url is required/i, 'errors when no --url provided');
+    like($output, qr/--url\s+or\s+--file\s+is\s+required/i,
+        'errors when neither --url nor --file is provided');
 };
 
 # ============================================================
