@@ -440,6 +440,12 @@ signalwire.core.mixins.auth_mixin.AuthMixin.validate_basic_auth: not_yet_impleme
 signalwire.core.mixins.prompt_mixin.PromptMixin.get_post_prompt: not_yet_implemented: prompt mixin accessor pending
 signalwire.core.mixins.prompt_mixin.PromptMixin.set_prompt_pom: not_yet_implemented: prompt mixin accessor pending
 signalwire.core.mixins.tool_mixin.ToolMixin.tool: not_yet_implemented: Python @tool decorator has no Perl analogue; define_tool is the documented path
+signalwire.core.mixins.tool_mixin.ToolMixin: tool_mixin_lifted_to_swml_service: Python's ToolMixin is mixed in to AgentBase. Perl folds the tool registry into SWMLService directly so SWMLService stands alone (per the SWAIG-lift refactor); the surface is the same (`define_tool`, `define_tools`, `register_swaig_function`, `on_function_call`) but it lives on SWMLService, not a separate mixin class.
+signalwire.core.mixins.tool_mixin.ToolMixin.define_tool: tool_mixin_lifted_to_swml_service: see the class-level note above; Perl exposes this on SWMLService.
+signalwire.core.mixins.tool_mixin.ToolMixin.define_tools: tool_mixin_lifted_to_swml_service: see the class-level note above; Perl exposes this on SWMLService.
+signalwire.core.mixins.tool_mixin.ToolMixin.on_function_call: tool_mixin_lifted_to_swml_service: see the class-level note above; Perl exposes this on SWMLService.
+signalwire.core.mixins.tool_mixin.ToolMixin.register_swaig_function: tool_mixin_lifted_to_swml_service: see the class-level note above; Perl exposes this on SWMLService.
+signalwire.core.agent_base.AgentBase.__init__: perl_constructor_idiom: Moo provides BUILD; Python's __init__ has no direct analogue but the constructor signature (named arguments accepted by AgentBase->new) is identical.
 signalwire.core.mixins.web_mixin.WebMixin.as_router: not_yet_implemented: web mixin helper pending — Perl exposes psgi_app/run/serve directly
 signalwire.core.mixins.web_mixin.WebMixin.enable_debug_routes: not_yet_implemented: web mixin helper pending — Perl exposes psgi_app/run/serve directly
 signalwire.core.mixins.web_mixin.WebMixin.get_app: not_yet_implemented: web mixin helper pending — Perl exposes psgi_app/run/serve directly

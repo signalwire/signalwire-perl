@@ -32,8 +32,19 @@ signalwire.core.swml_builder.SWMLBuilder.to_hash: port-only: SWML::Document publ
 signalwire.core.swml_builder.SWMLBuilder.to_json: port-only: SWML::Document public helper that Python keeps on SWMLService or private
 signalwire.core.swml_builder.SWMLBuilder.to_pretty_json: port-only: SWML::Document public helper that Python keeps on SWMLService or private
 signalwire.core.swml_service.SWMLService.can: port-only: Perl can() accessor (Moo plumbing) — surfaced because SWMLService defines it; harmless but recorded
+signalwire.core.swml_service.SWMLService.define_tool: tool_mixin_lifted: Perl folds Python's ToolMixin (which Python composes into AgentBase) directly into SWMLService — so SWMLService standalone can host SWAIG tools without subclassing AgentBase. Mirrors Python's ToolMixin.define_tool exactly; just lives on a different class.
+signalwire.core.swml_service.SWMLService.define_tools: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.define_tools.
+signalwire.core.swml_service.SWMLService.handle_additional_route: port-only: Perl exposes a hook for subclasses to mount extra routes onto the inherited PSGI app; Python achieves this via @app.route decorators.
+signalwire.core.swml_service.SWMLService.list_tool_names: port-only convenience accessor: returns the registered tool names in insertion order. Used by ContextBuilder->validate to surface reserved-name collisions; Python uses `cb._tools.keys()` directly.
+signalwire.core.swml_service.SWMLService.on_function_call: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.on_function_call.
+signalwire.core.swml_service.SWMLService.register_swaig_function: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.register_swaig_function.
+signalwire.core.swml_service.SWMLService.render_main_swml: port-only public hook: Perl exposes the main-section render path so subclasses can override; Python achieves this via _render_document overrides.
 signalwire.core.swml_service.SWMLService.render_swml: port-only public alias: Perl exposes render_swml as the method users call to dump SWML; Python keeps this internal
+signalwire.core.swml_service.SWMLService.swaig_pre_dispatch: port-only public hook: subclasses (notably AgentBase) override this to inject session-token validation and dynamic-config callbacks into the /swaig request path; Python uses _swaig_pre_dispatch (private with leading underscore).
 signalwire.core.swml_service.SWMLService.to_psgi_app: port-only: Perl ports use Plack/PSGI; psgi_app returns a coderef any Plack handler consumes
+signalwire.skills.datasphere.skill.DataSphereSkill.search_knowledge: port-only public method: Perl exposes the search call as a public method so the audit harness can drive it directly without going through the full SWAIG dispatch path. Python keeps the equivalent (_search_knowledge_handler) private.
+signalwire.skills.spider.skill.SpiderSkill.scrape_url: port-only public method: Perl exposes the fetch+strip path as a public method so the audit harness can drive it without going through SWAIG dispatch. Python keeps the equivalent (_scrape_url_handler) private.
+signalwire.skills.web_search.skill.WebSearchSkill.search_web: port-only public method: Perl exposes the Google-CSE call as a public method so the audit harness can drive it without going through SWAIG dispatch. Python keeps the equivalent (_search_web_handler) private.
 signalwire.relay.call.Action.on_completed: port-only Action/Message helper; Python packs this into wait()/dispatch paths
 signalwire.relay.call.Action.stop: port-only Action/Message helper; Python packs this into wait()/dispatch paths
 signalwire.relay.call.Call.dispatch_event: port-only dispatcher/passthrough helper for Perl-idiomatic event plumbing
