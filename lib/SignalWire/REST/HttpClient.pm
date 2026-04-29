@@ -16,7 +16,20 @@ has '_auth_header' => ( is => 'lazy' );
 
 sub _build_base_url {
     my ($self) = @_;
-    return 'https://' . $self->host;
+    my $host = $self->host;
+    # Allow callers to pass a fully-qualified URL (used by the audit
+    # fixture, which serves http://127.0.0.1:NNN). When the value
+    # already carries a scheme we use it verbatim; otherwise we
+    # prepend the production https://. Strip trailing slashes either
+    # way so request paths concatenate cleanly.
+    my $base;
+    if ($host =~ m{^https?://}) {
+        $base = $host;
+    } else {
+        $base = 'https://' . $host;
+    }
+    $base =~ s{/+$}{};
+    return $base;
 }
 
 sub _build__ua {
