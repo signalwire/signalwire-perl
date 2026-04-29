@@ -140,3 +140,30 @@ _test_api_connection: Python internal helper referenced in subclassing example
 
 Mark: part of the voice identifier "inworld.Mark" in comments/strings (e.g. `voice => 'inworld.Mark'` inside a hashref - not a method call)
 pl: appears in the substring ".pl(" inside the comment "joke_agent.pl (raw data_map)."
+
+## Audit-harness internals
+
+<!--
+  examples/relay_audit_harness.pl uses a private hook on Relay::Client to
+  emit a method-bearing JSON-RPC frame back to the audit fixture (the
+  fixture watches for `method:"signalwire.event"` from the client to
+  count an event as dispatched; Python's bare-result ack does not
+  satisfy that watcher). Calling the private helper from a harness is
+  intentional and not part of the public API surface.
+-->
+_send: private hook used by examples/relay_audit_harness.pl to emit method-bearing ack frame to the audit fixture
+
+## Private agent/swmlservice render helpers used by examples
+
+<!--
+  Some Perl examples drive Plack::Runner directly via `parse_options`
+  (real Perl module method, in the Plack distribution — not part of the
+  port's public surface) before handing the resulting PSGI app to the
+  runner. The audit's regex picks up the method call but it isn't a
+  port symbol.
+-->
+parse_options: Plack::Runner method called by SWML standalone examples
+sleep: Perl built-in (and the SWML `sleep` verb the auto-vivified example illustrates) — appears in `sleep(...)` syntax inside an example
+delete_resource: Python REST namespace helper described in fabric.md prose; Perl REST resources expose `delete()` directly per CRUD pattern
+new: Perl/Moo constructor — appears in 148+ ClassName->new(...) call sites in docs and examples; not a port symbol to resolve
+set_question_callback: example placeholder representing a user-supplied per-question handler in the dynamic InfoGatherer demo (not a port API)

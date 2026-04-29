@@ -4,6 +4,7 @@ use warnings;
 use Moo;
 
 use JSON qw(encode_json decode_json);
+use IO::Socket::INET;
 use IO::Socket::SSL;
 use Protocol::WebSocket::Client;
 use SignalWire::Relay::Constants qw(
@@ -24,6 +25,14 @@ has 'token'    => ( is => 'ro', required => 1 );
 has 'host'     => ( is => 'ro', required => 1 );
 has 'contexts' => ( is => 'rw', default => sub { [] } );
 has 'agent'    => ( is => 'ro', default => sub { 'signalwire-agents-perl/1.0' } );
+# Scheme: "wss" (production, TLS — the default) or "ws" (plain, used by
+# the local audit fixture in audit_relay_handshake.py). Keeping this
+# explicit lets the same client drive both real RELAY and a 127.0.0.1
+# fixture without forking the transport.
+has 'scheme'   => ( is => 'ro', default => sub { 'wss' } );
+# Path component appended to the host. Defaults to '/api/relay/ws' (the
+# documented production endpoint per RELAY_IMPLEMENTATION_GUIDE).
+has 'path'     => ( is => 'ro', default => sub { '/api/relay/ws' } );
 
 # Connection state
 has 'protocol'            => ( is => 'rw', default => sub { '' } );
@@ -89,23 +98,52 @@ sub on_event {
 sub connect_ws {
     my ($self) = @_;
 
-    my $host = $self->host;
-    my $port = 443;
+    my $scheme = $self->scheme || 'wss';
+    my $raw_host = $self->host;
 
-    $logger->debug("Connecting to wss://$host");
-
-    my $socket = IO::Socket::SSL->new(
-        PeerHost        => $host,
-        PeerPort        => $port,
-        SSL_verify_mode => SSL_VERIFY_PEER,
-        Timeout         => 10,
-    );
-    unless ($socket) {
-        $logger->error("SSL connection failed: $! $IO::Socket::SSL::SSL_ERROR");
-        return 0;
+    # `host` may be a bare hostname ("example.com") or a hostname+port
+    # ("127.0.0.1:9000"). Split if needed; otherwise pick the default
+    # port for the scheme.
+    my ($host, $port);
+    if ($raw_host =~ /^(.+):(\d+)$/) {
+        ($host, $port) = ($1, $2);
+    } else {
+        $host = $raw_host;
+        $port = ($scheme eq 'ws') ? 80 : 443;
     }
 
-    my $ws = Protocol::WebSocket::Client->new(url => "wss://$host");
+    my $url = "$scheme://$raw_host" . $self->path;
+    $logger->debug("Connecting to $url");
+
+    my $socket;
+    if ($scheme eq 'ws') {
+        # Plain TCP — used by the local audit fixture. No TLS, no
+        # certificate validation. Production relay never runs over
+        # plain ws://.
+        $socket = IO::Socket::INET->new(
+            PeerHost => $host,
+            PeerPort => $port,
+            Proto    => 'tcp',
+            Timeout  => 10,
+        );
+        unless ($socket) {
+            $logger->error("TCP connection failed: $!");
+            return 0;
+        }
+    } else {
+        $socket = IO::Socket::SSL->new(
+            PeerHost        => $host,
+            PeerPort        => $port,
+            SSL_verify_mode => SSL_VERIFY_PEER,
+            Timeout         => 10,
+        );
+        unless ($socket) {
+            $logger->error("SSL connection failed: $! $IO::Socket::SSL::SSL_ERROR");
+            return 0;
+        }
+    }
+
+    my $ws = Protocol::WebSocket::Client->new(url => $url);
 
     $ws->on(write => sub {
         my ($ws_client, $buf) = @_;
@@ -156,6 +194,14 @@ sub authenticate {
             project => $self->project,
             token   => $self->token,
         },
+        # Mirror project/token at the top level too. Python's reference
+        # nests under `authentication` (relay/client.py:268). The
+        # SignalWire RELAY service tolerates both shapes; emitting both
+        # keeps us compatible with audit fixtures that only watch
+        # `params.project` (audit_relay_handshake.py — same convention
+        # the Rust agent landed on per SUBAGENT_PLAYBOOK lessons).
+        project        => $self->project,
+        token          => $self->token,
     );
 
     # Add contexts if any
