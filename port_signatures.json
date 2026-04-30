@@ -15640,6 +15640,26 @@
           }
         }
       }
+    },
+    "signalwire.utils.url_validator": {
+      "classes": {},
+      "functions": {
+        "validate_url": {
+          "params": [
+            {
+              "name": "url",
+              "type": "any",
+              "required": true
+            },
+            {
+              "name": "allow_private",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        }
+      }
     }
   }
 }
