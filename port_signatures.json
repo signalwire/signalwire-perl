@@ -3152,6 +3152,42 @@
         }
       }
     },
+    "signalwire.core.mixins.auth_mixin": {
+      "classes": {
+        "AuthMixin": {
+          "methods": {
+            "get_basic_auth_credentials": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "validate_basic_auth": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "username",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "password",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
     "signalwire.core.mixins.mcp_server_mixin": {
       "classes": {
         "MCPServerMixin": {
@@ -4177,6 +4213,24 @@
               ],
               "returns": "any"
             },
+            "get_basic_auth_credentials": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "get_basic_auth_credentials_with_source": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "get_function": {
               "params": [
                 {
@@ -4429,6 +4483,25 @@
                 {
                   "name": "self",
                   "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "validate_basic_auth": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "username",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "password",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"

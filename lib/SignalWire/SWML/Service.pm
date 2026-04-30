@@ -144,6 +144,44 @@ sub _timing_safe_compare {
     return $hmac_a eq $hmac_b;
 }
 
+# Validate provided basic-auth credentials. (Python parity:
+# AuthMixin.validate_basic_auth(username, password).)
+sub validate_basic_auth {
+    my ($self, $username, $password) = @_;
+    my $u = $self->basic_auth_user;
+    my $p = $self->basic_auth_password;
+    return 0 unless defined $u && defined $p;
+    return _timing_safe_compare($username, $u)
+        && _timing_safe_compare($password, $p);
+}
+
+# Returns ($user, $password). (Python parity:
+# AuthMixin.get_basic_auth_credentials.)
+sub get_basic_auth_credentials {
+    my ($self) = @_;
+    return ($self->basic_auth_user // '', $self->basic_auth_password // '');
+}
+
+# Returns ($user, $password, $source) where $source is "provided",
+# "environment", or "generated". (Python parity:
+# AuthMixin.get_basic_auth_credentials(include_source=True).)
+sub get_basic_auth_credentials_with_source {
+    my ($self) = @_;
+    my $user = $self->basic_auth_user // '';
+    my $pass = $self->basic_auth_password // '';
+    my $env_user = $ENV{SWML_BASIC_AUTH_USER} // '';
+    my $env_pass = $ENV{SWML_BASIC_AUTH_PASSWORD} // '';
+    my $source;
+    if ($env_user ne '' && $env_pass ne '' && $user eq $env_user && $pass eq $env_pass) {
+        $source = 'environment';
+    } elsif ($user =~ /^user_/ && length($pass) > 20) {
+        $source = 'generated';
+    } else {
+        $source = 'provided';
+    }
+    return ($user, $pass, $source);
+}
+
 sub _check_basic_auth {
     my ($self, $env) = @_;
     my $auth = $env->{HTTP_AUTHORIZATION} // '';
