@@ -6,6 +6,15 @@
       "classes": {
         "AgentServer": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get_agent": {
               "params": [
                 {
@@ -112,6 +121,35 @@
       "classes": {
         "AgentBase": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "basic_auth_user",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "basic_auth_password",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "add_post_ai_verb": {
               "params": [
                 {
@@ -412,6 +450,20 @@
       "classes": {
         "Context": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_consolidate": {
               "params": [
                 {
@@ -926,6 +978,15 @@
         },
         "ContextBuilder": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_agent": {
               "params": [
                 {
@@ -1035,6 +1096,15 @@
         },
         "GatherInfo": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_completion_action": {
               "params": [
                 {
@@ -1098,6 +1168,45 @@
         },
         "GatherQuestion": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "key",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "question",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "type",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "confirm",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "prompt",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "functions",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "confirm": {
               "params": [
                 {
@@ -1165,6 +1274,20 @@
         },
         "Step": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_end": {
               "params": [
                 {
@@ -1560,6 +1683,20 @@
       "classes": {
         "DataMap": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "function_name",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_error_keys": {
               "params": [
                 {
@@ -1871,6 +2008,30 @@
       "classes": {
         "FunctionResult": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "response",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "action",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "post_process",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "action": {
               "params": [
                 {
@@ -3212,6 +3373,25 @@
       "classes": {
         "SessionManager": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "token_expiry_secs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "secret_key",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_debug_mode": {
               "params": [
                 {
@@ -3377,6 +3557,15 @@
       "classes": {
         "SkillBase": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "cleanup": {
               "params": [],
               "returns": "any"
@@ -3460,6 +3649,15 @@
       "classes": {
         "SkillManager": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "has_skill": {
               "params": [
                 {
@@ -3529,6 +3727,25 @@
       "classes": {
         "SWMLBuilder": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "version",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "sections",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "add_raw_verb": {
               "params": [
                 {
@@ -3681,6 +3898,65 @@
       "classes": {
         "SWMLService": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "route",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "host",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "basic_auth_user",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "basic_auth_password",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "document",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tools",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tool_order",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "routing_callbacks",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_logger": {
               "params": [
                 {
@@ -3963,10 +4239,157 @@
         }
       }
     },
+    "signalwire.prefabs.concierge": {
+      "classes": {
+        "ConciergeAgent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.prefabs.faq_bot": {
+      "classes": {
+        "FAQBotAgent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.prefabs.info_gatherer": {
+      "classes": {
+        "InfoGathererAgent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.prefabs.receptionist": {
+      "classes": {
+        "ReceptionistAgent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.prefabs.survey": {
+      "classes": {
+        "SurveyAgent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        }
+      }
+    },
     "signalwire.relay.call": {
       "classes": {
+        "AIAction": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        },
         "Action": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "completed",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "result",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "events",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "payload",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_client": {
               "params": [
                 {
@@ -4107,6 +4530,60 @@
         },
         "Call": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tag",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "device",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "end_reason",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "peer",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "context",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "dial_winner",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_actions": {
               "params": [
                 {
@@ -4772,6 +5249,15 @@
         },
         "CollectAction": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "collect_result": {
               "params": [],
               "returns": "any"
@@ -4789,6 +5275,15 @@
         },
         "DetectAction": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "detect_result": {
               "params": [],
               "returns": "any"
@@ -4797,6 +5292,15 @@
         },
         "FaxAction": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_fax_type": {
               "params": [
                 {
@@ -4814,6 +5318,15 @@
         },
         "PayAction": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "pay_result": {
               "params": [],
               "returns": "any"
@@ -4822,6 +5335,15 @@
         },
         "PlayAction": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "pause": {
               "params": [
                 {
@@ -4858,6 +5380,15 @@
         },
         "RecordAction": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "duration": {
               "params": [],
               "returns": "any"
@@ -4894,6 +5425,45 @@
               "returns": "any"
             }
           }
+        },
+        "StreamAction": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        },
+        "TapAction": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        },
+        "TranscribeAction": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
         }
       }
     },
@@ -4901,6 +5471,70 @@
       "classes": {
         "RelayClient": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "project",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "token",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "host",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "contexts",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "agent",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "scheme",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "path",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "protocol",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "authorization_state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "connected",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "session_id",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_calls": {
               "params": [
                 {
@@ -5269,6 +5903,20 @@
       "classes": {
         "AuthorizationStateEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "authorization_state",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "authorization_state": {
               "params": [
                 {
@@ -5282,6 +5930,25 @@
         },
         "CallDisconnectEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5304,6 +5971,45 @@
         },
         "CallReceiveEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tag",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "call_state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "device",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "context",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5362,6 +6068,50 @@
         },
         "CallStateEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tag",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "call_state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "device",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "end_reason",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "peer",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5429,6 +6179,30 @@
         },
         "CallingErrorEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5460,6 +6234,35 @@
         },
         "CollectEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "result",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5500,6 +6303,30 @@
         },
         "ConferenceEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "conference_id",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5531,6 +6358,35 @@
         },
         "ConnectEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "connect_state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "peer",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5571,6 +6427,35 @@
         },
         "DetectEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "detect",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5611,6 +6496,35 @@
         },
         "DialEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "tag",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "dial_state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "call",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call": {
               "params": [
                 {
@@ -5651,6 +6565,20 @@
         },
         "DisconnectEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "restart",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "restart": {
               "params": [
                 {
@@ -5664,6 +6592,35 @@
         },
         "FaxEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "fax",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5704,6 +6661,65 @@
         },
         "MessageReceiveEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "message_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "context",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "direction",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "from_number",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "to_number",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "media",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "segments",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "message_state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tags",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "body": {
               "params": [
                 {
@@ -5798,6 +6814,70 @@
         },
         "MessageStateEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "message_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "context",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "direction",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "from_number",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "to_number",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "media",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "segments",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "message_state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "reason",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tags",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "body": {
               "params": [
                 {
@@ -5901,6 +6981,40 @@
         },
         "PayEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "result",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5950,6 +7064,35 @@
         },
         "PlayEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -5990,6 +7133,55 @@
         },
         "RecordEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "duration",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "size",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "record",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -6066,6 +7258,30 @@
         },
         "ReferEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "refer_state",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -6097,6 +7313,15 @@
         },
         "RelayEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "event_type": {
               "params": [
                 {
@@ -6148,6 +7373,35 @@
         },
         "SendDigitsEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -6188,6 +7442,35 @@
         },
         "StreamEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -6228,6 +7511,40 @@
         },
         "TapEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tap",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -6277,6 +7594,35 @@
         },
         "TranscribeEvent": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "node_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "control_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "call_id": {
               "params": [
                 {
@@ -6321,6 +7667,80 @@
       "classes": {
         "Message": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "message_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "context",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "direction",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "from_number",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "to_number",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "media",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "segments",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "state",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "reason",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tags",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "completed",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "result",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_on_completed": {
               "params": [
                 {
@@ -6529,6 +7949,15 @@
       "classes": {
         "BaseResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_base_path": {
               "params": [
                 {
@@ -6551,6 +7980,15 @@
         },
         "CrudResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_update_method": {
               "params": [
                 {
@@ -6639,6 +8077,35 @@
         },
         "HttpClient": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "project",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "token",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "host",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "base_url",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_auth_header": {
               "params": [
                 {
@@ -6787,6 +8254,35 @@
         },
         "SignalWireRestError": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "status_code",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "method",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "body": {
               "params": [
                 {
@@ -6831,6 +8327,15 @@
       "classes": {
         "PhoneCallHandler": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "values": {
               "params": [],
               "returns": "any"
@@ -6843,6 +8348,135 @@
       "classes": {
         "RestClient": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "project",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "token",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "host",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "fabric",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "calling",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "phone_numbers",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "addresses",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "queues",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "recordings",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "number_groups",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "verified_callers",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "sip_profile",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "lookup",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "short_codes",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "imported_numbers",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "mfa",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "registry",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "datasphere",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "video",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "logs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "project_ns",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "pubsub",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "chat",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "compat",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -7076,6 +8710,15 @@
       "classes": {
         "AddressesResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create": {
               "params": [
                 {
@@ -7126,6 +8769,15 @@
       "classes": {
         "CallingNamespace": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "ai_hold": {
               "params": [],
               "returns": "any"
@@ -7282,6 +8934,15 @@
       "classes": {
         "ChatResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create_token": {
               "params": [
                 {
@@ -7304,6 +8965,15 @@
       "classes": {
         "CompatAccounts": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create": {
               "params": [
                 {
@@ -7369,6 +9039,15 @@
         },
         "CompatApplications": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "update": {
               "params": [
                 {
@@ -7392,6 +9071,15 @@
         },
         "CompatCalls": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "start_recording": {
               "params": [
                 {
@@ -7501,6 +9189,15 @@
         },
         "CompatConferences": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_recording": {
               "params": [
                 {
@@ -7757,6 +9454,15 @@
         },
         "CompatFaxes": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_media": {
               "params": [
                 {
@@ -7837,6 +9543,15 @@
         },
         "CompatLamlBins": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "update": {
               "params": [
                 {
@@ -7860,6 +9575,15 @@
         },
         "CompatMessages": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_media": {
               "params": [
                 {
@@ -7940,6 +9664,80 @@
         },
         "CompatNamespace": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "account_sid",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "accounts",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "calls",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "messages",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "faxes",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "conferences",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "phone_numbers",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "applications",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "laml_bins",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "queues",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "recordings",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "transcriptions",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tokens",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -8070,6 +9868,15 @@
         },
         "CompatPhoneNumbers": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_available_base": {
               "params": [
                 {
@@ -8224,6 +10031,15 @@
         },
         "CompatQueues": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "dequeue_member": {
               "params": [
                 {
@@ -8309,6 +10125,15 @@
         },
         "CompatRecordings": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_recording": {
               "params": [
                 {
@@ -8355,6 +10180,15 @@
         },
         "CompatTokens": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create": {
               "params": [
                 {
@@ -8406,6 +10240,15 @@
         },
         "CompatTranscriptions": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_transcription": {
               "params": [
                 {
@@ -8456,6 +10299,15 @@
       "classes": {
         "DatasphereDocuments": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_chunk": {
               "params": [
                 {
@@ -8535,6 +10387,15 @@
       "classes": {
         "AddressesResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -8567,6 +10428,15 @@
         },
         "AutoMaterializedWebhook": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_auto_helper_name": {
               "params": [
                 {
@@ -8594,6 +10464,15 @@
         },
         "CallFlowsResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "deploy_version": {
               "params": [
                 {
@@ -8655,6 +10534,15 @@
         },
         "ConferenceRoomsResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "list_addresses": {
               "params": [
                 {
@@ -8678,6 +10566,15 @@
         },
         "CxmlApplicationsResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create": {
               "params": [],
               "returns": "any"
@@ -8686,6 +10583,15 @@
         },
         "CxmlWebhooksResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_auto_helper_name": {
               "params": [
                 {
@@ -8699,6 +10605,95 @@
         },
         "FabricNamespace": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "swml_scripts",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "relay_applications",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "call_flows",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "conference_rooms",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "freeswitch_connectors",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "subscribers",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "sip_endpoints",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "cxml_scripts",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "cxml_applications",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "swml_webhooks",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "ai_agents",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "sip_gateways",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "cxml_webhooks",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "resources",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "addresses",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "tokens",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -8856,6 +10851,15 @@
         },
         "FabricTokens": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create_embed_token": {
               "params": [
                 {
@@ -8930,6 +10934,15 @@
         },
         "GenericResources": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "assign_domain_application": {
               "params": [
                 {
@@ -9033,6 +11046,15 @@
         },
         "Resource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "list_addresses": {
               "params": [
                 {
@@ -9056,6 +11078,15 @@
         },
         "ResourcePUT": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_update_method": {
               "params": [
                 {
@@ -9069,6 +11100,15 @@
         },
         "SubscribersResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create_sip_endpoint": {
               "params": [
                 {
@@ -9173,6 +11213,15 @@
         },
         "SwmlWebhooksResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_auto_helper_name": {
               "params": [
                 {
@@ -9190,6 +11239,15 @@
       "classes": {
         "ImportedNumbersResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create": {
               "params": [
                 {
@@ -9212,6 +11270,15 @@
       "classes": {
         "ConferenceLogs": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "list": {
               "params": [
                 {
@@ -9230,6 +11297,15 @@
         },
         "FaxLogs": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -9262,6 +11338,35 @@
         },
         "LogsNamespace": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "messages",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "voice",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "fax",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "conferences",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -9311,6 +11416,15 @@
         },
         "MessageLogs": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -9343,6 +11457,15 @@
         },
         "VoiceLogs": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -9398,6 +11521,15 @@
       "classes": {
         "LookupResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "phone_number": {
               "params": [
                 {
@@ -9425,6 +11557,15 @@
       "classes": {
         "MfaResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "call": {
               "params": [
                 {
@@ -9480,6 +11621,15 @@
       "classes": {
         "NumberGroupsResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_update_method": {
               "params": [
                 {
@@ -9563,6 +11713,15 @@
       "classes": {
         "PhoneNumbersResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_update_method": {
               "params": [
                 {
@@ -9727,6 +11886,20 @@
       "classes": {
         "ProjectNamespace": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "tokens",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -9749,6 +11922,15 @@
         },
         "ProjectTokens": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create": {
               "params": [
                 {
@@ -9804,6 +11986,15 @@
       "classes": {
         "PubSubResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create_token": {
               "params": [
                 {
@@ -9826,6 +12017,15 @@
       "classes": {
         "QueuesResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_update_method": {
               "params": [
                 {
@@ -9876,6 +12076,15 @@
       "classes": {
         "RecordingsResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_recording": {
               "params": [
                 {
@@ -9926,6 +12135,15 @@
       "classes": {
         "RegistryBrands": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create": {
               "params": [
                 {
@@ -10010,6 +12228,15 @@
         },
         "RegistryCampaigns": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create_order": {
               "params": [
                 {
@@ -10104,6 +12331,35 @@
         },
         "RegistryNamespace": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "brands",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "campaigns",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "orders",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "numbers",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -10153,6 +12409,15 @@
         },
         "RegistryNumbers": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_number": {
               "params": [
                 {
@@ -10171,6 +12436,15 @@
         },
         "RegistryOrders": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -10193,6 +12467,15 @@
       "classes": {
         "ShortCodesResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -10248,6 +12531,15 @@
       "classes": {
         "SipProfileResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -10279,6 +12571,15 @@
       "classes": {
         "VerifiedCallersResource": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_update_method": {
               "params": [
                 {
@@ -10329,6 +12630,15 @@
       "classes": {
         "VideoConferenceTokens": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -10361,6 +12671,15 @@
         },
         "VideoConferences": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_update_method": {
               "params": [
                 {
@@ -10431,6 +12750,50 @@
         },
         "VideoNamespace": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "rooms",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "room_tokens",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "room_sessions",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "room_recordings",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "conferences",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "conference_tokens",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "streams",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -10507,6 +12870,15 @@
         },
         "VideoRoomRecordings": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_recording": {
               "params": [
                 {
@@ -10572,6 +12944,15 @@
         },
         "VideoRoomSessions": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -10661,6 +13042,15 @@
         },
         "VideoRoomTokens": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "create": {
               "params": [
                 {
@@ -10679,6 +13069,15 @@
         },
         "VideoRooms": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "_update_method": {
               "params": [
                 {
@@ -10730,6 +13129,15 @@
         },
         "VideoStreams": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "delete_stream": {
               "params": [
                 {
@@ -10785,6 +13193,30 @@
       "classes": {
         "ApiNinjasTriviaSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_parameter_schema": {
               "params": [],
               "returns": "any"
@@ -10837,6 +13269,30 @@
       "classes": {
         "ClaudeSkillsSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_hints": {
               "params": [
                 {
@@ -10898,6 +13354,35 @@
       "classes": {
         "DataSphereSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "base_url",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -11000,6 +13485,30 @@
       "classes": {
         "DataSphereServerlessSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_global_data": {
               "params": [
                 {
@@ -11065,6 +13574,30 @@
       "classes": {
         "DateTimeSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_parameter_schema": {
               "params": [],
               "returns": "any"
@@ -11117,6 +13650,30 @@
       "classes": {
         "GoogleMapsSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_hints": {
               "params": [],
               "returns": "any"
@@ -11173,6 +13730,30 @@
       "classes": {
         "InfoGathererSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_global_data": {
               "params": [
                 {
@@ -11234,6 +13815,30 @@
       "classes": {
         "JokeSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_global_data": {
               "params": [],
               "returns": "any"
@@ -11290,6 +13895,30 @@
       "classes": {
         "MathSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_parameter_schema": {
               "params": [],
               "returns": "any"
@@ -11342,6 +13971,30 @@
       "classes": {
         "MCPGatewaySkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_global_data": {
               "params": [
                 {
@@ -11412,6 +14065,30 @@
       "classes": {
         "NativeVectorSearchSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_hints": {
               "params": [
                 {
@@ -11473,6 +14150,30 @@
       "classes": {
         "PlayBackgroundFileSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_parameter_schema": {
               "params": [],
               "returns": "any"
@@ -11525,6 +14226,30 @@
       "classes": {
         "CustomSkills": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_parameter_schema": {
               "params": [],
               "returns": "any"
@@ -11573,6 +14298,15 @@
         },
         "SkillRegistry": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "clear_registry": {
               "params": [],
               "returns": "any"
@@ -11627,6 +14361,35 @@
       "classes": {
         "SpiderSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "base_url",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -11715,6 +14478,30 @@
       "classes": {
         "SWMLTransferSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_hints": {
               "params": [
                 {
@@ -11776,6 +14563,30 @@
       "classes": {
         "WeatherApiSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_parameter_schema": {
               "params": [],
               "returns": "any"
@@ -11828,6 +14639,40 @@
       "classes": {
         "WebSearchSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_version",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "base_url",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -11925,6 +14770,45 @@
       "classes": {
         "WikipediaSearchSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "base_url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "num_results",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "no_results_message",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "_http": {
               "params": [
                 {
@@ -12032,6 +14916,25 @@
       "classes": {
         "SchemaUtils": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "verbs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "schema_data",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
             "get_verb": {
               "params": [
                 {

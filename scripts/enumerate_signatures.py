@@ -168,6 +168,28 @@ def collect(raw: dict) -> dict:
                 "returns": "any",
             }
 
+        # Synthesize __init__ for every Moo/Moose class. Perl/Moo provides
+        # ``new`` automatically based on attributes; cross-language audit
+        # treats this as the canonical ``__init__`` constructor. The params
+        # are the class's named attributes (Moo's hash-arg constructor).
+        if "__init__" not in methods_out and canonical_class is not None:
+            init_params: list[dict] = [{"name": "self", "kind": "self"}]
+            for a in type_entry.get("attributes", []):
+                pname = a.get("name", "").lstrip("+")
+                if not pname or pname.startswith("_"):
+                    continue
+                if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pname):
+                    continue
+                init_params.append({
+                    "name": pname,
+                    "type": "any",
+                    "required": not a.get("default") and a.get("required", False),
+                })
+            methods_out["__init__"] = {
+                "params": init_params,
+                "returns": "void",
+            }
+
         if not methods_out or canonical_class is None:
             continue
 
