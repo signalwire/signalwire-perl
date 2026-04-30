@@ -109,6 +109,9 @@ MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
         "add_mcp_server",
     ],
+    ("signalwire.core.mixins.state_mixin", "StateMixin"): [
+        "validate_tool_token",
+    ],
 }
 
 

@@ -284,6 +284,46 @@ sub get_prompt {
 # define_tool, register_swaig_function, define_tools, on_function_call are
 # provided by SignalWire::SWML::Service (parent). Inherited via `extends`.
 
+# Mint a per-call SWAIG-function token via the agent's SessionManager.
+#
+# Python parity: state_mixin.StateMixin._create_tool_token —
+# delegates to SessionManager->create_tool_token and returns "" on any
+# raised error (Python catches all exceptions and returns "").
+sub create_tool_token {
+    my ($self, $tool_name, $call_id) = @_;
+    my $token = '';
+    eval {
+        $token = $self->session_manager->create_tool_token($tool_name, $call_id);
+        1;
+    } or do {
+        return '';
+    };
+    return $token;
+}
+
+# Validate a per-call SWAIG-function token. Returns false (0) when the
+# function is not registered, when the SessionManager rejects the token,
+# or on any underlying exception.
+#
+# Python parity: state_mixin.StateMixin.validate_tool_token —
+# rejects unknown function names up-front and swallows errors.
+sub validate_tool_token {
+    my ($self, $function_name, $token, $call_id) = @_;
+    return 0 unless $self->has_function($function_name);
+    my $result = 0;
+    eval {
+        # Note: Perl SessionManager's validate_token signature is
+        # (call_id, function_name, token), not the Python order. The
+        # AgentBase facade keeps the Python order so callers can write
+        # the same code across languages.
+        $result = $self->session_manager->validate_token($call_id, $function_name, $token);
+        1;
+    } or do {
+        return 0;
+    };
+    return $result ? 1 : 0;
+}
+
 # ---------- AI Config methods ----------
 
 sub add_hint {

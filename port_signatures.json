@@ -371,6 +371,25 @@
               ],
               "returns": "any"
             },
+            "create_tool_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "tool_name",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
             "enable_mcp_server": {
               "params": [
                 {
@@ -3418,6 +3437,38 @@
                 },
                 {
                   "name": "skill_name",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.core.mixins.state_mixin": {
+      "classes": {
+        "StateMixin": {
+          "methods": {
+            "validate_tool_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "function_name",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "token",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "call_id",
                   "type": "any",
                   "required": true
                 }
