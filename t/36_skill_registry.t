@@ -2,6 +2,8 @@
 use strict;
 use warnings;
 use Test::More;
+use File::Temp qw(tempdir tempfile);
+use File::Spec;
 
 use SignalWire::Skills::SkillRegistry;
 use SignalWire::Agent::AgentBase;
@@ -90,6 +92,51 @@ subtest 'register custom skill' => sub {
     SignalWire::Skills::SkillRegistry->register_skill('test_custom', 'MyCustomSkill');
     my $factory = SignalWire::Skills::SkillRegistry->get_factory('test_custom');
     is($factory, 'MyCustomSkill', 'custom skill registered');
+};
+
+# ============================================================
+# 8-11. add_skill_directory parity with Python's
+#       signalwire.skills.registry.SkillRegistry.add_skill_directory.
+# ============================================================
+subtest 'add_skill_directory: valid path' => sub {
+    SignalWire::Skills::SkillRegistry->clear_registry;
+    my $tmpdir = tempdir(CLEANUP => 1);
+    SignalWire::Skills::SkillRegistry->add_skill_directory($tmpdir);
+    my $paths = SignalWire::Skills::SkillRegistry->_external_paths;
+    ok((grep { $_ eq $tmpdir } @$paths), 'tmpdir present in external_paths');
+};
+
+subtest 'add_skill_directory: nonexistent path' => sub {
+    SignalWire::Skills::SkillRegistry->clear_registry;
+    eval {
+        SignalWire::Skills::SkillRegistry->add_skill_directory(
+            '/no/such/path/swperl_abc123_does_not_exist'
+        );
+    };
+    my $err = $@;
+    ok($err, 'raised an error');
+    like($err, qr/does not exist/, 'error mentions does-not-exist');
+};
+
+subtest 'add_skill_directory: not a directory' => sub {
+    SignalWire::Skills::SkillRegistry->clear_registry;
+    my (undef, $filename) = tempfile(UNLINK => 1);
+    eval {
+        SignalWire::Skills::SkillRegistry->add_skill_directory($filename);
+    };
+    my $err = $@;
+    ok($err, 'raised an error');
+    like($err, qr/not a directory/, 'error mentions not-a-directory');
+};
+
+subtest 'add_skill_directory: dedup' => sub {
+    SignalWire::Skills::SkillRegistry->clear_registry;
+    my $tmpdir = tempdir(CLEANUP => 1);
+    SignalWire::Skills::SkillRegistry->add_skill_directory($tmpdir);
+    SignalWire::Skills::SkillRegistry->add_skill_directory($tmpdir);
+    my $paths = SignalWire::Skills::SkillRegistry->_external_paths;
+    my $count = grep { $_ eq $tmpdir } @$paths;
+    is($count, 1, 'tmpdir present exactly once');
 };
 
 done_testing;

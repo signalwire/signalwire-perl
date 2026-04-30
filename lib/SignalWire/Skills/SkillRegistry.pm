@@ -7,6 +7,9 @@ use warnings;
 
 # Global registry mapping skill name -> class name
 my %REGISTRY;
+# External skill directories registered via add_skill_directory.
+# Mirrors Python's SkillRegistry._external_paths.
+my @EXTERNAL_PATHS;
 
 sub register_skill {
     my ($class, $skill_name, $skill_class) = @_;
@@ -62,6 +65,32 @@ sub _camelize {
 
 sub clear_registry {
     %REGISTRY = ();
+    @EXTERNAL_PATHS = ();
+}
+
+# Add a directory to search for skills.
+#
+# Mirrors Python's
+# `signalwire.skills.registry.SkillRegistry.add_skill_directory`:
+# validate the path, die with an "X: <path>" message (Perl's analog of
+# raising ValueError) when the path doesn't exist or isn't a directory,
+# and de-duplicate entries in the external paths list.
+sub add_skill_directory {
+    my ($class, $path) = @_;
+    die "Skill directory does not exist: $path\n" unless -e $path;
+    die "Path is not a directory: $path\n"        unless -d $path;
+    return if grep { $_ eq $path } @EXTERNAL_PATHS;
+    push @EXTERNAL_PATHS, $path;
+    return;
+}
+
+# Returns the registered external skill directories.
+# Parity surface for Python's private `_external_paths` attribute —
+# exposed under the underscored name so the signature enumerator skips
+# it (matches Python convention).
+sub _external_paths {
+    my ($class) = @_;
+    return [@EXTERNAL_PATHS];
 }
 
 1;

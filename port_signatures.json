@@ -1973,6 +1973,22 @@
             }
           }
         }
+      },
+      "functions": {
+        "create_simple_context": {
+          "params": [
+            {
+              "name": "self",
+              "kind": "cls"
+            },
+            {
+              "name": "name",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        }
       }
     },
     "signalwire.core.data_map": {
@@ -3079,6 +3095,45 @@
               "returns": "any"
             }
           }
+        }
+      }
+    },
+    "signalwire.core.logging_config": {
+      "classes": {},
+      "functions": {
+        "debug": {
+          "params": [],
+          "returns": "any"
+        },
+        "error": {
+          "params": [],
+          "returns": "any"
+        },
+        "get_execution_mode": {
+          "params": [],
+          "returns": "any"
+        },
+        "get_logger": {
+          "params": [
+            {
+              "name": "self",
+              "kind": "cls"
+            },
+            {
+              "name": "name",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        },
+        "info": {
+          "params": [],
+          "returns": "any"
+        },
+        "warn": {
+          "params": [],
+          "returns": "any"
         }
       }
     },
@@ -14904,6 +14959,20 @@
               ],
               "returns": "void"
             },
+            "add_skill_directory": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "cls"
+                },
+                {
+                  "name": "path",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
             "clear_registry": {
               "params": [],
               "returns": "any"
@@ -15506,6 +15575,15 @@
               "returns": "any"
             }
           }
+        }
+      }
+    },
+    "signalwire.utils": {
+      "classes": {},
+      "functions": {
+        "is_serverless_mode": {
+          "params": [],
+          "returns": "any"
         }
       }
     },
