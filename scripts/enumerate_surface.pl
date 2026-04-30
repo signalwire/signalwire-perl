@@ -64,6 +64,9 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Security::SessionManager' => { module => 'signalwire.core.security.session_manager', class => 'SessionManager' },
     'SignalWire::Server::AgentServer'      => { module => 'signalwire.agent_server',         class => 'AgentServer'  },
     'SignalWire::Logging'                  => { module => 'signalwire.core.logging_config',  class => undef          },
+    'SignalWire::Core::LoggingConfig'      => { module => 'signalwire.core.logging_config',  class => undef          },
+    'SignalWire::Utils'                    => { module => 'signalwire.utils',                 class => undef          },
+    'SignalWire::Utils::UrlValidator'      => { module => 'signalwire.utils.url_validator',    class => undef          },
 
     # Contexts (multiple classes in one .pm)
     'SignalWire::Contexts'                 => { module => 'signalwire.core.contexts',        class => undef          },

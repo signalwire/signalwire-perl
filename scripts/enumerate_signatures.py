@@ -66,6 +66,17 @@ SKIP_METHODS = {
     "new",  # Moo provides ::new automatically
 }
 
+# Perl packages whose subs project as Python module-level FREE FUNCTIONS
+# (rather than as methods on a class).  Packages map with class=undef in
+# PACKAGE_TO_PY but only those listed here have their subs emitted as
+# free functions; others (e.g. SignalWire::Logging, which is a Moo class
+# whose instance methods would otherwise leak) get suppressed.
+FREE_FN_PACKAGES = {
+    "SignalWire::Core::LoggingConfig",
+    "SignalWire::Utils",
+    "SignalWire::Utils::UrlValidator",
+}
+
 
 # AgentBase methods that Python keeps on mixin classes. The Perl port has
 # them all flattened on AgentBase via Moo composition; we project them onto
@@ -141,6 +152,7 @@ def collect(raw: dict) -> dict:
         canonical_class = target["class"]
 
         methods_out: dict = {}
+        functions_out: dict = {}
 
         for m in type_entry.get("methods", []):
             native = m.get("name", "")
@@ -176,7 +188,16 @@ def collect(raw: dict) -> dict:
                 "returns": "void" if native == "BUILD" else "any",
             }
             if canonical_class is None:
-                # Module-level function (no class)
+                # Module-level function (no class).  Perl packages mapped
+                # with class=undef expose their subs as module-level free
+                # functions in the canonical inventory — but ONLY when the
+                # package is explicitly listed in FREE_FN_PACKAGES below.
+                # SignalWire::Logging maps to logging_config with class=undef
+                # purely so its Logger instance methods don't pollute the
+                # surface; we don't want those instance methods leaking up
+                # as fake free functions.
+                if full in FREE_FN_PACKAGES:
+                    functions_out[method_canonical] = sig
                 continue
             methods_out[method_canonical] = sig
 
@@ -213,6 +234,12 @@ def collect(raw: dict) -> dict:
                 "params": init_params,
                 "returns": "void",
             }
+
+        # Emit module-level free functions (class=undef packages).
+        if functions_out:
+            out_modules.setdefault(mod, {"classes": {}})
+            out_modules[mod].setdefault("functions", {})
+            out_modules[mod]["functions"].update(functions_out)
 
         if not methods_out or canonical_class is None:
             continue
@@ -255,6 +282,10 @@ def collect(raw: dict) -> dict:
                 for cls in sorted(entry["classes"])
             }
         }
+        # Module-level free functions (e.g. SignalWire::Logging subs that
+        # project onto signalwire.core.logging_config.functions.X).
+        if entry.get("functions"):
+            sorted_modules[k]["functions"] = dict(sorted(entry["functions"].items()))
     return {
         "version": "2",
         "generated_from": "signalwire-perl via best-effort regex parser",
