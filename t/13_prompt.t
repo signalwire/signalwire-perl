@@ -219,4 +219,37 @@ subtest 'prompt LLM params in SWML' => sub {
     is($ai[0]{ai}{prompt}{top_p}, 0.95, 'prompt top_p');
 };
 
+# ============================================================
+# 16. pom accessor (Python parity: agent.pom)
+#
+# Mirrors signalwire-python tests/unit/core/test_agent_base.py::
+#   TestAgentBasePromptMethods::test_set_prompt_pom_succeeds_when_use_pom_true
+# ============================================================
+subtest 'pom returns sections after prompt_add_section' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'pom1');
+    $agent->prompt_add_section('Greeting', 'Hello');
+    my $pom = $agent->pom;
+    ok(defined $pom, 'pom is defined');
+    is(scalar @$pom, 1, 'one section');
+    is($pom->[0]{title}, 'Greeting', 'title');
+    is($pom->[0]{body}, 'Hello', 'body');
+};
+
+subtest 'pom returns undef when use_pom is false' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'no_pom', use_pom => 0);
+    is($agent->pom, undef, 'pom returns undef when use_pom is false');
+};
+
+subtest 'pom returns deep clone (caller mutation cannot leak)' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'pom_clone');
+    $agent->prompt_add_section('Original', 'Body');
+    my $pom = $agent->pom;
+    push @$pom, { title => 'Injected' };
+    $pom->[0]{title} = 'Hijacked';
+
+    my $fresh = $agent->pom;
+    is(scalar @$fresh, 1, 'caller append did not leak');
+    is($fresh->[0]{title}, 'Original', 'caller mutation did not leak');
+};
+
 done_testing;

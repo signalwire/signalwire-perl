@@ -229,6 +229,67 @@ sub get_prompt {
     return $self->prompt_text;
 }
 
+# Read-only snapshot of the agent's POM section list.
+#
+# Python parity: ``agent.pom`` instance attribute (agent_base.py
+# line 209). Returns ``undef`` when ``use_pom`` is false (mirroring
+# Python's ``self.pom = None``); otherwise returns a deep-cloned arrayref
+# of section hashrefs so callers cannot mutate internal state.
+sub pom {
+    my ($self) = @_;
+    return undef unless $self->use_pom;
+    require Storable;
+    return Storable::dclone($self->pom_sections);
+}
+
+# Returns the post-prompt text whatever set_post_prompt stored, or
+# the empty string when none has been set.
+#
+# Mirrors Python's PromptManager.get_post_prompt /
+# PromptMixin.get_post_prompt — used by SWML rendering when a
+# post-prompt is configured.
+sub get_post_prompt {
+    my ($self) = @_;
+    return $self->post_prompt;
+}
+
+# Returns the raw prompt text whatever set_prompt_text stored, or the
+# empty string when no raw prompt has been set. Distinct from
+# get_prompt which may return the POM array when use_pom is true.
+#
+# Mirrors Python's PromptManager.get_raw_prompt.
+sub get_raw_prompt {
+    my ($self) = @_;
+    return $self->prompt_text;
+}
+
+# Sets the prompt as a list of POM section hashes. Each section hash
+# supports keys "title", "body", "bullets", "numbered",
+# "numbered_bullets", and "subsections". Switches the agent to POM
+# mode.
+#
+# Mirrors Python's PromptManager.set_prompt_pom — accepts a list of
+# section dicts and stores them in pom_sections.
+sub set_prompt_pom {
+    my ($self, $pom) = @_;
+    $self->use_pom(1);
+    $pom //= [];
+    $self->pom_sections([ @$pom ]);
+    return $self;
+}
+
+# Returns the contexts dictionary as a hashref of serialised SWML, or
+# undef when no contexts have been defined yet.
+#
+# Mirrors Python's PromptManager.get_contexts which returns the
+# contexts dict or None.
+sub get_contexts {
+    my ($self) = @_;
+    my $cb = $self->context_builder;
+    return undef unless defined $cb;
+    return $cb->to_hash;
+}
+
 # ---------- Tool methods ----------
 
 #
