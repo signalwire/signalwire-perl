@@ -94,6 +94,11 @@ MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
         "define_tool", "on_function_call", "register_swaig_function",
     ],
+    ("signalwire.core.agent.tools.registry", "ToolRegistry"): [
+        "define_tool", "register_swaig_function",
+        "has_function", "get_function", "get_all_functions",
+        "remove_function",
+    ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
         "enable_debug_routes", "manual_set_proxy_url", "run", "serve",
         "set_dynamic_config_callback",
@@ -199,13 +204,17 @@ def collect(raw: dict) -> dict:
         out_modules[mod]["classes"][canonical_class]["methods"].update(methods_out)
 
     # Mixin projection: Perl flattens all mixin methods onto AgentBase via
-    # Moo composition. Project them onto canonical Python mixin paths.
+    # Moo composition; some helpers also live on SWMLService (parent).
+    # Project them onto canonical Python mixin paths.
     ab_entry = out_modules.get("signalwire.core.agent_base", {}).get("classes", {}).get("AgentBase")
-    if ab_entry:
-        ab_methods = ab_entry["methods"]
+    svc_entry = out_modules.get("signalwire.core.swml_service", {}).get("classes", {}).get("SWMLService")
+    if ab_entry or svc_entry:
+        ab_methods = ab_entry["methods"] if ab_entry else {}
+        svc_methods = svc_entry["methods"] if svc_entry else {}
+        combined = {**svc_methods, **ab_methods}
         projected: set[str] = set()
         for (target_mod, target_cls), expected in MIXIN_PROJECTIONS.items():
-            present = {m: ab_methods[m] for m in expected if m in ab_methods}
+            present = {m: combined[m] for m in expected if m in combined}
             if not present:
                 continue
             out_modules.setdefault(target_mod, {"classes": {}})
@@ -214,7 +223,7 @@ def collect(raw: dict) -> dict:
             projected.update(present)
         for n in projected:
             ab_methods.pop(n, None)
-        if not ab_methods:
+        if ab_entry and not ab_methods:
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"]["classes"]:
                 out_modules.pop("signalwire.core.agent_base")

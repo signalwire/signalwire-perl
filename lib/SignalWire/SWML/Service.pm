@@ -291,6 +291,37 @@ sub register_swaig_function {
     return $self;
 }
 
+# Whether a SWAIG function with the given name is registered.
+# (Python parity: ToolRegistry.has_function.)
+sub has_function {
+    my ($self, $name) = @_;
+    return exists $self->tools->{$name} ? 1 : 0;
+}
+
+# Get a registered SWAIG function by name, or undef when absent.
+# (Python parity: ToolRegistry.get_function.)
+sub get_function {
+    my ($self, $name) = @_;
+    return $self->tools->{$name};
+}
+
+# Snapshot of all registered SWAIG functions keyed by name.
+# (Python parity: ToolRegistry.get_all_functions.)
+sub get_all_functions {
+    my ($self) = @_;
+    return { %{ $self->tools } };
+}
+
+# Remove a registered SWAIG function. Returns 1 on success, 0 if absent.
+# (Python parity: ToolRegistry.remove_function.)
+sub remove_function {
+    my ($self, $name) = @_;
+    return 0 unless exists $self->tools->{$name};
+    delete $self->tools->{$name};
+    @{ $self->tool_order } = grep { $_ ne $name } @{ $self->tool_order };
+    return 1;
+}
+
 # Register multiple tool definitions at once.
 sub define_tools {
     my ($self, @tool_defs) = @_;
