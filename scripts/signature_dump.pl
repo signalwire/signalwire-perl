@@ -115,20 +115,27 @@ sub parse_params {
     my @params;
 
     for my $bline (@$body) {
-        # ``my ($self, $a, $b, $c) = @_;``
+        # ``my ($self, $a, $b, $c) = @_;`` — also handles ``my (@args) = @_;``
+        # and ``my (%kwargs) = @_;`` (slurpy array / hash) which we tag with
+        # a sigil prefix so the canonical translator can distinguish between
+        # var_positional (@) and var_keyword (%).
         if ($bline =~ /^\s*my\s*\(\s*([^)]*)\s*\)\s*=\s*\@_\s*;/) {
             my $vars = $1;
             for my $v (split /\s*,\s*/, $vars) {
-                $v =~ s/^\$//;
-                $v =~ s/^[\@\%]//;  # array/hash slurp
                 next if $v eq '';
-                push @params, { name => $v };
+                my $sigil = '';
+                if ($v =~ /^([\@\%])/) {
+                    $sigil = $1;
+                }
+                $v =~ s/^[\$\@\%]//;
+                next if $v eq '';
+                push @params, { name => $v, sigil => $sigil };
             }
             return @params;
         }
         # ``my $x = shift;`` style — accumulate
         if ($bline =~ /^\s*my\s+\$(\w+)\s*=\s*shift\s*;/) {
-            push @params, { name => $1 };
+            push @params, { name => $1, sigil => '' };
             next;
         }
         # First non-blank non-comment line that doesn't match either pattern:

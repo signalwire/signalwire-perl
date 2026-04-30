@@ -702,11 +702,7 @@ signalwire.skills.web_search.skill_original.WebSearchSkill.setup: not_yet_implem
 signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.get_hints: not_yet_implemented: skill internal helper not yet ported
 signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.get_prompt_sections: not_yet_implemented: skill internal helper not yet ported
 signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.search_wiki: not_yet_implemented: skill internal helper not yet ported
-signalwire.RestClient: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
-signalwire.add_skill_directory: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
 signalwire.list_skills: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
-signalwire.list_skills_with_params: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
-signalwire.register_skill: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
 signalwire.run_agent: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
 signalwire.start_agent: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
 signalwire.utils.is_serverless_mode: not_yet_implemented: utility helper pending

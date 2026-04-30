@@ -72,9 +72,19 @@ SKIP_METHODS = {
 # free functions; others (e.g. SignalWire::Logging, which is a Moo class
 # whose instance methods would otherwise leak) get suppressed.
 FREE_FN_PACKAGES = {
+    "SignalWire",  # top-level RestClient/register_skill/add_skill_directory/list_skills_with_params
     "SignalWire::Core::LoggingConfig",
     "SignalWire::Utils",
     "SignalWire::Utils::UrlValidator",
+}
+
+# Free-function name overrides — for cases where the Python canonical
+# name doesn't follow Perl/snake_case. Python's top-level
+# ``signalwire.RestClient`` is a factory function but uses PascalCase
+# (it mirrors the class name). The Perl source-side sub is also named
+# ``RestClient`` — emit it as-is rather than lower-casing.
+FREE_FN_NAME_OVERRIDES = {
+    "RestClient": "RestClient",
 }
 
 
@@ -160,14 +170,17 @@ def collect(raw: dict) -> dict:
                 continue
             if native.startswith("_") and not native.startswith("__"):
                 continue
-            method_canonical = native
+            # Free-function name override — preserve PascalCase for the
+            # canonical Python ``signalwire.RestClient`` factory.
+            method_canonical = FREE_FN_NAME_OVERRIDES.get(native, native)
             params = m.get("parameters", [])
             # Strip $self / $class as the canonical receiver
             params_out = []
             saw_receiver = False
             for i, p in enumerate(params):
                 pname = p.get("name", "").lstrip("+")
-                if i == 0 and pname in ("self", "class"):
+                sigil = p.get("sigil", "")
+                if i == 0 and pname in ("self", "class") and not sigil:
                     params_out.append({
                         "name": "self",
                         "kind": "self" if pname == "self" else "cls",
@@ -178,11 +191,21 @@ def collect(raw: dict) -> dict:
                     continue
                 if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pname):
                     continue
-                params_out.append({
+                # Sigil-driven kind: ``@x`` -> var_positional (Perl array
+                # slurp ≡ Python ``*args``); ``%x`` -> var_keyword (Perl
+                # hash slurp ≡ Python ``**kwargs``); ``$x`` -> positional.
+                param: dict = {
                     "name": pname,
                     "type": "any",
                     "required": True,
-                })
+                }
+                if sigil == "@":
+                    param["kind"] = "var_positional"
+                    param["type"] = "list<any>"
+                elif sigil == "%":
+                    param["kind"] = "var_keyword"
+                    param["type"] = "dict<string,any>"
+                params_out.append(param)
             sig = {
                 "params": params_out,
                 "returns": "void" if native == "BUILD" else "any",

@@ -43,6 +43,46 @@ sub list_skills {
     return [ sort keys %REGISTRY ];
 }
 
+# Get complete schema for all registered skills.
+#
+# Mirrors Python's ``SkillRegistry.get_all_skills_schema()`` — returns a
+# hashref keyed by skill name where each value carries metadata + the
+# parameter schema for that skill. Perl skills don't carry rich
+# Python-style parameter introspection in v1, so the value defaults to
+# the minimal shape with just the skill name; built-in skills that
+# expose ``parameter_schema`` get richer detail.
+sub get_all_skills_schema {
+    my ($self) = @_;
+    # Accept both class-method (SkillRegistry->get_all_skills_schema) and
+    # instance-method ($registry->get_all_skills_schema) calls.
+    my $class = ref($self) || $self || __PACKAGE__;
+    $class->_load_all_builtins;
+    my %schema;
+    for my $name (sort keys %REGISTRY) {
+        my $skill_class = $REGISTRY{$name};
+        my %entry = (name => $name, parameters => {});
+        if (ref($skill_class) eq 'CODE') {
+            # Factory closure; can't introspect statically
+            ;
+        } elsif (defined $skill_class) {
+            if ($skill_class->can('parameter_schema')) {
+                eval {
+                    my $params = $skill_class->parameter_schema;
+                    $entry{parameters} = $params if ref($params) eq 'HASH';
+                };
+            }
+            if ($skill_class->can('skill_description')) {
+                eval { $entry{description} = $skill_class->skill_description };
+            }
+            if ($skill_class->can('skill_version')) {
+                eval { $entry{version} = $skill_class->skill_version };
+            }
+        }
+        $schema{$name} = \%entry;
+    }
+    return \%schema;
+}
+
 sub _load_all_builtins {
     my ($class) = @_;
     my @names = qw(

@@ -2,6 +2,52 @@
   "version": "2",
   "generated_from": "signalwire-perl via best-effort regex parser",
   "modules": {
+    "signalwire": {
+      "classes": {},
+      "functions": {
+        "RestClient": {
+          "params": [
+            {
+              "name": "args",
+              "type": "list<any>",
+              "required": true,
+              "kind": "var_positional"
+            },
+            {
+              "name": "kwargs",
+              "type": "dict<string,any>",
+              "required": true,
+              "kind": "var_keyword"
+            }
+          ],
+          "returns": "any"
+        },
+        "add_skill_directory": {
+          "params": [
+            {
+              "name": "path",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        },
+        "list_skills_with_params": {
+          "params": [],
+          "returns": "any"
+        },
+        "register_skill": {
+          "params": [
+            {
+              "name": "skill_class",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        }
+      }
+    },
     "signalwire.agent_server": {
       "classes": {
         "AgentServer": {
@@ -74,8 +120,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -184,8 +231,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -213,8 +261,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -232,8 +281,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -310,8 +360,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -483,8 +534,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -603,8 +655,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -993,8 +1046,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -1445,8 +1499,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -1737,8 +1792,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -1816,8 +1872,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2121,8 +2178,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2215,8 +2273,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2276,8 +2335,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2406,8 +2466,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2461,8 +2522,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2503,8 +2565,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2522,8 +2585,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2564,8 +2628,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2592,8 +2657,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2611,8 +2677,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2634,8 +2701,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2699,8 +2767,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2713,8 +2782,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2727,8 +2797,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2755,8 +2826,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2885,8 +2957,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2899,8 +2972,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2913,8 +2987,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2965,8 +3040,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2998,8 +3074,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3072,8 +3149,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3131,8 +3209,9 @@
                 },
                 {
                   "name": "h",
-                  "type": "any",
-                  "required": true
+                  "type": "list<any>",
+                  "required": true,
+                  "kind": "var_positional"
                 }
               ],
               "returns": "any"
@@ -3145,8 +3224,9 @@
                 },
                 {
                   "name": "args",
-                  "type": "any",
-                  "required": true
+                  "type": "list<any>",
+                  "required": true,
+                  "kind": "var_positional"
                 }
               ],
               "returns": "any"
@@ -3159,8 +3239,9 @@
                 },
                 {
                   "name": "lang",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3187,8 +3268,9 @@
                 },
                 {
                   "name": "pron",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3318,8 +3400,9 @@
                 },
                 {
                   "name": "p",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3332,8 +3415,9 @@
                 },
                 {
                   "name": "p",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3423,8 +3507,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3482,8 +3567,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3511,8 +3597,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3530,8 +3617,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3699,8 +3787,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3811,8 +3900,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3825,8 +3915,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -4058,8 +4149,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -4472,8 +4564,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -4486,8 +4579,9 @@
                 },
                 {
                   "name": "tool_defs",
-                  "type": "any",
-                  "required": true
+                  "type": "list<any>",
+                  "required": true,
+                  "kind": "var_positional"
                 }
               ],
               "returns": "any"
@@ -5126,8 +5220,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5225,8 +5320,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5239,8 +5335,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5253,8 +5350,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5267,8 +5365,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5281,8 +5380,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5295,8 +5395,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5309,8 +5410,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5332,8 +5434,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5346,8 +5449,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5360,8 +5464,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5401,8 +5506,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5456,8 +5562,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5479,8 +5586,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5502,8 +5610,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5516,8 +5625,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5530,8 +5640,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5553,8 +5664,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5567,8 +5679,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5613,8 +5726,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5636,8 +5750,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5650,8 +5765,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5664,8 +5780,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5678,8 +5795,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5692,8 +5810,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5706,8 +5825,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5720,8 +5840,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5734,8 +5855,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5748,8 +5870,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5771,8 +5894,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5794,8 +5918,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5808,8 +5933,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5822,8 +5948,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5845,8 +5972,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -6007,8 +6135,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -6302,8 +6431,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -6422,8 +6552,9 @@
                 },
                 {
                   "name": "contexts",
-                  "type": "any",
-                  "required": true
+                  "type": "list<any>",
+                  "required": true,
+                  "kind": "var_positional"
                 }
               ],
               "returns": "any"
@@ -6463,8 +6594,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -6495,8 +6627,9 @@
                 },
                 {
                   "name": "contexts",
-                  "type": "any",
-                  "required": true
+                  "type": "list<any>",
+                  "required": true,
+                  "kind": "var_positional"
                 }
               ],
               "returns": "any"
@@ -8541,8 +8674,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -8612,8 +8746,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -8654,8 +8789,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -8673,8 +8809,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -8766,8 +8903,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -8794,8 +8932,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -8813,8 +8952,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -8841,8 +8981,9 @@
                 },
                 {
                   "name": "opts",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9333,8 +9474,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9361,8 +9503,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9557,8 +9700,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9588,8 +9732,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9616,8 +9761,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9635,8 +9781,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9667,8 +9814,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9699,8 +9847,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9718,8 +9867,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9742,8 +9892,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9761,8 +9912,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9785,8 +9937,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9883,8 +10036,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9902,8 +10056,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9921,8 +10076,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9959,8 +10115,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9983,8 +10140,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10002,8 +10160,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10026,8 +10185,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10050,8 +10210,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10120,8 +10281,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10139,8 +10301,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10171,8 +10334,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10241,8 +10405,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10260,8 +10425,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10528,8 +10694,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10542,8 +10709,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10556,8 +10724,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10570,8 +10739,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10589,8 +10759,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10608,8 +10779,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10627,8 +10799,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10664,8 +10837,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10702,8 +10876,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10721,8 +10896,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10776,8 +10952,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10803,8 +10980,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10836,8 +11014,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10891,8 +11070,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10965,8 +11145,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10979,8 +11160,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11024,8 +11206,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11060,8 +11243,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11092,8 +11276,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11111,8 +11296,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11130,8 +11316,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11162,8 +11349,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11474,8 +11662,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11488,8 +11677,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11502,8 +11692,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11516,8 +11707,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11530,8 +11722,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11562,8 +11755,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11581,8 +11775,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11623,8 +11818,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11642,8 +11838,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11674,8 +11871,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11728,8 +11926,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11785,8 +11984,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11809,8 +12009,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11862,8 +12063,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11893,8 +12095,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -11934,8 +12137,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12053,8 +12257,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12094,8 +12299,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12113,8 +12319,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12149,8 +12356,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12180,8 +12388,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12194,8 +12403,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12213,8 +12423,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12258,8 +12469,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12305,8 +12517,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12345,8 +12558,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12364,8 +12578,9 @@
                 },
                 {
                   "name": "args",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12383,8 +12598,9 @@
                 },
                 {
                   "name": "args",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12402,8 +12618,9 @@
                 },
                 {
                   "name": "args",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12421,8 +12638,9 @@
                 },
                 {
                   "name": "args",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12440,8 +12658,9 @@
                 },
                 {
                   "name": "args",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12459,8 +12678,9 @@
                 },
                 {
                   "name": "args",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12478,8 +12698,9 @@
                 },
                 {
                   "name": "args",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12545,8 +12766,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12578,8 +12800,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12609,8 +12832,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12668,8 +12892,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12727,8 +12952,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12758,8 +12984,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12777,8 +13004,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12805,8 +13033,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12824,8 +13053,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12856,8 +13086,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12889,8 +13120,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12908,8 +13140,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -12927,8 +13160,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13104,8 +13338,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13123,8 +13358,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13163,8 +13399,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13222,8 +13459,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13308,8 +13546,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13327,8 +13566,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13346,8 +13586,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13521,8 +13762,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13540,8 +13782,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13581,8 +13824,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13600,8 +13844,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13619,8 +13864,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13638,8 +13884,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13665,8 +13912,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13706,8 +13954,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13725,8 +13974,9 @@
                 },
                 {
                   "name": "params",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -13785,8 +14035,9 @@
                 },
                 {
                   "name": "kwargs",
-                  "type": "any",
-                  "required": true
+                  "type": "dict<string,any>",
+                  "required": true,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -14929,6 +15180,15 @@
             },
             "clear_registry": {
               "params": [],
+              "returns": "any"
+            },
+            "get_all_skills_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
               "returns": "any"
             },
             "get_factory": {

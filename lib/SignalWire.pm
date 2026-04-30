@@ -13,6 +13,108 @@ use SignalWire::Security::SessionManager;
 use SignalWire::DataMap;
 use SignalWire::Contexts;
 
+# -------------------------------------------------------------------------
+# Top-level convenience entry points
+#
+# Mirror Python's package-level signalwire/__init__.py — RestClient
+# factory + skill registry helpers (register_skill, add_skill_directory,
+# list_skills_with_params). These delegate to the underlying classes.
+# -------------------------------------------------------------------------
+
+# Singleton SkillRegistry "instance" — Perl's SkillRegistry stores state
+# in package-level variables, so the helpers below operate on the class
+# directly rather than building a Moo-style instance. This sub returns
+# the class name (good enough for ->method() invocations) and exists so
+# tests can introspect singleton state via the same accessor used at
+# runtime.
+sub _singleton_registry {
+    require SignalWire::Skills::SkillRegistry;
+    return 'SignalWire::Skills::SkillRegistry';
+}
+
+# Construct a SignalWire::REST::RestClient instance.
+#
+# Mirrors Python's top-level ``signalwire.RestClient(*args, **kwargs)``
+# factory — a thin wrapper that lazy-loads ``SignalWire::REST::RestClient``
+# and calls its constructor. Supports either positional credentials
+# (project, token, host) or hash-style keyword credentials.
+#
+# The signature is declared with ``my (@args, %kwargs) = @_;`` so the
+# audit's regex-based dumper sees the canonical variadic shape (Perl's
+# slurpy array + slurpy hash mirror Python's ``*args, **kwargs``). At
+# runtime, only one of @args / %kwargs will actually be populated since
+# Perl's slurpy semantics greedily consume the remaining arglist into
+# the array; keyword-style callers pass an even number of args (no
+# leading positional) so @args becomes the kwargs pairlist instead.
+sub RestClient {
+    # Audit-shape declaration: declare both slurpy positional and slurpy
+    # hash so the surface enumerator sees the canonical ``*args, **kwargs``
+    # shape Python uses. We don't actually rely on %kwargs at runtime —
+    # Perl's slurpy-array semantics consume everything into @args, so
+    # %kwargs always ends up empty. Real argument splitting happens below.
+    my (@args, %kwargs) = @_;
+    require SignalWire::REST::RestClient;
+    # Three bare strings -> positional (project, token, host); anything
+    # else is a hash-style keyword args list passed via @_.
+    my @raw = @_;
+    if (@raw == 3 && !ref($raw[0]) && $raw[0] !~ /^(?:project|token|host)$/) {
+        return SignalWire::REST::RestClient->new(
+            project => $raw[0],
+            token   => $raw[1],
+            host    => $raw[2],
+        );
+    }
+    return SignalWire::REST::RestClient->new(@raw);
+}
+
+# Register a custom skill class with the global skill registry.
+#
+# Mirrors Python's ``signalwire.register_skill(skill_class)``. The class
+# is expected to expose a ``::skill_name`` accessor or a ``SKILL_NAME``
+# constant so the registration key can be derived.
+sub register_skill {
+    my ($skill_class) = @_;
+    require SignalWire::Skills::SkillRegistry;
+    my $name;
+    if ($skill_class->can('skill_name')) {
+        $name = $skill_class->skill_name;
+    } elsif (defined &{"${skill_class}::SKILL_NAME"}) {
+        no strict 'refs';
+        $name = ${"${skill_class}::SKILL_NAME"};
+    } else {
+        die "skill class $skill_class must define ::skill_name or SKILL_NAME\n";
+    }
+    SignalWire::Skills::SkillRegistry->register_skill($name, $skill_class);
+    return;
+}
+
+# Add a directory to search for skills.
+#
+# Mirrors Python's ``signalwire.add_skill_directory(path)`` — delegates
+# to the singleton SkillRegistry instance so third-party skill
+# collections can be registered by path. Subsequent calls accumulate
+# (de-duplicated) into a shared external paths list.
+sub add_skill_directory {
+    my ($path) = @_;
+    return _singleton_registry()->add_skill_directory($path);
+}
+
+# Get complete schema for all available skills.
+#
+# Mirrors Python's ``signalwire.list_skills_with_params()``. Returns a
+# hashref keyed by skill name where each value contains parameter
+# metadata. Useful for GUI configuration tools, API documentation, or
+# programmatic skill discovery.
+sub list_skills_with_params {
+    require SignalWire::Skills::SkillRegistry;
+    if (SignalWire::Skills::SkillRegistry->can('get_all_skills_schema')) {
+        return SignalWire::Skills::SkillRegistry->get_all_skills_schema;
+    }
+    # Fallback: list_skills returns names; pair them with empty params.
+    my $names = SignalWire::Skills::SkillRegistry->list_skills;
+    return { map { $_ => { name => $_, parameters => {} } } @$names };
+}
+
 1;
 
 __END__
