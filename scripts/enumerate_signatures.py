@@ -104,7 +104,7 @@ MIXIN_PROJECTIONS = {
     ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
         "enable_debug_routes", "manual_set_proxy_url", "run", "serve",
-        "set_dynamic_config_callback",
+        "set_dynamic_config_callback", "on_request", "on_swml_request",
     ],
     ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
         "add_mcp_server",

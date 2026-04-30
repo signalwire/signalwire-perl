@@ -288,6 +288,30 @@ sub render_swml {
     return $self->render_main_swml($env);
 }
 
+# Customization hook called when SWML is requested. Default delegates to
+# on_swml_request and returns its result. Subclasses typically override
+# on_swml_request rather than this method.
+#
+# Return undef to use the default SWML rendering, or a hashref of
+# modifications to merge into the rendered document.
+#
+# Python parity: WebMixin.on_request(request_data, callback_path).
+# The Python third `request` argument is FastAPI-specific and
+# intentionally not mirrored.
+sub on_request {
+    my ($self, $request_data, $callback_path) = @_;
+    return $self->on_swml_request($request_data, $callback_path);
+}
+
+# Customization point for subclasses to modify SWML based on request
+# data. The default implementation returns undef (no modification).
+#
+# Python parity: WebMixin.on_swml_request(request_data, callback_path).
+sub on_swml_request {
+    my ($self, $request_data, $callback_path) = @_;
+    return undef;
+}
+
 # ------------------------------------------------------------------
 # SWAIG tool registry (lifted from AgentBase)
 # ------------------------------------------------------------------

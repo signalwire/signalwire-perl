@@ -3557,6 +3557,44 @@
               ],
               "returns": "any"
             },
+            "on_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "callback_path",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "on_swml_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "callback_path",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
             "run": {
               "params": [
                 {
@@ -4379,6 +4417,44 @@
                 },
                 {
                   "name": "raw_data",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "on_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "callback_path",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "on_swml_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "callback_path",
                   "type": "any",
                   "required": true
                 }
