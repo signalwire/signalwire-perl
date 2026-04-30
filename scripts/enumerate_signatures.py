@@ -88,6 +88,18 @@ MIXIN_PROJECTIONS = {
         "prompt_has_section", "reset_contexts", "set_post_prompt",
         "set_prompt_text",
     ],
+    # Python additionally extracted a ``PromptManager`` class that
+    # PromptMixin delegates to. The user-facing surface is identical
+    # (``agent.prompt_manager.X`` ≡ ``agent.X``). Project the same set of
+    # AgentBase methods to PromptManager so the cross-language audit
+    # treats both paths as covered.
+    ("signalwire.core.agent.prompt.manager", "PromptManager"): [
+        "define_contexts", "get_contexts", "get_post_prompt", "get_prompt",
+        "get_raw_prompt",
+        "prompt_add_section", "prompt_add_subsection", "prompt_add_to_section",
+        "prompt_has_section", "set_post_prompt", "set_prompt_pom",
+        "set_prompt_text",
+    ],
     ("signalwire.core.mixins.skill_mixin", "SkillMixin"): [
         "add_skill", "has_skill", "list_skills", "remove_skill",
     ],
