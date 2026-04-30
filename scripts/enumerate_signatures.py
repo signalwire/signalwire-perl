@@ -67,6 +67,42 @@ SKIP_METHODS = {
 }
 
 
+# AgentBase methods that Python keeps on mixin classes. The Perl port has
+# them all flattened on AgentBase via Moo composition; we project them onto
+# the canonical Python mixin paths so the diff doesn't show them as
+# missing-reference (port-only) under signalwire.core.agent_base.AgentBase.
+MIXIN_PROJECTIONS = {
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
+        "add_function_include", "add_hint", "add_hints", "add_internal_filler",
+        "add_language", "add_pattern_hint", "add_pronunciation",
+        "enable_debug_events",
+        "set_function_includes", "set_global_data", "set_internal_fillers",
+        "set_languages", "set_native_functions", "set_param", "set_params",
+        "set_post_prompt_llm_params", "set_prompt_llm_params",
+        "set_pronunciations", "update_global_data",
+    ],
+    ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
+        "define_contexts", "get_prompt", "prompt_add_section",
+        "prompt_add_subsection", "prompt_add_to_section",
+        "prompt_has_section", "reset_contexts", "set_post_prompt",
+        "set_prompt_text",
+    ],
+    ("signalwire.core.mixins.skill_mixin", "SkillMixin"): [
+        "add_skill", "has_skill", "list_skills", "remove_skill",
+    ],
+    ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
+        "define_tool", "on_function_call", "register_swaig_function",
+    ],
+    ("signalwire.core.mixins.web_mixin", "WebMixin"): [
+        "enable_debug_routes", "manual_set_proxy_url", "run", "serve",
+        "set_dynamic_config_callback",
+    ],
+    ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
+        "add_mcp_server",
+    ],
+}
+
+
 def collect(raw: dict) -> dict:
     out_modules: dict = {}
 
@@ -138,6 +174,27 @@ def collect(raw: dict) -> dict:
         out_modules.setdefault(mod, {"classes": {}})
         out_modules[mod]["classes"].setdefault(canonical_class, {"methods": {}})
         out_modules[mod]["classes"][canonical_class]["methods"].update(methods_out)
+
+    # Mixin projection: Perl flattens all mixin methods onto AgentBase via
+    # Moo composition. Project them onto canonical Python mixin paths.
+    ab_entry = out_modules.get("signalwire.core.agent_base", {}).get("classes", {}).get("AgentBase")
+    if ab_entry:
+        ab_methods = ab_entry["methods"]
+        projected: set[str] = set()
+        for (target_mod, target_cls), expected in MIXIN_PROJECTIONS.items():
+            present = {m: ab_methods[m] for m in expected if m in ab_methods}
+            if not present:
+                continue
+            out_modules.setdefault(target_mod, {"classes": {}})
+            out_modules[target_mod]["classes"].setdefault(target_cls, {"methods": {}})
+            out_modules[target_mod]["classes"][target_cls]["methods"].update(present)
+            projected.update(present)
+        for n in projected:
+            ab_methods.pop(n, None)
+        if not ab_methods:
+            out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
+            if not out_modules["signalwire.core.agent_base"]["classes"]:
+                out_modules.pop("signalwire.core.agent_base")
 
     sorted_modules = {}
     for k in sorted(out_modules):
