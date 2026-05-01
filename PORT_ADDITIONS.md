@@ -88,3 +88,15 @@ signalwire.utils.schema_utils.SchemaUtils.get_verb_names: port-only: Perl Schema
 signalwire.utils.schema_utils.SchemaUtils.has_verb: port-only: Perl SchemaUtils exposes verb-introspection helpers (get_verb, get_verb_names, has_verb, verb_count, instance); Python keeps these internal
 signalwire.utils.schema_utils.SchemaUtils.instance: port-only: Perl SchemaUtils exposes verb-introspection helpers (get_verb, get_verb_names, has_verb, verb_count, instance); Python keeps these internal
 signalwire.utils.schema_utils.SchemaUtils.verb_count: port-only: Perl SchemaUtils exposes verb-introspection helpers (get_verb, get_verb_names, has_verb, verb_count, instance); Python keeps these internal
+signalwire.rest._base.CrudResource.delete_resource: perl-idiom port-only: Perl reserves the bareword ``delete`` for the built-in hash operator, so the canonical method is ``delete_resource``; the Python parity alias ``delete`` is also exposed
+signalwire.rest._base.HttpClient.delete_request: perl-idiom port-only: Perl reserves the bareword ``delete`` for the built-in hash operator, so HttpClient exposes ``delete_request``; the Python parity alias ``delete`` is also exposed
+signalwire.rest.namespaces.compat.CompatPhoneNumbers.delete_number: perl-idiom port-only: Compat resource keeps the domain-named ``delete_number`` alongside the Python-parity ``delete`` alias
+signalwire.rest.namespaces.compat.CompatRecordings.delete_recording: perl-idiom port-only: Compat resource keeps the domain-named ``delete_recording`` alongside the Python-parity ``delete`` alias
+signalwire.rest.namespaces.compat.CompatTokens.delete_token: perl-idiom port-only: Compat resource keeps the domain-named ``delete_token`` alongside the Python-parity ``delete`` alias
+signalwire.rest.namespaces.compat.CompatTranscriptions.delete_transcription: perl-idiom port-only: Compat resource keeps the domain-named ``delete_transcription`` alongside the Python-parity ``delete`` alias
+signalwire.rest.namespaces.fabric.GenericResources.delete_resource: perl-idiom port-only: Fabric GenericResources exposes ``delete_resource`` directly (the Python parity ``delete`` alias is also offered)
+signalwire.rest.namespaces.project.ProjectTokens.delete_token: perl-idiom port-only: ProjectTokens keeps the domain-named ``delete_token`` alongside the Python-parity ``delete`` alias
+signalwire.rest.namespaces.recordings.RecordingsResource.delete_recording: perl-idiom port-only: RecordingsResource keeps the domain-named ``delete_recording`` alongside the Python-parity ``delete`` alias
+signalwire.rest.namespaces.registry.RegistryNumbers.delete_number: perl-idiom port-only: RegistryNumbers keeps the domain-named ``delete_number`` alongside the Python-parity ``delete`` alias
+signalwire.rest.namespaces.video.VideoRoomRecordings.delete_recording: perl-idiom port-only: VideoRoomRecordings keeps the domain-named ``delete_recording`` alongside the Python-parity ``delete`` alias
+signalwire.rest.namespaces.video.VideoStreams.delete_stream: perl-idiom port-only: VideoStreams keeps the domain-named ``delete_stream`` alongside the Python-parity ``delete`` alias

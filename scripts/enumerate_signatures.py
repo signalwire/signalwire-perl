@@ -38,6 +38,40 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 PORT_ROOT = HERE.parent
 
+# Python reference oracle. Used to project Perl's idiomatic ``%opts``
+# slurpy hash and similar single-hashref patterns into the canonical
+# Python keyword-argument shape so the cross-language diff doesn't fail
+# on what is functionally the same kwargs contract.
+PSDK_CANDIDATES = [
+    PORT_ROOT.parent / "porting-sdk" / "python_signatures.json",
+    Path("/home/devuser/src/porting-sdk/python_signatures.json"),
+    Path("/usr/local/home/devuser/src/porting-sdk/python_signatures.json"),
+]
+
+
+def _load_python_reference() -> dict:
+    for p in PSDK_CANDIDATES:
+        if p.is_file():
+            return json.loads(p.read_text(encoding="utf-8"))
+    return {"modules": {}}
+
+
+PYTHON_REFERENCE = _load_python_reference()
+
+
+def python_signature(module: str, cls: str | None, method: str) -> dict | None:
+    """Return the Python reference signature for the given canonical
+    (module, class, method). Returns None if not found."""
+    mod_entry = PYTHON_REFERENCE.get("modules", {}).get(module)
+    if not mod_entry:
+        return None
+    if cls:
+        cls_entry = mod_entry.get("classes", {}).get(cls)
+        if not cls_entry:
+            return None
+        return cls_entry.get("methods", {}).get(method)
+    return mod_entry.get("functions", {}).get(method)
+
 # ---------------------------------------------------------------------------
 # Perl→Python mapping. Parsed at import-time from enumerate_surface.pl so the
 # table stays single-sourced.
@@ -66,6 +100,36 @@ SKIP_METHODS = {
     "new",  # Moo provides ::new automatically
 }
 
+
+# Perl-side parent classes for which subclass overrides should be
+# suppressed if they're not redefined in Python's subclass-side
+# signature inventory. Pattern: Python's enumerate_python_signatures.py
+# walks the AST and only records methods literally redefined on the
+# subclass; Perl's regex parser sees ``sub setup { 1 }`` as a real
+# subclass method even though it's just a thin Moo override of the
+# inherited stub.
+#
+# Map: parent canonical (module, class) -> set of method names whose
+# emissions on subclasses should be filtered out.
+PARENT_OVERRIDE_FILTER: dict = {
+    ("signalwire.core.skill_base", "SkillBase"): {
+        "setup", "cleanup", "get_hints", "get_global_data",
+        "get_parameter_schema", "get_prompt_sections", "get_skill_data",
+        "get_instance_key", "register_tools",
+        "define_tool", "update_skill_data",
+        "validate_env_vars", "validate_packages",
+    },
+}
+
+# Map of Perl-package -> the canonical (Python-module, Python-class)
+# parent it ultimately extends. Used together with
+# PARENT_OVERRIDE_FILTER above.
+PERL_SUBCLASS_PARENT = {
+    # Every Perl skill in lib/SignalWire/Skills/Builtin/ extends
+    # SignalWire::Skills::SkillBase.
+    "skill_base_subclass": ("signalwire.core.skill_base", "SkillBase"),
+}
+
 # Perl packages whose subs project as Python module-level FREE FUNCTIONS
 # (rather than as methods on a class).  Packages map with class=undef in
 # PACKAGE_TO_PY but only those listed here have their subs emitted as
@@ -88,6 +152,34 @@ FREE_FN_NAME_OVERRIDES = {
 }
 
 
+# Method-name renames: Perl idiomatic names projected back to the Python
+# canonical ones. The canonical Perl method (``to_hash``) and its
+# Python sibling (``to_dict``) describe the same operation; emit the
+# Perl method UNDER both names so the cross-language diff finds it
+# under either path. Pattern: native_perl_name -> [canonical_python_name, ...].
+PERL_METHOD_ALIASES = {
+    # Perl uses ``hash`` for the dict-like data structure; Python uses
+    # ``dict``. The serialization helper is named accordingly.
+    "to_hash": ["to_dict"],
+    # Perl reserves the bareword ``delete`` for the built-in hash
+    # operator; CrudResource and HttpClient use ``delete_resource`` /
+    # ``delete_request`` to avoid shadowing it. Both describe the same
+    # HTTP DELETE / resource-removal operation as Python's ``delete``.
+    "delete_resource": ["delete"],
+    "delete_request": ["delete"],
+}
+
+# Moo attribute renames: Perl's leading-underscore private attrs that
+# map to Python's public attribute name. Same pattern as
+# PERL_METHOD_ALIASES — emit the synthesized getter under both names.
+PERL_ATTR_ALIASES = {
+    # Perl SDK uses ``_logger`` / ``_log`` private slots whose getter
+    # is functionally Python's public ``logger`` attribute.
+    "_logger": ["logger"],
+    "_log": ["logger"],
+}
+
+
 # AgentBase methods that Python keeps on mixin classes. The Perl port has
 # them all flattened on AgentBase via Moo composition; we project them onto
 # the canonical Python mixin paths so the diff doesn't show them as
@@ -96,6 +188,7 @@ MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
         "add_function_include", "add_hint", "add_hints", "add_internal_filler",
         "add_language", "add_pattern_hint", "add_pronunciation",
+        "add_mcp_server", "enable_mcp_server",
         "enable_debug_events",
         "set_function_includes", "set_global_data", "set_internal_fillers",
         "set_languages", "set_native_functions", "set_param", "set_params",
@@ -103,6 +196,7 @@ MIXIN_PROJECTIONS = {
         "set_pronunciations", "update_global_data",
     ],
     ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
+        "contexts",
         "define_contexts", "get_post_prompt", "get_prompt",
         "prompt_add_section",
         "prompt_add_subsection", "prompt_add_to_section",
@@ -148,6 +242,91 @@ MIXIN_PROJECTIONS = {
 }
 
 
+# Methods where the Perl source uses an idiomatic single-scalar argument
+# (typically ``$opts`` / ``$args`` / ``$lang`` / ``$pron`` / ``$cb``) that
+# stands in for Python's named keyword arguments. The signature_dump.pl
+# parser sees this as a single positional scalar; the diff sees it as a
+# real arity mismatch. In Perl style, the single scalar holds ALL the
+# keyword args, so functionally the contract is identical to Python's
+# kwargs. Names listed here are projected to mirror the Python reference.
+#
+# This is a NAMED whitelist (not a heuristic) so we never silently swap
+# a real positional argument for kwargs projection.
+PERL_HASHREF_KWARG_METHODS = {
+    # AIConfigMixin: hashref-style kwargs. The Perl source has these on
+    # AgentBase (which Moo flattens); they get re-projected onto the
+    # AIConfigMixin canonical path during mixin projection.
+    ("signalwire.core.agent_base", "AgentBase", "add_pattern_hint"),
+    ("signalwire.core.agent_base", "AgentBase", "add_pronunciation"),
+    ("signalwire.core.agent_base", "AgentBase", "add_language"),
+    ("signalwire.core.agent_base", "AgentBase", "add_internal_filler"),
+    ("signalwire.core.agent_base", "AgentBase", "add_function_include"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "add_pattern_hint"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "add_pronunciation"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "add_language"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "add_internal_filler"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "add_function_include"),
+    # PhoneNumbersResource: extra kwargs hashref
+    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_ai_agent"),
+    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_call_flow"),
+    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_cxml_application"),
+    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_cxml_webhook"),
+    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_relay_application"),
+    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_relay_topic"),
+    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_swml_webhook"),
+}
+
+
+def _project_kwargs_from_python(
+    py_sig: dict, leading_positionals: list[dict]
+) -> list[dict] | None:
+    """Build a parameter list that combines the Perl-source's leading
+    positional params (everything before the slurpy/kwarg sink) with the
+    Python reference's named keyword params (the kwargs the slurpy
+    represents in Perl).
+
+    Returns None if the python signature isn't usable (no params or only
+    self).
+    """
+    if not py_sig:
+        return None
+    py_params = py_sig.get("params", [])
+    if len(py_params) <= 1:
+        return None
+    # Skip the python self/cls receiver so we can match against
+    # leading_positionals (which already includes self).
+    py_after_self = [p for p in py_params if p.get("kind") not in ("self", "cls")]
+    n_perl_pos = len([p for p in leading_positionals if p.get("kind") not in ("self", "cls")])
+    # The leading positional args from the Perl source map 1:1 to the
+    # first N python params. Any python params beyond that are what the
+    # Perl ``%opts`` slurpy / hashref carries.
+    if n_perl_pos > len(py_after_self):
+        # Perl has more leading positionals than python total — projection
+        # would lose information; bail out.
+        return None
+    # Use the names from python, but keep "self" from leading_positionals.
+    out = list(leading_positionals)
+    for p in py_after_self[n_perl_pos:]:
+        # Project the python param verbatim except force ``type=any``
+        # (Perl is dynamically typed; we don't claim the python type).
+        proj = {
+            "name": p.get("name", ""),
+            "type": "any",
+            "required": p.get("required", True),
+        }
+        kind = p.get("kind")
+        if kind == "var_keyword":
+            proj["kind"] = "var_keyword"
+            proj["type"] = "dict<string,any>"
+        elif kind == "var_positional":
+            proj["kind"] = "var_positional"
+            proj["type"] = "list<any>"
+        elif kind == "keyword":
+            proj["kind"] = "keyword"
+        out.append(proj)
+    return out
+
+
 def collect(raw: dict) -> dict:
     out_modules: dict = {}
 
@@ -155,7 +334,43 @@ def collect(raw: dict) -> dict:
     # for attribute inheritance. Moo's auto-`new` accepts every parent's
     # attribute as a named constructor arg, so the canonical __init__
     # signature must include inherited attrs.
-    by_full_name: dict = {t.get("full_name"): t for t in raw.get("types", []) if t.get("full_name")}
+    #
+    # Multi-package files (e.g. lib/SignalWire/Relay/Event.pm declares
+    # ``package SignalWire::Relay::Event;`` once at top with all the
+    # ``has`` attributes, then re-opens the same package later for the
+    # ``parse_event`` factory). The signature_dump.pl emits these as
+    # separate type entries; merge them so attrs+methods+extends from
+    # every reopening are unioned under a single full_name.
+    by_full_name: dict = {}
+    for t in raw.get("types", []):
+        full = t.get("full_name")
+        if not full:
+            continue
+        if full not in by_full_name:
+            by_full_name[full] = {
+                "full_name": full,
+                "attributes": [],
+                "methods": [],
+                "extends": [],
+            }
+        agg = by_full_name[full]
+        # Dedupe attributes by name (later reopenings shouldn't clobber).
+        seen_attrs = {a.get("name") for a in agg["attributes"]}
+        for a in t.get("attributes", []) or []:
+            if a.get("name") not in seen_attrs:
+                agg["attributes"].append(a)
+                seen_attrs.add(a.get("name"))
+        seen_methods = {m.get("name") for m in agg["methods"]}
+        for m in t.get("methods", []) or []:
+            if m.get("name") not in seen_methods:
+                agg["methods"].append(m)
+                seen_methods.add(m.get("name"))
+        for e in t.get("extends", []) or []:
+            if e not in agg["extends"]:
+                agg["extends"].append(e)
+    # Replace the raw types list with the merged versions so the rest of
+    # collect() iterates over the unioned entries.
+    raw = {"types": list(by_full_name.values())}
 
     def collect_inherited_attrs(entry: dict, seen: set) -> list:
         """Walk extends chain and concatenate attributes (parent first,
@@ -185,9 +400,54 @@ def collect(raw: dict) -> dict:
         methods_out: dict = {}
         functions_out: dict = {}
 
+        # Compute the chain of Perl ancestors so we can apply the
+        # PARENT_OVERRIDE_FILTER below. Walks ``extends`` recursively
+        # via by_full_name.
+        ancestor_perl_classes: set = set()
+        def _walk_ancestors(entry: dict, seen: set):
+            full = entry.get("full_name")
+            if full in seen:
+                return
+            seen.add(full)
+            for parent_name in entry.get("extends", []) or []:
+                ancestor_perl_classes.add(parent_name)
+                p = by_full_name.get(parent_name)
+                if p:
+                    _walk_ancestors(p, seen)
+        _walk_ancestors(type_entry, set())
+        # Translate ancestor Perl classes into canonical (module, class)
+        # tuples so we can index into PARENT_OVERRIDE_FILTER.
+        ancestor_canonical: set = set()
+        for anc in ancestor_perl_classes:
+            atarget = PACKAGE_TO_PY.get(anc)
+            if atarget and atarget["class"]:
+                ancestor_canonical.add((atarget["module"], atarget["class"]))
+        # Filter set: any method names this Perl class would emit that
+        # are inherited boilerplate from one of its parents and that
+        # Python's signature inventory does not redefine on the subclass.
+        skipped_due_to_parent: set = set()
+        for parent_key, method_names in PARENT_OVERRIDE_FILTER.items():
+            if parent_key in ancestor_canonical:
+                # Only filter when Python's reference DOESN'T list the
+                # method on this subclass — that's the indicator that
+                # Python keeps the implementation on the base class.
+                py_subclass_methods = (
+                    PYTHON_REFERENCE
+                    .get("modules", {})
+                    .get(mod, {})
+                    .get("classes", {})
+                    .get(canonical_class or "", {})
+                    .get("methods", {})
+                )
+                for name in method_names:
+                    if name not in py_subclass_methods:
+                        skipped_due_to_parent.add(name)
+
         for m in type_entry.get("methods", []):
             native = m.get("name", "")
             if native in SKIP_METHODS:
+                continue
+            if native in skipped_due_to_parent:
                 continue
             if native.startswith("_") and not native.startswith("__"):
                 continue
@@ -202,6 +462,20 @@ def collect(raw: dict) -> dict:
             # canonical Python ``signalwire.RestClient`` factory.
             method_canonical = FREE_FN_NAME_OVERRIDES.get(native, native)
             params = m.get("parameters", [])
+            # Zero-param Perl method: ``sub foo { return []; }`` style
+            # stubs don't declare ``my ($self) = @_;`` because they
+            # don't reference self. Functionally they're still instance
+            # methods (the Moo dispatcher provides $self even though
+            # the body ignores it). Infer the self receiver so the
+            # canonical signature has the right arity.
+            if not params and canonical_class is not None:
+                params_out = [{"name": "self", "kind": "self"}]
+                saw_receiver = True
+                methods_out[method_canonical] = {
+                    "params": params_out,
+                    "returns": "void" if native == "BUILD" else "any",
+                }
+                continue
             # Strip $self / $class as the canonical receiver
             params_out = []
             saw_receiver = False
@@ -211,6 +485,17 @@ def collect(raw: dict) -> dict:
                 # First positional param is the invocant. Perl SDK uses
                 # `$self`, `$class`, or short `$s` aliases for the same
                 # role; normalize all of them to the canonical "self".
+                # ``$class_or_self`` is the SDK convention for methods
+                # that can be invoked either as a classmethod
+                # (FunctionResult->create_payment_action(...)) or as
+                # an instance method ($fr->create_payment_action(...))
+                # — these mirror Python's ``@staticmethod``-decorated
+                # helpers, so we strip the receiver entirely.
+                if i == 0 and pname == "class_or_self" and not sigil:
+                    # Python's equivalent is a @staticmethod with no
+                    # receiver — mirror that by dropping the param.
+                    saw_receiver = True
+                    continue
                 if i == 0 and pname in ("self", "class", "s") and not sigil:
                     params_out.append({
                         "name": "self",
@@ -237,6 +522,47 @@ def collect(raw: dict) -> dict:
                     param["kind"] = "var_keyword"
                     param["type"] = "dict<string,any>"
                 params_out.append(param)
+
+            # Perl-idiom projection: the canonical Perl ``%opts`` slurpy
+            # hash IS the kwargs sink — semantically identical to Python's
+            # named keyword args. When the source-side dump shows the
+            # last param is ``%opts`` (var_keyword), expand it into the
+            # Python reference's named keyword parameters so the
+            # cross-language diff sees a 1:1 contract instead of an arity
+            # mismatch. Same logic for the ``%foo`` hash hash specialty
+            # like ``add_language(%lang)``: the slurpy carries every
+            # python-named kwarg.
+            if (
+                params_out
+                and params_out[-1].get("kind") == "var_keyword"
+                and canonical_class is not None
+            ):
+                py_sig = python_signature(mod, canonical_class, method_canonical)
+                leading = params_out[:-1]
+                projected = _project_kwargs_from_python(py_sig, leading)
+                if projected is not None:
+                    params_out = projected
+
+            # Single-scalar hashref kwargs idiom (e.g. ``add_language($lang)``,
+            # ``set_ai_agent($id, $args)``): the source-side dump shows a
+            # single trailing positional that semantically holds all the
+            # Python keyword args. Whitelisted by canonical method name
+            # so we never silently swap a real scalar argument.
+            elif (
+                canonical_class is not None
+                and (mod, canonical_class, method_canonical) in PERL_HASHREF_KWARG_METHODS
+            ):
+                py_sig = python_signature(mod, canonical_class, method_canonical)
+                # Drop the trailing scalar (it represents the kwargs sink),
+                # keep everything before it.
+                if params_out and params_out[-1].get("kind") not in ("self", "cls"):
+                    leading = params_out[:-1]
+                else:
+                    leading = list(params_out)
+                projected = _project_kwargs_from_python(py_sig, leading)
+                if projected is not None:
+                    params_out = projected
+
             sig = {
                 "params": params_out,
                 "returns": "void" if native == "BUILD" else "any",
@@ -254,18 +580,41 @@ def collect(raw: dict) -> dict:
                     functions_out[method_canonical] = sig
                 continue
             methods_out[method_canonical] = sig
+            # Emit canonical-Python aliases (e.g. Perl's ``to_hash`` is
+            # the same operation as Python's ``to_dict``). Without these
+            # aliases the cross-language diff sees missing-port for
+            # ``to_dict`` and missing-reference for ``to_hash``.
+            for alias in PERL_METHOD_ALIASES.get(native, []):
+                if alias not in methods_out:
+                    methods_out[alias] = sig
 
         # Moo/Moose attributes → emit as zero-arg getter methods
         for a in type_entry.get("attributes", []):
             attr = a.get("name", "").lstrip("+")
             if not attr or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
                 continue
-            if attr in methods_out:
-                continue
-            methods_out[attr] = {
+            # Skip underscore-prefix Perl-private attrs (Perl convention:
+            # ``_logger``, ``_http``, ``_sip_routing_enabled``) — they
+            # mirror Python's leading-underscore privates which the
+            # Python AST walker excludes from the canonical surface.
+            # Hand-curated PERL_ATTR_ALIASES still gets to project a
+            # public alias for the cases where the canonical Python
+            # name differs (e.g. ``_logger`` -> ``logger``).
+            getter_sig = {
                 "params": [{"name": "self", "kind": "self"}],
                 "returns": "any",
             }
+            if attr.startswith("_"):
+                # Emit only the alias (if any), not the underscore form.
+                for alias in PERL_ATTR_ALIASES.get(attr, []):
+                    if alias not in methods_out:
+                        methods_out[alias] = getter_sig
+                continue
+            if attr not in methods_out:
+                methods_out[attr] = getter_sig
+            for alias in PERL_ATTR_ALIASES.get(attr, []):
+                if alias not in methods_out:
+                    methods_out[alias] = getter_sig
 
         # Synthesize __init__ for every Moo/Moose class. Perl/Moo provides
         # ``new`` automatically based on attributes; cross-language audit
@@ -294,7 +643,41 @@ def collect(raw: dict) -> dict:
         # - Classes that don't extend a known resource base (top-level
         #   namespace orchestrators like Calling/Compat/Logs) get a
         #   synthesized __init__ from whatever attrs the class body owns.
-        if "__init__" not in methods_out and canonical_class is not None and own_attrs:
+        # Synthesize __init__ only when Python's reference signature
+        # inventory has an __init__ for this class. Skip the synthesis
+        # in two cases:
+        #
+        #   1. Python class in inventory but no __init__ entry: Python
+        #      inherits the parent's __init__; emitting a Perl-side
+        #      __init__ would falsely surface as missing-reference.
+        #
+        #   2. Python class not in inventory at all (e.g. some skill
+        #      subclasses where the Python AST walker excluded them):
+        #      we have no canonical signature to project against, and
+        #      emitting Moo-synthesized params introduces false drift.
+        #      The class itself is documented in PORT_OMISSIONS / surface
+        #      audit if relevant.
+        #
+        # Class qualifies for synthesis if it has own attrs OR inherited
+        # attrs (pure leaf-resource classes that only ``extends Base``
+        # take their __init__ shape from the inherited http/base_path
+        # constructor; Python redefines __init__ on the leaf to document
+        # the inherited shape). Also qualify when Python's reference
+        # __init__ takes only ``self`` — Moo provides a no-arg constructor
+        # implicitly even when the Perl class has no attrs of its own.
+        inherited_attrs_for_synth = collect_inherited_attrs(type_entry, set())
+        py_init_for_synthesis = python_signature(mod, canonical_class, "__init__")
+        py_init_self_only = (
+            py_init_for_synthesis is not None
+            and len(py_init_for_synthesis.get("params", [])) == 1
+        )
+        synth_init = (
+            "__init__" not in methods_out
+            and canonical_class is not None
+            and (own_attrs or inherited_attrs_for_synth or py_init_self_only)
+            and py_init_for_synthesis is not None
+        )
+        if synth_init:
             init_params: list[dict] = [{"name": "self", "kind": "self"}]
             inherited = collect_inherited_attrs(type_entry, set())
             seen_names: set = set()
@@ -315,6 +698,67 @@ def collect(raw: dict) -> dict:
                     "type": "any",
                     "required": not a.get("default") and a.get("required", False),
                 })
+            # Project the synthesized __init__ to Python's reference shape
+            # when the Perl Moo class declares every Python positional arg
+            # as a Moo attribute. Moo accepts every attribute as a named
+            # arg regardless of kind, so we can adopt Python's per-param
+            # ``kind`` (positional/keyword) verbatim. We also reorder the
+            # Perl attrs to match the Python signature order so the diff
+            # zips them up correctly. Any Perl-only attrs that Python
+            # doesn't have are appended at the end (they're additive).
+            #
+            # Skip the projection when Python has positional attrs Perl
+            # doesn't model — this would cause the position-zip diff
+            # to mismatch downstream params on kind alone. Such cases
+            # are real divergence and belong in PORT_SIGNATURE_OMISSIONS.
+            py_init = python_signature(mod, canonical_class, "__init__")
+            if py_init:
+                py_params = py_init.get("params", [])
+                # Map perl attr name -> the {name, type, required} we built.
+                perl_by_name: dict = {}
+                for p in init_params[1:]:  # skip self
+                    perl_by_name[p["name"]] = p
+                # Project Perl-attr-driven __init__ to Python's reference
+                # shape, adopting Python's per-param ``kind`` for every
+                # Perl attr that has a Python counterpart. The remaining
+                # Perl-only attrs are emitted at the end with no explicit
+                # kind (default ``positional``); the diff tolerates port
+                # extras as long as they're optional (which Moo attrs
+                # always are when they have a default).
+                projected: list[dict] = [{"name": "self", "kind": "self"}]
+                used_perl_names: set = set()
+                for pyp in py_params:
+                    if pyp.get("kind") in ("self", "cls"):
+                        continue
+                    name = pyp.get("name")
+                    if name in perl_by_name:
+                        # Adopt Python's kind so keyword-only stays keyword-only.
+                        port_param = dict(perl_by_name[name])
+                        if pyp.get("kind") == "keyword":
+                            port_param["kind"] = "keyword"
+                        projected.append(port_param)
+                        used_perl_names.add(name)
+                    elif pyp.get("kind") == "var_keyword":
+                        # Python's **kwargs is handled by Perl Moo's open
+                        # constructor — emit as var_keyword.
+                        projected.append({
+                            "name": name,
+                            "kind": "var_keyword",
+                            "type": "dict<string,any>",
+                            "required": pyp.get("required", False),
+                        })
+                # Append Perl-only attrs (port-extra) at the end. Moo
+                # accepts them as named args; emit them WITHOUT a
+                # ``kind`` marker so the diff treats them as
+                # ``positional`` (the default) — but since they're
+                # extras (more params than Python), the diff already
+                # tolerates them as "port-side optional extras" so
+                # long as they're optional.
+                for p in init_params[1:]:
+                    if p["name"] not in used_perl_names:
+                        port_param = dict(p)
+                        projected.append(port_param)
+                init_params = projected
             methods_out["__init__"] = {
                 "params": init_params,
                 "returns": "void",
@@ -347,12 +791,56 @@ def collect(raw: dict) -> dict:
             present = {m: combined[m] for m in expected if m in combined}
             if not present:
                 continue
+            # Re-run kwargs/hashref projection now that the canonical
+            # (mixin module, mixin class, method) is known. The original
+            # Pre-mixin projection used signalwire.core.agent_base.AgentBase
+            # paths, but the python reference houses the same method on
+            # the mixin path (e.g. signalwire.core.mixins.web_mixin.WebMixin.run).
+            re_projected_present: dict = {}
+            for m_name, sig in present.items():
+                params = sig.get("params", [])
+                if (
+                    params
+                    and params[-1].get("kind") == "var_keyword"
+                ):
+                    py_sig = python_signature(target_mod, target_cls, m_name)
+                    leading = params[:-1]
+                    proj = _project_kwargs_from_python(py_sig, leading)
+                    if proj is not None:
+                        sig = {**sig, "params": proj}
+                # Hashref-kwargs idiom on mixin path: AIConfigMixin's
+                # hashref-style helpers (add_pattern_hint, add_pronunciation,
+                # add_language) live on AgentBase pre-projection; their
+                # whitelist entry is keyed on the mixin path. Apply the
+                # projection here so the mixin sees the kwargs-expanded
+                # signature.
+                elif (target_mod, target_cls, m_name) in PERL_HASHREF_KWARG_METHODS:
+                    py_sig = python_signature(target_mod, target_cls, m_name)
+                    if params and params[-1].get("kind") not in ("self", "cls"):
+                        leading = params[:-1]
+                    else:
+                        leading = list(params)
+                    proj = _project_kwargs_from_python(py_sig, leading)
+                    if proj is not None:
+                        sig = {**sig, "params": proj}
+                re_projected_present[m_name] = sig
             out_modules.setdefault(target_mod, {"classes": {}})
             out_modules[target_mod]["classes"].setdefault(target_cls, {"methods": {}})
-            out_modules[target_mod]["classes"][target_cls]["methods"].update(present)
+            out_modules[target_mod]["classes"][target_cls]["methods"].update(re_projected_present)
             projected.update(present)
         for n in projected:
             ab_methods.pop(n, None)
+            # Also pop from SWMLService when the method is purely a
+            # mixin (Python reference doesn't list it on SWMLService).
+            # If Python's SWMLService genuinely has the method as well
+            # (e.g. inherited or duplicated), leave it.
+            if (
+                n in svc_methods
+                and PYTHON_REFERENCE.get("modules", {})
+                .get("signalwire.core.swml_service", {}).get("classes", {})
+                .get("SWMLService", {}).get("methods", {}).get(n) is None
+            ):
+                svc_methods.pop(n, None)
         if ab_entry and not ab_methods:
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"]["classes"]:
@@ -385,7 +873,68 @@ def run_dump() -> dict:
     )
     if cp.returncode != 0:
         raise RuntimeError(f"signature_dump.pl failed:\n{cp.stderr}")
-    return json.loads(cp.stdout)
+    raw = json.loads(cp.stdout)
+    augment_with_bareword_has(raw)
+    return raw
+
+
+def augment_with_bareword_has(raw: dict) -> None:
+    """Post-process the raw signature dump to also pick up Moo ``has``
+    declarations using BAREWORDS rather than quoted names. The
+    signature_dump.pl regex only matches quoted forms ``has 'name' =>``
+    / ``has "name" =>`` but a portion of the SDK uses the unquoted
+    form ``has name =>`` (notably SkillBase, SkillManager, SkillRegistry,
+    AgentServer). Rather than touch signature_dump.pl, we scan the
+    library here in Python and union any missing attrs by package name.
+    """
+    by_full_name: dict = {}
+    for t in raw.get("types", []):
+        full = t.get("full_name")
+        if full and full not in by_full_name:
+            by_full_name[full] = t
+
+    bareword_has = re.compile(
+        r"^\s*has\s+([A-Za-z_][A-Za-z0-9_]*)\s*=>",
+        re.MULTILINE,
+    )
+    pkg_pattern = re.compile(r"^\s*package\s+([\w:]+)\s*;", re.MULTILINE)
+
+    lib_root = PORT_ROOT / "lib"
+    if not lib_root.is_dir():
+        return
+    for pm_path in lib_root.rglob("*.pm"):
+        text = pm_path.read_text(encoding="utf-8", errors="ignore")
+        # Per-file: split by `package X;` declarations and scan each
+        # block. (Signature_dump.pl effectively does the same by
+        # tracking the current package as it walks lines.)
+        pkg_matches = list(pkg_pattern.finditer(text))
+        if not pkg_matches:
+            continue
+        for i, pkg_m in enumerate(pkg_matches):
+            pkg_name = pkg_m.group(1)
+            start = pkg_m.end()
+            end = pkg_matches[i + 1].start() if i + 1 < len(pkg_matches) else len(text)
+            block = text[start:end]
+            # Collect bareword has-decls in this block.
+            new_attrs = bareword_has.findall(block)
+            if not new_attrs:
+                continue
+            entry = by_full_name.get(pkg_name)
+            if entry is None:
+                # Synthesize a stub entry; the rest of collect() handles it.
+                entry = {
+                    "full_name": pkg_name,
+                    "attributes": [],
+                    "methods": [],
+                    "extends": [],
+                }
+                by_full_name[pkg_name] = entry
+                raw.setdefault("types", []).append(entry)
+            existing = {a.get("name") for a in entry.get("attributes", [])}
+            for n in new_attrs:
+                if n not in existing:
+                    entry.setdefault("attributes", []).append({"name": n})
+                    existing.add(n)
 
 
 def main() -> int:
