@@ -9321,6 +9321,88 @@
         }
       }
     },
+    "signalwire.rest._pagination": {
+      "classes": {
+        "PaginatedIterator": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "http",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "path",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "params",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "data_key",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "all": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "data_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "http": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "path": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
     "signalwire.rest.call_handler": {
       "classes": {
         "PhoneCallHandler": {

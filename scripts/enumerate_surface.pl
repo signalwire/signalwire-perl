@@ -161,6 +161,8 @@ my %PACKAGE_TO_PY = (
     'SignalWire::REST::Namespaces::Base'          => { module => 'signalwire.rest._base', class => 'BaseResource' },
     'SignalWire::REST::Namespaces::CrudResource'  => { module => 'signalwire.rest._base', class => 'CrudResource' },
     'SignalWire::REST::PhoneCallHandler'          => { module => 'signalwire.rest.call_handler', class => 'PhoneCallHandler' },
+    'SignalWire::REST::Pagination'                => { module => 'signalwire.rest._pagination', class => undef },
+    'SignalWire::REST::Pagination::PaginatedIterator' => { module => 'signalwire.rest._pagination', class => 'PaginatedIterator' },
 
     # REST: simple namespaces
     'SignalWire::REST::Namespaces::Calling'       => { module => 'signalwire.rest.namespaces.calling',    class => 'CallingNamespace' },
@@ -463,6 +465,7 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::REST::Namespaces::Video',
     'SignalWire::REST::Namespaces::Project',
     'SignalWire::REST::Namespaces::Project::Tokens',
+    'SignalWire::REST::Pagination::PaginatedIterator',
 
     # Server / security / skills
     'SignalWire::Server::AgentServer',
@@ -576,7 +579,10 @@ sub parse_file {
         if ($line =~ /^sub\s+([A-Za-z_]\w*)\b/) {
             my $sub_name = $1;
             next unless $current;   # sub before any package — ignore
-            next if $sub_name =~ /^_/;          # Perl convention: private
+            # Perl convention: leading underscore = private. Dunder
+            # methods (e.g. __iter__, __next__, __init__) are public
+            # protocol hooks and should be emitted.
+            next if $sub_name =~ /^_/ && !($sub_name =~ /^__\w+__$/);
             next if $SKIP_SUB{$sub_name};
             next if $current->{_seen}{$sub_name}++;  # de-dup overloaded defs
             push @{ $current->{subs} }, $sub_name;

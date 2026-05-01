@@ -68,6 +68,7 @@ signalwire.relay.event.DisconnectEvent: port-only event subclass Perl emits expl
 signalwire.relay.event.RelayEvent.parse_event: port-only: Perl uses a class-method parser; Python uses the module-level parse_event() function
 signalwire.relay.message.Message.dispatch_event: port-only dispatcher/passthrough helper for Perl-idiomatic event plumbing
 signalwire.relay.message.Message.on_completed: port-only dispatcher/passthrough helper for Perl-idiomatic event plumbing
+signalwire.rest._pagination.PaginatedIterator.all: port-only: drains the iterator into a list (Perl idiom for `list(iter)`); Python uses `list(it)` directly
 signalwire.rest.call_handler.PhoneCallHandler.values: port-only: authoritative list accessor for the enum; Python uses the enum class directly
 signalwire.rest.namespaces.calling.CallingNamespace.update_call: port-only helper for updating an in-flight call; Python clients use client.calls(sid).update()
 signalwire.rest.namespaces.fabric.AddressesResource: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource

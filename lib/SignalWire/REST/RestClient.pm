@@ -18,6 +18,7 @@ use SignalWire::REST::Namespaces::Logs;
 use SignalWire::REST::Namespaces::Project;
 use SignalWire::REST::Namespaces::PubSub;
 use SignalWire::REST::Namespaces::Chat;
+use SignalWire::REST::Pagination;
 
 has 'project' => ( is => 'ro', required => 1 );
 has 'token'   => ( is => 'ro', required => 1 );

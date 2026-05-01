@@ -191,6 +191,13 @@ def collect(raw: dict) -> dict:
                 continue
             if native.startswith("_") and not native.startswith("__"):
                 continue
+            # Python's enumerate_python_signatures.py records only ``__init__``
+            # among dunder methods (the others are runtime protocol hooks
+            # like ``__iter__``/``__next__``/``__repr__`` that the Python
+            # AST walker skips). Match that policy so the Perl iterator
+            # doesn't surface false-positive port-only dunders.
+            if native.startswith("__") and native.endswith("__") and native != "__init__":
+                continue
             # Free-function name override — preserve PascalCase for the
             # canonical Python ``signalwire.RestClient`` factory.
             method_canonical = FREE_FN_NAME_OVERRIDES.get(native, native)

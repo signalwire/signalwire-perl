@@ -611,10 +611,6 @@ signalwire.relay.message.Message.__repr__: not_yet_implemented: relay feature pe
 signalwire.relay.message.Message.result: not_yet_implemented: relay feature pending — relay client is functional but incomplete
 signalwire.rest._base.CrudWithAddresses: not_yet_implemented: REST coverage pending for this resource method
 signalwire.rest._base.CrudWithAddresses.list_addresses: not_yet_implemented: REST coverage pending for this resource method
-signalwire.rest._pagination.PaginatedIterator: not_yet_implemented: REST coverage pending for this resource method
-signalwire.rest._pagination.PaginatedIterator.__init__: not_yet_implemented: REST coverage pending for this resource method
-signalwire.rest._pagination.PaginatedIterator.__iter__: not_yet_implemented: REST coverage pending for this resource method
-signalwire.rest._pagination.PaginatedIterator.__next__: not_yet_implemented: REST coverage pending for this resource method
 signalwire.rest.namespaces.addresses.AddressesResource.delete: not_yet_implemented: REST coverage pending for this resource method
 signalwire.rest.namespaces.calling.CallingNamespace.update: not_yet_implemented: REST coverage pending for this resource method
 signalwire.rest.namespaces.datasphere.DatasphereNamespace: not_yet_implemented: REST coverage pending for this resource method
