@@ -258,6 +258,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "contexts",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -690,6 +695,21 @@
                 },
                 {
                   "name": "logger",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "schema_utils",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "verb_registry",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "security",
                   "type": "any",
                   "required": false
                 },
@@ -1179,7 +1199,12 @@
                   "kind": "self"
                 },
                 {
-                  "name": "cb",
+                  "name": "summary",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
                   "type": "any",
                   "required": true
                 }
@@ -2670,6 +2695,18 @@
             }
           }
         }
+      },
+      "functions": {
+        "create_simple_context": {
+          "params": [
+            {
+              "name": "name",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        }
       }
     },
     "signalwire.core.data_map": {
@@ -4121,6 +4158,16 @@
         "get_execution_mode": {
           "params": [],
           "returns": "any"
+        },
+        "get_logger": {
+          "params": [
+            {
+              "name": "name",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
         }
       }
     },
@@ -4173,10 +4220,9 @@
                   "kind": "self"
                 },
                 {
-                  "name": "h",
-                  "type": "list<any>",
-                  "required": true,
-                  "kind": "var_positional"
+                  "name": "hints",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -4528,6 +4574,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "include_source",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -4601,6 +4652,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "contexts",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -5029,6 +5085,11 @@
                   "name": "callback_path",
                   "type": "any",
                   "required": true
+                },
+                {
+                  "name": "request",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -5137,6 +5198,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -5193,6 +5259,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -5221,6 +5292,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -5239,6 +5315,21 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "key",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "value",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -5893,6 +5984,21 @@
                   "name": "logger",
                   "type": "any",
                   "required": false
+                },
+                {
+                  "name": "schema_utils",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "verb_registry",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "security",
+                  "type": "any",
+                  "required": false
                 }
               ],
               "returns": "void"
@@ -5939,11 +6045,26 @@
               ],
               "returns": "any"
             },
+            "extract_sip_username": {
+              "params": [
+                {
+                  "name": "request_body",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
             "get_basic_auth_credentials": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "include_source",
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -6110,6 +6231,24 @@
               ],
               "returns": "any"
             },
+            "schema_utils": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "security": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "swaig_pre_dispatch": {
               "params": [
                 {
@@ -6153,6 +6292,15 @@
               "returns": "any"
             },
             "tools": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "verb_registry": {
               "params": [
                 {
                   "name": "self",
@@ -6263,6 +6411,21 @@
                 },
                 {
                   "name": "logger",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "schema_utils",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "verb_registry",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "security",
                   "type": "any",
                   "required": false
                 },
@@ -6594,6 +6757,21 @@
                   "required": false
                 },
                 {
+                  "name": "schema_utils",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "verb_registry",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "security",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "auto_answer",
                   "type": "any",
                   "required": false
@@ -6884,6 +7062,21 @@
                   "required": false
                 },
                 {
+                  "name": "schema_utils",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "verb_registry",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "security",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "auto_answer",
                   "type": "any",
                   "required": false
@@ -7162,6 +7355,21 @@
                 },
                 {
                   "name": "logger",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "schema_utils",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "verb_registry",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "security",
                   "type": "any",
                   "required": false
                 },
@@ -7472,6 +7680,21 @@
                 },
                 {
                   "name": "logger",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "schema_utils",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "verb_registry",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "security",
                   "type": "any",
                   "required": false
                 },
@@ -8835,6 +9058,12 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "kwargs",
+                  "type": "dict<string,any>",
+                  "required": false,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -10705,9 +10934,8 @@
                 },
                 {
                   "name": "contexts",
-                  "type": "list<any>",
-                  "required": true,
-                  "kind": "var_positional"
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -10831,9 +11059,8 @@
                 },
                 {
                   "name": "contexts",
-                  "type": "list<any>",
-                  "required": true,
-                  "kind": "var_positional"
+                  "type": "any",
+                  "required": true
                 }
               ],
               "returns": "any"

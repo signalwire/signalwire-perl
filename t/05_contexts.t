@@ -419,11 +419,21 @@ subtest 'valid_steps with next' => sub {
 # Test: create_simple_context
 # =============================================
 subtest 'create_simple_context' => sub {
+    # Class-method invocation form (legacy Perl idiom).
     my $ctx = SignalWire::Contexts->create_simple_context();
-    is($ctx->name, 'default', 'default name');
+    is($ctx->name, 'default', 'default name (class-method form)');
+    isa_ok($ctx, 'SignalWire::Contexts::Context', 'returns Context object');
 
     $ctx = SignalWire::Contexts->create_simple_context('custom');
-    is($ctx->name, 'custom', 'custom name');
+    is($ctx->name, 'custom', 'custom name (class-method form)');
+
+    # Free-function invocation form (Python parity:
+    # signalwire.core.contexts.create_simple_context(name='default')).
+    $ctx = SignalWire::Contexts::create_simple_context();
+    is($ctx->name, 'default', 'default name (free-fn form)');
+
+    $ctx = SignalWire::Contexts::create_simple_context('mycontext');
+    is($ctx->name, 'mycontext', 'custom name (free-fn form)');
 };
 
 done_testing;

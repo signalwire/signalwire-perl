@@ -138,6 +138,7 @@ PERL_SUBCLASS_PARENT = {
 FREE_FN_PACKAGES = {
     "SignalWire",  # top-level RestClient/register_skill/add_skill_directory/list_skills_with_params
     "SignalWire::Core::LoggingConfig",
+    "SignalWire::Contexts",  # create_simple_context() helper
     "SignalWire::Utils",
     "SignalWire::Utils::UrlValidator",
 }

@@ -176,12 +176,34 @@ subtest 'get_full_url' => sub {
 # ============================================================
 # 8. Summary callback
 # ============================================================
-subtest 'on_summary' => sub {
+subtest 'on_summary registration form (coderef)' => sub {
     my $a = SignalWire::Agent::AgentBase->new(name => 'sum');
     my $cb = sub { 1 };
     my $ret = $a->on_summary($cb);
-    is($ret, $a, 'returns self');
+    is($ret, $a, 'returns self when called with coderef');
     is($a->summary_callback, $cb, 'callback set');
+};
+
+# Python parity: AgentBase.on_summary(summary, raw_data=None).
+# When called with a non-coderef (the normal Python invocation form),
+# dispatches to the registered callback.
+subtest 'on_summary dispatch form invokes registered callback' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'sum_dispatch');
+    my @captured;
+    $a->on_summary(sub { @captured = @_; return 'dispatched'; });
+    my $ret = $a->on_summary({ stage => 'final', text => 'hello' },
+                             { raw => 'payload' });
+    is($ret, 'dispatched', 'returns the callback return value');
+    is_deeply($captured[0], { stage => 'final', text => 'hello' },
+              'callback got summary');
+    is_deeply($captured[1], { raw => 'payload' },
+              'callback got raw_data');
+};
+
+subtest 'on_summary dispatch with no callback registered is a no-op' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'sum_no_cb');
+    my $ret = $a->on_summary({ stage => 'x' }, undef);
+    is($ret, undef, 'no callback => returns undef (mirrors Python pass)');
 };
 
 # ============================================================

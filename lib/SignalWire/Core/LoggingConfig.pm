@@ -2,8 +2,19 @@ package SignalWire::Core::LoggingConfig;
 use strict;
 use warnings;
 use Exporter qw(import);
+use SignalWire::Logging;
 
-our @EXPORT_OK = qw(get_execution_mode);
+our @EXPORT_OK = qw(get_execution_mode get_logger);
+
+# Python parity: signalwire.core.logging_config.get_logger(name) is a
+# module-level factory that returns a structured logger bound to the
+# given name. Perl's SignalWire::Logging->get_logger($name) is the
+# class-method form; this free-function form mirrors Python's import
+# shape so cross-port code reads the same.
+sub get_logger {
+    my ($name) = @_;
+    return SignalWire::Logging->get_logger($name);
+}
 
 # Cross-language SDK contract for serverless / deployment-mode detection.
 #

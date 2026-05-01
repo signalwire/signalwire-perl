@@ -158,6 +158,29 @@ subtest 'azure is serverless' => sub {
     ok(SignalWire::Utils::is_serverless_mode(), 'azure -> serverless');
 };
 
+# Python parity: signalwire.core.logging_config.get_logger($name) is a
+# module-level free function.
+subtest 'get_logger free function returns structured logger' => sub {
+    my $logger = SignalWire::Core::LoggingConfig::get_logger('test_logger');
+    isa_ok($logger, 'SignalWire::Logging', 'returns SignalWire::Logging instance');
+    is($logger->name, 'test_logger', 'logger has the requested name');
+    can_ok($logger, qw(debug info warn error));
+};
+
+subtest 'get_logger same name returns same instance (memoized)' => sub {
+    my $a = SignalWire::Core::LoggingConfig::get_logger('logger_x');
+    my $b = SignalWire::Core::LoggingConfig::get_logger('logger_x');
+    is($a, $b, 'same name returns same instance');
+};
+
+subtest 'get_logger different names return distinct loggers' => sub {
+    my $a = SignalWire::Core::LoggingConfig::get_logger('logger_p');
+    my $b = SignalWire::Core::LoggingConfig::get_logger('logger_q');
+    isnt($a, $b, 'different names are distinct loggers');
+    is($a->name, 'logger_p', 'p name');
+    is($b->name, 'logger_q', 'q name');
+};
+
 restore_env();
 
 done_testing();

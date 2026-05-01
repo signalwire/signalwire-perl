@@ -360,13 +360,34 @@ sub send_message {
 # --- Context management ---
 
 sub receive {
-    my ($self, @contexts) = @_;
-    return $self->execute('signalwire.receive', { contexts => \@contexts });
+    my ($self, $contexts) = @_;
+    # Python parity: receive(contexts: list[str]). Canonical form takes
+    # an arrayref. Backward-compat: also accept slurpy
+    # (``$client->receive('ctx1', 'ctx2')``) — re-grab @_ when the first
+    # arg is a string and there are extras.
+    my @ctxs;
+    if (ref $contexts eq 'ARRAY') {
+        @ctxs = @$contexts;
+    } else {
+        @ctxs = @_;
+        shift @ctxs;  # drop $self
+    }
+    return unless @ctxs;
+    return $self->execute('signalwire.receive', { contexts => \@ctxs });
 }
 
 sub unreceive {
-    my ($self, @contexts) = @_;
-    return $self->execute('signalwire.unreceive', { contexts => \@contexts });
+    my ($self, $contexts) = @_;
+    # Python parity: unreceive(contexts: list[str]).
+    my @ctxs;
+    if (ref $contexts eq 'ARRAY') {
+        @ctxs = @$contexts;
+    } else {
+        @ctxs = @_;
+        shift @ctxs;  # drop $self
+    }
+    return unless @ctxs;
+    return $self->execute('signalwire.unreceive', { contexts => \@ctxs });
 }
 
 # --- Dial ---

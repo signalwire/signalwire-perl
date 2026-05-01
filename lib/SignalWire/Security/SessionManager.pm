@@ -121,11 +121,28 @@ sub validate_tool_token {
     return $self->validate_token($call_id, $function_name, $token);
 }
 
-# Legacy methods - no-ops for API compat
-sub activate_session { return 1 }
-sub end_session      { return 1 }
-sub get_session_metadata  { return {} }
-sub set_session_metadata  { return 1 }
+# Legacy methods - no-ops for API compat (mirroring Python's
+# stateless SessionManager.activate_session/end_session/etc. which
+# accept the args, validate they're present, and return success).
+sub activate_session {
+    my ($self, $call_id) = @_;
+    return 1;
+}
+
+sub end_session {
+    my ($self, $call_id) = @_;
+    return 1;
+}
+
+sub get_session_metadata {
+    my ($self, $call_id) = @_;
+    return {};
+}
+
+sub set_session_metadata {
+    my ($self, $call_id, $key, $value) = @_;
+    return 1;
+}
 
 sub debug_token {
     my ($self, $token) = @_;

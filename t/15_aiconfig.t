@@ -17,10 +17,32 @@ subtest 'add_hint' => sub {
     is($a->hints->[0], 'SignalWire', 'hint stored');
 };
 
-subtest 'add_hints' => sub {
+subtest 'add_hints (slurpy form, Perl idiom)' => sub {
     my $a = SignalWire::Agent::AgentBase->new(name => 'hs');
     $a->add_hints('AI', 'agent', 'cloud');
-    is(scalar @{$a->hints}, 3, 'three hints');
+    is(scalar @{$a->hints}, 3, 'three hints (slurpy)');
+    is_deeply($a->hints, ['AI', 'agent', 'cloud'], 'order preserved');
+};
+
+subtest 'add_hints (arrayref form, Python parity)' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'hs_aref');
+    my $ret = $a->add_hints(['AI', 'agent', 'cloud']);
+    is($ret, $a, 'returns self for chaining (Python parity)');
+    is(scalar @{$a->hints}, 3, 'three hints (arrayref)');
+    is_deeply($a->hints, ['AI', 'agent', 'cloud'], 'order preserved');
+};
+
+subtest 'add_hints filters non-strings (Python parity)' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'hs_filter');
+    $a->add_hints(['valid', '', undef, 'also valid']);
+    is_deeply($a->hints, ['valid', 'also valid'],
+              'empty string and undef filtered out (matches Python)');
+};
+
+subtest 'add_hints with empty arrayref is no-op' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'hs_empty');
+    $a->add_hints([]);
+    is(scalar @{$a->hints}, 0, 'empty list is no-op');
 };
 
 subtest 'hints in SWML' => sub {

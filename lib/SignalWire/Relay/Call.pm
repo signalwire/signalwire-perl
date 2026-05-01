@@ -245,8 +245,11 @@ sub join_room {
 }
 
 sub leave_room {
-    my ($self) = @_;
-    return $self->_execute('calling.leave_room');
+    my ($self, %opts) = @_;
+    # Python parity: Call.leave_room(**kwargs). Forwards any caller-provided
+    # kwargs to the Relay leave_room dispatch (slurpy hash on the Perl side
+    # ≡ **kwargs on the Python side).
+    return $self->_execute('calling.leave_room', %opts);
 }
 
 sub amazon_bedrock {

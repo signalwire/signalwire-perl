@@ -129,10 +129,30 @@ subtest 'Timing-safe comparison' => sub {
 # =============================================
 subtest 'Legacy methods' => sub {
     my $sm = SignalWire::Security::SessionManager->new();
-    ok($sm->activate_session('call-1'), 'activate_session returns true');
-    ok($sm->end_session('call-1'), 'end_session returns true');
-    is_deeply($sm->get_session_metadata('call-1'), {}, 'get_session_metadata returns empty hash');
-    ok($sm->set_session_metadata('call-1', 'key', 'val'), 'set_session_metadata returns true');
+
+    # Mirror Python's stateless session manager: every legacy method
+    # accepts (call_id) (and key/value for set_session_metadata) and
+    # returns success / empty metadata. The contract is that the
+    # *signature* is what callers depend on, not internal state.
+    ok($sm->activate_session('call-1'), 'activate_session(call_id) returns true');
+    ok($sm->end_session('call-1'),      'end_session(call_id) returns true');
+
+    my $md = $sm->get_session_metadata('call-1');
+    is_deeply($md, {}, 'get_session_metadata(call_id) returns empty hash');
+    is(ref($md), 'HASH', 'get_session_metadata returns a hashref');
+
+    ok($sm->set_session_metadata('call-1', 'key', 'val'),
+       'set_session_metadata(call_id, key, value) returns true');
+
+    # Multiple call_ids: stateless => same behavior for any call_id.
+    for my $cid ('call-A', 'call-B', '') {
+        ok($sm->activate_session($cid),       "activate_session('$cid') ok");
+        ok($sm->end_session($cid),            "end_session('$cid') ok");
+        is_deeply($sm->get_session_metadata($cid), {},
+                  "get_session_metadata('$cid') -> {}");
+        ok($sm->set_session_metadata($cid, 'k', 'v'),
+           "set_session_metadata('$cid', k, v) ok");
+    }
 };
 
 # =============================================

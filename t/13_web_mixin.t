@@ -27,13 +27,15 @@ use SignalWire::SWML::Service;
         $self->{custom_return} = undef;
         $self->{last_request_data} = undef;
         $self->{last_callback_path} = undef;
+        $self->{last_request} = undef;
         return $self;
     }
 
     sub on_swml_request {
-        my ($self, $request_data, $callback_path) = @_;
+        my ($self, $request_data, $callback_path, $request) = @_;
         $self->{last_request_data} = $request_data;
         $self->{last_callback_path} = $callback_path;
+        $self->{last_request} = $request;
         return $self->{custom_return};
     }
 }
@@ -52,6 +54,31 @@ subtest 'on_swml_request default returns undef' => sub {
     my $svc = SignalWire::SWML::Service->new(name => 't');
     is($svc->on_swml_request(undef, undef), undef,
        'default on_swml_request returns undef');
+};
+
+# Python parity: on_swml_request(request_data, callback_path, request).
+# Third arg is the underlying request object (FastAPI Request in
+# Python; PSGI env hashref in Perl).
+subtest 'on_swml_request accepts third request arg (Python parity)' => sub {
+    my $svc = CustomService->new(name => 't_req');
+    $svc->{custom_return} = { ok => 1 };
+    my $rd  = { data => 'v' };
+    my $env = {
+        REQUEST_METHOD => 'POST',
+        PATH_INFO      => '/swml',
+        QUERY_STRING   => 'foo=bar',
+    };
+    my $result = $svc->on_swml_request($rd, '/cb', $env);
+    is_deeply($svc->{last_request_data}, $rd, 'hook received request_data');
+    is($svc->{last_callback_path},     '/cb', 'hook received callback_path');
+    is_deeply($svc->{last_request},    $env,  'hook received request env');
+    is_deeply($result, { ok => 1 }, 'returns hook value');
+};
+
+subtest 'on_swml_request default ignores third arg' => sub {
+    my $svc = SignalWire::SWML::Service->new(name => 't_req_def');
+    is($svc->on_swml_request(undef, undef, { REQUEST_METHOD => 'GET' }),
+       undef, 'default returns undef even when third arg supplied');
 };
 
 subtest 'on_request default returns undef' => sub {

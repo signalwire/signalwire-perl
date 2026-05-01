@@ -851,8 +851,18 @@ sub to_hash {
 # Back to main package
 package SignalWire::Contexts;
 
+# Python parity: signalwire.core.contexts.create_simple_context(name='default')
+# is a module-level free function. Perl invocation forms supported:
+#   - SignalWire::Contexts::create_simple_context('mycontext')   # free fn
+#   - SignalWire::Contexts->create_simple_context('mycontext')   # class method
+# Both forms collapse to a single optional ``$name`` argument.
 sub create_simple_context {
-    my ($class, $name) = @_;
+    my ($name) = @_;
+    if (defined $name && !ref($name) && $name eq __PACKAGE__) {
+        # Class-method invocation form — drop the receiver, shift remaining.
+        shift;
+        $name = $_[0];
+    }
     $name //= 'default';
     return SignalWire::Contexts::Context->new(name => $name);
 }

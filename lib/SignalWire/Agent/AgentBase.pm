@@ -394,8 +394,22 @@ sub add_hint {
 }
 
 sub add_hints {
-    my ($self, @h) = @_;
-    push @{ $self->hints }, @h;
+    my ($self, $hints) = @_;
+    # Python parity: add_hints(hints: List[str]). Accept an arrayref
+    # as the canonical form. Backward-compat: also accept slurpy
+    # (``add_hints('a', 'b', 'c')``) when the first arg is a string.
+    if (ref $hints eq 'ARRAY') {
+        for my $h (@$hints) {
+            push @{ $self->hints }, $h if defined $h && !ref($h) && length $h;
+        }
+    } else {
+        # Slurpy form — re-grab @_ skipping $self.
+        my @rest = @_;
+        shift @rest;
+        for my $h (@rest) {
+            push @{ $self->hints }, $h if defined $h && !ref($h) && length $h;
+        }
+    }
     return $self;
 }
 
@@ -653,7 +667,41 @@ sub set_answer_config {
 # gather_submit). See SignalWire::Contexts::ContextBuilder.
 #
 sub define_contexts {
-    my ($self) = @_;
+    my ($self, $contexts) = @_;
+    # Python parity: PromptMixin.define_contexts(contexts=None).
+    #   - When called with no arg (legacy / Perl idiom), returns the
+    #     ContextBuilder for fluent chaining (``$agent->define_contexts->add_context(...)``).
+    #   - When called with a hashref or ContextBuilder, applies that
+    #     configuration via context_builder and returns $self for chaining.
+    if (defined $contexts) {
+        if (ref $contexts eq 'HASH') {
+            # Apply each top-level context name -> config pair.
+            my $cb = $self->context_builder;
+            $cb->attach_agent($self) if $cb->can('attach_agent');
+            for my $name (keys %$contexts) {
+                my $cfg = $contexts->{$name};
+                my $ctx = $cb->add_context($name);
+                # Best-effort: if config is a hashref, apply known keys.
+                if (ref $cfg eq 'HASH') {
+                    if (defined $cfg->{steps} && ref $cfg->{steps} eq 'HASH') {
+                        for my $sname (keys %{ $cfg->{steps} }) {
+                            $ctx->add_step($sname, %{ $cfg->{steps}{$sname} });
+                        }
+                    }
+                }
+            }
+            return $self;
+        }
+        # ContextBuilder-like object: assume $contexts->to_hash is the
+        # canonical projection; replace this agent's builder with it.
+        if (ref $contexts && $contexts->can('to_hash')) {
+            $self->{_external_context_builder} = $contexts;
+            $contexts->attach_agent($self) if $contexts->can('attach_agent');
+            return $self;
+        }
+        die "define_contexts: contexts must be a hashref or a ContextBuilder";
+    }
+    # No-arg form: return the (memoized) ContextBuilder.
     my $cb = $self->context_builder;
     $cb->attach_agent($self) if $cb->can('attach_agent');
     return $cb;
@@ -750,9 +798,28 @@ sub clear_swaig_query_params {
 }
 
 sub on_summary {
-    my ($self, $cb) = @_;
-    $self->summary_callback($cb);
-    return $self;
+    my ($self, $summary, $raw_data) = @_;
+    # Python parity: AgentBase.on_summary(summary, raw_data=None).
+    #
+    # Two invocation forms:
+    #   1. Registration form (Perl idiom):
+    #        $agent->on_summary(sub { my ($summary, $raw) = @_; ... });
+    #      A coderef as the first arg installs that handler as the
+    #      summary callback and returns $self for chaining.
+    #   2. Dispatch form (Python parity):
+    #        $agent->on_summary($summary, $raw_data);
+    #      Anything else is treated as the summary payload itself
+    #      and dispatches to the registered callback. Default
+    #      implementation is a no-op (matches Python's pass).
+    if (ref $summary eq 'CODE') {
+        $self->summary_callback($summary);
+        return $self;
+    }
+    my $cb = $self->summary_callback;
+    if ($cb) {
+        return $cb->($summary, $raw_data);
+    }
+    return undef;
 }
 
 sub on_debug_event {

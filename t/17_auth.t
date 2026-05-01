@@ -186,6 +186,73 @@ subtest 'security headers present' => sub {
 };
 
 # ============================================================
+# 8a. get_basic_auth_credentials(include_source)
+#     Python parity: AuthMixin.get_basic_auth_credentials(include_source=False)
+# ============================================================
+subtest 'get_basic_auth_credentials() returns (user, pass)' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(
+        name                 => 'creds',
+        basic_auth_user      => 'alice',
+        basic_auth_password  => 'wonderland',
+    );
+    my @creds = $a->get_basic_auth_credentials();
+    is(scalar @creds, 2, 'two-element list returned');
+    is($creds[0], 'alice', 'user');
+    is($creds[1], 'wonderland', 'password');
+};
+
+subtest 'get_basic_auth_credentials(0) returns (user, pass)' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(
+        name                 => 'creds_explicit_false',
+        basic_auth_user      => 'alice',
+        basic_auth_password  => 'wonderland',
+    );
+    my @creds = $a->get_basic_auth_credentials(0);
+    is(scalar @creds, 2, 'two-element list when include_source=0');
+};
+
+subtest 'get_basic_auth_credentials(1) returns (user, pass, source) "provided"' => sub {
+    local $ENV{SWML_BASIC_AUTH_USER};
+    local $ENV{SWML_BASIC_AUTH_PASSWORD};
+    delete $ENV{SWML_BASIC_AUTH_USER};
+    delete $ENV{SWML_BASIC_AUTH_PASSWORD};
+    my $a = SignalWire::Agent::AgentBase->new(
+        name                 => 'src_provided',
+        basic_auth_user      => 'manual_user',
+        basic_auth_password  => 'short',
+    );
+    my @creds = $a->get_basic_auth_credentials(1);
+    is(scalar @creds, 3, 'three-element list when include_source=1');
+    is($creds[0], 'manual_user', 'user');
+    is($creds[1], 'short',       'password');
+    is($creds[2], 'provided',    'source is "provided" for explicitly-passed creds');
+};
+
+subtest 'get_basic_auth_credentials(1) returns "environment" when env-derived' => sub {
+    local $ENV{SWML_BASIC_AUTH_USER}     = 'env_alice';
+    local $ENV{SWML_BASIC_AUTH_PASSWORD} = 'env_secret';
+    my $a = SignalWire::Agent::AgentBase->new(name => 'src_env');
+    my @creds = $a->get_basic_auth_credentials(1);
+    is($creds[0], 'env_alice',  'user from env');
+    is($creds[1], 'env_secret', 'password from env');
+    is($creds[2], 'environment','source is "environment"');
+};
+
+subtest 'get_basic_auth_credentials(1) returns "generated" when auto-minted' => sub {
+    local $ENV{SWML_BASIC_AUTH_USER};
+    local $ENV{SWML_BASIC_AUTH_PASSWORD};
+    delete $ENV{SWML_BASIC_AUTH_USER};
+    delete $ENV{SWML_BASIC_AUTH_PASSWORD};
+    my $a = SignalWire::Agent::AgentBase->new(
+        name                 => 'src_generated',
+        basic_auth_user      => 'user_abcd',                    # starts with "user_"
+        basic_auth_password  => 'a' x 24,                       # >20 chars
+    );
+    my @creds = $a->get_basic_auth_credentials(1);
+    is($creds[2], 'generated', 'source is "generated"');
+};
+
+# ============================================================
 # 8. Malformed auth header
 # ============================================================
 subtest 'malformed auth header' => sub {

@@ -461,12 +461,41 @@ subtest 'security headers' => sub {
 # ============================================================
 # 20. Context builder (lazy)
 # ============================================================
-subtest 'context builder' => sub {
+subtest 'context builder (no-arg form returns ContextBuilder)' => sub {
     my $agent = SignalWire::Agent::AgentBase->new(name => 'ctx_test');
     my $builder = $agent->define_contexts;
     ok(defined $builder, 'context builder returned');
+    isa_ok($builder, 'SignalWire::Contexts::ContextBuilder',
+           'returns ContextBuilder');
     $builder->add_context('default');
     ok($builder->has_contexts, 'context added');
+};
+
+# Python parity: PromptMixin.define_contexts(contexts=None).
+# Optional ``contexts`` arg accepts a hashref or a ContextBuilder
+# and returns $self for chaining.
+subtest 'define_contexts(hashref) applies config and returns self' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ctx_apply');
+    my $ret = $agent->define_contexts({
+        default => {
+            steps => {
+                greet => { task => 'Greet the user' },
+            },
+        },
+    });
+    is($ret, $agent, 'returns $self for chaining');
+    ok($agent->context_builder->has_contexts, 'context applied');
+    my $ctx = $agent->context_builder->get_context('default');
+    ok(defined $ctx, 'default context exists');
+    ok(defined $ctx->get_step('greet'), 'greet step added');
+};
+
+subtest 'define_contexts(ContextBuilder) attaches external builder' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ctx_external');
+    my $external = SignalWire::Contexts::ContextBuilder->new;
+    $external->add_context('default')->add_step('s1', task => 'do thing');
+    my $ret = $agent->define_contexts($external);
+    is($ret, $agent, 'returns $self when given a ContextBuilder');
 };
 
 # ============================================================

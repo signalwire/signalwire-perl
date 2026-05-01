@@ -67,6 +67,43 @@ has '_logger' => (
     default => sub { SignalWire::Logging->get_logger('signalwire.swml_service') },
 );
 
+# Python parity: schema_utils / verb_registry / security accessors.
+# In Python these are instance attributes set in __init__; cross-language
+# audit treats them as zero-arg getters. The Perl singletons / lazy-built
+# objects expose the same accessor surface.
+has 'schema_utils' => (
+    is      => 'lazy',
+    default => sub { SignalWire::SWML::Schema->instance },
+);
+
+has 'verb_registry' => (
+    is      => 'lazy',
+    default => sub {
+        # Tiny stand-in registry for verb-handler dispatch. The Perl SDK
+        # uses AUTOLOAD against the schema for verb lookup; this hashref
+        # mirrors Python's VerbHandlerRegistry surface (handlers indexed
+        # by verb name) so callers can introspect / extend it.
+        return { handlers => {} };
+    },
+);
+
+has 'security' => (
+    is      => 'lazy',
+    default => sub {
+        my ($self) = @_;
+        # Python's SWMLService.security is a SecurityConfig instance that
+        # bundles SSL + basic-auth + CORS knobs. Perl SWMLService models
+        # those as direct ``has`` attributes (basic_auth_user, etc.); the
+        # ``security`` accessor returns a hashref view of the same data so
+        # cross-port code that reaches into ``$svc->security->{...}`` keeps
+        # working. Wrap in a blessed Moo-ish object so introspection still
+        # sees it as an object (Python parity).
+        require SignalWire::Security::SessionManager;
+        return $self->{_session_manager}
+            //= SignalWire::Security::SessionManager->new();
+    },
+);
+
 # Function-name validation pattern matches the other ports.
 my $SWAIG_FN_NAME = qr/\A[a-zA-Z_][a-zA-Z0-9_]*\z/;
 
@@ -155,20 +192,15 @@ sub validate_basic_auth {
         && _timing_safe_compare($password, $p);
 }
 
-# Returns ($user, $password). (Python parity:
-# AuthMixin.get_basic_auth_credentials.)
-sub get_basic_auth_credentials {
-    my ($self) = @_;
-    return ($self->basic_auth_user // '', $self->basic_auth_password // '');
-}
-
-# Returns ($user, $password, $source) where $source is "provided",
+# Returns ($user, $password) by default; if $include_source is truthy,
+# returns ($user, $password, $source) where $source is "provided",
 # "environment", or "generated". (Python parity:
-# AuthMixin.get_basic_auth_credentials(include_source=True).)
-sub get_basic_auth_credentials_with_source {
-    my ($self) = @_;
+# AuthMixin.get_basic_auth_credentials(include_source=False).)
+sub get_basic_auth_credentials {
+    my ($self, $include_source) = @_;
     my $user = $self->basic_auth_user // '';
     my $pass = $self->basic_auth_password // '';
+    return ($user, $pass) unless $include_source;
     my $env_user = $ENV{SWML_BASIC_AUTH_USER} // '';
     my $env_pass = $ENV{SWML_BASIC_AUTH_PASSWORD} // '';
     my $source;
@@ -180,6 +212,50 @@ sub get_basic_auth_credentials_with_source {
         $source = 'provided';
     }
     return ($user, $pass, $source);
+}
+
+# Backward-compat alias for Perl callers that used the named-helper form.
+# Equivalent to ``$self->get_basic_auth_credentials(1)``.
+sub get_basic_auth_credentials_with_source {
+    my ($self) = @_;
+    return $self->get_basic_auth_credentials(1);
+}
+
+# extract_sip_username($request_body)
+#
+# Python parity: SWMLService.extract_sip_username(request_body) is a
+# @staticmethod that pulls the username out of a SignalWire/SWML
+# request body's call.to field. Handles SIP URIs (``sip:user@host``),
+# TEL URIs (``tel:+15551234567``), and plain destination strings.
+# Returns undef when the body shape doesn't match.
+#
+# Callable as either a class method or instance method (Perl idiom for
+# what Python expresses with @staticmethod). The class_or_self receiver
+# is mirrored from FunctionResult and other static-method-shaped helpers.
+sub extract_sip_username {
+    my ($class_or_self, $request_body) = @_;
+    # Allow being called as a free function (single-arg form): if the
+    # first arg is itself the request_body hashref, shift it forward.
+    if (!defined $request_body && ref $class_or_self eq 'HASH') {
+        $request_body = $class_or_self;
+    }
+    return undef unless ref $request_body eq 'HASH';
+    my $call = $request_body->{call};
+    return undef unless ref $call eq 'HASH';
+    my $to = $call->{to};
+    # Python's implementation calls ``to_field.startswith(...)`` which
+    # raises AttributeError for non-string values (None / int / list)
+    # and returns None via the except path. Mirror that policy: any
+    # non-defined or ref value short-circuits to undef.
+    return undef unless defined $to && !ref $to;
+
+    if ($to =~ m{^sip:([^@]+)\@}i) {
+        return $1;
+    }
+    if ($to =~ m{^tel:(.+)$}i) {
+        return $1;
+    }
+    return $to;
 }
 
 sub _check_basic_auth {
@@ -306,9 +382,13 @@ sub on_request {
 # Customization point for subclasses to modify SWML based on request
 # data. The default implementation returns undef (no modification).
 #
-# Python parity: WebMixin.on_swml_request(request_data, callback_path).
+# Python parity: WebMixin.on_swml_request(request_data, callback_path, request).
+# The third ``$request`` parameter mirrors Python's optional FastAPI
+# Request object; in Perl this is the PSGI ``$env`` hashref (or a
+# wrapper produced by the calling code). Subclasses that don't need
+# direct request access can ignore it.
 sub on_swml_request {
-    my ($self, $request_data, $callback_path) = @_;
+    my ($self, $request_data, $callback_path, $request) = @_;
     return undef;
 }
 
