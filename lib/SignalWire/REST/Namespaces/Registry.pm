@@ -87,6 +87,12 @@ sub delete_number {
     return $self->_http->delete_request($self->_path($number_id));
 }
 
+# Python parity alias.
+sub delete {
+    my ($self, $number_id) = @_;
+    return $self->_http->delete_request($self->_path($number_id));
+}
+
 # --- RegistryNamespace ---
 package SignalWire::REST::Namespaces::Registry;
 use Moo;

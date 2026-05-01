@@ -151,6 +151,27 @@ MIXIN_PROJECTIONS = {
 def collect(raw: dict) -> dict:
     out_modules: dict = {}
 
+    # Build a Perl-package -> entry index so we can walk `extends` chains
+    # for attribute inheritance. Moo's auto-`new` accepts every parent's
+    # attribute as a named constructor arg, so the canonical __init__
+    # signature must include inherited attrs.
+    by_full_name: dict = {t.get("full_name"): t for t in raw.get("types", []) if t.get("full_name")}
+
+    def collect_inherited_attrs(entry: dict, seen: set) -> list:
+        """Walk extends chain and concatenate attributes (parent first,
+        then child). Stops on cycles via `seen`."""
+        full = entry.get("full_name")
+        if full in seen:
+            return []
+        seen.add(full)
+        out: list = []
+        for parent_name in entry.get("extends", []) or []:
+            parent = by_full_name.get(parent_name)
+            if parent:
+                out.extend(collect_inherited_attrs(parent, seen))
+        out.extend(entry.get("attributes", []))
+        return out
+
     for type_entry in raw.get("types", []):
         full = type_entry.get("full_name", "")
         target = PACKAGE_TO_PY.get(full)
@@ -180,10 +201,13 @@ def collect(raw: dict) -> dict:
             for i, p in enumerate(params):
                 pname = p.get("name", "").lstrip("+")
                 sigil = p.get("sigil", "")
-                if i == 0 and pname in ("self", "class") and not sigil:
+                # First positional param is the invocant. Perl SDK uses
+                # `$self`, `$class`, or short `$s` aliases for the same
+                # role; normalize all of them to the canonical "self".
+                if i == 0 and pname in ("self", "class", "s") and not sigil:
                     params_out.append({
                         "name": "self",
-                        "kind": "self" if pname == "self" else "cls",
+                        "kind": "cls" if pname == "class" else "self",
                     })
                     saw_receiver = True
                     continue
@@ -240,16 +264,47 @@ def collect(raw: dict) -> dict:
         # ``new`` automatically based on attributes; cross-language audit
         # treats this as the canonical ``__init__`` constructor. The params
         # are the class's named attributes (Moo's hash-arg constructor).
-        if "__init__" not in methods_out and canonical_class is not None:
+        # Perl convention prefixes private attributes with `_` (e.g.
+        # ``_http``, ``_base_path``); Python's matching ``__init__`` takes
+        # them as positional ``http``/``base_path``. We strip a single
+        # leading underscore for the canonical name so the cross-language
+        # diff treats them as equivalent.
+        # Synthesize __init__ when the class is a Moo-style resource — it
+        # either declares its own attributes or extends one of the SDK's
+        # resource bases (Base / CrudResource) which provide _http +
+        # _base_path. Python sometimes redefines __init__ on a subclass
+        # for documentation even when the signature is identical to the
+        # parent's; for parity we walk the extends chain and emit the
+        # full attribute list.
+        own_attrs = type_entry.get("attributes", []) or []
+        # Heuristic for emitting __init__:
+        # - Classes that declare their own attributes always get an
+        #   __init__ (the attrs are constructor args).
+        # - Classes that inherit from Base/CrudResource without adding
+        #   any of their own attrs are pure leaf resources whose __init__
+        #   is the inherited (http, base_path); Python doesn't redefine
+        #   __init__ on such classes either.
+        # - Classes that don't extend a known resource base (top-level
+        #   namespace orchestrators like Calling/Compat/Logs) get a
+        #   synthesized __init__ from whatever attrs the class body owns.
+        if "__init__" not in methods_out and canonical_class is not None and own_attrs:
             init_params: list[dict] = [{"name": "self", "kind": "self"}]
-            for a in type_entry.get("attributes", []):
+            inherited = collect_inherited_attrs(type_entry, set())
+            seen_names: set = set()
+            for a in inherited:
                 pname = a.get("name", "").lstrip("+")
-                if not pname or pname.startswith("_"):
+                if not pname:
                     continue
-                if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pname):
+                canonical = pname.lstrip("_")
+                if not canonical or canonical.startswith("_"):
                     continue
+                if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", canonical):
+                    continue
+                if canonical in seen_names:
+                    continue
+                seen_names.add(canonical)
                 init_params.append({
-                    "name": pname,
+                    "name": canonical,
                     "type": "any",
                     "required": not a.get("default") and a.get("required", False),
                 })

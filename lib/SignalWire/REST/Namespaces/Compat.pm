@@ -223,6 +223,12 @@ sub delete_number {
     return $self->_http->delete_request($self->_path($sid));
 }
 
+# Python parity alias.
+sub delete {
+    my ($self, $sid) = @_;
+    return $self->_http->delete_request($self->_path($sid));
+}
+
 sub import_number {
     my ($self, %kwargs) = @_;
     (my $path = $self->_base_path) =~ s/IncomingPhoneNumbers/ImportedPhoneNumbers/;
@@ -314,6 +320,12 @@ sub delete_recording {
     return $self->_http->delete_request($self->_path($sid));
 }
 
+# Python parity alias.
+sub delete {
+    my ($self, $sid) = @_;
+    return $self->_http->delete_request($self->_path($sid));
+}
+
 # --- CompatTranscriptions ---
 package SignalWire::REST::Namespaces::Compat::Transcriptions;
 use Moo;
@@ -335,6 +347,12 @@ sub delete_transcription {
     return $self->_http->delete_request($self->_path($sid));
 }
 
+# Python parity alias.
+sub delete {
+    my ($self, $sid) = @_;
+    return $self->_http->delete_request($self->_path($sid));
+}
+
 # --- CompatTokens ---
 package SignalWire::REST::Namespaces::Compat::Tokens;
 use Moo;
@@ -351,6 +369,12 @@ sub update {
 }
 
 sub delete_token {
+    my ($self, $token_id) = @_;
+    return $self->_http->delete_request($self->_path($token_id));
+}
+
+# Python parity alias.
+sub delete {
     my ($self, $token_id) = @_;
     return $self->_http->delete_request($self->_path($token_id));
 }

@@ -137,6 +137,7 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Fabric::ResourcePUT';
 
 sub create {
+    my ($self, %kwargs) = @_;
     die "cXML applications cannot be created via this API";
 }
 
@@ -157,6 +158,12 @@ sub get {
 }
 
 sub delete_resource {
+    my ($self, $resource_id) = @_;
+    return $self->_http->delete_request($self->_path($resource_id));
+}
+
+# Python parity alias.
+sub delete {
     my ($self, $resource_id) = @_;
     return $self->_http->delete_request($self->_path($resource_id));
 }

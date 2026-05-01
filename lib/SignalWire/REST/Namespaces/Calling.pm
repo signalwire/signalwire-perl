@@ -20,6 +20,9 @@ sub _execute {
 
 # Call lifecycle
 sub dial        { my ($s, %p) = @_; $s->_execute('dial', undef, %p) }
+# Python parity: `update` is the public name; `update_call` stays as an
+# alias because earlier Perl releases shipped with that name.
+sub update      { my ($s, %p) = @_; $s->_execute('update', undef, %p) }
 sub update_call { my ($s, %p) = @_; $s->_execute('update', undef, %p) }
 sub end         { my ($s, $id, %p) = @_; $s->_execute('calling.end', $id, %p) }
 sub transfer    { my ($s, $id, %p) = @_; $s->_execute('calling.transfer', $id, %p) }

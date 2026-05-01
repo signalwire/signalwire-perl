@@ -23,6 +23,12 @@ sub delete_token {
     return $self->_http->delete_request($self->_path($token_id));
 }
 
+# Python parity alias.
+sub delete {
+    my ($self, $token_id) = @_;
+    return $self->_http->delete_request($self->_path($token_id));
+}
+
 # --- ProjectNamespace ---
 package SignalWire::REST::Namespaces::Project;
 use Moo;

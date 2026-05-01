@@ -24,6 +24,11 @@ sub get {
     return $self->_http->get($self->_path($address_id));
 }
 
+sub delete {
+    my ($self, $address_id) = @_;
+    return $self->_http->delete_request($self->_path($address_id));
+}
+
 # --- Queues ---
 package SignalWire::REST::Namespaces::Queues;
 use Moo;
@@ -39,6 +44,11 @@ sub list_members {
 sub get_next_member {
     my ($self, $queue_id) = @_;
     return $self->_http->get($self->_path($queue_id, 'members', 'next'));
+}
+
+sub get_member {
+    my ($self, $queue_id, $member_id) = @_;
+    return $self->_http->get($self->_path($queue_id, 'members', $member_id));
 }
 
 # --- Recordings (read-only + delete) ---
@@ -58,6 +68,12 @@ sub get {
 }
 
 sub delete_recording {
+    my ($self, $recording_id) = @_;
+    return $self->_http->delete_request($self->_path($recording_id));
+}
+
+# Python parity alias.
+sub delete {
     my ($self, $recording_id) = @_;
     return $self->_http->delete_request($self->_path($recording_id));
 }

@@ -47,6 +47,7 @@ sub parse_file {
     my $cur_pkg;
     my @methods;
     my @attrs;
+    my @extends;
 
     my $i = 0;
     while ($i < @$lines) {
@@ -54,16 +55,25 @@ sub parse_file {
 
         if ($line =~ /^\s*package\s+([\w:]+)\s*;/) {
             # Flush previous package
-            if (defined $cur_pkg && (@methods || @attrs)) {
+            if (defined $cur_pkg && (@methods || @attrs || @extends)) {
                 push @entries, {
                     full_name => $cur_pkg,
                     methods => [@methods],
                     attributes => [@attrs],
+                    extends => [@extends],
                 };
             }
             $cur_pkg = $1;
             @methods = ();
             @attrs = ();
+            @extends = ();
+            $i++;
+            next;
+        }
+
+        # ``extends 'Parent';`` — single arg
+        if ($line =~ /^\s*extends\s+(?:'([^']+)'|"([^"]+)")/) {
+            push @extends, ($1 // $2);
             $i++;
             next;
         }
@@ -71,8 +81,12 @@ sub parse_file {
         if ($line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*(?:\([^)]*\))?\s*\{/ ||
             $line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*$/) {
             my $name = $1;
-            # Collect body lines (next ~10 lines or until balanced brace)
-            my @body;
+            # Collect body lines. Always include the sub-declaration line
+            # itself so single-line definitions like
+            #   sub play_pause { my ($s, $id, %p) = @_; ... }
+            # have their params parsed (depth becomes 0 immediately and
+            # the j-loop below skips body collection).
+            my @body = ($line);
             my $depth = ($line =~ tr/\{// ) - ($line =~ tr/\}//);
             my $j = $i + 1;
             while ($j < @$lines && $depth > 0 && $j - $i < 30) {
@@ -100,11 +114,12 @@ sub parse_file {
         $i++;
     }
 
-    if (defined $cur_pkg && (@methods || @attrs)) {
+    if (defined $cur_pkg && (@methods || @attrs || @extends)) {
         push @entries, {
             full_name => $cur_pkg,
             methods => [@methods],
             attributes => [@attrs],
+            extends => [@extends],
         };
     }
     return @entries;
@@ -119,7 +134,9 @@ sub parse_params {
         # and ``my (%kwargs) = @_;`` (slurpy array / hash) which we tag with
         # a sigil prefix so the canonical translator can distinguish between
         # var_positional (@) and var_keyword (%).
-        if ($bline =~ /^\s*my\s*\(\s*([^)]*)\s*\)\s*=\s*\@_\s*;/) {
+        # The pattern may appear anywhere on the line (single-line subs put
+        # it after `sub NAME {`).
+        if ($bline =~ /\bmy\s*\(\s*([^)]*)\s*\)\s*=\s*\@_\s*;/) {
             my $vars = $1;
             for my $v (split /\s*,\s*/, $vars) {
                 next if $v eq '';
@@ -134,10 +151,13 @@ sub parse_params {
             return @params;
         }
         # ``my $x = shift;`` style — accumulate
-        if ($bline =~ /^\s*my\s+\$(\w+)\s*=\s*shift\s*;/) {
+        if ($bline =~ /\bmy\s+\$(\w+)\s*=\s*shift\s*;/) {
             push @params, { name => $1, sigil => '' };
             next;
         }
+        # Skip the sub-declaration line itself - it's only included so that
+        # single-line definitions get parsed.
+        next if $bline =~ /^\s*sub\s+\w+/;
         # First non-blank non-comment line that doesn't match either pattern:
         # stop accumulating shift-style and return what we have.
         if ($bline =~ /^\s*[^#\s]/ && !@params) {

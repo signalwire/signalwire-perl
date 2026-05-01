@@ -167,7 +167,7 @@ my %PACKAGE_TO_PY = (
     'SignalWire::REST::Namespaces::Chat'          => { module => 'signalwire.rest.namespaces.chat',       class => 'ChatResource' },
     'SignalWire::REST::Namespaces::PubSub'        => { module => 'signalwire.rest.namespaces.pubsub',     class => 'PubSubResource' },
     'SignalWire::REST::Namespaces::PhoneNumbers'  => { module => 'signalwire.rest.namespaces.phone_numbers', class => 'PhoneNumbersResource' },
-    'SignalWire::REST::Namespaces::Datasphere'    => { module => 'signalwire.rest.namespaces.datasphere', class => undef },
+    'SignalWire::REST::Namespaces::Datasphere'    => { module => 'signalwire.rest.namespaces.datasphere', class => 'DatasphereNamespace' },
     'SignalWire::REST::Namespaces::Datasphere::Documents' => { module => 'signalwire.rest.namespaces.datasphere', class => 'DatasphereDocuments' },
     'SignalWire::REST::Namespaces::Project'       => { module => 'signalwire.rest.namespaces.project',    class => 'ProjectNamespace' },
     'SignalWire::REST::Namespaces::Project::Tokens' => { module => 'signalwire.rest.namespaces.project',  class => 'ProjectTokens' },
@@ -216,17 +216,17 @@ my %PACKAGE_TO_PY = (
 
     # REST: Fabric.pm — multi-package (Python surface under rest.namespaces.fabric)
     'SignalWire::REST::Namespaces::Fabric'                     => { module => 'signalwire.rest.namespaces.fabric', class => 'FabricNamespace' },
-    'SignalWire::REST::Namespaces::Fabric::Addresses'          => { module => 'signalwire.rest.namespaces.fabric', class => 'AddressesResource' },
+    'SignalWire::REST::Namespaces::Fabric::Addresses'          => { module => 'signalwire.rest.namespaces.fabric', class => 'FabricAddresses' },
     'SignalWire::REST::Namespaces::Fabric::Subscribers'        => { module => 'signalwire.rest.namespaces.fabric', class => 'SubscribersResource' },
     'SignalWire::REST::Namespaces::Fabric::Tokens'             => { module => 'signalwire.rest.namespaces.fabric', class => 'FabricTokens' },
     'SignalWire::REST::Namespaces::Fabric::GenericResources'   => { module => 'signalwire.rest.namespaces.fabric', class => 'GenericResources' },
     'SignalWire::REST::Namespaces::Fabric::SwmlWebhooks'       => { module => 'signalwire.rest.namespaces.fabric', class => 'SwmlWebhooksResource' },
     # Other Fabric::* subpackages are helpers that have no 1:1 Python
     # equivalent; they'll land in PORT_ADDITIONS.md under rest.namespaces.fabric.
-    'SignalWire::REST::Namespaces::Fabric::Resource'              => { module => 'signalwire.rest.namespaces.fabric', class => 'Resource' },
+    'SignalWire::REST::Namespaces::Fabric::Resource'              => { module => 'signalwire.rest.namespaces.fabric', class => 'FabricResource' },
     'SignalWire::REST::Namespaces::Fabric::AutoMaterializedWebhook' => { module => 'signalwire.rest.namespaces.fabric', class => 'AutoMaterializedWebhook' },
     'SignalWire::REST::Namespaces::Fabric::CxmlWebhooks'          => { module => 'signalwire.rest.namespaces.fabric', class => 'CxmlWebhooksResource' },
-    'SignalWire::REST::Namespaces::Fabric::ResourcePUT'           => { module => 'signalwire.rest.namespaces.fabric', class => 'ResourcePUT' },
+    'SignalWire::REST::Namespaces::Fabric::ResourcePUT'           => { module => 'signalwire.rest.namespaces.fabric', class => 'FabricResourcePUT' },
     'SignalWire::REST::Namespaces::Fabric::CallFlows'             => { module => 'signalwire.rest.namespaces.fabric', class => 'CallFlowsResource' },
     'SignalWire::REST::Namespaces::Fabric::ConferenceRooms'       => { module => 'signalwire.rest.namespaces.fabric', class => 'ConferenceRoomsResource' },
     'SignalWire::REST::Namespaces::Fabric::CxmlApplications'      => { module => 'signalwire.rest.namespaces.fabric', class => 'CxmlApplicationsResource' },

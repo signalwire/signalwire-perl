@@ -85,6 +85,12 @@ sub delete_recording {
     return $self->_http->delete_request($self->_path($recording_id));
 }
 
+# Python parity alias.
+sub delete {
+    my ($self, $recording_id) = @_;
+    return $self->_http->delete_request($self->_path($recording_id));
+}
+
 sub list_events {
     my ($self, $recording_id, %params) = @_;
     my $p = %params ? \%params : undef;
@@ -145,6 +151,12 @@ sub update {
 }
 
 sub delete_stream {
+    my ($self, $stream_id) = @_;
+    return $self->_http->delete_request($self->_path($stream_id));
+}
+
+# Python parity alias.
+sub delete {
     my ($self, $stream_id) = @_;
     return $self->_http->delete_request($self->_path($stream_id));
 }
