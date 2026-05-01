@@ -21,6 +21,9 @@ use Time::HiRes qw(sleep);
 use IPC::Open3 ();
 use Symbol ();
 use IO::Handle ();
+use File::Spec ();
+use Cwd ();
+use Config ();
 
 use SignalWire::REST::RestClient;
 
@@ -116,6 +119,30 @@ sub _ua {
     return $_UA ||= HTTP::Tiny->new( timeout => 5 );
 }
 
+# Walk this file's directory upward looking for an adjacent
+# ../porting-sdk/test_harness/<name>/<name>/__init__.py.
+#
+# Returns the absolute path to the directory containing the Python package
+# (the value to put on PYTHONPATH so that `python -m <name>` resolves), or
+# undef when no adjacent porting-sdk is reachable.
+sub discover_porting_sdk_package {
+    my ($name) = @_;
+    my $here = Cwd::abs_path(__FILE__);
+    return undef unless defined $here;
+    my $dir = File::Spec->canonpath((File::Spec->splitpath($here))[1]);
+    # File::Spec->splitpath returns trailing slash on the directory, strip.
+    $dir =~ s{[/\\]$}{};
+    while (1) {
+        my $parent = File::Spec->canonpath(File::Spec->catdir($dir, File::Spec->updir));
+        last if $parent eq $dir;
+        my $candidate = File::Spec->catdir($parent, 'porting-sdk', 'test_harness', $name);
+        my $init = File::Spec->catfile($candidate, $name, '__init__.py');
+        return $candidate if -f $init;
+        $dir = $parent;
+    }
+    return undef;
+}
+
 sub _ensure_server {
     return if $_ENSURED;
     $_ENSURED = 1;
@@ -125,6 +152,20 @@ sub _ensure_server {
         # Reuse whatever's already listening (we did not spawn it).
         return;
     }
+
+    # Try to inject porting-sdk/test_harness/mock_signalwire/ into
+    # PYTHONPATH so `python -m mock_signalwire` resolves without a prior
+    # `pip install -e ...`. Adjacency contract: porting-sdk next to
+    # signalwire-perl in ~/src/. When the walk fails we still spawn — the
+    # child falls back to whatever is on the system Python's sys.path,
+    # and the readiness probe surfaces a clear timeout error if neither
+    # mode is available.
+    my $pkg_dir = discover_porting_sdk_package('mock_signalwire');
+    my $sep = $Config::Config{path_sep} // ':';
+    my $existing = defined $ENV{PYTHONPATH} ? $ENV{PYTHONPATH} : '';
+    local $ENV{PYTHONPATH} = defined $pkg_dir
+        ? ($existing ne '' ? "$pkg_dir$sep$existing" : $pkg_dir)
+        : $existing;
 
     # Try to spawn `python -m mock_signalwire`. On any failure, set the
     # skip reason and leave it to client() to plan(skip_all).
@@ -164,7 +205,9 @@ sub _ensure_server {
         sleep 0.2;
     }
 
-    $_SKIP_REASON = "mock_signalwire did not become ready on $BASE_URL within 30s";
+    $_SKIP_REASON = "mock_signalwire did not become ready on $BASE_URL within 30s "
+                  . "(clone porting-sdk next to signalwire-perl so tests can find "
+                  . "porting-sdk/test_harness/mock_signalwire/, or pip install the mock_signalwire package)";
     eval { kill 'TERM', $_MOCK_PID } if $_MOCK_PID;
 }
 
