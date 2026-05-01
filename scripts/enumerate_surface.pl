@@ -119,6 +119,7 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Relay::Action'    => { module => 'signalwire.relay.call',    class => 'Action'      },
     'SignalWire::Relay::Action::AI'         => { module => 'signalwire.relay.call', class => 'AIAction'         },
     'SignalWire::Relay::Action::Collect'    => { module => 'signalwire.relay.call', class => 'CollectAction'    },
+    'SignalWire::Relay::Action::StandaloneCollect' => { module => 'signalwire.relay.call', class => 'StandaloneCollectAction' },
     'SignalWire::Relay::Action::Detect'     => { module => 'signalwire.relay.call', class => 'DetectAction'     },
     'SignalWire::Relay::Action::Fax'        => { module => 'signalwire.relay.call', class => 'FaxAction'        },
     'SignalWire::Relay::Action::Pay'        => { module => 'signalwire.relay.call', class => 'PayAction'        },

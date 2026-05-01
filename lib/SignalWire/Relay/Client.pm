@@ -20,11 +20,14 @@ use SignalWire::Logging;
 
 my $logger = SignalWire::Logging->get_logger('relay_client');
 
-has 'project'  => ( is => 'ro', required => 1 );
-has 'token'    => ( is => 'ro', required => 1 );
+has 'project'  => ( is => 'ro', default => sub { '' } );
+has 'token'    => ( is => 'ro', default => sub { '' } );
 has 'host'     => ( is => 'ro', required => 1 );
 has 'contexts' => ( is => 'rw', default => sub { [] } );
 has 'agent'    => ( is => 'ro', default => sub { 'signalwire-agents-perl/1.0' } );
+# Optional JWT-based authentication (alternative to project/token).
+has 'jwt_token' => ( is => 'ro', default => sub { '' } );
+has '_jwt_token' => ( is => 'rw', default => sub { '' } );
 # Scheme: "wss" (production, TLS — the default) or "ws" (plain, used by
 # the local audit fixture in audit_relay_handshake.py). Keeping this
 # explicit lets the same client drive both real RELAY and a 127.0.0.1
@@ -39,6 +42,11 @@ has 'protocol'            => ( is => 'rw', default => sub { '' } );
 has 'authorization_state' => ( is => 'rw', default => sub { '' } );
 has 'connected'           => ( is => 'rw', default => sub { 0 } );
 has 'session_id'          => ( is => 'rw', default => sub { '' } );
+
+# Aliases for Python parity (same value, different names).
+sub relay_protocol { $_[0]->protocol }
+sub _connected     { $_[0]->connected }
+sub _authorization_state { $_[0]->authorization_state }
 
 # Correlation maps
 has '_pending'       => ( is => 'rw', default => sub { {} } );  # rpc_id => { resolve => sub, reject => sub }
@@ -94,6 +102,25 @@ sub on_event {
 }
 
 # --- Connection ---
+
+# Public connect: opens the WebSocket and runs the signalwire.connect
+# handshake in one call (matches Python RelayClient.connect()). Returns
+# the authenticate result hashref on success, dies on failure.
+sub connect {
+    my ($self) = @_;
+    die "project and token are required (or jwt_token)"
+        unless ($self->project && $self->token) || $self->jwt_token || $self->_jwt_token;
+    my $ok = $self->connect_ws;
+    die "WebSocket connect failed" unless $ok;
+    return $self->authenticate;
+}
+
+# Public disconnect: tears down the WebSocket transport. Mirrors
+# Python RelayClient.disconnect().
+sub disconnect {
+    my ($self) = @_;
+    return $self->disconnect_ws;
+}
 
 sub connect_ws {
     my ($self) = @_;
@@ -186,23 +213,28 @@ sub connect_ws {
 sub authenticate {
     my ($self) = @_;
 
+    # Build authentication block: either project/token or jwt_token.
+    my %auth;
+    my $jwt = $self->jwt_token || $self->_jwt_token;
+    if ($jwt) {
+        $auth{jwt_token} = $jwt;
+    } else {
+        $auth{project} = $self->project;
+        $auth{token}   = $self->token;
+    }
+
     my %params = (
         version        => PROTOCOL_VERSION,
         agent          => $self->agent,
         event_acks     => JSON::true,
-        authentication => {
-            project => $self->project,
-            token   => $self->token,
-        },
-        # Mirror project/token at the top level too. Python's reference
-        # nests under `authentication` (relay/client.py:268). The
-        # SignalWire RELAY service tolerates both shapes; emitting both
-        # keeps us compatible with audit fixtures that only watch
-        # `params.project` (audit_relay_handshake.py — same convention
-        # the Rust agent landed on per SUBAGENT_PLAYBOOK lessons).
-        project        => $self->project,
-        token          => $self->token,
+        authentication => \%auth,
     );
+    # Mirror project/token at the top level when not using JWT (Rust agent
+    # convention; production tolerates both shapes).
+    unless ($jwt) {
+        $params{project} = $self->project;
+        $params{token}   = $self->token;
+    }
 
     # Add contexts if any
     if (@{$self->contexts}) {
@@ -281,10 +313,23 @@ sub execute {
 sub send_message {
     my ($self, %opts) = @_;
 
-    my %params;
-    for my $key (qw(context to_number from_number body media tags region)) {
-        $params{$key} = $opts{$key} if exists $opts{$key};
-    }
+    die "At least one of body or media is required"
+        unless (defined $opts{body} && length $opts{body})
+            || (ref $opts{media} eq 'ARRAY' && @{$opts{media}});
+
+    # Default context to the relay protocol or 'default' (matches Python).
+    my $msg_context = $opts{context} // $self->protocol // '';
+    $msg_context = 'default' unless length $msg_context;
+
+    my %params = (
+        context     => $msg_context,
+        to_number   => $opts{to_number}   // '',
+        from_number => $opts{from_number} // '',
+    );
+    $params{body}   = $opts{body}   if defined $opts{body}   && length $opts{body};
+    $params{media}  = $opts{media}  if ref $opts{media} eq 'ARRAY' && @{$opts{media}};
+    $params{tags}   = $opts{tags}   if ref $opts{tags}  eq 'ARRAY' && @{$opts{tags}};
+    $params{region} = $opts{region} if defined $opts{region} && length $opts{region};
 
     my $result = $self->execute('messaging.send', \%params);
 
@@ -417,8 +462,31 @@ sub _handle_message {
     my ($self, $raw) = @_;
     $logger->debug("RECV: $raw");
 
+    # Skip non-JSON-text frames. Protocol::WebSocket::Client doesn't
+    # surface frame opcode in on_read, so we sniff: a JSON-RPC frame
+    # always starts with '{'. Close/ping/pong control frames have a
+    # 16-bit status code or short binary payload that won't begin with
+    # '{', and decoding them as JSON would just spam the log.
+    return unless defined $raw && length $raw;
+    my $first;
+    if (utf8::is_utf8($raw)) {
+        $first = substr($raw, 0, 1);
+    } else {
+        $first = substr($raw, 0, 1);
+    }
+    return unless defined $first && $first eq '{';
+
+    # decode_json expects a byte string; if the payload arrived flagged
+    # utf8 (Perl saw a multibyte char in transit) we need to re-encode
+    # before parsing. Otherwise we hit "Wide character in subroutine entry".
     my $msg;
-    eval { $msg = decode_json($raw) };
+    if (utf8::is_utf8($raw)) {
+        my $bytes = $raw;
+        utf8::encode($bytes);
+        eval { $msg = decode_json($bytes) };
+    } else {
+        eval { $msg = decode_json($raw) };
+    }
     if ($@) {
         $logger->error("JSON parse error: $@");
         return;

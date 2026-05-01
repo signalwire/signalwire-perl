@@ -163,12 +163,31 @@ sub _stop_method { 'calling.detect.stop' }
 
 sub detect_result { $_[0]->payload->{detect} // {} }
 
-# --- CollectAction ---
+# Detect resolves on the FIRST `params.detect` payload (the actual
+# detection result), not on a state(finished). Mirror Python's
+# ``DetectAction._check_event``.
+sub _handle_event {
+    my ($self, $event) = @_;
+    $self->SUPER::_handle_event($event);
+    return if $self->completed;
+    my $params = $event->params // {};
+    if (ref $params eq 'HASH'
+        && ref $params->{detect} eq 'HASH'
+        && %{$params->{detect}})
+    {
+        $self->_resolve($event);
+    }
+}
+
+# --- CollectAction (used by play_and_collect) ---
 package SignalWire::Relay::Action::Collect;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.collect.stop' }
+# play_and_collect's stop verb is calling.play_and_collect.stop, not
+# calling.collect.stop. The standalone collect uses StandaloneCollect
+# below.
+sub _stop_method { 'calling.play_and_collect.stop' }
 
 sub start_input_timers {
     my ($self) = @_;
@@ -178,15 +197,46 @@ sub start_input_timers {
 sub collect_result { $_[0]->payload->{result} // {} }
 
 # Override event handling: for play_and_collect, ignore play events
+# (play(finished) must NOT resolve a play_and_collect; only the collect
+# terminal event should — see RELAY_IMPLEMENTATION_GUIDE). Resolves on a
+# calling.call.collect event that carries a result, or a state in the
+# terminal-state map.
 sub _handle_event {
     my ($self, $event) = @_;
-    # If this is a play_and_collect action, only resolve on collect events
-    if ($event->event_type eq 'calling.call.play') {
-        # Ignore play events for collect actions (play_and_collect gotcha)
+    # Defense-in-depth: even if a caller hands us a play event (e.g. the
+    # legacy unit test that drives the action directly), we drop it so
+    # state doesn't update.
+    if (($event->event_type // '') eq 'calling.call.play') {
         return;
     }
     $self->SUPER::_handle_event($event);
+    return if $self->completed;
+    if ($event->event_type eq 'calling.call.collect') {
+        my $params = $event->params // {};
+        my $result = ref $params eq 'HASH' ? $params->{result} : undef;
+        if (ref $result eq 'HASH' && %$result) {
+            $self->_resolve($event);
+        }
+    }
 }
+
+# Filter calling.call.play events: Call's dispatcher consults this method
+# before handing the event to the action so play events neither dispatch
+# nor (more importantly) trigger terminal-state auto-resolve.
+sub _should_consume_event {
+    my ($self, $event) = @_;
+    return 0 if ($event->event_type // '') eq 'calling.call.play';
+    return 1;
+}
+
+# --- StandaloneCollectAction ---
+package SignalWire::Relay::Action::StandaloneCollect;
+use Moo;
+extends 'SignalWire::Relay::Action::Collect';
+
+# Standalone collect uses calling.collect.stop, not the
+# play_and_collect.stop variant.
+sub _stop_method { 'calling.collect.stop' }
 
 # --- FaxAction ---
 package SignalWire::Relay::Action::Fax;

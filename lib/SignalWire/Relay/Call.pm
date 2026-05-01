@@ -102,14 +102,30 @@ sub dispatch_event {
     my $control_id = $event->can('control_id') ? $event->control_id : '';
     if ($control_id && exists $self->_actions->{$control_id}) {
         my $action = $self->_actions->{$control_id};
-        $action->_handle_event($event);
+        # The action decides whether to consume the event. play_and_collect's
+        # CollectAction filters calling.call.play events out entirely so they
+        # neither dispatch nor terminally resolve.
+        my $consumed = 1;
+        if ($action->can('_should_consume_event')) {
+            $consumed = $action->_should_consume_event($event);
+        }
+        if ($consumed) {
+            $action->_handle_event($event);
 
-        # Check if action reached terminal state
-        my $terminal = ACTION_TERMINAL_STATES->{$event_type} // {};
-        my $action_state = $event->can('state') ? ($event->state // '') : '';
-        if ($terminal->{$action_state}) {
-            $action->_resolve($event);
-            delete $self->_actions->{$control_id};
+            # Check if action reached terminal state — but only for events
+            # the action consumed, AND only if the action hasn't already
+            # decided to resolve itself in _handle_event (e.g. Detect on
+            # first detect payload).
+            unless ($action->completed) {
+                my $terminal = ACTION_TERMINAL_STATES->{$event_type} // {};
+                my $action_state = $event->can('state') ? ($event->state // '') : '';
+                if ($terminal->{$action_state}) {
+                    $action->_resolve($event);
+                }
+            }
+            if ($action->completed) {
+                delete $self->_actions->{$control_id};
+            }
         }
     }
 
@@ -297,7 +313,7 @@ sub detect {
 
 sub collect {
     my ($self, %opts) = @_;
-    return $self->_start_action('calling.collect', 'SignalWire::Relay::Action::Collect', %opts);
+    return $self->_start_action('calling.collect', 'SignalWire::Relay::Action::StandaloneCollect', %opts);
 }
 
 sub play_and_collect {

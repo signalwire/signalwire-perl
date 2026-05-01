@@ -334,11 +334,17 @@ use_ok('SignalWire::Relay::Action');
     is($action->_stop_method, 'calling.detect.stop', 'detect stop method');
 }
 
-# CollectAction -- filters play events
+# CollectAction -- play_and_collect variant filters play events. The
+# standalone collect is StandaloneCollect (different stop verb).
 {
     my $action = SignalWire::Relay::Action::Collect->new(control_id => 'coll-1');
-    is($action->_stop_method, 'calling.collect.stop', 'collect stop method');
+    is($action->_stop_method, 'calling.play_and_collect.stop',
+       'play_and_collect stop method');
     ok($action->can('start_input_timers'), 'collect can start_input_timers');
+
+    my $standalone = SignalWire::Relay::Action::StandaloneCollect->new(control_id => 'sc-1');
+    is($standalone->_stop_method, 'calling.collect.stop',
+       'standalone collect stop method');
 
     # Play event should be ignored
     my $play_event = SignalWire::Relay::Event->parse_event('calling.call.play', {
