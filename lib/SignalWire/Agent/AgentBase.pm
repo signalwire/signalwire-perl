@@ -229,17 +229,26 @@ sub get_prompt {
     return $self->prompt_text;
 }
 
-# Read-only snapshot of the agent's POM section list.
+# Read-only snapshot of the agent's POM as a typed
+# SignalWire::POM::PromptObjectModel object.
 #
 # Python parity: ``agent.pom`` instance attribute (agent_base.py
-# line 209). Returns ``undef`` when ``use_pom`` is false (mirroring
-# Python's ``self.pom = None``); otherwise returns a deep-cloned arrayref
-# of section hashrefs so callers cannot mutate internal state.
+# line 209) — Python returns a PromptObjectModel instance built from
+# ``pom_sections`` (or None when ``use_pom`` is false). This Perl port
+# mirrors that contract: undef when use_pom is off, otherwise a fresh
+# PromptObjectModel constructed from a deep-cloned copy of the
+# internal section list so caller mutations cannot leak back.
 sub pom {
     my ($self) = @_;
     return undef unless $self->use_pom;
     require Storable;
-    return Storable::dclone($self->pom_sections);
+    require SignalWire::POM::PromptObjectModel;
+    my $cloned = Storable::dclone($self->pom_sections);
+    # Empty pom_sections still returns a PromptObjectModel (Python
+    # parity: ``self.pom = PromptObjectModel()`` even when no sections
+    # have been added).
+    return SignalWire::POM::PromptObjectModel->new if !@$cloned;
+    return SignalWire::POM::PromptObjectModel->_from_data($cloned);
 }
 
 # Returns the post-prompt text whatever set_post_prompt stored, or

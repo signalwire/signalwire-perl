@@ -10,6 +10,9 @@ WriteMakefile(
     PREREQ_PM => {
         'Moo'               => '2.0',
         'JSON'              => '4.0',
+        'JSON::PP'          => 0,
+        'YAML::PP'          => 0,
+        'Tie::IxHash'       => 0,
         'Plack'             => '1.0',
         'Plack::Request'    => 0,
         'HTTP::Tiny'        => 0,
@@ -19,6 +22,7 @@ WriteMakefile(
     },
     TEST_REQUIRES => {
         'Test::More'        => '0.98',
+        'Test::Exception'   => 0,
         'Plack::Test'       => 0,
         'HTTP::Request::Common' => 0,
     },

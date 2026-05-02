@@ -6313,6 +6313,419 @@
         }
       }
     },
+    "signalwire.pom.pom": {
+      "classes": {
+        "PromptObjectModel": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "debug",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "sections",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "add_pom_as_subsection": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "target",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "pom_to_add",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "add_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "title",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "bullets",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "numbered",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "numberedBullets",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "debug": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "find_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "title",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "from_json": {
+              "params": [
+                {
+                  "name": "json_data",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "from_yaml": {
+              "params": [
+                {
+                  "name": "yaml_data",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "render_markdown": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "render_xml": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "sections": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_dict": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_hash": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_json": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_yaml": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        },
+        "Section": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "title",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "bullets",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "numbered",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "numberedBullets",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "subsections",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "add_body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "add_bullets": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "bullets",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "add_subsection": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "title",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "bullets",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "numbered",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "numberedBullets",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "bullets": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "numbered": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "numberedBullets": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "render_markdown": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "level",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "section_number",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "render_xml": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "indent",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "section_number",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "subsections": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "title": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_dict": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_hash": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
     "signalwire.prefabs.concierge": {
       "classes": {
         "ConciergeAgent": {

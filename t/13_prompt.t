@@ -224,15 +224,21 @@ subtest 'prompt LLM params in SWML' => sub {
 #
 # Mirrors signalwire-python tests/unit/core/test_agent_base.py::
 #   TestAgentBasePromptMethods::test_set_prompt_pom_succeeds_when_use_pom_true
+#
+# As of 2026-04-30: ``$agent->pom`` returns a typed
+# SignalWire::POM::PromptObjectModel object (was an arrayref of section
+# hashes). The typed object exposes the same data via Section accessors
+# plus markdown/xml/json rendering — matching Python's PromptObjectModel.
 # ============================================================
-subtest 'pom returns sections after prompt_add_section' => sub {
+subtest 'pom returns PromptObjectModel after prompt_add_section' => sub {
     my $agent = SignalWire::Agent::AgentBase->new(name => 'pom1');
     $agent->prompt_add_section('Greeting', 'Hello');
     my $pom = $agent->pom;
     ok(defined $pom, 'pom is defined');
-    is(scalar @$pom, 1, 'one section');
-    is($pom->[0]{title}, 'Greeting', 'title');
-    is($pom->[0]{body}, 'Hello', 'body');
+    isa_ok($pom, 'SignalWire::POM::PromptObjectModel');
+    is(scalar @{ $pom->sections }, 1, 'one section');
+    is($pom->sections->[0]->title, 'Greeting', 'title');
+    is($pom->sections->[0]->body, 'Hello', 'body');
 };
 
 subtest 'pom returns undef when use_pom is false' => sub {
@@ -240,16 +246,18 @@ subtest 'pom returns undef when use_pom is false' => sub {
     is($agent->pom, undef, 'pom returns undef when use_pom is false');
 };
 
-subtest 'pom returns deep clone (caller mutation cannot leak)' => sub {
+subtest 'pom returns a fresh object — caller mutation cannot leak' => sub {
     my $agent = SignalWire::Agent::AgentBase->new(name => 'pom_clone');
     $agent->prompt_add_section('Original', 'Body');
     my $pom = $agent->pom;
-    push @$pom, { title => 'Injected' };
-    $pom->[0]{title} = 'Hijacked';
+    # Mutate the returned PromptObjectModel: add a new section, rename
+    # the existing one. Neither change must leak back to the agent.
+    $pom->add_section(title => 'Injected', body => 'leaked');
+    $pom->sections->[0]->title('Hijacked');
 
     my $fresh = $agent->pom;
-    is(scalar @$fresh, 1, 'caller append did not leak');
-    is($fresh->[0]{title}, 'Original', 'caller mutation did not leak');
+    is(scalar @{ $fresh->sections }, 1, 'caller add_section did not leak');
+    is($fresh->sections->[0]->title, 'Original', 'caller mutation did not leak');
 };
 
 done_testing;

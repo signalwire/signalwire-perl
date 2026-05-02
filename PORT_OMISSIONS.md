@@ -323,28 +323,8 @@ signalwire.mcp_gateway.session_manager.SessionManager.shutdown: mcp-gateway-stan
 
 ## pom-standalone-tooling
 
-The standalone `signalwire.pom.pom` / `pom_tool` modules (command-line POM renderer and pure Prompt Object Model with Section class) are Python-specific helpers. The Perl port builds POM inline via `prompt_add_section` / `prompt_add_subsection` on AgentBase, which is the same contract exposed through a different shape. A dedicated Perl POM module would be re-invention; it will be added when a user wants POM-without-agent.
+The `signalwire.pom.pom_tool` CLI helper (`pom-tool` / `python -m signalwire.pom.pom_tool`) is a Python-only entry point — same role the Perl SDK fills via `prove`/standalone scripts. The standalone Prompt Object Model itself (`signalwire.pom.pom.PromptObjectModel` and `Section`) IS now ported in Perl as `SignalWire::POM::PromptObjectModel` / `SignalWire::POM::Section` (lib/SignalWire/POM/), with byte-for-byte parity verified by t/pom/prompt_object_model.t.
 
-signalwire.pom.pom.PromptObjectModel: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.__init__: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.add_pom_as_subsection: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.add_section: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.find_section: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.from_json: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.from_yaml: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.render_markdown: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.render_xml: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.to_dict: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.to_json: pom-standalone-tooling
-signalwire.pom.pom.PromptObjectModel.to_yaml: pom-standalone-tooling
-signalwire.pom.pom.Section: pom-standalone-tooling
-signalwire.pom.pom.Section.__init__: pom-standalone-tooling
-signalwire.pom.pom.Section.add_body: pom-standalone-tooling
-signalwire.pom.pom.Section.add_bullets: pom-standalone-tooling
-signalwire.pom.pom.Section.add_subsection: pom-standalone-tooling
-signalwire.pom.pom.Section.render_markdown: pom-standalone-tooling
-signalwire.pom.pom.Section.render_xml: pom-standalone-tooling
-signalwire.pom.pom.Section.to_dict: pom-standalone-tooling
 signalwire.pom.pom_tool.detect_file_format: pom-standalone-tooling
 signalwire.pom.pom_tool.load_pom: pom-standalone-tooling
 signalwire.pom.pom_tool.main: pom-standalone-tooling

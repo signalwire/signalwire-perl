@@ -247,6 +247,12 @@ my %PACKAGE_TO_PY = (
     # SWML
     'SignalWire::SWML::Document' => { module => 'signalwire.core.swml_builder',  class => 'SWMLBuilder' },
     'SignalWire::SWML::Schema'   => { module => 'signalwire.utils.schema_utils', class => 'SchemaUtils' },
+
+    # POM — typed Prompt Object Model. Python lives in ``signalwire.pom.pom``;
+    # Perl mirrors the same shape under ``SignalWire::POM::*`` and projects
+    # both classes back to the canonical Python paths.
+    'SignalWire::POM::PromptObjectModel' => { module => 'signalwire.pom.pom', class => 'PromptObjectModel' },
+    'SignalWire::POM::Section'           => { module => 'signalwire.pom.pom', class => 'Section' },
 );
 
 # -------------------------------------------------------------------------
@@ -414,6 +420,15 @@ my %METHOD_OVERRIDES = (
     },
     'SignalWire::SWAIG::FunctionResult' => {
         'to_hash' => { module => 'signalwire.core.function_result', class => 'FunctionResult', method => 'to_dict' },
+    },
+    # POM Section/PromptObjectModel: same to_hash -> to_dict rename as the
+    # Contexts/FunctionResult families above; the underlying serialised
+    # shape is identical between languages.
+    'SignalWire::POM::Section' => {
+        'to_hash' => { module => 'signalwire.pom.pom', class => 'Section', method => 'to_dict' },
+    },
+    'SignalWire::POM::PromptObjectModel' => {
+        'to_hash' => { module => 'signalwire.pom.pom', class => 'PromptObjectModel', method => 'to_dict' },
     },
 
     # SWML::Service auth methods come from AuthMixin in Python (declared

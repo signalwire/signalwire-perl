@@ -3,6 +3,9 @@ requires 'perl', '5.026';
 # Core
 requires 'Moo', '2.0';
 requires 'JSON', '4.0';
+requires 'JSON::PP';
+requires 'YAML::PP';
+requires 'Tie::IxHash';
 requires 'Plack', '1.0';
 requires 'Plack::Request';
 requires 'HTTP::Tiny';
