@@ -10,10 +10,17 @@ See also: PORT_OMISSIONS.md for Python-reference symbols we deliberately skip.
 
 signalwire.agent_server.AgentServer.list_agents: port-only accessor: Perl convention surfaces a list-style getter where Python uses a generator or direct attribute access
 signalwire.agent_server.AgentServer.psgi_app: port-only: Perl ports use Plack/PSGI; psgi_app returns a coderef any Plack handler consumes
+signalwire.core.agent_base.AgentBase.create_tool_token: prompt_mixin_lifted: Perl rolls up StateMixin / SessionManager onto AgentBase so callers don't reach into a sub-object — mirrors the documented tool_mixin_lifted pattern
+signalwire.core.agent_base.AgentBase.get_contexts: prompt_mixin_lifted: Perl AgentBase exposes a get_contexts() accessor for the contexts list; Python uses PromptMixin.contexts (attribute access)
+signalwire.core.agent_base.AgentBase.get_post_prompt: prompt_mixin_lifted: Perl rolls up PromptMixin onto AgentBase; Python keeps these on PromptMixin (mirrors tool_mixin_lifted pattern)
+signalwire.core.agent_base.AgentBase.get_raw_prompt: prompt_mixin_lifted: Perl rolls up PromptMixin onto AgentBase; Python keeps these on PromptMixin (mirrors tool_mixin_lifted pattern)
 signalwire.core.agent_base.AgentBase.list_tool_names: port-only helper used by ContextBuilder->validate to surface reserved-name collisions
+signalwire.core.agent_base.AgentBase.pom: port-only Perl accessor returning the underlying SignalWire::POM::PromptObjectModel instance; Python keeps the POM private inside PromptMixin
 signalwire.core.agent_base.AgentBase.psgi_app: port-only: Perl ports use Plack/PSGI; psgi_app returns a coderef any Plack handler consumes
 signalwire.core.agent_base.AgentBase.render_swml: port-only public alias: Perl exposes render_swml as the method users call to dump SWML; Python keeps this internal
 signalwire.core.agent_base.AgentBase.set_answer_config: port-only helper: wires AnswerConfig into SWML rendering; Python threads these through AIConfigMixin
+signalwire.core.agent_base.AgentBase.set_prompt_pom: prompt_mixin_lifted: Perl rolls up PromptMixin onto AgentBase; Python keeps these on PromptMixin (mirrors tool_mixin_lifted pattern)
+signalwire.core.agent_base.AgentBase.validate_tool_token: prompt_mixin_lifted: Perl rolls up StateMixin onto AgentBase; Python keeps validate_tool_token on StateMixin (mirrors tool_mixin_lifted pattern)
 signalwire.core.contexts.ContextBuilder.attach_agent: port-only: weak-ref back to agent so validate() can check reserved tool-name collisions; Python avoids this via Python-level closures
 signalwire.core.contexts.ContextBuilder.has_contexts: port-only: explicit presence check used in AgentBase build path; Python uses `if cb.contexts` idiom
 signalwire.core.contexts.ContextBuilder.to_hashref: port-only: alias to to_dict that returns the nested hashref explicitly (Perl idiom)
@@ -34,10 +41,16 @@ signalwire.core.swml_builder.SWMLBuilder.to_pretty_json: port-only: SWML::Docume
 signalwire.core.swml_service.SWMLService.can: port-only: Perl can() accessor (Moo plumbing) — surfaced because SWMLService defines it; harmless but recorded
 signalwire.core.swml_service.SWMLService.define_tool: tool_mixin_lifted: Perl folds Python's ToolMixin (which Python composes into AgentBase) directly into SWMLService — so SWMLService standalone can host SWAIG tools without subclassing AgentBase. Mirrors Python's ToolMixin.define_tool exactly; just lives on a different class.
 signalwire.core.swml_service.SWMLService.define_tools: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.define_tools.
+signalwire.core.swml_service.SWMLService.get_all_functions: tool_mixin_lifted: Perl exposes the tool registry's accessors directly on SWMLService; Python keeps these on ToolRegistry (accessed via agent.tool_registry.get_all_functions()).
+signalwire.core.swml_service.SWMLService.get_basic_auth_credentials_with_source: port-only: Perl exposes a "with-source" variant that also returns where the credentials came from (env vs config vs explicit), used by debug routes; Python uses get_basic_auth_credentials() and infers source from logs.
+signalwire.core.swml_service.SWMLService.get_function: tool_mixin_lifted: Perl exposes the tool registry's accessors directly on SWMLService; Python keeps these on ToolRegistry (accessed via agent.tool_registry.get_function()).
 signalwire.core.swml_service.SWMLService.handle_additional_route: port-only: Perl exposes a hook for subclasses to mount extra routes onto the inherited PSGI app; Python achieves this via @app.route decorators.
+signalwire.core.swml_service.SWMLService.has_function: tool_mixin_lifted: Perl exposes the tool registry's accessors directly on SWMLService; Python keeps these on ToolRegistry (accessed via agent.tool_registry.has_function()).
 signalwire.core.swml_service.SWMLService.list_tool_names: port-only convenience accessor: returns the registered tool names in insertion order. Used by ContextBuilder->validate to surface reserved-name collisions; Python uses `cb._tools.keys()` directly.
 signalwire.core.swml_service.SWMLService.on_function_call: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.on_function_call.
+signalwire.core.swml_service.SWMLService.on_swml_request: web_mixin_lifted: Perl rolls up WebMixin onto SWMLService so subclasses (notably AgentBase) can override the SWML-request hook directly; Python keeps on_swml_request on WebMixin (mirrors tool_mixin_lifted pattern).
 signalwire.core.swml_service.SWMLService.register_swaig_function: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.register_swaig_function.
+signalwire.core.swml_service.SWMLService.remove_function: tool_mixin_lifted: Perl exposes the tool registry's mutators directly on SWMLService; Python keeps these on ToolRegistry (accessed via agent.tool_registry.remove_function()).
 signalwire.core.swml_service.SWMLService.render_main_swml: port-only public hook: Perl exposes the main-section render path so subclasses can override; Python achieves this via _render_document overrides.
 signalwire.core.swml_service.SWMLService.render_swml: port-only public alias: Perl exposes render_swml as the method users call to dump SWML; Python keeps this internal
 signalwire.core.swml_service.SWMLService.swaig_pre_dispatch: port-only public hook: subclasses (notably AgentBase) override this to inject session-token validation and dynamic-config callbacks into the /swaig request path; Python uses _swaig_pre_dispatch (private with leading underscore).
@@ -74,6 +87,7 @@ signalwire.rest.namespaces.calling.CallingNamespace.update_call: port-only helpe
 signalwire.rest.namespaces.fabric.AddressesResource: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
 signalwire.rest.namespaces.fabric.AddressesResource.get: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
 signalwire.rest.namespaces.fabric.AddressesResource.list: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
+signalwire.rest.namespaces.fabric.FabricResource.list_addresses: crud_with_addresses_lifted: Perl folds Python's CrudWithAddresses.list_addresses mixin onto the FabricResource base class so all fabric resource classes inherit it; Python keeps it on the abstract CrudWithAddresses parent.
 signalwire.rest.namespaces.fabric.Resource: port-only: internal helper class for the Fabric resource indirection; Python does not expose a top-level Resource class
 signalwire.rest.namespaces.fabric.Resource.list_addresses: port-only: internal helper class for the Fabric resource indirection; Python does not expose a top-level Resource class
 signalwire.rest.namespaces.fabric.ResourcePUT: port-only: internal helper class for the Fabric resource indirection; Python does not expose a top-level Resource class
