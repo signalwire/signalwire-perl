@@ -39,6 +39,7 @@ jobs:
           repository: signalwire/porting-sdk
           path: porting-sdk
           fetch-depth: 1
+          token: ${{ secrets.PORTING_SDK_TOKEN }}
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1
