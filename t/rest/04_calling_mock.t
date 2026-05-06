@@ -39,6 +39,40 @@ sub _assert_command {
 # -------------------- Lifecycle --------------------
 
 subtest 'TestCallingLifecycle' => sub {
+    subtest 'dial codecs array' => sub {
+        my $client = MockTest::client();
+        my $body = $client->calling->dial(
+            url    => 'https://example.com/swml',
+            to     => '+15551234567',
+            codecs => [ 'OPUS', 'G729', 'VP8', 'PCMA' ],
+        );
+        is(ref $body, 'HASH', 'response is a hashref');
+        ok(exists $body->{id}, 'response has id');
+        my $params = _assert_command('dial', undef);
+        is_deeply(
+            $params->{codecs},
+            [ 'OPUS', 'G729', 'VP8', 'PCMA' ],
+            'params.codecs is the array we sent',
+        );
+        is($params->{to}, '+15551234567', 'params.to forwarded');
+    };
+
+    subtest 'dial codecs string' => sub {
+        my $client = MockTest::client();
+        my $body = $client->calling->dial(
+            url    => 'https://example.com/swml',
+            to     => '+15551234567',
+            codecs => 'OPUS,G729,VP8,PCMA',
+        );
+        is(ref $body, 'HASH', 'response is a hashref');
+        my $params = _assert_command('dial', undef);
+        is(
+            $params->{codecs},
+            'OPUS,G729,VP8,PCMA',
+            'params.codecs is the comma-separated string we sent',
+        );
+    };
+
     subtest 'update' => sub {
         my $client = MockTest::client();
         my $body = $client->calling->update(id => 'call-1', state => 'hold');
