@@ -695,3 +695,4 @@ signalwire.utils.schema_utils.SchemaUtils.validate_verb: not_yet_implemented: ut
 signalwire.utils.schema_utils.SchemaValidationError: not_yet_implemented: utility helper pending
 signalwire.utils.schema_utils.SchemaValidationError.__init__: not_yet_implemented: utility helper pending
 signalwire.utils.url_validator.validate_url: not_yet_implemented: utility helper pending
+signalwire.core.security.webhook_middleware.make_webhook_validation_dependency: framework_specific: FastAPI dependency factory; Perl exposes Plack middleware as a class (SignalWire::Security::WebhookMiddleware) instead — see PORT_ADDITIONS.md

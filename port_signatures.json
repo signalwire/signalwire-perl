@@ -664,6 +664,11 @@
                   "required": false
                 },
                 {
+                  "name": "signing_key",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "basic_auth_user",
                   "type": "any",
                   "required": false
@@ -1443,6 +1448,15 @@
                   "name": "url",
                   "type": "any",
                   "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "signing_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
                 }
               ],
               "returns": "any"
@@ -5395,6 +5409,81 @@
         }
       }
     },
+    "signalwire.core.security.webhook_middleware": {
+      "classes": {},
+      "functions": {
+        "wrap": {
+          "params": [
+            {
+              "name": "self",
+              "kind": "cls"
+            },
+            {
+              "name": "opts",
+              "type": "dict<string,any>",
+              "required": true,
+              "kind": "var_keyword"
+            }
+          ],
+          "returns": "any"
+        }
+      }
+    },
+    "signalwire.core.security.webhook_validator": {
+      "classes": {},
+      "functions": {
+        "validate_request": {
+          "params": [
+            {
+              "name": "signing_key",
+              "type": "any",
+              "required": true
+            },
+            {
+              "name": "signature",
+              "type": "any",
+              "required": true
+            },
+            {
+              "name": "url",
+              "type": "any",
+              "required": true
+            },
+            {
+              "name": "params_or_raw_body",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        },
+        "validate_webhook_signature": {
+          "params": [
+            {
+              "name": "signing_key",
+              "type": "any",
+              "required": true
+            },
+            {
+              "name": "signature",
+              "type": "any",
+              "required": true
+            },
+            {
+              "name": "url",
+              "type": "any",
+              "required": true
+            },
+            {
+              "name": "raw_body",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        }
+      }
+    },
     "signalwire.core.skill_base": {
       "classes": {
         "SkillBase": {
@@ -7008,6 +7097,11 @@
                   "required": false
                 },
                 {
+                  "name": "signing_key",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "skill_manager",
                   "type": "any",
                   "required": false
@@ -7350,6 +7444,11 @@
                   "required": false
                 },
                 {
+                  "name": "signing_key",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "skill_manager",
                   "type": "any",
                   "required": false
@@ -7655,6 +7754,11 @@
                   "required": false
                 },
                 {
+                  "name": "signing_key",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "skill_manager",
                   "type": "any",
                   "required": false
@@ -7948,6 +8052,11 @@
                 },
                 {
                   "name": "session_manager",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "signing_key",
                   "type": "any",
                   "required": false
                 },
@@ -8273,6 +8382,11 @@
                 },
                 {
                   "name": "session_manager",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "signing_key",
                   "type": "any",
                   "required": false
                 },

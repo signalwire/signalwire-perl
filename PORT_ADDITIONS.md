@@ -114,3 +114,4 @@ signalwire.rest.namespaces.recordings.RecordingsResource.delete_recording: perl-
 signalwire.rest.namespaces.registry.RegistryNumbers.delete_number: perl-idiom port-only: RegistryNumbers keeps the domain-named ``delete_number`` alongside the Python-parity ``delete`` alias
 signalwire.rest.namespaces.video.VideoRoomRecordings.delete_recording: perl-idiom port-only: VideoRoomRecordings keeps the domain-named ``delete_recording`` alongside the Python-parity ``delete`` alias
 signalwire.rest.namespaces.video.VideoStreams.delete_stream: perl-idiom port-only: VideoStreams keeps the domain-named ``delete_stream`` alongside the Python-parity ``delete`` alias
+signalwire.core.security.webhook_middleware.wrap: perl-idiom port-only: Plack middleware wrap() instance method (Plack convention) — Python uses make_webhook_validation_dependency factory function instead

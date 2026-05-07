@@ -91,6 +91,22 @@ has swaig_query_params => (is => 'rw', default => sub { {} });
 # Session manager (built in BUILD)
 has session_manager => (is => 'rw');
 
+# Webhook signature validation. When set (or SIGNALWIRE_SIGNING_KEY env
+# is non-empty), the PSGI app auto-mounts SignalWire::Security::WebhookMiddleware
+# on POST /, POST /swaig, POST /post_prompt and rejects unsigned/invalid
+# requests with 403. When unset, AgentBase logs a prominent startup
+# warning the first time psgi_app is built.
+has signing_key => (
+    is      => 'rw',
+    lazy    => 1,
+    builder => '_build_signing_key',
+);
+
+sub _build_signing_key {
+    my ($self) = @_;
+    return $ENV{SIGNALWIRE_SIGNING_KEY};
+}
+
 # Skill manager
 has skill_manager => (is => 'rw', lazy => 1, builder => '_build_skill_manager');
 
@@ -1324,7 +1340,49 @@ sub _build_psgi_app {
         return $res;
     };
 
+    # Signed-webhook gate — wraps the entire app so unsigned / invalid
+    # requests on POST /, POST $route/swaig, POST $route/post_prompt
+    # are rejected with 403 before any other handling. Passthrough when
+    # signing_key is empty (the startup-warning code below logs once
+    # so callers know validation is disabled).
+    my $signing_key = $self->signing_key;
+    if (defined $signing_key && $signing_key ne '') {
+        require SignalWire::Security::WebhookMiddleware;
+        my $main_path = ($route eq '' || $route eq '/') ? '/' : $route;
+        my @gated_paths = ($main_path);
+        push @gated_paths, "$route/swaig", "$route/post_prompt"
+            if $route ne '';
+        push @gated_paths, '/swaig', '/post_prompt'
+            if $route eq '' || $route eq '/';
+        # De-dup
+        my %seen;
+        @gated_paths = grep { !$seen{$_}++ } @gated_paths;
+
+        my $signed_app = SignalWire::Security::WebhookMiddleware->wrap(
+            app         => $app_with_middleware,
+            signing_key => $signing_key,
+            paths       => \@gated_paths,
+            methods     => ['POST'],
+            trust_proxy => 1,
+        );
+        return $signed_app;
+    }
+    else {
+        $self->_warn_signing_key_disabled_once;
+    }
+
     return $app_with_middleware;
+}
+
+# Emit a one-time startup warning when signing_key is unset. Mirrors
+# the Python and Node SDKs: webhook signature validation is OFF unless
+# you pass signing_key or set SIGNALWIRE_SIGNING_KEY.
+sub _warn_signing_key_disabled_once {
+    my ($self) = @_;
+    return if $self->{_signing_warning_emitted};
+    $self->{_signing_warning_emitted} = 1;
+    carp "[signalwire] webhook signature validation is disabled — "
+        . "set signing_key or SIGNALWIRE_SIGNING_KEY to enable";
 }
 
 sub _check_auth {

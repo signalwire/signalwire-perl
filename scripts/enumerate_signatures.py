@@ -141,6 +141,8 @@ FREE_FN_PACKAGES = {
     "SignalWire::Contexts",  # create_simple_context() helper
     "SignalWire::Utils",
     "SignalWire::Utils::UrlValidator",
+    "SignalWire::Security::WebhookValidator",  # validate_webhook_signature, validate_request
+    "SignalWire::Security::WebhookMiddleware",  # make_webhook_validation_dependency
 }
 
 # Free-function name overrides — for cases where the Python canonical
