@@ -15,3 +15,7 @@ cover_db/
 *.swp
 .env
 local/
+
+# Python audit-script bytecode (scripts/enumerate_*.py invocations)
+__pycache__/
+*.pyc
