@@ -9,6 +9,10 @@ name: Surface Audit (Layer B)
 # See CHECKLIST_TEMPLATE.md § Symbol-level surface parity in
 # https://github.com/signalwire/porting-sdk for the contract.
 
+env:
+  # Opt into Node.js 24 ahead of GitHub's 2026-06-02 default switch.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   pull_request:
     paths:

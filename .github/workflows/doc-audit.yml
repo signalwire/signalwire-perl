@@ -13,6 +13,10 @@ name: Doc Audit (Layer C)
 # Also parse-checks every bundled example (`perl -c`) so syntax breaks can
 # never slip in silently.
 
+env:
+  # Opt into Node.js 24 ahead of GitHub's 2026-06-02 default switch.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   pull_request:
     paths:
