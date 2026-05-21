@@ -88,6 +88,121 @@ subtest 'languages in SWML' => sub {
 };
 
 # ============================================================
+# 2b. Per-language params (Python 029ca6f parity)
+# ============================================================
+subtest 'add_language with params attaches params' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_with');
+    $a->add_language(
+        name   => 'English',
+        code   => 'en-US',
+        voice  => 'josh',
+        engine => 'elevenlabs',
+        params => { stability => 0.5, similarity_boost => 0.75 },
+    );
+    is_deeply($a->languages->[0]{params},
+              { stability => 0.5, similarity_boost => 0.75 },
+              'params hashref attached');
+};
+
+subtest 'add_language without params omits key' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_none');
+    $a->add_language(name => 'French', code => 'fr-FR', voice => 'fr-FR-Neural2-A');
+    ok(!exists $a->languages->[0]{params},
+       'params key absent when not supplied (matches Python)');
+};
+
+subtest 'add_language with empty params omits key' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_empty');
+    $a->add_language(name => 'French', code => 'fr-FR', voice => 'v', params => {});
+    ok(!exists $a->languages->[0]{params},
+       'empty hashref params dropped (matches Python "if params:")');
+};
+
+subtest 'get_language_params returns set hashref' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_get_set');
+    $a->add_language(name => 'English', code => 'en-US', voice => 'v',
+                     params => { a => 1 });
+    is_deeply($a->get_language_params('en-US'),
+              { a => 1 },
+              'get_language_params returns the hashref');
+};
+
+subtest 'get_language_params returns undef when unset' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_get_unset');
+    $a->add_language(name => 'English', code => 'en-US', voice => 'v');
+    is($a->get_language_params('en-US'), undef,
+       'undef when params never set (Python returns None)');
+};
+
+subtest 'get_language_params returns undef for unknown code' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_get_unknown');
+    is($a->get_language_params('zh-CN'), undef,
+       'undef for unknown code (Python returns None, no exception)');
+};
+
+subtest 'set_language_params replaces existing' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_set_replace');
+    $a->add_language(name => 'English', code => 'en-US', voice => 'v',
+                     params => { a => 1 });
+    $a->set_language_params('en-US', { b => 2 });
+    is_deeply($a->get_language_params('en-US'),
+              { b => 2 },
+              'existing params replaced wholesale');
+};
+
+subtest 'set_language_params adds when unset' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_set_add');
+    $a->add_language(name => 'English', code => 'en-US', voice => 'v');
+    $a->set_language_params('en-US', { c => 3 });
+    is_deeply($a->get_language_params('en-US'),
+              { c => 3 },
+              'params attached to previously-unparams language');
+};
+
+subtest 'set_language_params with empty hashref removes key' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_set_rm');
+    $a->add_language(name => 'English', code => 'en-US', voice => 'v',
+                     params => { a => 1 });
+    $a->set_language_params('en-US', {});
+    is($a->get_language_params('en-US'), undef,
+       'empty hashref clears params (Python parity)');
+    ok(!exists $a->languages->[0]{params}, 'params key actually removed');
+};
+
+subtest 'set_language_params on unknown code is no-op' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_set_unknown');
+    $a->add_language(name => 'English', code => 'en-US', voice => 'v');
+    $a->set_language_params('zh-CN', { a => 1 });
+    is($a->get_language_params('en-US'), undef,
+       'known language untouched when unknown code targeted');
+    ok(!exists $a->languages->[0]{params},
+       'no params silently added to the wrong language');
+};
+
+subtest 'set_language_params returns self for chaining' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_chain');
+    $a->add_language(name => 'English', code => 'en-US', voice => 'v');
+    my $ret = $a->set_language_params('en-US', { a => 1 });
+    is($ret, $a, 'returns self (Python parity for chaining)');
+};
+
+subtest 'per-language params surface in SWML' => sub {
+    my $a = SignalWire::Agent::AgentBase->new(name => 'lp_swml');
+    $a->add_language(
+        name   => 'English',
+        code   => 'en-US',
+        voice  => 'josh',
+        engine => 'elevenlabs',
+        params => { stability => 0.5 },
+    );
+    my $swml = $a->render_swml;
+    my @ai = grep { exists $_->{ai} } @{$swml->{sections}{main}};
+    is_deeply($ai[0]{ai}{languages}[0]{params},
+              { stability => 0.5 },
+              'params hashref emitted under language object in SWML');
+};
+
+# ============================================================
 # 3. Pronunciations
 # ============================================================
 subtest 'add_pronunciation' => sub {

@@ -4305,6 +4305,11 @@
                   "name": "model",
                   "type": "any",
                   "required": false
+                },
+                {
+                  "name": "params",
+                  "type": "any",
+                  "required": false
                 }
               ],
               "returns": "any"
@@ -4414,6 +4419,20 @@
               ],
               "returns": "any"
             },
+            "get_language_params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "code",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
             "set_function_includes": {
               "params": [
                 {
@@ -4450,6 +4469,25 @@
                 },
                 {
                   "name": "fillers",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "set_language_params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "code",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "params",
                   "type": "any",
                   "required": true
                 }

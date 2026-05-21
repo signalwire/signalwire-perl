@@ -446,6 +446,17 @@ sub add_pattern_hint {
 
 sub add_language {
     my ($self, %lang) = @_;
+    # Per-language params (engine-specific tuning, voice settings, etc.).
+    # Python parity (commit 029ca6f): only emit the ``params`` key when
+    # the supplied hashref is non-empty so SWML stays byte-identical for
+    # existing callers who don't pass params. Treat an explicit empty
+    # hashref the same as "not passed".
+    if (exists $lang{params}) {
+        my $p = $lang{params};
+        if (!defined $p || ref($p) ne 'HASH' || !%$p) {
+            delete $lang{params};
+        }
+    }
     push @{ $self->languages }, \%lang;
     return $self;
 }
@@ -454,6 +465,36 @@ sub set_languages {
     my ($self, $langs) = @_;
     $self->languages($langs);
     return $self;
+}
+
+# Set (or replace) the per-language ``params`` hashref on an
+# already-added language. Python parity (commit 029ca6f): empty hashref
+# removes the key; unknown ``code`` is a no-op; always returns $self
+# for chaining.
+sub set_language_params {
+    my ($self, $code, $params) = @_;
+    for my $language (@{ $self->languages }) {
+        next unless defined $language->{code} && $language->{code} eq $code;
+        if (defined $params && ref($params) eq 'HASH' && %$params) {
+            $language->{params} = $params;
+        } else {
+            delete $language->{params};
+        }
+        last;
+    }
+    return $self;
+}
+
+# Read the per-language ``params`` hashref for a previously-added
+# language. Returns undef when the code is unknown or when params were
+# never set — no exception path (matches Python's ``return None``).
+sub get_language_params {
+    my ($self, $code) = @_;
+    for my $language (@{ $self->languages }) {
+        next unless defined $language->{code} && $language->{code} eq $code;
+        return $language->{params};
+    }
+    return undef;
 }
 
 sub add_pronunciation {

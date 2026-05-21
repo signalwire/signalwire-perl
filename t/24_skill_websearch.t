@@ -53,6 +53,66 @@ subtest 'parameter schema' => sub {
     ok(exists $schema->{api_key}, 'has api_key');
     ok(exists $schema->{search_engine_id}, 'has search_engine_id');
     ok(exists $schema->{num_results}, 'has num_results');
+    ok(exists $schema->{response_prefix},  'has response_prefix');
+    ok(exists $schema->{response_postfix}, 'has response_postfix');
+};
+
+# ----------------------------------------------------------------
+# Python 8aad242 parity: response_prefix / response_postfix wrap
+# successful results, leave error / empty branches alone.
+# ----------------------------------------------------------------
+subtest 'response_prefix wraps success body' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_prefix');
+    my $skill = $factory->new(agent => $agent,
+                              params => { response_prefix => 'BEGIN-CITATION' });
+    my $out = $skill->_wrap_response("1. Foo\n   Foo snippet\n   http://x");
+    like($out, qr/\ABEGIN-CITATION\n\n1\. Foo\b/,
+         'prefix prepended with blank-line separator');
+};
+
+subtest 'response_postfix wraps success body' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_postfix');
+    my $skill = $factory->new(agent => $agent,
+                              params => { response_postfix => 'END-CITATION' });
+    my $out = $skill->_wrap_response("1. Foo\n   snippet\n   http://x");
+    like($out, qr/http:\/\/x\n\nEND-CITATION\z/,
+         'postfix appended with blank-line separator');
+};
+
+subtest 'both prefix and postfix wrap success body' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_both');
+    my $skill = $factory->new(agent => $agent, params => {
+        response_prefix  => 'P',
+        response_postfix => 'Q',
+    });
+    my $out = $skill->_wrap_response("body");
+    is($out, "P\n\nbody\n\nQ",
+       'both wrappers applied in canonical order');
+};
+
+subtest 'no wrap when neither prefix nor postfix set' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_no_wrap');
+    my $skill = $factory->new(agent => $agent, params => {});
+    my $body = "1. Foo\n   snippet\n   http://x";
+    is($skill->_wrap_response($body), $body,
+       'response passed through unchanged when params absent');
+};
+
+subtest 'error responses are NOT wrapped' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ws_err');
+    my $skill = $factory->new(agent => $agent, params => {
+        response_prefix  => 'WRAP',
+        response_postfix => 'WRAP',
+    });
+    is($skill->_wrap_response('Web search error: 503 Service Unavailable'),
+       'Web search error: 503 Service Unavailable',
+       'HTTP error passes through unwrapped (matches Python)');
+    is($skill->_wrap_response('Web search parse error: bad json'),
+       'Web search parse error: bad json',
+       'parse error passes through unwrapped');
+    is($skill->_wrap_response('No results for: zzz'),
+       'No results for: zzz',
+       'empty-result sentinel passes through unwrapped');
 };
 
 done_testing;

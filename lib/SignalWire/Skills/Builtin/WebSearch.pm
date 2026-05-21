@@ -86,6 +86,7 @@ sub register_tools {
             require SignalWire::SWAIG::FunctionResult;
             my $query = $args->{query} // '';
             my $text = $weak_self->search_web($query);
+            $text = $weak_self->_wrap_response($text);
             return SignalWire::SWAIG::FunctionResult->new(response => $text);
         },
     );
@@ -132,6 +133,27 @@ sub search_web {
     return join("\n\n", @lines);
 }
 
+# Wrap a successful search response with optional response_prefix /
+# response_postfix. Mirrors Python signalwire/skills/web_search/skill.py
+# (commit 8aad242): prefix/postfix are joined with a blank line on each
+# side. Error / no-result branches are passed through unwrapped so the
+# LLM still sees the failure mode verbatim.
+sub _wrap_response {
+    my ($self, $text) = @_;
+    return $text unless defined $text && length $text;
+    # Match Python's "errors don't get wrapped" pattern. The Perl
+    # search_web returns one of three known failure sentinels; anything
+    # else is a real result list.
+    return $text if $text =~ /^Web search error:/;
+    return $text if $text =~ /^Web search parse error:/;
+    return $text if $text =~ /^No results for:/;
+    my $prefix  = $self->params->{response_prefix}  // '';
+    my $postfix = $self->params->{response_postfix} // '';
+    $text = "$prefix\n\n$text"  if length $prefix;
+    $text = "$text\n\n$postfix" if length $postfix;
+    return $text;
+}
+
 sub get_global_data {
     return {
         web_search_enabled => JSON::true,
@@ -154,9 +176,11 @@ sub _get_prompt_sections {
 sub get_parameter_schema {
     return {
         %{ SignalWire::Skills::SkillBase->get_parameter_schema },
-        api_key          => { type => 'string', required => 1, hidden => 1 },
-        search_engine_id => { type => 'string', required => 1, hidden => 1 },
-        num_results      => { type => 'integer', default => 3, min => 1, max => 10 },
+        api_key           => { type => 'string',  required => 1, hidden => 1 },
+        search_engine_id  => { type => 'string',  required => 1, hidden => 1 },
+        num_results       => { type => 'integer', default  => 3, min => 1, max => 10 },
+        response_prefix   => { type => 'string',  default  => '' },
+        response_postfix  => { type => 'string',  default  => '' },
     };
 }
 
