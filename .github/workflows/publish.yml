@@ -22,13 +22,31 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
+      - name: Checkout porting-sdk (mock_relay + mock_signalwire test harnesses)
+        uses: actions/checkout@v5
+        with:
+          repository: signalwire/porting-sdk
+          path: porting-sdk
+          fetch-depth: 1
+          token: ${{ secrets.PORTING_SDK_TOKEN }}
+
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: '5.38'
 
-      - name: Install dependencies
+      - name: Setup Python (for porting-sdk mock servers)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Perl dependencies
         run: cpanm --installdeps .
+
+      - name: Install Python test harnesses (mock_relay + mock_signalwire)
+        run: |
+          pip install -e porting-sdk/test_harness/mock_relay
+          pip install -e porting-sdk/test_harness/mock_signalwire
 
       - name: Run tests
         run: PERL5LIB="lib:t/lib" prove -r t/
