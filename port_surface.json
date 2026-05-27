@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 5d38117f902788034cbcc1ce8abbcac7b5cd60ac",
+   "generated_from" : "signalwire-perl @ 51b582610ded9a7bee7fab88b168dbc199184bc1",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -233,9 +233,11 @@
                "add_pronunciation",
                "enable_debug_events",
                "enable_mcp_server",
+               "get_language_params",
                "set_function_includes",
                "set_global_data",
                "set_internal_fillers",
+               "set_language_params",
                "set_languages",
                "set_native_functions",
                "set_param",
@@ -313,6 +315,19 @@
             ]
          },
          "functions" : []
+      },
+      "signalwire.core.security.webhook_middleware" : {
+         "classes" : {},
+         "functions" : [
+            "wrap"
+         ]
+      },
+      "signalwire.core.security.webhook_validator" : {
+         "classes" : {},
+         "functions" : [
+            "validate_request",
+            "validate_webhook_signature"
+         ]
       },
       "signalwire.core.skill_base" : {
          "classes" : {

@@ -312,6 +312,8 @@ my %AGENTBASE_METHOD_TO_PY = (
     'add_pattern_hint'         => { module => 'signalwire.core.mixins.ai_config_mixin', class => 'AIConfigMixin', method => 'add_pattern_hint' },
     'add_language'             => { module => 'signalwire.core.mixins.ai_config_mixin', class => 'AIConfigMixin', method => 'add_language' },
     'set_languages'            => { module => 'signalwire.core.mixins.ai_config_mixin', class => 'AIConfigMixin', method => 'set_languages' },
+    'get_language_params'      => { module => 'signalwire.core.mixins.ai_config_mixin', class => 'AIConfigMixin', method => 'get_language_params' },
+    'set_language_params'      => { module => 'signalwire.core.mixins.ai_config_mixin', class => 'AIConfigMixin', method => 'set_language_params' },
     'add_pronunciation'        => { module => 'signalwire.core.mixins.ai_config_mixin', class => 'AIConfigMixin', method => 'add_pronunciation' },
     'set_pronunciations'       => { module => 'signalwire.core.mixins.ai_config_mixin', class => 'AIConfigMixin', method => 'set_pronunciations' },
     'set_param'                => { module => 'signalwire.core.mixins.ai_config_mixin', class => 'AIConfigMixin', method => 'set_param' },
