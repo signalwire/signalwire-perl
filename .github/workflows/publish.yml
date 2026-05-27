@@ -40,9 +40,10 @@ jobs:
         run: |
           cpanm CPAN::Uploader
           perl Makefile.PL
+          make manifest
           make
           make dist
-          cpan-upload -u "$CPAN_USERNAME" -p "$CPAN_PASSWORD" SignalWire-Agents-*.tar.gz
+          cpan-upload -u "$CPAN_USERNAME" -p "$CPAN_PASSWORD" SignalWire-*.tar.gz
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
