@@ -9,6 +9,7 @@ use FindBin ();
 use lib "$FindBin::Bin/../lib";
 use Time::HiRes qw(sleep time);
 
+use JSON ();
 use RelayMockTest;
 use SignalWire::Relay::Client;
 use SignalWire::Relay::Action;
@@ -128,6 +129,164 @@ subtest 'play on_completed callback fires' => sub {
     $action->on_completed(sub { $cb_fired = 1 });
     _pump_until($client, 5, sub { $action->is_done });
     ok($cb_fired, 'on_completed callback fired');
+    $client->disconnect;
+};
+
+# ---------------------------------------------------------------------------
+# Play convenience: play_tts / play_audio / play_silence / play_ringtone
+# Typed wrappers that build the RELAY media object and delegate to play().
+# We assert the exact { type, params } wire shape lands on calling.play.
+# ---------------------------------------------------------------------------
+
+subtest 'play_tts builds tts media on calling.play' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-tts');
+    my $action = $call->play_tts('Hello world',
+        language => 'en-US', gender => 'female', voice => 'spore', volume => 2.5);
+    isa_ok($action, 'SignalWire::Relay::Action::Play');
+    my $entries = RelayMockTest::journal_recv(method => 'calling.play');
+    is(scalar @$entries, 1, 'one calling.play entry');
+    my $p = $entries->[0]{frame}{params};
+    is($p->{call_id}, 'call-tts', 'call_id on wire');
+    is($p->{play}[0]{type}, 'tts', 'media type tts');
+    is($p->{play}[0]{params}{text}, 'Hello world', 'tts text on wire');
+    is($p->{play}[0]{params}{language}, 'en-US', 'tts language on wire');
+    is($p->{play}[0]{params}{gender}, 'female', 'tts gender on wire');
+    is($p->{play}[0]{params}{voice}, 'spore', 'tts voice on wire');
+    cmp_ok($p->{volume}, '==', 2.5, 'volume sibling on wire');
+    $client->disconnect;
+};
+
+subtest 'play_tts omits unset optional params' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-tts-min');
+    $call->play_tts('Just text');
+    my $p = RelayMockTest::journal_recv(method => 'calling.play')->[0]{frame}{params};
+    is($p->{play}[0]{params}{text}, 'Just text', 'text present');
+    ok(!exists $p->{play}[0]{params}{language}, 'no language key when unset');
+    ok(!exists $p->{play}[0]{params}{voice},    'no voice key when unset');
+    ok(!exists $p->{volume}, 'no volume key when unset');
+    $client->disconnect;
+};
+
+subtest 'play_audio builds audio media on calling.play' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-paud');
+    my $action = $call->play_audio('https://cdn.example/a.mp3', volume => -1.0);
+    isa_ok($action, 'SignalWire::Relay::Action::Play');
+    my $p = RelayMockTest::journal_recv(method => 'calling.play')->[0]{frame}{params};
+    is($p->{play}[0]{type}, 'audio', 'media type audio');
+    is($p->{play}[0]{params}{url}, 'https://cdn.example/a.mp3', 'audio url on wire');
+    cmp_ok($p->{volume}, '==', -1.0, 'volume sibling on wire');
+    $client->disconnect;
+};
+
+subtest 'play_silence builds silence media on calling.play' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-psil');
+    my $action = $call->play_silence(3.5);
+    isa_ok($action, 'SignalWire::Relay::Action::Play');
+    my $p = RelayMockTest::journal_recv(method => 'calling.play')->[0]{frame}{params};
+    is($p->{play}[0]{type}, 'silence', 'media type silence');
+    cmp_ok($p->{play}[0]{params}{duration}, '==', 3.5, 'silence duration on wire');
+    $client->disconnect;
+};
+
+subtest 'play_ringtone builds ringtone media on calling.play' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-prng');
+    my $action = $call->play_ringtone('us', duration => 5, volume => 0.0);
+    isa_ok($action, 'SignalWire::Relay::Action::Play');
+    my $p = RelayMockTest::journal_recv(method => 'calling.play')->[0]{frame}{params};
+    is($p->{play}[0]{type}, 'ringtone', 'media type ringtone');
+    is($p->{play}[0]{params}{name}, 'us', 'ringtone name on wire');
+    cmp_ok($p->{play}[0]{params}{duration}, '==', 5, 'ringtone duration on wire');
+    $client->disconnect;
+};
+
+# ---------------------------------------------------------------------------
+# Detect convenience: detect_digit / detect_answering_machine / detect_fax
+# Typed wrappers that build the RELAY detect object and delegate to detect().
+# timeout is a SIBLING of `detect`, not inside the detect object.
+# ---------------------------------------------------------------------------
+
+subtest 'detect_digit builds digit detect on calling.detect' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-ddig');
+    my $action = $call->detect_digit(digits => '123', timeout => 10);
+    isa_ok($action, 'SignalWire::Relay::Action::Detect');
+    my $p = RelayMockTest::journal_recv(method => 'calling.detect')->[0]{frame}{params};
+    is($p->{detect}{type}, 'digit', 'detect type digit');
+    is($p->{detect}{params}{digits}, '123', 'digits inside detect.params');
+    cmp_ok($p->{timeout}, '==', 10, 'timeout is a sibling of detect');
+    ok(!exists $p->{detect}{params}{timeout}, 'timeout NOT inside detect.params');
+    $client->disconnect;
+};
+
+subtest 'detect_answering_machine builds machine detect, only-provided params' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-damd');
+    my $action = $call->detect_answering_machine(
+        initial_timeout       => 4.5,
+        machine_words_threshold => 6,
+        detect_interruptions  => JSON::false(),
+        timeout               => 30,
+    );
+    isa_ok($action, 'SignalWire::Relay::Action::Detect');
+    my $p = RelayMockTest::journal_recv(method => 'calling.detect')->[0]{frame}{params};
+    is($p->{detect}{type}, 'machine', 'detect type machine');
+    cmp_ok($p->{detect}{params}{initial_timeout}, '==', 4.5, 'initial_timeout on wire');
+    cmp_ok($p->{detect}{params}{machine_words_threshold}, '==', 6, 'machine_words_threshold on wire');
+    ok(exists $p->{detect}{params}{detect_interruptions}, 'detect_interruptions present (false is provided)');
+    ok(!exists $p->{detect}{params}{end_silence_timeout}, 'unset AMD knob omitted');
+    ok(!exists $p->{detect}{params}{machine_voice_threshold}, 'unset AMD knob omitted');
+    cmp_ok($p->{timeout}, '==', 30, 'timeout is a sibling of detect');
+    $client->disconnect;
+};
+
+subtest 'detect_fax builds fax detect on calling.detect' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-dfax');
+    my $action = $call->detect_fax(tone => 'CED', timeout => 15);
+    isa_ok($action, 'SignalWire::Relay::Action::Detect');
+    my $p = RelayMockTest::journal_recv(method => 'calling.detect')->[0]{frame}{params};
+    is($p->{detect}{type}, 'fax', 'detect type fax');
+    is($p->{detect}{params}{tone}, 'CED', 'fax tone inside detect.params');
+    cmp_ok($p->{timeout}, '==', 15, 'timeout is a sibling of detect');
+    $client->disconnect;
+};
+
+# ---------------------------------------------------------------------------
+# Prompt convenience: prompt_tts / prompt_audio
+# Typed media over play_and_collect(); collect hashref passes through verbatim.
+# ---------------------------------------------------------------------------
+
+subtest 'prompt_tts builds tts media + collect on calling.play_and_collect' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-ptts');
+    my $action = $call->prompt_tts('Press a key',
+        { digits => { max => 1 } }, voice => 'spore', volume => 1.0);
+    isa_ok($action, 'SignalWire::Relay::Action::Collect');
+    my $p = RelayMockTest::journal_recv(method => 'calling.play_and_collect')->[0]{frame}{params};
+    is($p->{play}[0]{type}, 'tts', 'media type tts');
+    is($p->{play}[0]{params}{text}, 'Press a key', 'tts text on wire');
+    is($p->{play}[0]{params}{voice}, 'spore', 'tts voice on wire');
+    is($p->{collect}{digits}{max}, 1, 'collect passed through verbatim');
+    cmp_ok($p->{volume}, '==', 1.0, 'volume sibling on wire');
+    $client->disconnect;
+};
+
+subtest 'prompt_audio builds audio media + collect on calling.play_and_collect' => sub {
+    my $client = _connected_client();
+    my $call = _answered_inbound_call($client, 'call-paudc');
+    my $action = $call->prompt_audio('https://cdn.example/p.wav',
+        { speech => { language => 'en-US' } });
+    isa_ok($action, 'SignalWire::Relay::Action::Collect');
+    my $p = RelayMockTest::journal_recv(method => 'calling.play_and_collect')->[0]{frame}{params};
+    is($p->{play}[0]{type}, 'audio', 'media type audio');
+    is($p->{play}[0]{params}{url}, 'https://cdn.example/p.wav', 'audio url on wire');
+    is($p->{collect}{speech}{language}, 'en-US', 'collect.speech passed through verbatim');
+    ok(!exists $p->{volume}, 'no volume key when unset');
     $client->disconnect;
 };
 

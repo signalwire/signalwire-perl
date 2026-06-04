@@ -9338,6 +9338,117 @@
               ],
               "returns": "any"
             },
+            "detect_answering_machine": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "initial_timeout",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "end_silence_timeout",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "machine_voice_threshold",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "machine_words_threshold",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "detect_interruptions",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "detect_message_end",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "timeout",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "detect_digit": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "digits",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "timeout",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "detect_fax": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "tone",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "timeout",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
             "device": {
               "params": [
                 {
@@ -9943,6 +10054,208 @@
                   "type": "dict<string,any>",
                   "required": false,
                   "kind": "var_keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "play_audio": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "url",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "volume",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "play_ringtone": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "duration",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "volume",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "play_silence": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "duration",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "play_tts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "text",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "language",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "gender",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "voice",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "volume",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "prompt_audio": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "url",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "collect",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "volume",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "prompt_tts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "text",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "collect",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "language",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "gender",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "voice",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "volume",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "on_completed",
+                  "type": "any",
+                  "required": false,
+                  "kind": "keyword"
                 }
               ],
               "returns": "any"

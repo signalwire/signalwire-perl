@@ -67,6 +67,27 @@ signalwire.core.agent_base.AgentBase.create_tool_token: Perl AgentBase exposes `
 signalwire.core.agent_base.AgentBase.extract_sip_username: Perl AgentBase keeps a SignalWire-style ``from``/``caller_id_number`` extractor for backward compatibility; Python's ``SWMLService.extract_sip_username`` (the canonical version) checks ``call.to`` and is now also exposed on the Perl SWMLService. The AgentBase helper is a Perl-only convenience.
 
 
+## Idiom: Perl Call has no Call-level state-wait primitive
+
+The Python `Call.wait_for_*` convenience methods are built on
+`Call.wait_for(event_type, predicate, timeout)`, which awaits an asyncio
+Future resolved from the Call's own event dispatch. The Perl Call has no
+equivalent: it updates `state` synchronously inside `dispatch_event` but
+owns no blocking wait-on-state / event-future primitive, and the
+frame-pump read-loop (`while (!$done) { $client->_read_once }`) lives on
+`SignalWire::Relay::Client` (see `Client::dial`), not on `Call`. Adding a
+`Call`-level blocking wait would require either reaching into the client's
+read-loop or a generic `wait_for`, neither of which exists in this port —
+so the three typed state-waits are omitted rather than stubbed. (The
+underlying state-tracking IS implemented: `$call->state` reflects the
+latest `calling.call.state`, and callers can register `$call->on(...)` to
+react to transitions.)
+
+signalwire.relay.call.Call.wait_for_answered: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed
+signalwire.relay.call.Call.wait_for_ringing: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed
+signalwire.relay.call.Call.wait_for_ending: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed
+
+
 ## Source-side stubs (Perl method bodies don't yet declare full args)
 
 (All previously-listed stubs have been closed. New stubs would live here.)

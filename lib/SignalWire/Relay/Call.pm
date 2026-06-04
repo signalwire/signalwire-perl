@@ -304,6 +304,52 @@ sub play {
     return $self->_start_action('calling.play', 'SignalWire::Relay::Action::Play', %opts);
 }
 
+# --- Play convenience: typed wrappers over play() ---
+#
+# These restore the legacy call->play_tts(text => ...) ergonomics so
+# callers don't hand-build the { type => "...", params => {...} } media
+# shape. Each delegates to play() with the exact RELAY media object
+# (see RELAY_IMPLEMENTATION_GUIDE.md "Media Objects"). Optional params
+# are only included when the caller supplies them, so the wire shape
+# carries no undef keys.
+
+sub play_tts {
+    my ($self, $text, %opts) = @_;
+    my %tts = ( text => $text );
+    $tts{language} = $opts{language} if defined $opts{language};
+    $tts{gender}   = $opts{gender}   if defined $opts{gender};
+    $tts{voice}    = $opts{voice}    if defined $opts{voice};
+    my @play = ( play => [ { type => 'tts', params => \%tts } ] );
+    push @play, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @play, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->play(@play);
+}
+
+sub play_audio {
+    my ($self, $url, %opts) = @_;
+    my @play = ( play => [ { type => 'audio', params => { url => $url } } ] );
+    push @play, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @play, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->play(@play);
+}
+
+sub play_silence {
+    my ($self, $duration, %opts) = @_;
+    my @play = ( play => [ { type => 'silence', params => { duration => $duration } } ] );
+    push @play, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->play(@play);
+}
+
+sub play_ringtone {
+    my ($self, $name, %opts) = @_;
+    my %rt = ( name => $name );
+    $rt{duration} = $opts{duration} if defined $opts{duration};
+    my @play = ( play => [ { type => 'ringtone', params => \%rt } ] );
+    push @play, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @play, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->play(@play);
+}
+
 sub record {
     my ($self, %opts) = @_;
     return $self->_start_action('calling.record', 'SignalWire::Relay::Action::Record', %opts);
@@ -314,6 +360,50 @@ sub detect {
     return $self->_start_action('calling.detect', 'SignalWire::Relay::Action::Detect', %opts);
 }
 
+# --- Detect convenience: typed wrappers over detect() ---
+#
+# Build the RELAY detect object { type => "...", params => {...} } and
+# forward to detect(). The optional timeout is a sibling of `detect` in
+# the calling.detect params, not inside the detect object — same as
+# Python's Call.detect_*.
+
+sub detect_digit {
+    my ($self, %opts) = @_;
+    my %params;
+    $params{digits} = $opts{digits} if defined $opts{digits};
+    my @args = ( detect => { type => 'digit', params => \%params } );
+    push @args, ( timeout => $opts{timeout} ) if defined $opts{timeout};
+    push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->detect(@args);
+}
+
+sub detect_answering_machine {
+    my ($self, %opts) = @_;
+    my %params;
+    # Only the AMD knobs the caller actually provided land in params; the
+    # server fills the rest from its defaults.
+    for my $key (qw(
+        initial_timeout end_silence_timeout machine_voice_threshold
+        machine_words_threshold detect_interruptions detect_message_end
+    )) {
+        $params{$key} = $opts{$key} if defined $opts{$key};
+    }
+    my @args = ( detect => { type => 'machine', params => \%params } );
+    push @args, ( timeout => $opts{timeout} ) if defined $opts{timeout};
+    push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->detect(@args);
+}
+
+sub detect_fax {
+    my ($self, %opts) = @_;
+    my %params;
+    $params{tone} = $opts{tone} if defined $opts{tone};
+    my @args = ( detect => { type => 'fax', params => \%params } );
+    push @args, ( timeout => $opts{timeout} ) if defined $opts{timeout};
+    push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->detect(@args);
+}
+
 sub collect {
     my ($self, %opts) = @_;
     return $self->_start_action('calling.collect', 'SignalWire::Relay::Action::StandaloneCollect', %opts);
@@ -322,6 +412,38 @@ sub collect {
 sub play_and_collect {
     my ($self, %opts) = @_;
     return $self->_start_action('calling.play_and_collect', 'SignalWire::Relay::Action::Collect', %opts);
+}
+
+# --- Prompt convenience: typed media over play_and_collect() ---
+#
+# Play a TTS / audio prompt and collect input in one call. The `collect`
+# hashref is passed through verbatim (see RELAY guide "Collect Object");
+# only the play media is built from the typed args.
+
+sub prompt_tts {
+    my ($self, $text, $collect, %opts) = @_;
+    my %tts = ( text => $text );
+    $tts{language} = $opts{language} if defined $opts{language};
+    $tts{gender}   = $opts{gender}   if defined $opts{gender};
+    $tts{voice}    = $opts{voice}    if defined $opts{voice};
+    my @args = (
+        play    => [ { type => 'tts', params => \%tts } ],
+        collect => $collect,
+    );
+    push @args, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->play_and_collect(@args);
+}
+
+sub prompt_audio {
+    my ($self, $url, $collect, %opts) = @_;
+    my @args = (
+        play    => [ { type => 'audio', params => { url => $url } } ],
+        collect => $collect,
+    );
+    push @args, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
+    return $self->play_and_collect(@args);
 }
 
 sub send_fax {
