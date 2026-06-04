@@ -1,0 +1,114 @@
+package SignalWire::Skills::SkillName;
+# Copyright (c) 2025 SignalWire
+# Licensed under the MIT License.
+#
+# Built-in skill names as a typed, named closed set.
+#
+# Perl is dynamically typed and has no real enums, so this buys NO
+# compile-time typo checking — a bare string like 'datetiem' still only
+# fails at load time, when the registry can't find the skill. What it
+# DOES buy:
+#   - a single source of truth for the 18 built-in skill names, co-located
+#     with the skill system (the list otherwise lives only inside
+#     SkillRegistry::_load_all_builtins and the test suite);
+#   - editor autocomplete + discoverability via named constants;
+#   - SkillName->all for iteration / validation and SkillName->is_builtin
+#     for membership checks.
+#
+# The constants ARE the canonical wire strings, so nothing about
+# AgentBase->add_skill / remove_skill / has_skill changes: they still take
+# a string. That keeps parity with the Python reference (bare str) and
+# leaves custom / third-party skill names working automatically — an
+# unknown string is simply not in this set.
+#
+#     use SignalWire::Skills::SkillName qw(DATETIME);
+#     $agent->add_skill( DATETIME );                  # imported constant
+#     $agent->add_skill( SignalWire::Skills::SkillName::DATETIME() );  # FQ
+#     $agent->add_skill( 'datetime' );                # string (Python parity)
+#     $agent->add_skill( 'my_custom_skill' );         # open set: custom skill
+#
+# The names are exported on request (Exporter), so callers can pull just the
+# ones they use, or `:all` for every built-in name.
+#
+# Mirrors the cross-port Tier-1 idiom proof (PHP's backed enum SkillName,
+# TypeScript's union type, etc.) adapted to Perl's constants idiom.
+
+use strict;
+use warnings;
+
+use Exporter 'import';
+
+# Each constant's value is the skill's registered wire name — the exact
+# string passed to SkillRegistry->register_skill in the matching
+# SignalWire::Skills::Builtin::* module. Keep this list in lockstep with
+# SkillRegistry::_load_all_builtins.
+use constant {
+    API_NINJAS_TRIVIA     => 'api_ninjas_trivia',
+    CLAUDE_SKILLS         => 'claude_skills',
+    CUSTOM_SKILLS         => 'custom_skills',
+    DATASPHERE            => 'datasphere',
+    DATASPHERE_SERVERLESS => 'datasphere_serverless',
+    DATETIME              => 'datetime',
+    GOOGLE_MAPS           => 'google_maps',
+    INFO_GATHERER         => 'info_gatherer',
+    JOKE                  => 'joke',
+    MATH                  => 'math',
+    MCP_GATEWAY           => 'mcp_gateway',
+    NATIVE_VECTOR_SEARCH  => 'native_vector_search',
+    PLAY_BACKGROUND_FILE  => 'play_background_file',
+    SPIDER                => 'spider',
+    SWML_TRANSFER         => 'swml_transfer',
+    WEATHER_API           => 'weather_api',
+    WEB_SEARCH            => 'web_search',
+    WIKIPEDIA_SEARCH      => 'wikipedia_search',
+};
+
+# Constants are exported on request; `:all` pulls every built-in name.
+our @EXPORT_OK = qw(
+    API_NINJAS_TRIVIA CLAUDE_SKILLS CUSTOM_SKILLS DATASPHERE
+    DATASPHERE_SERVERLESS DATETIME GOOGLE_MAPS INFO_GATHERER JOKE MATH
+    MCP_GATEWAY NATIVE_VECTOR_SEARCH PLAY_BACKGROUND_FILE SPIDER
+    SWML_TRANSFER WEATHER_API WEB_SEARCH WIKIPEDIA_SEARCH
+);
+our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
+
+# Sorted list of every built-in wire name. Sorted so the order matches
+# SkillRegistry->list_skills (which sorts its keys).
+my @ALL = sort qw(
+    api_ninjas_trivia
+    claude_skills
+    custom_skills
+    datasphere
+    datasphere_serverless
+    datetime
+    google_maps
+    info_gatherer
+    joke
+    math
+    mcp_gateway
+    native_vector_search
+    play_background_file
+    spider
+    swml_transfer
+    weather_api
+    web_search
+    wikipedia_search
+);
+
+my %IS_BUILTIN = map { $_ => 1 } @ALL;
+
+# SkillName->all — arrayref of the 18 built-in skill wire names (sorted).
+sub all {
+    return [@ALL];
+}
+
+# SkillName->is_builtin($name) — true if $name is one of the built-in
+# skills, false for custom / unknown names. Accepts the bareword constant
+# too (it's just the string).
+sub is_builtin {
+    my ($class, $name) = @_;
+    return 0 unless defined $name;
+    return exists $IS_BUILTIN{$name} ? 1 : 0;
+}
+
+1;
