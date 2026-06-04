@@ -25,10 +25,19 @@ signalwire.core.contexts.ContextBuilder.attach_agent: port-only: weak-ref back t
 signalwire.core.contexts.ContextBuilder.has_contexts: port-only: explicit presence check used in AgentBase build path; Python uses `if cb.contexts` idiom
 signalwire.core.contexts.ContextBuilder.to_hashref: port-only: alias to to_dict that returns the nested hashref explicitly (Perl idiom)
 signalwire.core.function_result.FunctionResult.to_json: port-only: convenience serializer; Python uses json.dumps(result.to_dict())
+signalwire.core.function_result.RecordCall: perl_constants_idiom: SignalWire::SWAIG::RecordCall is a constants package single-sourcing the two closed-set string params record_call already validates inline — FORMAT (wav/mp3) and the write-side record DIRECTION (speak/listen/both). record_call still takes plain strings (the constants ARE the wire strings) so Python parity + custom callers are unchanged; this is the accepted-values source of truth + autocomplete, not a new compile-time check (record_call's own `die` still rejects bad values).
+signalwire.core.function_result.RecordCall.directions: perl_constants_idiom: RecordCall->directions returns the accepted record-direction set [speak,listen,both] (see RecordCall).
+signalwire.core.function_result.RecordCall.formats: perl_constants_idiom: RecordCall->formats returns the accepted recording-format set [wav,mp3] (see RecordCall).
+signalwire.core.function_result.RecordCall.is_direction: perl_constants_idiom: RecordCall->is_direction($v) membership check over the record-direction set (see RecordCall).
+signalwire.core.function_result.RecordCall.is_format: perl_constants_idiom: RecordCall->is_format($v) membership check over the recording-format set (see RecordCall).
 signalwire.core.logging_config.debug: port-only: Perl exports package-level logging functions; Python uses a logger handle (get_logger().debug(...))
 signalwire.core.logging_config.error: port-only: Perl exports package-level logging functions; Python uses a logger handle (get_logger().debug(...))
 signalwire.core.logging_config.info: port-only: Perl exports package-level logging functions; Python uses a logger handle (get_logger().debug(...))
 signalwire.core.logging_config.warn: port-only: Perl exports package-level logging functions; Python uses a logger handle (get_logger().debug(...))
+signalwire.core.logging_config.LogLevel: perl_constants_idiom: SignalWire::Logging::LogLevel is a constants package single-sourcing the four log levels (debug/info/warn/error, ascending severity) that otherwise live only in SignalWire::Logging's private %LEVELS table. The logger's `level` attribute, SIGNALWIRE_LOG_LEVEL, and debug/info/warn/error still take/emit plain strings (the constants ARE the level strings) so Python stdlib-level-name parity is unchanged; this is the source of truth + autocomplete + a validation/severity helper, not a compile-time check.
+signalwire.core.logging_config.LogLevel.all: perl_constants_idiom: LogLevel->all returns the four levels as an arrayref in ascending severity (see LogLevel).
+signalwire.core.logging_config.LogLevel.is_valid: perl_constants_idiom: LogLevel->is_valid($level) membership check over the log-level set (see LogLevel).
+signalwire.core.logging_config.LogLevel.severity: perl_constants_idiom: LogLevel->severity($level) returns the ascending-severity integer (debug=0..error=3) mirroring SignalWire::Logging's internal threshold numbers (see LogLevel).
 signalwire.core.skill_manager.SkillManager.list_skills: port-only accessor: Perl convention surfaces a list-style getter where Python uses a generator or direct attribute access
 signalwire.core.swml_builder.SWMLBuilder.add_raw_verb: port-only: SWML::Document public helper that Python keeps on SWMLService or private
 signalwire.core.swml_builder.SWMLBuilder.add_verb: port-only: SWML::Document public helper that Python keeps on SWMLService or private
