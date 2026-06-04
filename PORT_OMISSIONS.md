@@ -679,8 +679,6 @@ signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.get_hints: not_yet
 signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.get_prompt_sections: not_yet_implemented: skill internal helper not yet ported
 signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.search_wiki: not_yet_implemented: skill internal helper not yet ported
 signalwire.list_skills: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
-signalwire.run_agent: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
-signalwire.start_agent: not_yet_implemented: top-level convenience export — Perl users currently use the class path (e.g. SignalWire::REST::RestClient->new) directly
 signalwire.utils.is_serverless_mode: not_yet_implemented: utility helper pending
 signalwire.utils.schema_utils.SchemaUtils.full_validation_available: not_yet_implemented: utility helper pending
 signalwire.utils.schema_utils.SchemaUtils.generate_method_body: not_yet_implemented: utility helper pending
