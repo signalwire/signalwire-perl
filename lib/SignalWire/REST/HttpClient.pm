@@ -42,6 +42,12 @@ sub _build__ua {
             'Authorization' => $self->_auth_header,
         },
         timeout => 30,
+        # Verify TLS certificates by default, matching the Python reference
+        # (requests/httpx verify by default). HTTP::Tiny otherwise defaults
+        # verify_SSL => 0, which would silently accept any cert — a security
+        # divergence from Python. Verification honors SSL_CERT_FILE / the OS
+        # trust store; plaintext http:// requests are unaffected.
+        verify_SSL      => 1,
     );
 }
 

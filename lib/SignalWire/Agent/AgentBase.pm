@@ -1628,6 +1628,21 @@ sub serve {
     my $host = $opts{host} // $self->host;
     my $port = $opts{port} // $self->port;
 
+    # HTTPS self-serve: when an SSL cert+key pair is configured the agent
+    # presents it directly (no reverse proxy required), matching the Python
+    # reference's uvicorn ssl_certfile/ssl_keyfile path. Two config sources,
+    # mirroring Python:
+    #   * Explicit serve()/run() options (ssl_cert + ssl_key) always enable
+    #     TLS — the analogue of Python web_service.start(ssl_cert=, ssl_key=),
+    #     which serves HTTPS whenever both are passed regardless of the flag.
+    #   * Otherwise the SWML_SSL_* environment variables (same names the Python
+    #     SecurityConfig reads): TLS only when SWML_SSL_ENABLED is truthy AND
+    #     both SWML_SSL_CERT_PATH and SWML_SSL_KEY_PATH resolve.
+    my ($cert, $key) = _resolve_tls(\%opts);
+    if (defined $cert && defined $key) {
+        return $self->_serve_tls($app, $host, $port, $cert, $key);
+    }
+
     require Plack::Runner;
     my $runner = Plack::Runner->new;
     $runner->parse_options(
@@ -1636,6 +1651,57 @@ sub serve {
         '--server' => 'HTTP::Server::PSGI',
     );
     $runner->run($app);
+}
+
+# _resolve_tls(\%opts) -> ($cert, $key) when TLS should be served, else
+# (undef, undef). Explicit ssl_cert + ssl_key options force HTTPS; otherwise the
+# SWML_SSL_* environment is consulted (TLS only when SWML_SSL_ENABLED is truthy
+# AND both cert + key paths are set), exactly matching the Python reference.
+sub _resolve_tls {
+    my ($opts) = @_;
+    my $cert = $opts->{ssl_cert} // $opts->{ssl_cert_path};
+    my $key  = $opts->{ssl_key}  // $opts->{ssl_key_path};
+    if (defined $cert && length $cert && defined $key && length $key) {
+        return ($cert, $key);
+    }
+    my $enabled = lc($ENV{SWML_SSL_ENABLED} // '');
+    if ($enabled eq 'true' || $enabled eq '1' || $enabled eq 'yes') {
+        my $ecert = $ENV{SWML_SSL_CERT_PATH};
+        my $ekey  = $ENV{SWML_SSL_KEY_PATH};
+        if (defined $ecert && length $ecert && defined $ekey && length $ekey) {
+            return ($ecert, $ekey);
+        }
+    }
+    return (undef, undef);
+}
+
+# Serve $app over HTTPS by building an IO::Socket::SSL listen socket from the
+# configured cert/key and handing it to HTTP::Server::PSGI via listen_sock
+# (HTTP::Server::PSGI accepts an already-bound socket and derives host/port
+# from it). IO::Socket::SSL is already a hard dependency (used by the RELAY
+# client), so this adds no new dependency. Blocks like the plaintext path.
+sub _serve_tls {
+    my ($self, $app, $host, $port, $cert, $key) = @_;
+    require IO::Socket::SSL;
+    require HTTP::Server::PSGI;
+    no warnings 'once';  # $IO::Socket::SSL::SSL_ERROR is populated at runtime
+
+    my $ssl = IO::Socket::SSL->new(
+        LocalAddr     => $host,
+        LocalPort     => $port,
+        Listen        => 5,
+        ReuseAddr     => 1,
+        SSL_cert_file => $cert,
+        SSL_key_file  => $key,
+    ) or croak("AgentBase: TLS listen on $host:$port failed: "
+             . ($IO::Socket::SSL::SSL_ERROR // $!));
+
+    my $srv = HTTP::Server::PSGI->new(
+        host        => $host,
+        port        => $port,
+        listen_sock => $ssl,
+    );
+    $srv->run($app);
 }
 
 # ---------- helpers ----------
