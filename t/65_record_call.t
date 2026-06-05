@@ -142,4 +142,82 @@ subtest 'constant and string produce the identical record_call action' => sub {
     }
 };
 
+# ------------------------------------------------------------------
+# 5. Dropped-keys restoration: the slurpy-%opts body used to read only
+#    control_id/stereo/format/direction and silently drop the rest.
+#    Python emits beep + input_sensitivity UNCONDITIONALLY (even at their
+#    defaults) and the remaining keys conditionally. Assert every key
+#    reaches the SWML wire shape with Python's exact gating.
+# ------------------------------------------------------------------
+subtest 'record_call always-on keys: beep + input_sensitivity (defaults)' => sub {
+    my $r = SignalWire::SWAIG::FunctionResult->new;
+    $r->record_call;    # all defaults
+    my $p = record_params($r);
+
+    # Even with zero opts, Python emits these five unconditionally.
+    is_deeply(
+        [ sort keys %$p ],
+        [ sort qw(stereo format direction beep input_sensitivity) ],
+        'all-defaults record_call emits exactly the 5 always-on keys',
+    );
+    is($p->{format},    'wav',  'format default');
+    is($p->{direction}, 'both', 'direction default');
+    # beep defaults false but is STILL emitted (was dropped before the fix).
+    ok(defined $p->{beep}, 'beep key present at default');
+    ok(!$p->{beep},        'beep default is false');
+    # input_sensitivity defaults 44.0 and is emitted as a number (was dropped).
+    cmp_ok($p->{input_sensitivity}, '==', 44, 'input_sensitivity default 44.0 emitted');
+    # stereo default false, emitted.
+    ok(defined $p->{stereo}, 'stereo key present');
+    ok(!$p->{stereo},        'stereo default false');
+};
+
+subtest 'record_call conditional keys reach the SWML when set' => sub {
+    my $r = SignalWire::SWAIG::FunctionResult->new;
+    $r->record_call(
+        control_id          => 'rec1',
+        stereo              => 1,
+        format              => 'mp3',
+        direction           => 'speak',
+        terminators         => '#',
+        beep                => 1,
+        input_sensitivity   => 50.5,
+        initial_timeout     => 0,        # is-not-None gate: 0 MUST still emit
+        end_silence_timeout => 2.5,
+        max_length          => 30,
+        status_url          => 'https://x.test/s',
+    );
+    my $p = record_params($r);
+
+    is($p->{control_id},        'rec1',              'control_id');
+    ok($p->{stereo},                                 'stereo true');
+    is($p->{format},            'mp3',               'format');
+    is($p->{direction},         'speak',             'direction');
+    is($p->{terminators},       '#',                 'terminators reaches SWML (was dropped)');
+    ok($p->{beep},                                   'beep true reaches SWML (was dropped)');
+    cmp_ok($p->{input_sensitivity}, '==', 50.5,      'input_sensitivity passthrough (was dropped)');
+    # The numeric-timeout trio uses Python's `is not None` gate: a literal 0
+    # still emits. This is the subtle case the old truthiness body would lose.
+    ok(exists $p->{initial_timeout},                 'initial_timeout=0 still emitted (is-not-None gate)');
+    cmp_ok($p->{initial_timeout},     '==', 0,       'initial_timeout value 0');
+    cmp_ok($p->{end_silence_timeout}, '==', 2.5,     'end_silence_timeout reaches SWML (was dropped)');
+    cmp_ok($p->{max_length},          '==', 30,      'max_length reaches SWML (was dropped)');
+    is($p->{status_url},        'https://x.test/s',  'status_url reaches SWML (was dropped)');
+};
+
+subtest 'record_call omits conditional keys left unset' => sub {
+    # With only the two always-on numerics/bools present plus format/direction,
+    # none of the optional keys should appear (matches Python's gating).
+    my $r = SignalWire::SWAIG::FunctionResult->new;
+    $r->record_call(format => 'mp4', direction => 'listen');
+    my $p = record_params($r);
+    for my $k (qw(control_id terminators initial_timeout end_silence_timeout
+        max_length status_url)) {
+        ok(!exists $p->{$k}, "unset optional key '$k' omitted");
+    }
+    # but the always-on ones are still there
+    ok(exists $p->{beep},              'beep still present');
+    ok(exists $p->{input_sensitivity}, 'input_sensitivity still present');
+};
+
 done_testing;

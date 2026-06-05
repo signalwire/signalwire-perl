@@ -658,6 +658,99 @@ subtest 'Payment class methods' => sub {
 };
 
 # =============================================
+# Test: pay (always-on keys, incl. min_postal_code_length)
+# =============================================
+# The pay verb rides at main[1] (main[0] is the {set:{ai_response}} preamble).
+sub pay_params {
+    my ($fr) = @_;
+    return result_hash($fr)->{action}[0]{SWML}{sections}{main}[1]{pay};
+}
+
+subtest 'pay always-on keys (Python parity)' => sub {
+    my $r = SignalWire::SWAIG::FunctionResult->new;
+    $r->pay(payment_connector_url => 'https://pay.test/connect');
+    my $p = pay_params($r);
+
+    # Every always-on key Python emits unconditionally — the whole point of
+    # this subtest is min_postal_code_length, which the slurpy-%opts body
+    # used to drop entirely. All are strings on the wire.
+    is($p->{payment_connector_url}, 'https://pay.test/connect', 'connector url');
+    is($p->{input},                 'dtmf',                     'input default');
+    is($p->{payment_method},        'credit-card',              'payment_method default');
+    is($p->{timeout},               '5',                        'timeout stringified');
+    is($p->{max_attempts},          '1',                        'max_attempts stringified');
+    is($p->{security_code},         'true',                     'security_code default');
+    is($p->{min_postal_code_length}, '0', 'min_postal_code_length default "0" (was dropped)');
+    is($p->{token_type},            'reusable',                 'token_type default');
+    is($p->{currency},              'usd',                      'currency default');
+    is($p->{language},              'en-US',                    'language default');
+    is($p->{voice},                 'woman',                    'voice default');
+    is($p->{valid_card_types},      'visa mastercard amex',     'valid_card_types default');
+    is($p->{postal_code},           'true',                     'postal_code bool default');
+
+    # min_postal_code_length is read off %opts and stringified.
+    my $r2 = SignalWire::SWAIG::FunctionResult->new;
+    $r2->pay(payment_connector_url => 'https://pay.test/c', min_postal_code_length => 5);
+    is(pay_params($r2)->{min_postal_code_length}, '5',
+        'min_postal_code_length passthrough stringified');
+
+    # The full always-on key set matches Python exactly (no extra, none missing).
+    my $r3 = SignalWire::SWAIG::FunctionResult->new;
+    $r3->pay(payment_connector_url => 'https://pay.test/c');
+    is_deeply(
+        [ sort keys %{ pay_params($r3) } ],
+        [ sort qw(payment_connector_url input payment_method timeout max_attempts
+            security_code min_postal_code_length token_type currency language voice
+            valid_card_types postal_code) ],
+        'pay always-on key set is byte-identical to Python',
+    );
+};
+
+# =============================================
+# Test: tap (rtp_ptime + status_url restored, rtp_ptime validation)
+# =============================================
+sub tap_params {
+    my ($fr) = @_;
+    return result_hash($fr)->{action}[0]{SWML}{sections}{main}[0]{tap};
+}
+
+subtest 'tap rtp_ptime + status_url + validation (Python parity)' => sub {
+    # Defaults: only uri (rtp_ptime==20 and status_url undef are omitted,
+    # matching Python's per-key gating).
+    my $r = SignalWire::SWAIG::FunctionResult->new;
+    $r->tap('wss://t.test/s');
+    is_deeply(tap_params($r), { uri => 'wss://t.test/s' },
+        'all-defaults tap emits only uri');
+
+    # Non-default rtp_ptime + status_url both reach the wire (were dropped).
+    my $r2 = SignalWire::SWAIG::FunctionResult->new;
+    $r2->tap('wss://t.test/s', control_id => 't1', direction => 'speak',
+        codec => 'PCMA', rtp_ptime => 40, status_url => 'https://s.test/cb');
+    my $p = tap_params($r2);
+    is($p->{rtp_ptime},  40,                  'rtp_ptime reaches the SWML (was dropped)');
+    is($p->{status_url}, 'https://s.test/cb', 'status_url reaches the SWML (was dropped)');
+    is($p->{control_id}, 't1',                'control_id present');
+    is($p->{direction},  'speak',             'direction present');
+    is($p->{codec},      'PCMA',              'codec present');
+
+    # rtp_ptime at its default (20) is still omitted even alongside other params.
+    my $r3 = SignalWire::SWAIG::FunctionResult->new;
+    $r3->tap('wss://t.test/s', status_url => 'https://s.test/cb');
+    ok(!exists tap_params($r3)->{rtp_ptime},
+        'default rtp_ptime (20) omitted');
+
+    # rtp_ptime <= 0 dies (Python: ValueError "rtp_ptime must be a positive integer").
+    my $rd = SignalWire::SWAIG::FunctionResult->new;
+    ok(!eval { $rd->tap('wss://t.test/s', rtp_ptime => 0); 1 },
+        'rtp_ptime => 0 dies');
+    like($@, qr/\Qrtp_ptime must be a positive integer\E/,
+        'rtp_ptime validation message matches Python');
+    my $rn = SignalWire::SWAIG::FunctionResult->new;
+    ok(!eval { $rn->tap('wss://t.test/s', rtp_ptime => -5); 1 },
+        'negative rtp_ptime dies');
+};
+
+# =============================================
 # Test: swml_user_event
 # =============================================
 subtest 'swml_user_event' => sub {

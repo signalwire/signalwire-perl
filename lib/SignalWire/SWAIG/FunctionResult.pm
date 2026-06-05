@@ -233,21 +233,45 @@ sub stop_background_file {
 
 sub record_call {
     my ($self, %opts) = @_;
-    my $control_id = $opts{control_id};
-    my $stereo     = $opts{stereo}    // 0;
-    my $format     = $opts{format}    // 'wav';
-    my $direction  = $opts{direction} // 'both';
+    # Defaults mirror the Python reference's argument defaults.
+    my $control_id          = $opts{control_id};
+    my $stereo              = $opts{stereo}            // 0;
+    my $format              = $opts{format}            // 'wav';
+    my $direction           = $opts{direction}         // 'both';
+    my $terminators         = $opts{terminators};
+    my $beep                = $opts{beep}              // 0;
+    my $input_sensitivity   = exists $opts{input_sensitivity} ? $opts{input_sensitivity} : 44.0;
+    my $initial_timeout     = $opts{initial_timeout};
+    my $end_silence_timeout = $opts{end_silence_timeout};
+    my $max_length          = $opts{max_length};
+    my $status_url          = $opts{status_url};
 
     die "format must be 'wav', 'mp3', or 'mp4'" unless $format eq 'wav' || $format eq 'mp3' || $format eq 'mp4';
     die "direction must be 'speak', 'listen', or 'both'"
         unless $direction eq 'speak' || $direction eq 'listen' || $direction eq 'both';
 
+    # Always-on keys: stereo/format/direction/beep/input_sensitivity are
+    # emitted UNCONDITIONALLY (Python builds them into record_params before
+    # any conditional), so beep=false and input_sensitivity=44.0 ship even
+    # at their defaults. beep/stereo are JSON booleans; input_sensitivity
+    # is a JSON number.
     my %params = (
-        stereo    => $stereo ? JSON::true : JSON::false,
-        format    => $format,
-        direction => $direction,
+        stereo            => $stereo ? JSON::true : JSON::false,
+        format            => $format,
+        direction         => $direction,
+        beep              => $beep ? JSON::true : JSON::false,
+        input_sensitivity => $input_sensitivity + 0,
     );
-    $params{control_id} = $control_id if $control_id;
+
+    # Conditional keys. control_id/terminators/status_url use Python's
+    # truthiness gate (`if x:`); the three numeric timeouts use the
+    # `is not None` gate, so a literal 0 still emits — `defined` mirrors that.
+    $params{control_id}          = $control_id          if $control_id;
+    $params{terminators}         = $terminators         if $terminators;
+    $params{initial_timeout}     = $initial_timeout + 0     if defined $initial_timeout;
+    $params{end_silence_timeout} = $end_silence_timeout + 0 if defined $end_silence_timeout;
+    $params{max_length}          = $max_length + 0          if defined $max_length;
+    $params{status_url}          = $status_url          if $status_url;
 
     my $swml_doc = {
         version  => '1.0.0',
@@ -490,16 +514,24 @@ sub tap {
     my $control_id = $opts{control_id};
     my $direction  = $opts{direction} // 'both';
     my $codec      = $opts{codec}     // 'PCMU';
+    my $rtp_ptime  = $opts{rtp_ptime} // 20;
+    my $status_url = $opts{status_url};
 
     die "direction must be 'speak', 'hear', or 'both'"
         unless $direction eq 'speak' || $direction eq 'hear' || $direction eq 'both';
     die "codec must be 'PCMU' or 'PCMA'"
         unless $codec eq 'PCMU' || $codec eq 'PCMA';
+    # Python: `if rtp_ptime <= 0: raise ValueError(...)`.
+    die "rtp_ptime must be a positive integer" if $rtp_ptime <= 0;
 
     my %params = (uri => $uri);
-    $params{control_id} = $control_id if $control_id;
-    $params{direction}  = $direction  if $direction ne 'both';
-    $params{codec}      = $codec      if $codec ne 'PCMU';
+    # Conditional keys — each emitted only when it differs from its default,
+    # matching Python's per-key gating.
+    $params{control_id} = $control_id   if $control_id;
+    $params{direction}  = $direction    if $direction ne 'both';
+    $params{codec}      = $codec        if $codec ne 'PCMU';
+    $params{rtp_ptime}  = $rtp_ptime + 0 if $rtp_ptime != 20;
+    $params{status_url} = $status_url   if $status_url;
 
     my $swml_doc = {
         version  => '1.0.0',
@@ -556,18 +588,23 @@ sub pay {
     my $max_attempts  = $opts{max_attempts}  // 1;
     my $ai_response   = $opts{ai_response}   // 'The payment status is ${pay_result}, do not mention anything else about collecting payment if successful.';
 
+    # min_postal_code_length is an always-on key in Python
+    # (str(min_postal_code_length), default "0"); emit it as a string too.
+    my $min_postal_code_length = $opts{min_postal_code_length} // 0;
+
     my %pay_params = (
-        payment_connector_url => $connector_url,
-        input                 => $input_method,
-        payment_method        => $opts{payment_method} // 'credit-card',
-        timeout               => "$timeout",
-        max_attempts          => "$max_attempts",
-        security_code         => (($opts{security_code} // 1) ? 'true' : 'false'),
-        token_type            => $opts{token_type}  // 'reusable',
-        currency              => $opts{currency}    // 'usd',
-        language              => $opts{language}    // 'en-US',
-        voice                 => $opts{voice}       // 'woman',
-        valid_card_types      => $opts{valid_card_types} // 'visa mastercard amex',
+        payment_connector_url  => $connector_url,
+        input                  => $input_method,
+        payment_method         => $opts{payment_method} // 'credit-card',
+        timeout                => "$timeout",
+        max_attempts           => "$max_attempts",
+        security_code          => (($opts{security_code} // 1) ? 'true' : 'false'),
+        min_postal_code_length => "$min_postal_code_length",
+        token_type             => $opts{token_type}  // 'reusable',
+        currency               => $opts{currency}    // 'usd',
+        language               => $opts{language}    // 'en-US',
+        voice                  => $opts{voice}       // 'woman',
+        valid_card_types       => $opts{valid_card_types} // 'visa mastercard amex',
     );
 
     my $postal = $opts{postal_code} // 1;
