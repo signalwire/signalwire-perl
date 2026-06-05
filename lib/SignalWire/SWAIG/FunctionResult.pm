@@ -343,29 +343,126 @@ sub execute_swml {
     return $self->add_action('SWML', $swml_data);
 }
 
+# join_conference — join an ad-hoc audio conference (RELAY + CXML) via
+# SWML. Full parity with the Python reference
+# (core/function_result.py join_conference): 19 params (name + 18
+# optional), 7 inline validations with EXACT Python ValueError messages,
+# and simple-form (all defaults -> bare conference NAME string) vs
+# full-object emission (every NON-DEFAULT param under its snake_case wire
+# key). The closed sets are mirrored in SignalWire::SWAIG::JoinConference
+# (BEEP/RECORD/TRIM/METHOD), but the `die` guards here are the single
+# source of truth at runtime — they reproduce Python's f-string list
+# rendering ("beep must be one of ['true', 'false', 'onEnter', 'onExit']").
 sub join_conference {
     my ($self, $name, %opts) = @_;
-    die "name cannot be empty" unless defined $name && length $name;
 
-    my $muted = $opts{muted} // 0;
-    my $beep  = $opts{beep}  // 'true';
+    # Defaults — exactly the Python reference's argument defaults.
+    my $muted                            = $opts{muted}                            // 0;
+    my $beep                             = $opts{beep}                             // 'true';
+    my $start_on_enter                   = exists $opts{start_on_enter} ? $opts{start_on_enter} : 1;
+    my $end_on_exit                      = $opts{end_on_exit}                      // 0;
+    my $wait_url                         = $opts{wait_url};
+    my $max_participants                 = $opts{max_participants}                 // 250;
+    my $record                           = $opts{record}                           // 'do-not-record';
+    my $region                           = $opts{region};
+    my $trim                             = $opts{trim}                             // 'trim-silence';
+    my $coach                            = $opts{coach};
+    my $status_callback_event            = $opts{status_callback_event};
+    my $status_callback                  = $opts{status_callback};
+    my $status_callback_method           = $opts{status_callback_method}           // 'POST';
+    my $recording_status_callback        = $opts{recording_status_callback};
+    my $recording_status_callback_method = $opts{recording_status_callback_method} // 'POST';
+    my $recording_status_callback_event  = $opts{recording_status_callback_event}  // 'completed';
+    my $result                           = $opts{result};
 
-    # Simple form: no options set
-    if (!$muted && $beep eq 'true' && !keys %opts) {
-        my $swml_doc = {
-            version  => '1.0.0',
-            sections => { main => [{ join_conference => $name }] },
-        };
-        return $self->execute_swml($swml_doc);
+    # --- Validations (match Python's exact ValueError messages) ---
+
+    # beep ∈ {true, false, onEnter, onExit}
+    die "beep must be one of ['true', 'false', 'onEnter', 'onExit']"
+        unless $beep eq 'true' || $beep eq 'false'
+            || $beep eq 'onEnter' || $beep eq 'onExit';
+
+    # 0 < max_participants <= 250
+    die "max_participants must be a positive integer <= 250"
+        unless $max_participants > 0 && $max_participants <= 250;
+
+    # record ∈ {do-not-record, record-from-start}
+    die "record must be one of ['do-not-record', 'record-from-start']"
+        unless $record eq 'do-not-record' || $record eq 'record-from-start';
+
+    # trim ∈ {trim-silence, do-not-trim}
+    die "trim must be one of ['trim-silence', 'do-not-trim']"
+        unless $trim eq 'trim-silence' || $trim eq 'do-not-trim';
+
+    # status_callback_method ∈ {GET, POST}
+    die "status_callback_method must be one of ['GET', 'POST']"
+        unless $status_callback_method eq 'GET' || $status_callback_method eq 'POST';
+
+    # recording_status_callback_method ∈ {GET, POST}
+    die "recording_status_callback_method must be one of ['GET', 'POST']"
+        unless $recording_status_callback_method eq 'GET'
+            || $recording_status_callback_method eq 'POST';
+
+    # name not empty after trimming whitespace
+    my $trimmed = defined $name ? $name : '';
+    $trimmed =~ s/^\s+//;
+    $trimmed =~ s/\s+$//;
+    die "name cannot be empty" if $trimmed eq '';
+
+    # --- Build the join_conference payload ---
+
+    my $join_params;
+    if (   !$muted
+        && $beep eq 'true'
+        && $start_on_enter
+        && !$end_on_exit
+        && !defined $wait_url
+        && $max_participants == 250
+        && $record eq 'do-not-record'
+        && !defined $region
+        && $trim eq 'trim-silence'
+        && !defined $coach
+        && !defined $status_callback_event
+        && !defined $status_callback
+        && $status_callback_method eq 'POST'
+        && !defined $recording_status_callback
+        && $recording_status_callback_method eq 'POST'
+        && $recording_status_callback_event eq 'completed'
+        && !defined $result)
+    {
+        # Simple form — just the conference name as a bare string.
+        $join_params = $name;
     }
-
-    my %params = (name => $name);
-    $params{muted} = JSON::true if $muted;
-    $params{beep}  = $beep      if $beep ne 'true';
+    else {
+        # Full-object form: name + every NON-DEFAULT param under its
+        # snake_case wire key. Each key is emitted only when ≠ default.
+        $join_params = { name => $name };
+        $join_params->{muted}                            = JSON::true        if $muted;
+        $join_params->{beep}                             = $beep             if $beep ne 'true';
+        $join_params->{start_on_enter}                   = JSON::false       if !$start_on_enter;
+        $join_params->{end_on_exit}                      = JSON::true        if $end_on_exit;
+        # The six Optional[str] params use Python's truthiness emission
+        # gate (`if wait_url:`), i.e. omit when undef OR empty string,
+        # while emitting the literal "0" (Python treats "" / None as falsy
+        # but "0" as truthy for str). `defined && length` reproduces that.
+        $join_params->{wait_url}                         = $wait_url         if defined $wait_url && length $wait_url;
+        $join_params->{max_participants}                 = $max_participants if $max_participants != 250;
+        $join_params->{record}                           = $record           if $record ne 'do-not-record';
+        $join_params->{region}                           = $region           if defined $region && length $region;
+        $join_params->{trim}                             = $trim             if $trim ne 'trim-silence';
+        $join_params->{coach}                            = $coach            if defined $coach && length $coach;
+        $join_params->{status_callback_event}            = $status_callback_event            if defined $status_callback_event && length $status_callback_event;
+        $join_params->{status_callback}                  = $status_callback                  if defined $status_callback && length $status_callback;
+        $join_params->{status_callback_method}           = $status_callback_method           if $status_callback_method ne 'POST';
+        $join_params->{recording_status_callback}        = $recording_status_callback        if defined $recording_status_callback && length $recording_status_callback;
+        $join_params->{recording_status_callback_method} = $recording_status_callback_method if $recording_status_callback_method ne 'POST';
+        $join_params->{recording_status_callback_event}  = $recording_status_callback_event  if $recording_status_callback_event ne 'completed';
+        $join_params->{result}                           = $result           if defined $result;
+    }
 
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ join_conference => \%params }] },
+        sections => { main => [{ join_conference => $join_params }] },
     };
     return $self->execute_swml($swml_doc);
 }

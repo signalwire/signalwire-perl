@@ -333,6 +333,233 @@ subtest 'execute_swml' => sub {
     is($h->{action}[0]{SWML}{version}, '1.0.0', 'execute_swml from JSON string');
 };
 
+# =============================================
+# Test: join_conference — full parity with the Python reference
+# (core/function_result.py join_conference). 19 params (name + 18
+# optional), 7 validations with EXACT Python ValueError messages, and
+# simple-form (all defaults -> bare conference NAME string) vs full-object
+# emission (every NON-DEFAULT param under its snake_case wire key).
+# Drives the REAL join_conference -> execute_swml -> add_action path and
+# asserts on the serialized SWML action. No mocks.
+# =============================================
+
+# Pull the join_conference payload back out of a serialized result.
+# It lands at action[0]/SWML/sections/main/[0]/join_conference — either a
+# bare string (simple form) or a hashref (full-object form).
+sub jc_payload {
+    my ($fr) = @_;
+    my $h = result_hash($fr);
+    return $h->{action}[0]{SWML}{sections}{main}[0]{join_conference};
+}
+
+subtest 'join_conference simple form (all defaults -> bare name)' => sub {
+    my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+    my $ret = $r->join_conference('support-lobby');
+    is($ret, $r, 'join_conference returns self for chaining');
+
+    my $payload = jc_payload($r);
+    ok(!ref $payload, 'all-defaults emits a bare scalar, not a hashref');
+    is($payload, 'support-lobby', 'bare conference name on the wire');
+
+    # Defaults that equal the simple-form trigger must NOT force object form.
+    $r = SignalWire::SWAIG::FunctionResult->new('conf');
+    $r->join_conference(
+        'lobby2',
+        muted                            => 0,
+        beep                             => 'true',
+        start_on_enter                   => 1,
+        end_on_exit                      => 0,
+        max_participants                 => 250,
+        record                           => 'do-not-record',
+        trim                             => 'trim-silence',
+        status_callback_method           => 'POST',
+        recording_status_callback_method => 'POST',
+        recording_status_callback_event  => 'completed',
+    );
+    is(jc_payload($r), 'lobby2',
+        'explicitly passing every default still collapses to bare name');
+};
+
+subtest 'join_conference full-object form (non-default params, snake_case keys)' => sub {
+    my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+    $r->join_conference(
+        'big-room',
+        muted                            => 1,
+        beep                             => 'onEnter',
+        start_on_enter                   => 0,
+        end_on_exit                      => 1,
+        wait_url                         => 'https://example.com/hold.swml',
+        max_participants                 => 100,
+        record                           => 'record-from-start',
+        region                           => 'us-east',
+        trim                             => 'do-not-trim',
+        coach                            => 'call-abc-123',
+        status_callback_event            => 'start end join leave',
+        status_callback                  => 'https://example.com/status',
+        status_callback_method           => 'GET',
+        recording_status_callback        => 'https://example.com/rec',
+        recording_status_callback_method => 'GET',
+        recording_status_callback_event  => 'in-progress',
+        result                           => { foo => 'bar' },
+    );
+
+    my $p = jc_payload($r);
+    is(ref $p, 'HASH', 'non-default params emit a hashref');
+    is($p->{name}, 'big-room', 'name key present in object form');
+
+    # Every non-default param under its EXACT snake_case wire key.
+    is($p->{muted}, JSON::true, 'muted => true (boolean, not 1-ish)');
+    is($p->{beep}, 'onEnter', 'beep wire key');
+    is($p->{start_on_enter}, JSON::false, 'start_on_enter => false');
+    is($p->{end_on_exit}, JSON::true, 'end_on_exit => true');
+    is($p->{wait_url}, 'https://example.com/hold.swml', 'wait_url (NOT holdAudio)');
+    is($p->{max_participants}, 100, 'max_participants');
+    is($p->{record}, 'record-from-start', 'record');
+    is($p->{region}, 'us-east', 'region');
+    is($p->{trim}, 'do-not-trim', 'trim');
+    is($p->{coach}, 'call-abc-123', 'coach');
+    is($p->{status_callback_event}, 'start end join leave', 'status_callback_event');
+    is($p->{status_callback}, 'https://example.com/status', 'status_callback');
+    is($p->{status_callback_method}, 'GET', 'status_callback_method');
+    is($p->{recording_status_callback}, 'https://example.com/rec', 'recording_status_callback');
+    is($p->{recording_status_callback_method}, 'GET', 'recording_status_callback_method');
+    is($p->{recording_status_callback_event}, 'in-progress', 'recording_status_callback_event');
+    is_deeply($p->{result}, { foo => 'bar' }, 'result passthrough');
+
+    # There must be no Twilio-style camelCase key leaking in.
+    ok(!exists $p->{holdAudio}, 'no holdAudio key (Python uses wait_url)');
+    ok(!exists $p->{startConferenceOnEnter}, 'no camelCase startConferenceOnEnter');
+};
+
+subtest 'join_conference omits keys left at their defaults' => sub {
+    # Only ONE non-default param: object form with name + that one key only.
+    my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+    $r->join_conference('room', max_participants => 50);
+    my $p = jc_payload($r);
+    is(ref $p, 'HASH', 'single non-default forces object form');
+    is($p->{name}, 'room', 'name present');
+    is($p->{max_participants}, 50, 'max_participants present');
+    # None of the default-valued params should appear.
+    for my $k (qw(muted beep start_on_enter end_on_exit wait_url record
+                  region trim coach status_callback_event status_callback
+                  status_callback_method recording_status_callback
+                  recording_status_callback_method recording_status_callback_event
+                  result)) {
+        ok(!exists $p->{$k}, "default-valued '$k' is omitted");
+    }
+};
+
+subtest 'join_conference validations (exact Python ValueError messages)' => sub {
+    # Invalid beep.
+    {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        my $ok = eval { $r->join_conference('c', beep => 'maybe'); 1 };
+        ok(!$ok, 'invalid beep dies');
+        like($@, qr/\Qbeep must be one of ['true', 'false', 'onEnter', 'onExit']\E/,
+            'beep message matches Python list rendering');
+    }
+    # max_participants out of range: > 250, == 0, < 0.
+    for my $bad (251, 1000, 0, -1, -50) {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        my $ok = eval { $r->join_conference('c', max_participants => $bad); 1 };
+        ok(!$ok, "max_participants=$bad dies");
+        like($@, qr/\Qmax_participants must be a positive integer <= 250\E/,
+            "max_participants=$bad message");
+    }
+    # Boundary: exactly 250 and exactly 1 are accepted.
+    for my $good (1, 250) {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        my $ok = eval { $r->join_conference('c', max_participants => $good); 1 };
+        ok($ok, "max_participants=$good accepted") or diag($@);
+    }
+    # Invalid record.
+    {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        my $ok = eval { $r->join_conference('c', record => 'sometimes'); 1 };
+        ok(!$ok, 'invalid record dies');
+        like($@, qr/\Qrecord must be one of ['do-not-record', 'record-from-start']\E/,
+            'record message');
+    }
+    # Invalid trim.
+    {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        my $ok = eval { $r->join_conference('c', trim => 'maybe-trim'); 1 };
+        ok(!$ok, 'invalid trim dies');
+        like($@, qr/\Qtrim must be one of ['trim-silence', 'do-not-trim']\E/,
+            'trim message');
+    }
+    # Invalid status_callback_method.
+    {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        my $ok = eval { $r->join_conference('c', status_callback_method => 'PUT'); 1 };
+        ok(!$ok, 'invalid status_callback_method dies');
+        like($@, qr/\Qstatus_callback_method must be one of ['GET', 'POST']\E/,
+            'status_callback_method message');
+    }
+    # Invalid recording_status_callback_method.
+    {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        my $ok = eval { $r->join_conference('c', recording_status_callback_method => 'DELETE'); 1 };
+        ok(!$ok, 'invalid recording_status_callback_method dies');
+        like($@, qr/\Qrecording_status_callback_method must be one of ['GET', 'POST']\E/,
+            'recording_status_callback_method message');
+    }
+    # Empty name and whitespace-only name (after trim).
+    {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        ok(!eval { $r->join_conference(''); 1 }, 'empty name dies');
+        like($@, qr/\Qname cannot be empty\E/, 'empty-name message');
+    }
+    {
+        my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+        ok(!eval { $r->join_conference('   '); 1 }, 'whitespace-only name dies');
+        like($@, qr/\Qname cannot be empty\E/, 'whitespace-name message');
+    }
+};
+
+subtest 'join_conference Optional[str] truthiness emission (Python parity)' => sub {
+    # Python emits the six Optional[str] params with `if <str>:` (truthiness):
+    # an empty string is OMITTED (but still forces object form via the
+    # simple-form `is None` gate). `result` uses `is not None`, so a defined
+    # falsy result (0) IS emitted.
+    my $r = SignalWire::SWAIG::FunctionResult->new('conf');
+    $r->join_conference('room', wait_url => '', region => '', coach => '');
+    my $p = jc_payload($r);
+    is(ref $p, 'HASH', 'empty-string optional forces object form (matches Python is-None gate)');
+    is($p->{name}, 'room', 'name present');
+    ok(!exists $p->{wait_url}, 'empty wait_url omitted (truthiness gate)');
+    ok(!exists $p->{region},   'empty region omitted (truthiness gate)');
+    ok(!exists $p->{coach},    'empty coach omitted (truthiness gate)');
+
+    # result => 0 is defined-but-falsy; Python's `is not None` emits it.
+    my $r2 = SignalWire::SWAIG::FunctionResult->new('conf');
+    $r2->join_conference('room', result => 0);
+    my $p2 = jc_payload($r2);
+    ok(exists $p2->{result}, 'result => 0 is emitted (is-not-None gate, not truthiness)');
+    is($p2->{result}, 0, 'result value 0 preserved');
+
+    # result => arrayref (the "cond when array []" form) passes through.
+    my $r3 = SignalWire::SWAIG::FunctionResult->new('conf');
+    $r3->join_conference('room', result => ['a', 'b']);
+    is_deeply(jc_payload($r3)->{result}, ['a', 'b'], 'arrayref result passthrough');
+};
+
+subtest 'join_conference chaining with other actions' => sub {
+    my $r = SignalWire::SWAIG::FunctionResult->new('multi')
+        ->say('Joining the conference')
+        ->join_conference('lobby', muted => 1)
+        ->set_post_process(1);
+    my $h = result_hash($r);
+    is($h->{response}, 'multi', 'response preserved through chain');
+    is(scalar @{ $h->{action} }, 2, 'say + join_conference => 2 actions');
+    is($h->{action}[0]{say}, 'Joining the conference', 'first action is say');
+    is($h->{action}[1]{SWML}{sections}{main}[0]{join_conference}{name}, 'lobby',
+        'second action is the join_conference object');
+    is($h->{action}[1]{SWML}{sections}{main}[0]{join_conference}{muted}, JSON::true,
+        'muted carried into the chained join_conference');
+    ok($h->{post_process}, 'post_process set after chain');
+};
+
 subtest 'join_room' => sub {
     my $r = SignalWire::SWAIG::FunctionResult->new('room');
     $r->join_room('my-room');
