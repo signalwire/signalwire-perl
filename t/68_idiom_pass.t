@@ -279,6 +279,7 @@ subtest 'POD: documented modules are Pod::Checker-clean' => sub {
     my $lib = File::Spec->catdir($test_dir, File::Spec->updir, 'lib');
 
     my @modules = qw(
+        SignalWire/SWAIG/ParameterSchema.pm
         SignalWire/SWAIG/RecordCall.pm
         SignalWire/SWAIG/Tap.pm
         SignalWire/SWAIG/JoinConference.pm
