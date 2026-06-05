@@ -9,6 +9,11 @@
 #   2. signature regen                    — python adapter + signature_dump.pl
 #   3. drift gate                         — porting-sdk diff_port_signatures.py
 #   4. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
+#   5. emission gate                      — porting-sdk diff_port_emission.py
+#                                           (byte-compares bin/emit-corpus.pl's
+#                                           FunctionResult serialisation vs
+#                                           Python's to_dict() over the shared
+#                                           81-entry corpus; no mocks/network)
 
 set -u
 set -o pipefail
@@ -79,6 +84,16 @@ run_gate "DRIFT" "diff_port_signatures vs python reference" \
 # Gate 4: no-cheat
 run_gate "NO-CHEAT" "audit_no_cheat_tests" \
     python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
+
+# Gate 5: emission — byte-compare FunctionResult serialisation vs Python's
+# to_dict() over the shared 81-entry corpus. Pure serialisation: no mock
+# servers, no network — just signalwire-python adjacent (already required by
+# the drift gate) and bin/emit-corpus.pl. See porting-sdk/IDIOM_PASS_JOURNAL.md
+# §4 Tier-0 and scripts/diff_port_emission.py.
+run_gate "EMISSION" "diff_port_emission vs python to_dict()" \
+    python3 "$PORTING_SDK_DIR/scripts/diff_port_emission.py" \
+        --dump-cmd "perl bin/emit-corpus.pl" \
+        --port-repo "$PORT_ROOT"
 
 if [ -z "$FAILED_GATES" ]; then
     echo "==> CI PASS"

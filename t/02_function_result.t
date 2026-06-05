@@ -619,6 +619,40 @@ subtest 'RPC methods' => sub {
     $h = result_hash($r);
     $main = $h->{action}[0]{SWML}{sections}{main};
     is($main->[0]{execute_rpc}{method}, 'ai_unhold', 'rpc_ai_unhold');
+
+    # --- Regression: empty params must be OMITTED from the wire shape. ---
+    # Python's execute_rpc gates the params key with `if params:`, where an
+    # EMPTY dict {} is falsy and never reaches the wire. rpc_ai_unhold passes
+    # params={} internally, so the serialized execute_rpc must carry ONLY
+    # {method, call_id} — no `params` key at all. A Perl hashref is truthy even
+    # when empty, so the verb explicitly mirrors Python's emptiness gate; this
+    # pins the corrected shape (the cross-port emission corpus' rpc_ai_unhold
+    # entry diffs against this exact Python to_dict() shape).
+    my $unhold_rpc = $main->[0]{execute_rpc};
+    ok(!exists $unhold_rpc->{params},
+        'rpc_ai_unhold omits params (empty {} is falsy in Python, must not emit)');
+    is($unhold_rpc->{call_id}, 'call-456', 'rpc_ai_unhold carries call_id');
+    is_deeply([ sort keys %$unhold_rpc ], [ sort qw(method call_id) ],
+        'rpc_ai_unhold execute_rpc has exactly method + call_id (no params)');
+
+    # And execute_rpc called directly with an empty params hashref behaves the
+    # same way — empty params are dropped, matching Python's `if params:`.
+    $r = SignalWire::SWAIG::FunctionResult->new('rpc');
+    $r->execute_rpc(method => 'noop', params => {});
+    $h = result_hash($r);
+    $main = $h->{action}[0]{SWML}{sections}{main};
+    ok(!exists $main->[0]{execute_rpc}{params},
+        'execute_rpc with empty params {} omits the params key (Python truthiness)');
+    is($main->[0]{execute_rpc}{method}, 'noop',
+        'execute_rpc with empty params still carries the method');
+
+    # A NON-empty params hashref still emits (sanity: the gate only drops EMPTY).
+    $r = SignalWire::SWAIG::FunctionResult->new('rpc');
+    $r->execute_rpc(method => 'go', params => { a => 1 });
+    $h = result_hash($r);
+    $main = $h->{action}[0]{SWML}{sections}{main};
+    is_deeply($main->[0]{execute_rpc}{params}, { a => 1 },
+        'execute_rpc with non-empty params still emits them');
 };
 
 # =============================================
@@ -704,6 +738,51 @@ subtest 'pay always-on keys (Python parity)' => sub {
             valid_card_types postal_code) ],
         'pay always-on key set is byte-identical to Python',
     );
+};
+
+# Regression: empty collection-typed optional params must be OMITTED, matching
+# Python's `if parameters:` / `if prompts:` / `if media:` / `if tags:` gates
+# (an empty list/dict is falsy in Python and never reaches the wire). A Perl
+# arrayref/hashref is truthy even when empty, so the verbs use a Python-
+# truthiness gate; this pins the corrected shape. Without the fix, pay shipped
+# `parameters: []` / `prompts: []` and send_sms shipped `media: []` / `tags: []`.
+subtest 'empty optional collections are omitted (Python truthiness)' => sub {
+    # --- pay: empty parameters + prompts ---
+    my $r = SignalWire::SWAIG::FunctionResult->new;
+    $r->pay(payment_connector_url => 'https://pay.test/c',
+            parameters => [], prompts => []);
+    my $p = pay_params($r);
+    ok(!exists $p->{parameters}, 'pay omits empty parameters (was [])');
+    ok(!exists $p->{prompts},    'pay omits empty prompts (was [])');
+
+    # NON-empty parameters/prompts still emit unchanged.
+    my $r2 = SignalWire::SWAIG::FunctionResult->new;
+    $r2->pay(payment_connector_url => 'https://pay.test/c',
+             parameters => [ { name => 'order_id', value => '42' } ],
+             prompts    => [ { for => 'payment-card-number', actions => [] } ]);
+    my $p2 = pay_params($r2);
+    is_deeply($p2->{parameters}, [ { name => 'order_id', value => '42' } ],
+        'pay keeps non-empty parameters');
+    is($p2->{prompts}[0]{for}, 'payment-card-number',
+        'pay keeps non-empty prompts');
+
+    # --- send_sms: empty media + tags ---
+    my $s = SignalWire::SWAIG::FunctionResult->new;
+    $s->send_sms(to_number => '+15551112222', from_number => '+15553334444',
+                 body => 'hi', media => [], tags => []);
+    my $sp = result_hash($s)->{action}[0]{SWML}{sections}{main}[0]{send_sms};
+    ok(!exists $sp->{media}, 'send_sms omits empty media (was [])');
+    ok(!exists $sp->{tags},  'send_sms omits empty tags (was [])');
+    is_deeply([ sort keys %$sp ], [ sort qw(to_number from_number body) ],
+        'send_sms with empty media/tags carries only to/from/body');
+
+    # NON-empty media/tags still emit.
+    my $s2 = SignalWire::SWAIG::FunctionResult->new;
+    $s2->send_sms(to_number => '+1', from_number => '+2',
+                  media => [ 'https://ex.com/a.jpg' ], tags => [ 'vip' ]);
+    my $sp2 = result_hash($s2)->{action}[0]{SWML}{sections}{main}[0]{send_sms};
+    is_deeply($sp2->{media}, [ 'https://ex.com/a.jpg' ], 'send_sms keeps non-empty media');
+    is_deeply($sp2->{tags},  [ 'vip' ],                  'send_sms keeps non-empty tags');
 };
 
 # =============================================

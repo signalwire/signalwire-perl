@@ -27,6 +27,25 @@ has 'post_process' => (
     default => sub { 0 },
 );
 
+# Mirror Python's `if value:` truthiness for the values that reach the wire as
+# optional keys. The cross-port emission contract is byte-equality with
+# Python's to_dict(), and Python treats an EMPTY dict/list as falsy (so an
+# empty `params={}` is omitted) while Perl treats any ref as truthy. This
+# helper bridges that gap: an empty hashref/arrayref is falsy, a non-empty one
+# is truthy, and a plain scalar uses Perl's own truthiness (matching Python's
+# str/number rules closely enough for the wire values in play).
+sub _py_truthy {
+    my ($v) = @_;
+    return 0 unless defined $v;
+    if (ref $v eq 'HASH') {
+        return scalar(keys %$v) ? 1 : 0;
+    }
+    if (ref $v eq 'ARRAY') {
+        return scalar(@$v) ? 1 : 0;
+    }
+    return $v ? 1 : 0;
+}
+
 # Constructor: new(response => "text") or new("text") or new("text", post_process => 1)
 around BUILDARGS => sub {
     my ($orig, $class, @args) = @_;
@@ -537,8 +556,11 @@ sub send_sms ($self, %opts) {
         from_number => $from_number,
     );
     $sms_params{body}   = $body   if $body;
-    $sms_params{media}  = $media  if $media;
-    $sms_params{tags}   = $tags   if $tags;
+    # Python gates media/tags with `if media:` / `if tags:` — an EMPTY list is
+    # falsy and omitted. A Perl arrayref is truthy even when empty, so use the
+    # Python-truthiness helper (an empty [] must not reach the wire).
+    $sms_params{media}  = $media  if _py_truthy($media);
+    $sms_params{tags}   = $tags   if _py_truthy($tags);
     $sms_params{region} = $region if $region;
 
     my $swml_doc = {
@@ -584,8 +606,10 @@ sub pay ($self, %opts) {
     $pay_params{status_url}    = $opts{status_url}    if $opts{status_url};
     $pay_params{charge_amount} = $opts{charge_amount} if $opts{charge_amount};
     $pay_params{description}   = $opts{description}   if $opts{description};
-    $pay_params{parameters}    = $opts{parameters}    if $opts{parameters};
-    $pay_params{prompts}       = $opts{prompts}       if $opts{prompts};
+    # Python gates parameters/prompts with `if parameters:` / `if prompts:` — an
+    # EMPTY list is falsy and omitted. Mirror that (a Perl [] is truthy).
+    $pay_params{parameters}    = $opts{parameters}    if _py_truthy($opts{parameters});
+    $pay_params{prompts}       = $opts{prompts}       if _py_truthy($opts{prompts});
 
     my $swml_doc = {
         version  => '1.0.0',
@@ -610,7 +634,12 @@ sub execute_rpc ($self, %opts) {
     my %rpc_params = (method => $method);
     $rpc_params{call_id} = $call_id if $call_id;
     $rpc_params{node_id} = $node_id if $node_id;
-    $rpc_params{params}  = $params  if $params;
+    # Python gates this with `if params:`, where an EMPTY dict {} is falsy and
+    # therefore OMITTED (rpc_ai_unhold passes params={}, which never reaches the
+    # wire). A Perl hashref is truthy even when empty, so mirror Python's
+    # truthiness: emit params only when it's a NON-EMPTY hashref/arrayref (or a
+    # defined non-ref scalar). Without this, ai_unhold would ship `params: {}`.
+    $rpc_params{params} = $params if _py_truthy($params);
 
     my $swml_doc = {
         version  => '1.0.0',
