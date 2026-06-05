@@ -2,6 +2,14 @@ package SignalWire::SWAIG::FunctionResult;
 use strict;
 use warnings;
 use Moo;
+# Subroutine signatures (Perl 5.20+). The SDK's declared floor is 5.026
+# (see Makefile.PL / cpanfile), where signatures are still gated behind
+# the experimental warning; silence it so the floor stays green. On 5.36+
+# signatures are non-experimental and this `no warnings` is harmless.
+# NB: must come AFTER `use Moo;` — Moo's import re-enables the default
+# warning set and would otherwise un-silence experimental::signatures.
+use feature 'signatures';
+no warnings 'experimental::signatures';
 use JSON ();
 
 has 'response' => (
@@ -34,34 +42,29 @@ around BUILDARGS => sub {
 
 # --- Core methods ---
 
-sub set_response {
-    my ($self, $response) = @_;
+sub set_response ($self, $response) {
     $self->response($response);
     return $self;
 }
 
-sub set_post_process {
-    my ($self, $post_process) = @_;
+sub set_post_process ($self, $post_process) {
     $self->post_process($post_process ? 1 : 0);
     return $self;
 }
 
-sub add_action {
-    my ($self, $name, $data) = @_;
+sub add_action ($self, $name, $data) {
     push @{ $self->action }, { $name => $data };
     return $self;
 }
 
-sub add_actions {
-    my ($self, $actions) = @_;
+sub add_actions ($self, $actions) {
     push @{ $self->action }, @$actions;
     return $self;
 }
 
 # --- Call Control ---
 
-sub connect {
-    my ($self, $destination, %opts) = @_;
+sub connect ($self, $destination, %opts) {
     my $final = exists $opts{final} ? $opts{final} : 1;
     my $from  = $opts{from};
 
@@ -82,8 +85,7 @@ sub connect {
     return $self;
 }
 
-sub swml_transfer {
-    my ($self, $dest, $ai_response, %opts) = @_;
+sub swml_transfer ($self, $dest, $ai_response, %opts) {
     my $final = exists $opts{final} ? $opts{final} : 1;
 
     my $swml_action = {
@@ -103,21 +105,18 @@ sub swml_transfer {
     return $self;
 }
 
-sub hangup {
-    my ($self) = @_;
+sub hangup ($self) {
     return $self->add_action('hangup', JSON::true);
 }
 
-sub hold {
-    my ($self, $timeout) = @_;
+sub hold ($self, $timeout = undef) {
     $timeout //= 300;
     $timeout = 0   if $timeout < 0;
     $timeout = 900 if $timeout > 900;
     return $self->add_action('hold', $timeout);
 }
 
-sub wait_for_user {
-    my ($self, %opts) = @_;
+sub wait_for_user ($self, %opts) {
     my $enabled      = $opts{enabled};
     my $timeout      = $opts{timeout};
     my $answer_first = $opts{answer_first};
@@ -135,35 +134,29 @@ sub wait_for_user {
     return $self->add_action('wait_for_user', $value);
 }
 
-sub stop {
-    my ($self) = @_;
+sub stop ($self) {
     return $self->add_action('stop', JSON::true);
 }
 
 # --- State & Data ---
 
-sub update_global_data {
-    my ($self, $data) = @_;
+sub update_global_data ($self, $data) {
     return $self->add_action('set_global_data', $data);
 }
 
-sub remove_global_data {
-    my ($self, $keys) = @_;
+sub remove_global_data ($self, $keys) {
     return $self->add_action('unset_global_data', $keys);
 }
 
-sub set_metadata {
-    my ($self, $data) = @_;
+sub set_metadata ($self, $data) {
     return $self->add_action('set_meta_data', $data);
 }
 
-sub remove_metadata {
-    my ($self, $keys) = @_;
+sub remove_metadata ($self, $keys) {
     return $self->add_action('unset_meta_data', $keys);
 }
 
-sub swml_user_event {
-    my ($self, $event_data) = @_;
+sub swml_user_event ($self, $event_data) {
     my $swml_action = {
         sections => {
             main => [{
@@ -175,18 +168,15 @@ sub swml_user_event {
     return $self->add_action('SWML', $swml_action);
 }
 
-sub swml_change_step {
-    my ($self, $step_name) = @_;
+sub swml_change_step ($self, $step_name) {
     return $self->add_action('change_step', $step_name);
 }
 
-sub swml_change_context {
-    my ($self, $context_name) = @_;
+sub swml_change_context ($self, $context_name) {
     return $self->add_action('change_context', $context_name);
 }
 
-sub switch_context {
-    my ($self, %opts) = @_;
+sub switch_context ($self, %opts) {
     my $system_prompt = $opts{system_prompt};
     my $user_prompt   = $opts{user_prompt};
     my $consolidate   = $opts{consolidate};
@@ -204,21 +194,18 @@ sub switch_context {
     return $self->add_action('context_switch', \%ctx);
 }
 
-sub replace_in_history {
-    my ($self, $text) = @_;
+sub replace_in_history ($self, $text = undef) {
     $text //= JSON::true;
     return $self->add_action('replace_in_history', $text);
 }
 
 # --- Media ---
 
-sub say {
-    my ($self, $text) = @_;
+sub say ($self, $text) {
     return $self->add_action('say', $text);
 }
 
-sub play_background_file {
-    my ($self, $filename, %opts) = @_;
+sub play_background_file ($self, $filename, %opts) {
     my $wait = $opts{wait};
     if ($wait) {
         return $self->add_action('playback_bg', { file => $filename, wait => JSON::true });
@@ -226,13 +213,11 @@ sub play_background_file {
     return $self->add_action('playback_bg', $filename);
 }
 
-sub stop_background_file {
-    my ($self) = @_;
+sub stop_background_file ($self) {
     return $self->add_action('stop_playback_bg', JSON::true);
 }
 
-sub record_call {
-    my ($self, %opts) = @_;
+sub record_call ($self, %opts) {
     # Defaults mirror the Python reference's argument defaults.
     my $control_id          = $opts{control_id};
     my $stereo              = $opts{stereo}            // 0;
@@ -280,8 +265,7 @@ sub record_call {
     return $self->execute_swml($swml_doc);
 }
 
-sub stop_record_call {
-    my ($self, %opts) = @_;
+sub stop_record_call ($self, %opts) {
     my $control_id = $opts{control_id};
     my %params;
     $params{control_id} = $control_id if $control_id;
@@ -295,53 +279,44 @@ sub stop_record_call {
 
 # --- Speech & AI ---
 
-sub add_dynamic_hints {
-    my ($self, $hints) = @_;
+sub add_dynamic_hints ($self, $hints) {
     return $self->add_action('add_dynamic_hints', $hints);
 }
 
-sub clear_dynamic_hints {
-    my ($self) = @_;
+sub clear_dynamic_hints ($self) {
     push @{ $self->action }, { clear_dynamic_hints => {} };
     return $self;
 }
 
-sub set_end_of_speech_timeout {
-    my ($self, $ms) = @_;
+sub set_end_of_speech_timeout ($self, $ms) {
     return $self->add_action('end_of_speech_timeout', $ms);
 }
 
-sub set_speech_event_timeout {
-    my ($self, $ms) = @_;
+sub set_speech_event_timeout ($self, $ms) {
     return $self->add_action('speech_event_timeout', $ms);
 }
 
-sub toggle_functions {
-    my ($self, $toggles) = @_;
+sub toggle_functions ($self, $toggles) {
     return $self->add_action('toggle_functions', $toggles);
 }
 
-sub enable_functions_on_timeout {
-    my ($self, $enabled) = @_;
+sub enable_functions_on_timeout ($self, $enabled = undef) {
     $enabled //= 1;
     return $self->add_action('functions_on_speaker_timeout', $enabled ? JSON::true : JSON::false);
 }
 
-sub enable_extensive_data {
-    my ($self, $enabled) = @_;
+sub enable_extensive_data ($self, $enabled = undef) {
     $enabled //= 1;
     return $self->add_action('extensive_data', $enabled ? JSON::true : JSON::false);
 }
 
-sub update_settings {
-    my ($self, $settings) = @_;
+sub update_settings ($self, $settings) {
     return $self->add_action('settings', $settings);
 }
 
 # --- Advanced ---
 
-sub execute_swml {
-    my ($self, $swml_content, %opts) = @_;
+sub execute_swml ($self, $swml_content, %opts) {
     my $transfer = $opts{transfer} // 0;
 
     my $swml_data;
@@ -377,9 +352,7 @@ sub execute_swml {
 # (BEEP/RECORD/TRIM/METHOD), but the `die` guards here are the single
 # source of truth at runtime — they reproduce Python's f-string list
 # rendering ("beep must be one of ['true', 'false', 'onEnter', 'onExit']").
-sub join_conference {
-    my ($self, $name, %opts) = @_;
-
+sub join_conference ($self, $name, %opts) {
     # Defaults — exactly the Python reference's argument defaults.
     my $muted                            = $opts{muted}                            // 0;
     my $beep                             = $opts{beep}                             // 'true';
@@ -491,8 +464,7 @@ sub join_conference {
     return $self->execute_swml($swml_doc);
 }
 
-sub join_room {
-    my ($self, $name) = @_;
+sub join_room ($self, $name) {
     my $swml_doc = {
         version  => '1.0.0',
         sections => { main => [{ join_room => { name => $name } }] },
@@ -500,8 +472,7 @@ sub join_room {
     return $self->execute_swml($swml_doc);
 }
 
-sub sip_refer {
-    my ($self, $to_uri) = @_;
+sub sip_refer ($self, $to_uri) {
     my $swml_doc = {
         version  => '1.0.0',
         sections => { main => [{ sip_refer => { to_uri => $to_uri } }] },
@@ -509,8 +480,7 @@ sub sip_refer {
     return $self->execute_swml($swml_doc);
 }
 
-sub tap {
-    my ($self, $uri, %opts) = @_;
+sub tap ($self, $uri, %opts) {
     my $control_id = $opts{control_id};
     my $direction  = $opts{direction} // 'both';
     my $codec      = $opts{codec}     // 'PCMU';
@@ -540,8 +510,7 @@ sub tap {
     return $self->execute_swml($swml_doc);
 }
 
-sub stop_tap {
-    my ($self, %opts) = @_;
+sub stop_tap ($self, %opts) {
     my $control_id = $opts{control_id};
     my %params;
     $params{control_id} = $control_id if $control_id;
@@ -553,8 +522,7 @@ sub stop_tap {
     return $self->execute_swml($swml_doc);
 }
 
-sub send_sms {
-    my ($self, %opts) = @_;
+sub send_sms ($self, %opts) {
     my $to_number   = $opts{to_number}   // die "to_number is required";
     my $from_number = $opts{from_number} // die "from_number is required";
     my $body        = $opts{body};
@@ -580,8 +548,7 @@ sub send_sms {
     return $self->execute_swml($swml_doc);
 }
 
-sub pay {
-    my ($self, %opts) = @_;
+sub pay ($self, %opts) {
     my $connector_url = $opts{payment_connector_url} // die "payment_connector_url required";
     my $input_method  = $opts{input_method}  // 'dtmf';
     my $timeout       = $opts{timeout}       // 5;
@@ -634,8 +601,7 @@ sub pay {
 
 # --- RPC ---
 
-sub execute_rpc {
-    my ($self, %opts) = @_;
+sub execute_rpc ($self, %opts) {
     my $method  = $opts{method}  // die "method is required";
     my $params  = $opts{params};
     my $call_id = $opts{call_id};
@@ -653,8 +619,7 @@ sub execute_rpc {
     return $self->execute_swml($swml_doc);
 }
 
-sub rpc_dial {
-    my ($self, %opts) = @_;
+sub rpc_dial ($self, %opts) {
     my $to_number   = $opts{to_number}   // die "to_number is required";
     my $from_number = $opts{from_number} // die "from_number is required";
     my $dest_swml   = $opts{dest_swml}   // die "dest_swml is required";
@@ -675,8 +640,7 @@ sub rpc_dial {
     );
 }
 
-sub rpc_ai_message {
-    my ($self, %opts) = @_;
+sub rpc_ai_message ($self, %opts) {
     my $call_id      = $opts{call_id}      // die "call_id is required";
     my $message_text = $opts{message_text} // die "message_text is required";
     my $role         = $opts{role}         // 'system';
@@ -691,8 +655,7 @@ sub rpc_ai_message {
     );
 }
 
-sub rpc_ai_unhold {
-    my ($self, %opts) = @_;
+sub rpc_ai_unhold ($self, %opts) {
     my $call_id = $opts{call_id} // die "call_id is required";
 
     return $self->execute_rpc(
@@ -702,15 +665,13 @@ sub rpc_ai_unhold {
     );
 }
 
-sub simulate_user_input {
-    my ($self, $text) = @_;
+sub simulate_user_input ($self, $text) {
     return $self->add_action('user_input', $text);
 }
 
 # --- Payment helpers (class methods) ---
 
-sub create_payment_prompt {
-    my ($class_or_self, %opts) = @_;
+sub create_payment_prompt ($class_or_self, %opts) {
     my $for_situation = $opts{for_situation} // die "for_situation is required";
     my $actions       = $opts{actions}       // die "actions is required";
     my $card_type     = $opts{card_type};
@@ -726,20 +687,17 @@ sub create_payment_prompt {
     return \%prompt;
 }
 
-sub create_payment_action {
-    my ($class_or_self, $action_type, $phrase) = @_;
+sub create_payment_action ($class_or_self, $action_type, $phrase) {
     return { type => $action_type, phrase => $phrase };
 }
 
-sub create_payment_parameter {
-    my ($class_or_self, $name, $value) = @_;
+sub create_payment_parameter ($class_or_self, $name, $value) {
     return { name => $name, value => $value };
 }
 
 # --- Serialization ---
 
-sub to_hash {
-    my ($self) = @_;
+sub to_hash ($self) {
     my %result;
 
     $result{response} = $self->response if length $self->response;
@@ -757,9 +715,101 @@ sub to_hash {
     return \%result;
 }
 
-sub to_json {
-    my ($self) = @_;
+sub to_json ($self) {
     return JSON::encode_json($self->to_hash);
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::SWAIG::FunctionResult - build SWAIG function responses and actions
+
+=head1 SYNOPSIS
+
+    use SignalWire::SWAIG::FunctionResult;
+
+    # Plain spoken response:
+    my $result = SignalWire::SWAIG::FunctionResult->new('Order placed.');
+
+    # Response plus call-control actions (chainable, fluent style):
+    my $result = SignalWire::SWAIG::FunctionResult->new
+        ->set_response('Connecting you now.')
+        ->connect('+15551234567', final => 1);
+
+    my $payload = $result->to_hash;   # ready for JSON emission
+    my $json    = $result->to_json;
+
+=head1 DESCRIPTION
+
+L<SignalWire::SWAIG::FunctionResult> is the Perl port of
+C<signalwire.core.function_result.FunctionResult>. A SWAIG function
+handler returns one of these to tell the agent what to say and which
+call-control actions to perform. The action list is serialised to the
+wire shape the SignalWire AI engine expects.
+
+Most mutators return C<$self> so calls chain fluently. The constructor
+accepts either C<< new(response => $text) >>, the positional shorthand
+C<< new($text) >>, or C<< new($text, post_process => 1) >>.
+
+The class-method payment helpers (C<create_payment_prompt>,
+C<create_payment_action>, C<create_payment_parameter>) may be invoked as
+class or instance methods — they build plain hashrefs and hold no state.
+
+=head1 METHODS
+
+The surface mirrors the Python reference; see that documentation for the
+authoritative per-argument contract. Grouped by area:
+
+=head2 Core
+
+C<set_response>, C<set_post_process>, C<add_action>, C<add_actions>.
+
+=head2 Call control
+
+C<connect>, C<swml_transfer>, C<hangup>, C<hold>, C<wait_for_user>,
+C<stop>, C<join_conference>, C<join_room>, C<sip_refer>, C<send_sms>,
+C<pay>.
+
+=head2 State and data
+
+C<update_global_data>, C<remove_global_data>, C<set_metadata>,
+C<remove_metadata>, C<swml_user_event>, C<swml_change_step>,
+C<swml_change_context>, C<switch_context>, C<replace_in_history>.
+
+=head2 Media
+
+C<say>, C<play_background_file>, C<stop_background_file>, C<record_call>,
+C<stop_record_call>, C<tap>, C<stop_tap>.
+
+=head2 Speech and AI
+
+C<add_dynamic_hints>, C<clear_dynamic_hints>, C<set_end_of_speech_timeout>,
+C<set_speech_event_timeout>, C<toggle_functions>,
+C<enable_functions_on_timeout>, C<enable_extensive_data>,
+C<update_settings>, C<simulate_user_input>.
+
+=head2 Advanced / RPC
+
+C<execute_swml>, C<execute_rpc>, C<rpc_dial>, C<rpc_ai_message>,
+C<rpc_ai_unhold>.
+
+=head2 Serialization
+
+C<to_hash> (the Python C<to_dict> equivalent) and C<to_json>.
+
+=head1 SEE ALSO
+
+L<SignalWire::SWAIG::RecordCall>, L<SignalWire::SWAIG::Tap>, and
+L<SignalWire::SWAIG::JoinConference> for the typed closed sets accepted by
+C<record_call>, C<tap>, and C<join_conference>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

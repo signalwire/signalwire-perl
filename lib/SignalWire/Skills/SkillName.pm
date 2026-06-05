@@ -112,3 +112,78 @@ sub is_builtin {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::SkillName - built-in skill names as a typed closed set
+
+=head1 SYNOPSIS
+
+    use SignalWire::Skills::SkillName qw(DATETIME);
+
+    $agent->add_skill( DATETIME );          # imported constant
+    $agent->add_skill( 'datetime' );        # string (Python parity)
+    $agent->add_skill( 'my_custom_skill' ); # open set: custom skill
+
+    # Membership / iteration helpers:
+    SignalWire::Skills::SkillName->is_builtin('datetime');     # 1
+    SignalWire::Skills::SkillName->is_builtin('my_custom');    # 0
+    @{ SignalWire::Skills::SkillName->all };                   # 18 names
+
+=head1 DESCRIPTION
+
+The 18 built-in skill names, surfaced as typed, named constants. Each
+constant's value is the skill's registered wire name — the exact string
+passed to C<< SkillRegistry->register_skill >> in the matching
+C<SignalWire::Skills::Builtin::*> module.
+
+The constants B<are> the canonical wire strings, so nothing about
+C<< AgentBase->add_skill >> / C<remove_skill> / C<has_skill> changes: they
+still take a string. That keeps parity with the Python reference (a bare
+C<str>) and leaves custom / third-party skill names working automatically
+— an unknown string is simply not in this set.
+
+This buys a single source of truth for the built-in names (otherwise they
+live only inside C<SkillRegistry::_load_all_builtins> and the test suite),
+plus editor autocomplete and the membership/iteration helpers below.
+
+=head1 CONSTANTS
+
+Exported on request via L<Exporter>; C<:all> pulls every name. The full
+set: C<API_NINJAS_TRIVIA>, C<CLAUDE_SKILLS>, C<CUSTOM_SKILLS>,
+C<DATASPHERE>, C<DATASPHERE_SERVERLESS>, C<DATETIME>, C<GOOGLE_MAPS>,
+C<INFO_GATHERER>, C<JOKE>, C<MATH>, C<MCP_GATEWAY>,
+C<NATIVE_VECTOR_SEARCH>, C<PLAY_BACKGROUND_FILE>, C<SPIDER>,
+C<SWML_TRANSFER>, C<WEATHER_API>, C<WEB_SEARCH>, C<WIKIPEDIA_SEARCH>.
+
+=head1 METHODS
+
+=head2 all
+
+    my $aref = SignalWire::Skills::SkillName->all;
+
+Arrayref of the 18 built-in skill wire names, sorted so the order matches
+C<< SkillRegistry->list_skills >>.
+
+=head2 is_builtin
+
+    my $bool = SignalWire::Skills::SkillName->is_builtin($name);
+
+True if C<$name> is one of the built-in skills, false for custom /
+unknown names. Accepts the bareword constant too.
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillRegistry>,
+L<SignalWire::Skills::SkillManager>,
+L<SignalWire::Skills::SkillBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

@@ -101,3 +101,109 @@ sub is_direction {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::SWAIG::RecordCall - typed closed sets for FunctionResult->record_call
+
+=head1 SYNOPSIS
+
+    use SignalWire::SWAIG::RecordCall qw(MP3 BOTH);
+    use SignalWire::SWAIG::FunctionResult;
+
+    my $result = SignalWire::SWAIG::FunctionResult->new;
+
+    # Named constants and bare wire strings are interchangeable:
+    $result->record_call( format => MP3,   direction => BOTH );
+    $result->record_call( format => 'mp3', direction => 'both' );
+
+    # Membership / iteration helpers:
+    SignalWire::SWAIG::RecordCall->is_format('mp3');     # 1
+    SignalWire::SWAIG::RecordCall->is_direction('hear'); # 0 (that's tap's word)
+    @{ SignalWire::SWAIG::RecordCall->formats };         # ('wav','mp3','mp4')
+
+=head1 DESCRIPTION
+
+The two closed-set string parameters of
+L<SignalWire::SWAIG::FunctionResult>'s C<record_call> verb, surfaced as
+typed, named constants:
+
+=over 4
+
+=item * B<FORMAT> — the recording container: C<wav>, C<mp3>, or C<mp4>.
+
+=item * B<DIRECTION> — which audio channel(s) to capture: C<speak>,
+C<listen>, or C<both>.
+
+=back
+
+These sets are not merely advisory. C<record_call> validates both inline
+and dies on anything outside the set; this module hoists those literal
+sets into a single source of truth so the accepted values are
+discoverable and autocompletable instead of living only inside the C<die>
+strings. The constants B<are> the canonical wire strings, so
+C<record_call>'s signature is unchanged — it still takes plain
+C<< format => ... >> / C<< direction => ... >> strings, preserving Python
+parity.
+
+The record C<direction> here is the write-side record-channel selector.
+It is unrelated to the read-only inbound/outbound C<direction> field on
+Relay message events, and it uses C<listen> where
+L<SignalWire::SWAIG::Tap> uses C<hear> — the two vocabularies must never
+be unified.
+
+=head1 CONSTANTS
+
+Exported on request via L<Exporter>. The C<:formats> tag pulls
+C<WAV>/C<MP3>/C<MP4>; C<:directions> pulls C<SPEAK>/C<LISTEN>/C<BOTH>;
+C<:all> pulls every constant.
+
+    WAV    => 'wav'      SPEAK  => 'speak'
+    MP3    => 'mp3'      LISTEN => 'listen'
+    MP4    => 'mp4'      BOTH   => 'both'
+
+=head1 METHODS
+
+=head2 formats
+
+    my $aref = SignalWire::SWAIG::RecordCall->formats;
+
+Arrayref of the accepted format strings, in the order C<record_call>
+lists them in its validation message.
+
+=head2 directions
+
+    my $aref = SignalWire::SWAIG::RecordCall->directions;
+
+Arrayref of the accepted record-direction strings.
+
+=head2 is_format
+
+    my $bool = SignalWire::SWAIG::RecordCall->is_format($value);
+
+True if C<$value> is an accepted recording format. Accepts the bareword
+constant too (it is just the string).
+
+=head2 is_direction
+
+    my $bool = SignalWire::SWAIG::RecordCall->is_direction($value);
+
+True if C<$value> is an accepted record direction.
+
+=head1 SEE ALSO
+
+L<SignalWire::SWAIG::FunctionResult>,
+L<SignalWire::SWAIG::Tap>,
+L<SignalWire::SWAIG::JoinConference>,
+L<SignalWire::Skills::SkillName>,
+L<SignalWire::Logging::LogLevel>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

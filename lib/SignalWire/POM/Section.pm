@@ -15,6 +15,11 @@ package SignalWire::POM::Section;
 use strict;
 use warnings;
 use Moo;
+# Subroutine signatures (Perl 5.20+; floor 5.026). Must follow `use Moo;`
+# (Moo re-enables the default warning set, which would otherwise
+# un-silence experimental::signatures).
+use feature 'signatures';
+no warnings 'experimental::signatures';
 use Scalar::Util qw(blessed);
 use Carp qw(croak);
 use Tie::IxHash;
@@ -34,6 +39,10 @@ has body => (
     default => sub { '' },
 );
 
+# NB: ``body`` / ``bullets`` type errors are raised in BUILD (below) with
+# a bullets-vs-body hint, so they intentionally carry no ``isa`` here —
+# isa would pre-empt BUILD with a terser message. ``subsections`` is not
+# checked in BUILD, so it gets an isa guard for fail-fast safety.
 has bullets => (
     is      => 'rw',
     default => sub { [] },
@@ -42,6 +51,7 @@ has bullets => (
 has subsections => (
     is      => 'rw',
     default => sub { [] },
+    isa     => sub { croak("subsections must be an arrayref") unless ref $_[0] eq 'ARRAY' },
 );
 
 # Whether this section should be auto-numbered when rendered alongside
@@ -60,9 +70,7 @@ has numberedBullets => (
 
 # ---------- BUILD: validate types of body / bullets ----------
 
-sub BUILD {
-    my ($self, $args) = @_;
-
+sub BUILD ($self, $args) {
     if (defined $args->{body} && ref $args->{body}) {
         croak "body must be a string, not " . ref($args->{body})
             . ". If you meant to pass a list of bullet points, use bullets parameter instead.";
@@ -78,16 +86,14 @@ sub BUILD {
 # Replace the body text on this section. Mirrors Python's
 # ``Section.add_body`` which is documented to "Add OR REPLACE the body
 # text" — calling this overwrites any prior value rather than appending.
-sub add_body {
-    my ($self, $body) = @_;
+sub add_body ($self, $body) {
     croak "body must be a string, not " . ref($body) if ref $body;
     $self->body($body);
     return $self;
 }
 
 # Append bullets to the existing list (does NOT replace).
-sub add_bullets {
-    my ($self, $bullets) = @_;
+sub add_bullets ($self, $bullets) {
     croak "bullets must be a list, not " . (ref($bullets) || 'scalar')
         if !defined $bullets || ref $bullets ne 'ARRAY';
     push @{ $self->bullets }, @$bullets;
@@ -97,9 +103,7 @@ sub add_bullets {
 # Add a subsection and return the newly-created Section object so the
 # caller can chain ``->add_body / ->add_bullets`` onto it (matching
 # Python's return-the-Section ergonomic).
-sub add_subsection {
-    my ($self, %opts) = @_;
-
+sub add_subsection ($self, %opts) {
     croak "Subsections must have a title" unless defined $opts{title};
 
     my $sub = SignalWire::POM::Section->new(
@@ -117,8 +121,7 @@ sub add_subsection {
 # Key order matches Python's to_dict (title, body, bullets, subsections,
 # numbered, numberedBullets). Empty fields are dropped — the resulting
 # hash is suitable for `from_json` / `from_yaml` round-tripping.
-sub to_hash {
-    my ($self) = @_;
+sub to_hash ($self) {
     tie my %data, 'Tie::IxHash';
 
     if (defined $self->title) {
@@ -147,8 +150,7 @@ sub to_hash {
 # 2=##, ...). ``section_number`` is an arrayref of the section's
 # position among numbered siblings (e.g. [1,2,3] for "1.2.3."). Mirrors
 # Python's Section.render_markdown signature/output exactly.
-sub render_markdown {
-    my ($self, $level, $section_number) = @_;
+sub render_markdown ($self, $level = undef, $section_number = undef) {
     $level //= 2;
     $section_number //= [];
 
@@ -216,8 +218,7 @@ sub render_markdown {
 # Render this section as XML. ``indent`` is the number of two-space
 # indentation levels. ``section_number`` is the same numbering arrayref
 # used by render_markdown. Mirrors Python's Section.render_xml exactly.
-sub render_xml {
-    my ($self, $indent, $section_number) = @_;
+sub render_xml ($self, $indent = undef, $section_number = undef) {
     $indent //= 0;
     $section_number //= [];
 
@@ -285,6 +286,8 @@ sub render_xml {
 1;
 
 __END__
+
+=encoding utf-8
 
 =head1 NAME
 

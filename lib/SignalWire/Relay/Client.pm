@@ -2,6 +2,12 @@ package SignalWire::Relay::Client;
 use strict;
 use warnings;
 use Moo;
+# Subroutine signatures (Perl 5.20+; floor 5.026). Must follow `use Moo;`
+# (Moo's import re-enables the default warning set, which would otherwise
+# un-silence experimental::signatures).
+use feature 'signatures';
+no warnings 'experimental::signatures';
+use Carp ();
 
 use JSON qw(encode_json decode_json);
 use IO::Socket::INET;
@@ -22,8 +28,21 @@ my $logger = SignalWire::Logging->get_logger('relay_client');
 
 has 'project'  => ( is => 'ro', default => sub { '' } );
 has 'token'    => ( is => 'ro', default => sub { '' } );
-has 'host'     => ( is => 'ro', required => 1 );
-has 'contexts' => ( is => 'rw', default => sub { [] } );
+# host is the required RELAY endpoint — a bad construction must die at
+# build time rather than fail later inside connect_ws.
+has 'host'     => (
+    is       => 'ro',
+    required => 1,
+    isa      => sub {
+        Carp::croak("host must be a non-empty string")
+            unless defined $_[0] && !ref $_[0] && length $_[0];
+    },
+);
+has 'contexts' => (
+    is      => 'rw',
+    default => sub { [] },
+    isa     => sub { Carp::croak("contexts must be an arrayref") unless ref $_[0] eq 'ARRAY' },
+);
 has 'agent'    => ( is => 'ro', default => sub { 'signalwire-agents-perl/1.0' } );
 # Optional JWT-based authentication (alternative to project/token).
 has 'jwt_token' => ( is => 'ro', default => sub { '' } );
@@ -83,20 +102,20 @@ sub _generate_uuid {
 
 # --- Public API: register handlers ---
 
-sub on_call {
-    my ($self, $cb) = @_;
+sub on_call ($self, $cb) {
+    Carp::croak("on_call() callback must be a coderef") unless ref $cb eq 'CODE';
     $self->_on_call($cb);
     return $self;
 }
 
-sub on_message {
-    my ($self, $cb) = @_;
+sub on_message ($self, $cb) {
+    Carp::croak("on_message() callback must be a coderef") unless ref $cb eq 'CODE';
     $self->_on_message($cb);
     return $self;
 }
 
-sub on_event {
-    my ($self, $cb) = @_;
+sub on_event ($self, $cb) {
+    Carp::croak("on_event() callback must be a coderef") unless ref $cb eq 'CODE';
     $self->_on_event($cb);
     return $self;
 }
@@ -106,8 +125,7 @@ sub on_event {
 # Public connect: opens the WebSocket and runs the signalwire.connect
 # handshake in one call (matches Python RelayClient.connect()). Returns
 # the authenticate result hashref on success, dies on failure.
-sub connect {
-    my ($self) = @_;
+sub connect ($self) {
     die "project and token are required (or jwt_token)"
         unless ($self->project && $self->token) || $self->jwt_token || $self->_jwt_token;
     my $ok = $self->connect_ws;
@@ -117,14 +135,11 @@ sub connect {
 
 # Public disconnect: tears down the WebSocket transport. Mirrors
 # Python RelayClient.disconnect().
-sub disconnect {
-    my ($self) = @_;
+sub disconnect ($self) {
     return $self->disconnect_ws;
 }
 
-sub connect_ws {
-    my ($self) = @_;
-
+sub connect_ws ($self) {
     my $scheme = $self->scheme || 'wss';
     my $raw_host = $self->host;
 
@@ -210,9 +225,7 @@ sub connect_ws {
     return 1;
 }
 
-sub authenticate {
-    my ($self) = @_;
-
+sub authenticate ($self) {
     # Build authentication block: either project/token or jwt_token.
     my %auth;
     my $jwt = $self->jwt_token || $self->_jwt_token;
@@ -263,8 +276,7 @@ sub authenticate {
 
 # --- JSON-RPC execute ---
 
-sub execute {
-    my ($self, $method, $params) = @_;
+sub execute ($self, $method, $params = undef) {
     $params //= {};
 
     my $id = _generate_uuid();
@@ -310,9 +322,7 @@ sub execute {
 
 # --- Messaging ---
 
-sub send_message {
-    my ($self, %opts) = @_;
-
+sub send_message ($self, %opts) {
     die "At least one of body or media is required"
         unless (defined $opts{body} && length $opts{body})
             || (ref $opts{media} eq 'ARRAY' && @{$opts{media}});
@@ -360,6 +370,10 @@ sub send_message {
 # --- Context management ---
 
 sub receive {
+    # NB: left in classic my-@_ form (NOT a signature). The canonical
+    # arg is a single ``$contexts`` arrayref (Python parity), but this also
+    # accepts a bare list via @_ introspection; a signature would either
+    # lose the list form or change the parsed arity ($contexts -> @args).
     my ($self, $contexts) = @_;
     # Python parity: receive(contexts: list[str]). Canonical form takes
     # an arrayref. Backward-compat: also accept slurpy
@@ -377,6 +391,8 @@ sub receive {
 }
 
 sub unreceive {
+    # Left in classic my-@_ form for the same dual arrayref/list reason
+    # as receive() above.
     my ($self, $contexts) = @_;
     # Python parity: unreceive(contexts: list[str]).
     my @ctxs;
@@ -392,8 +408,7 @@ sub unreceive {
 
 # --- Dial ---
 
-sub dial {
-    my ($self, %opts) = @_;
+sub dial ($self, %opts) {
     my $tag = $opts{tag} || _generate_uuid();
     my $timeout = delete $opts{timeout} || 120;
     my $on_completed = delete $opts{on_completed};
@@ -446,8 +461,7 @@ sub dial {
 
 # --- Internal: send a JSON-RPC message ---
 
-sub _send {
-    my ($self, $msg) = @_;
+sub _send ($self, $msg) {
     my $json = encode_json($msg);
     $logger->debug("SEND: $json");
     my $ws = $self->_ws;
@@ -458,8 +472,7 @@ sub _send {
 
 # --- Internal: read one frame from WebSocket ---
 
-sub _read_once {
-    my ($self) = @_;
+sub _read_once ($self) {
     my $socket = $self->_socket;
     return unless $socket;
 
@@ -479,8 +492,7 @@ sub _read_once {
 
 # --- Internal: handle an incoming WebSocket message ---
 
-sub _handle_message {
-    my ($self, $raw) = @_;
+sub _handle_message ($self, $raw) {
     $logger->debug("RECV: $raw");
 
     # Skip non-JSON-text frames. Protocol::WebSocket::Client doesn't
@@ -545,8 +557,7 @@ sub _handle_message {
 
 # --- Internal: send an ACK ---
 
-sub _send_ack {
-    my ($self, $id) = @_;
+sub _send_ack ($self, $id) {
     $self->_send({
         jsonrpc => '2.0',
         id      => $id,
@@ -556,8 +567,7 @@ sub _send_ack {
 
 # --- Internal: handle events ---
 
-sub _handle_event {
-    my ($self, $outer_params) = @_;
+sub _handle_event ($self, $outer_params) {
     my $event_type = $outer_params->{event_type} // '';
     my $inner_params = $outer_params->{params} // {};
 
@@ -637,8 +647,7 @@ sub _handle_event {
 
 # --- Internal: handle inbound call ---
 
-sub _handle_inbound_call {
-    my ($self, $event, $params) = @_;
+sub _handle_inbound_call ($self, $event, $params) {
     my $call_id = $params->{call_id} // '';
     return unless $call_id;
 
@@ -661,9 +670,7 @@ sub _handle_inbound_call {
 
 # --- Internal: handle inbound message ---
 
-sub _handle_inbound_message {
-    my ($self, $event) = @_;
-
+sub _handle_inbound_message ($self, $event) {
     if (my $cb = $self->_on_message) {
         eval { $cb->($event) };
         warn "on_message callback error: $@" if $@;
@@ -672,8 +679,7 @@ sub _handle_inbound_message {
 
 # --- Internal: handle dial completion event ---
 
-sub _handle_dial_event {
-    my ($self, $event, $params) = @_;
+sub _handle_dial_event ($self, $event, $params) {
     my $tag = $params->{tag} // '';
     my $dial_state = $params->{dial_state} // '';
     my $call_info = $params->{call} // {};
@@ -707,8 +713,7 @@ sub _handle_dial_event {
 
 # --- Internal: handle server disconnect ---
 
-sub _handle_disconnect {
-    my ($self, $params) = @_;
+sub _handle_disconnect ($self, $params) {
     my $restart = $params->{restart} || 0;
 
     if ($restart) {
@@ -723,9 +728,7 @@ sub _handle_disconnect {
 
 # --- Reconnection ---
 
-sub reconnect {
-    my ($self) = @_;
-
+sub reconnect ($self) {
     # Reject all pending requests
     for my $id (keys %{$self->_pending}) {
         my $p = delete $self->_pending->{$id};
@@ -757,8 +760,7 @@ sub reconnect {
 
 # --- Disconnect ---
 
-sub disconnect_ws {
-    my ($self) = @_;
+sub disconnect_ws ($self) {
     $self->connected(0);
     if ($self->_socket) {
         close($self->_socket);
@@ -769,11 +771,105 @@ sub disconnect_ws {
 
 # --- Run event loop ---
 
-sub run {
-    my ($self) = @_;
+sub run ($self) {
     while ($self->connected) {
         $self->_read_once();
     }
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Relay::Client - RELAY WebSocket client (connect, dial, message)
+
+=head1 SYNOPSIS
+
+    use SignalWire::Relay::Client;
+
+    my $client = SignalWire::Relay::Client->new(
+        host    => 'relay.example.com',
+        project => $project,
+        token   => $token,
+    );
+
+    $client->on_call(sub ($call) { $call->answer; });
+    $client->connect;                 # opens WS + authenticates
+    $client->receive(['office']);     # subscribe to inbound contexts
+
+    my $call = $client->dial( devices => [...] );      # outbound
+    my $msg  = $client->send_message( to_number => $to,
+                                      from_number => $from,
+                                      body => 'hi' );
+
+    $client->run;                     # block in the event loop
+    $client->disconnect;
+
+=head1 DESCRIPTION
+
+L<SignalWire::Relay::Client> is the Perl port of the Python reference's
+C<RelayClient>. It owns the RELAY WebSocket transport, performs the
+C<signalwire.connect> handshake, runs a synchronous JSON-RPC request/
+response loop, demultiplexes server-initiated events into typed
+L<SignalWire::Relay::Event> objects, and routes them to the right
+L<SignalWire::Relay::Call> / L<SignalWire::Relay::Message>.
+
+Construction fails fast: C<host> is required and must be a non-empty
+string; C<contexts> must be an arrayref (Moo C<isa> constraints).
+
+=head1 METHODS
+
+=head2 Handler registration
+
+=over 4
+
+=item * C<on_call($cb)> — C<< $cb->($call) >> for each inbound call.
+
+=item * C<on_message($cb)> — C<< $cb->($event) >> for each inbound message.
+
+=item * C<on_event($cb)> — C<< $cb->($event) >> for every event.
+
+=back
+
+Each callback must be a coderef; each returns C<$self> for chaining.
+
+=head2 Connection
+
+C<connect> (open WS + authenticate), C<disconnect>, C<connect_ws>,
+C<authenticate>, C<reconnect>, C<disconnect_ws>, and C<run> (the blocking
+read loop).
+
+=head2 RPC and operations
+
+=over 4
+
+=item * C<execute($method, $params)> — issue a JSON-RPC call and block for
+the result.
+
+=item * C<dial(%opts)> — place an outbound call; returns the answered
+L<SignalWire::Relay::Call>.
+
+=item * C<send_message(%opts)> — send an SMS/MMS; returns a
+L<SignalWire::Relay::Message> handle.
+
+=item * C<receive($contexts)> / C<unreceive($contexts)> — subscribe /
+unsubscribe to inbound contexts. Accepts an arrayref (canonical) or a
+bare list.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Relay::Call>, L<SignalWire::Relay::Message>,
+L<SignalWire::Relay::Event>, L<SignalWire::Relay::Constants>, and the
+RELAY protocol guide in F<porting-sdk/RELAY_IMPLEMENTATION_GUIDE.md>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

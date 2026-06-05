@@ -145,3 +145,109 @@ sub is_method {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::SWAIG::JoinConference - typed closed sets for FunctionResult->join_conference
+
+=head1 SYNOPSIS
+
+    use SignalWire::SWAIG::JoinConference qw(ON_ENTER RECORD_FROM_START);
+    use SignalWire::SWAIG::FunctionResult;
+
+    my $result = SignalWire::SWAIG::FunctionResult->new;
+
+    # Named constants and bare wire strings are interchangeable:
+    $result->join_conference( 'lobby',
+        beep   => ON_ENTER,
+        record => RECORD_FROM_START );
+    $result->join_conference( 'lobby',
+        beep   => 'onEnter',
+        record => 'record-from-start' );
+
+    # Membership / iteration helpers:
+    SignalWire::SWAIG::JoinConference->is_beep('onEnter');  # 1
+    @{ SignalWire::SWAIG::JoinConference->records };        # do-not-record,...
+
+=head1 DESCRIPTION
+
+The four closed-set string parameters of
+L<SignalWire::SWAIG::FunctionResult>'s C<join_conference> verb, surfaced
+as typed, named constants:
+
+=over 4
+
+=item * B<BEEP> — beep behaviour: C<true>, C<false>, C<onEnter>, or
+C<onExit>.
+
+=item * B<RECORD> — recording mode: C<do-not-record> or
+C<record-from-start>.
+
+=item * B<TRIM> — silence trimming: C<trim-silence> or C<do-not-trim>.
+
+=item * B<METHOD> — HTTP method for the status / recording-status
+callbacks: C<GET> or C<POST> (shared by C<status_callback_method> and
+C<recording_status_callback_method>).
+
+=back
+
+C<join_conference> validates each inline and dies on anything outside the
+set, reproducing the Python reference's exact C<ValueError> messages
+(e.g. C<beep must be one of ['true', 'false', 'onEnter', 'onExit']>). This
+module hoists those literal sets into a single source of truth so the
+accepted values are discoverable and autocompletable. The constants B<are>
+the canonical wire strings, so C<join_conference>'s signature is
+unchanged, preserving Python parity.
+
+The constant B<names> use shouting identifiers (C<ON_ENTER>); the
+B<values> are the camelCase wire strings the SWML verb expects
+(C<onEnter>).
+
+=head1 CONSTANTS
+
+Exported on request via L<Exporter>. Tags: C<:beep>, C<:record>, C<:trim>,
+C<:methods>, and C<:all>.
+
+    BEEP_TRUE  => 'true'      DO_NOT_RECORD     => 'do-not-record'
+    BEEP_FALSE => 'false'     RECORD_FROM_START => 'record-from-start'
+    ON_ENTER   => 'onEnter'   TRIM_SILENCE      => 'trim-silence'
+    ON_EXIT    => 'onExit'    DO_NOT_TRIM       => 'do-not-trim'
+    GET        => 'GET'       POST              => 'POST'
+
+=head1 METHODS
+
+=head2 beeps / records / trims / methods
+
+    my $aref = SignalWire::SWAIG::JoinConference->beeps;
+    my $aref = SignalWire::SWAIG::JoinConference->records;
+    my $aref = SignalWire::SWAIG::JoinConference->trims;
+    my $aref = SignalWire::SWAIG::JoinConference->methods;
+
+Arrayrefs of the accepted strings for each set, in the order
+C<join_conference> lists them in its validation messages.
+
+=head2 is_beep / is_record / is_trim / is_method
+
+    my $bool = SignalWire::SWAIG::JoinConference->is_beep($value);
+    my $bool = SignalWire::SWAIG::JoinConference->is_record($value);
+    my $bool = SignalWire::SWAIG::JoinConference->is_trim($value);
+    my $bool = SignalWire::SWAIG::JoinConference->is_method($value);
+
+True if C<$value> is an accepted member of the corresponding set. Each
+accepts the bareword constant too (it is just the string).
+
+=head1 SEE ALSO
+
+L<SignalWire::SWAIG::FunctionResult>,
+L<SignalWire::SWAIG::RecordCall>,
+L<SignalWire::SWAIG::Tap>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

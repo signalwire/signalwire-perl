@@ -526,7 +526,10 @@ signalwire.relay.call.AIAction.stop: not_yet_implemented: relay feature pending 
 signalwire.relay.call.Call.__repr__: not_yet_implemented: relay feature pending — relay client is functional but incomplete
 signalwire.relay.call.Call.pass_: not_yet_implemented: relay feature pending — relay client is functional but incomplete
 signalwire.relay.call.Call.wait_for: not_yet_implemented: relay feature pending — relay client is functional but incomplete
+signalwire.relay.call.Call.wait_for_answered: not_yet_implemented: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed — mirrors PORT_SIGNATURE_OMISSIONS.md
 signalwire.relay.call.Call.wait_for_ended: not_yet_implemented: relay feature pending — relay client is functional but incomplete
+signalwire.relay.call.Call.wait_for_ending: not_yet_implemented: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed — mirrors PORT_SIGNATURE_OMISSIONS.md
+signalwire.relay.call.Call.wait_for_ringing: not_yet_implemented: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed — mirrors PORT_SIGNATURE_OMISSIONS.md
 signalwire.relay.call.CollectAction.__init__: not_yet_implemented: relay feature pending — relay client is functional but incomplete
 signalwire.relay.call.CollectAction.stop: not_yet_implemented: relay feature pending — relay client is functional but incomplete
 signalwire.relay.call.CollectAction.volume: not_yet_implemented: relay feature pending — relay client is functional but incomplete

@@ -2,6 +2,11 @@ package SignalWire::Relay::Event;
 use strict;
 use warnings;
 use Moo;
+# Subroutine signatures (Perl 5.20+; floor 5.026), enabled file-wide.
+# Must follow `use Moo;` (Moo re-enables the default warning set). The
+# factory at the bottom re-silences after its package's own `use Moo`.
+use feature 'signatures';
+no warnings 'experimental::signatures';
 
 # Base event class -- all relay events inherit from this.
 has 'event_type' => ( is => 'ro', default => sub { '' } );
@@ -223,6 +228,7 @@ has 'restart' => ( is => 'ro', default => sub { 0 } );
 
 # --- Factory method ---
 package SignalWire::Relay::Event;
+no warnings 'experimental::signatures';  # re-silence after subclass use Moo
 
 # Map event_type string to class name
 my %EVENT_CLASS_MAP = (
@@ -250,8 +256,7 @@ my %EVENT_CLASS_MAP = (
     'signalwire.disconnect'          => 'SignalWire::Relay::Event::Disconnect',
 );
 
-sub parse_event {
-    my ($class_or_self, $event_type, $params) = @_;
+sub parse_event ($class_or_self, $event_type, $params = undef) {
     $params //= {};
 
     my $event_class = $EVENT_CLASS_MAP{$event_type};
@@ -279,3 +284,71 @@ sub parse_event {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Relay::Event - typed RELAY event objects and their factory
+
+=head1 SYNOPSIS
+
+    use SignalWire::Relay::Event;
+
+    my $event = SignalWire::Relay::Event->parse_event(
+        'calling.call.state',
+        { call_id => $id, call_state => 'answered' },
+    );
+
+    $event->event_type;   # 'calling.call.state'
+    $event->call_state;   # 'answered'  (on the ::CallState subclass)
+
+=head1 DESCRIPTION
+
+L<SignalWire::Relay::Event> is the base class for every RELAY event the
+client receives. Each concrete event type is a small read-only Moo
+subclass that exposes the fields relevant to it (for example
+C<::CallState> carries C<call_state> / C<end_reason> / C<peer>, while
+C<::MessageReceive> carries C<from_number> / C<body> / C<media>). All
+subclasses inherit C<event_type>, C<timestamp>, and the raw C<params>
+hashref from the base class.
+
+The event objects are read-only data carriers built from the server
+payload; they deliberately carry no C<isa> constraints so a forward-
+compatible server shape is never rejected — unknown fields are simply
+ignored by Moo.
+
+=head1 METHODS
+
+=head2 parse_event
+
+    my $event = SignalWire::Relay::Event->parse_event($event_type, $params);
+
+Class-method factory. Looks C<$event_type> up in the internal event-class
+map and returns an instance of the matching subclass, populated from
+C<$params> (which defaults to an empty hashref). Unknown event types fall
+back to a base L<SignalWire::Relay::Event> carrying the raw type and
+params. Normally called by L<SignalWire::Relay::Client> as it demultiplexes
+the WebSocket stream.
+
+=head1 EVENT TYPES
+
+The recognised C<event_type> strings and their subclasses include the
+C<calling.call.*> family (state, receive, dial, connect, disconnect, play,
+record, collect, detect, fax, tap, stream, transcribe, pay, send_digits,
+refer, ai), C<calling.conference>, C<messaging.receive> /
+C<messaging.state>, and the C<signalwire.*> session events
+(C<authorization.state>, C<disconnect>).
+
+=head1 SEE ALSO
+
+L<SignalWire::Relay::Client>, L<SignalWire::Relay::Call>,
+L<SignalWire::Relay::Message>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

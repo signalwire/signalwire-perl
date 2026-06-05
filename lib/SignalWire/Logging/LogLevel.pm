@@ -90,3 +90,83 @@ sub severity {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Logging::LogLevel - log levels as a typed closed set
+
+=head1 SYNOPSIS
+
+    use SignalWire::Logging::LogLevel qw(DEBUG);
+
+    my $log = SignalWire::Logging->new( level => DEBUG );  # imported constant
+    SignalWire::Logging->new( level => 'debug' );          # string (parity)
+    $ENV{SIGNALWIRE_LOG_LEVEL} = SignalWire::Logging::LogLevel::WARN();
+
+    # Membership / ordering helpers:
+    SignalWire::Logging::LogLevel->is_valid('warn');  # 1
+    SignalWire::Logging::LogLevel->severity('error'); # 3
+    @{ SignalWire::Logging::LogLevel->all };           # debug,info,warn,error
+
+=head1 DESCRIPTION
+
+The four log levels, surfaced as typed, named constants whose values are
+the exact level strings L<SignalWire::Logging> recognises in its private
+C<%LEVELS> table and emits from C<debug>/C<info>/C<warn>/C<error>.
+
+The constants B<are> the canonical level strings, so nothing about
+L<SignalWire::Logging> changes: the C<level> attribute, the
+C<SIGNALWIRE_LOG_LEVEL> env var, and the level methods all still take /
+emit plain strings. That keeps parity with the Python reference (stdlib
+C<logging> level names) and leaves any custom threshold string working
+exactly as before.
+
+This buys a single source of truth for the four levels (otherwise they
+live only inside the C<%LEVELS> table), plus editor autocomplete and the
+membership/severity helpers below.
+
+=head1 CONSTANTS
+
+Exported on request via L<Exporter>; C<:all> pulls every constant.
+
+    DEBUG => 'debug'    WARN  => 'warn'
+    INFO  => 'info'     ERROR => 'error'
+
+=head1 METHODS
+
+=head2 all
+
+    my $aref = SignalWire::Logging::LogLevel->all;
+
+Arrayref of the four level strings in ascending severity (not alphabetical
+— severity is the natural reading order for log levels).
+
+=head2 is_valid
+
+    my $bool = SignalWire::Logging::LogLevel->is_valid($level);
+
+True if C<$level> is one of the four known levels, false otherwise.
+Accepts the bareword constant too.
+
+=head2 severity
+
+    my $n = SignalWire::Logging::LogLevel->severity($level);
+
+The ascending-severity integer for C<$level> (C<debug>=0 .. C<error>=3),
+or C<undef> for an unknown level. These are the same threshold numbers
+L<SignalWire::Logging> uses internally to decide whether a message clears
+the configured threshold.
+
+=head1 SEE ALSO
+
+L<SignalWire::Logging>, L<SignalWire::Skills::SkillName>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

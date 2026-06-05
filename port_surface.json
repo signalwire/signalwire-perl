@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 51b582610ded9a7bee7fab88b168dbc199184bc1",
+   "generated_from" : "signalwire-perl @ cd45df2eef28fc6d8f73ca4afed6ebf87ee46e5c",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -496,6 +496,9 @@
                "denoise",
                "denoise_stop",
                "detect",
+               "detect_answering_machine",
+               "detect_digit",
+               "detect_fax",
                "disconnect",
                "dispatch_event",
                "echo",
@@ -512,6 +515,12 @@
                "pay",
                "play",
                "play_and_collect",
+               "play_audio",
+               "play_ringtone",
+               "play_silence",
+               "play_tts",
+               "prompt_audio",
+               "prompt_tts",
                "queue_enter",
                "queue_leave",
                "receive_fax",

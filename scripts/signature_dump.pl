@@ -78,9 +78,25 @@ sub parse_file {
             next;
         }
 
-        if ($line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*(?:\([^)]*\))?\s*\{/ ||
-            $line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*$/) {
-            my $name = $1;
+        # ``sub NAME (SIGNATURE) {`` / ``sub NAME {`` / bare ``sub NAME``.
+        # The optional ``(SIGNATURE)`` is the Perl 5.20+ subroutine-
+        # signatures feature (``use feature 'signatures'``). We CAPTURE it
+        # (rather than discard) so a method written in signature form
+        #   sub foo ($self, $alpha, $beta = 5, %opts) { ... }
+        # yields the same parameter inventory as the classic
+        #   sub foo { my ($self, $alpha, $beta, %opts) = @_; ... }
+        # form. Without this, a port-side switch to signatures would drop
+        # every parameter and surface as spurious arity drift.
+        my ($name, $sig);
+        if ($line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*(\([^)]*\))?\s*\{/) {
+            ($name, $sig) = ($1, $2);
+        }
+        elsif ($line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*(\([^)]*\))?\s*$/) {
+            # Declaration with no opening brace on this line (brace on the
+            # next line). The signature, if any, is still on this line.
+            ($name, $sig) = ($1, $2);
+        }
+        if (defined $name) {
             # Collect body lines. Always include the sub-declaration line
             # itself so single-line definitions like
             #   sub play_pause { my ($s, $id, %p) = @_; ... }
@@ -94,7 +110,18 @@ sub parse_file {
                 $depth += ($lines->[$j] =~ tr/\{//) - ($lines->[$j] =~ tr/\}//);
                 $j++;
             }
-            my @params = parse_params(\@body);
+            # A non-empty signature parenthetical is authoritative: parse
+            # the names straight from it. An empty signature ``()`` means a
+            # genuinely zero-parameter sub (e.g. a classmethod-free helper).
+            # When there's no signature at all, fall back to scanning the
+            # body for ``my (...) = @_`` / ``my $x = shift``.
+            my @params;
+            if (defined $sig) {
+                @params = parse_signature($sig);
+            }
+            else {
+                @params = parse_params(\@body);
+            }
             push @methods, {
                 name => $name,
                 parameters => \@params,
@@ -123,6 +150,45 @@ sub parse_file {
         };
     }
     return @entries;
+}
+
+# Parse a Perl 5.20+ subroutine signature parenthetical, e.g.
+#   ($self, $alpha, $beta = 5, @rest)   or   ($self, %opts)
+# into the same { name => ..., sigil => ... } shape parse_params emits
+# from ``my (...) = @_``. The leading ``$`` sigil is dropped (positional
+# scalars carry sigil => ''); ``@`` / ``%`` are preserved so the canonical
+# translator can map them to var_positional / var_keyword. Defaults
+# (``= EXPR``) are stripped — they don't affect the parameter NAME or its
+# kind, and matching Python's per-parameter ``required`` flag is handled
+# downstream from the Python reference, not from the Perl default here.
+sub parse_signature {
+    my ($sig) = @_;
+    # Strip the surrounding parens.
+    $sig =~ s/^\s*\(//;
+    $sig =~ s/\)\s*$//;
+    my @params;
+    # Split on top-level commas. Signature defaults in this SDK are simple
+    # scalars/strings without nested commas, so a plain comma split is
+    # sufficient (and the parser is best-effort by design).
+    for my $part (split /,/, $sig) {
+        # Drop any default: ``$beta = 5`` / ``$x //= 'foo'`` -> ``$beta``.
+        $part =~ s/(?:\/\/=|=).*$//s;
+        $part =~ s/^\s+//;
+        $part =~ s/\s+$//;
+        next if $part eq '';
+        # A bare sigil placeholder (``$``, ``@``, ``%`` with no name) is a
+        # signature's way of accepting-and-ignoring an argument; skip it
+        # since it has no name to record.
+        my $sigil = '';
+        if ($part =~ /^([\@\%])/) {
+            $sigil = $1;
+        }
+        $part =~ s/^[\$\@\%]//;
+        next if $part eq '';
+        next unless $part =~ /^[A-Za-z_]\w*$/;
+        push @params, { name => $part, sigil => $sigil };
+    }
+    return @params;
 }
 
 sub parse_params {

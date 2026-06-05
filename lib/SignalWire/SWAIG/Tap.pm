@@ -103,3 +103,104 @@ sub is_codec {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::SWAIG::Tap - typed closed sets for FunctionResult->tap
+
+=head1 SYNOPSIS
+
+    use SignalWire::SWAIG::Tap qw(SPEAK HEAR BOTH PCMU PCMA);
+    use SignalWire::SWAIG::FunctionResult;
+
+    my $result = SignalWire::SWAIG::FunctionResult->new;
+
+    # Named constants and bare wire strings are interchangeable:
+    $result->tap( 'rtp://1.2.3.4:5000', direction => HEAR,   codec => PCMA );
+    $result->tap( 'rtp://1.2.3.4:5000', direction => 'hear', codec => 'PCMA' );
+
+    # Membership / iteration helpers:
+    SignalWire::SWAIG::Tap->is_direction('hear');  # 1
+    SignalWire::SWAIG::Tap->is_codec('OPUS');      # 0 (RELAY-only codec)
+    @{ SignalWire::SWAIG::Tap->codecs };           # ('PCMU','PCMA')
+
+=head1 DESCRIPTION
+
+The two closed-set string parameters of
+L<SignalWire::SWAIG::FunctionResult>'s C<tap> verb, surfaced as typed,
+named constants:
+
+=over 4
+
+=item * B<DIRECTION> — which audio channel(s) to tap: C<speak>, C<hear>,
+or C<both>.
+
+=item * B<CODEC> — the RTP codec for the tapped media: C<PCMU> or C<PCMA>.
+
+=back
+
+C<tap> validates both inline and dies on anything outside the set; this
+module hoists those literal sets into a single source of truth so the
+accepted values are discoverable and autocompletable instead of living
+only inside the C<die> strings. The constants B<are> the canonical wire
+strings, so C<tap>'s signature is unchanged.
+
+B<Distinct from RecordCall.> The tap direction set is
+C<{speak, hear, both}>: the inbound-listen channel is C<hear>, not
+C<record_call>'s C<listen>. Likewise this two-value codec set
+C<{PCMU, PCMA}> is the SWAIG-tap codec set only — a strict subset of the
+RELAY connect/stream codec superset (C<PCMU>, C<PCMA>, C<OPUS>, C<G722>,
+...). These vocabularies must never be conflated.
+
+=head1 CONSTANTS
+
+Exported on request via L<Exporter>. The C<:directions> tag pulls
+C<SPEAK>/C<HEAR>/C<BOTH>; C<:codecs> pulls C<PCMU>/C<PCMA>; C<:all> pulls
+every constant.
+
+    SPEAK => 'speak'    PCMU => 'PCMU'
+    HEAR  => 'hear'     PCMA => 'PCMA'
+    BOTH  => 'both'
+
+=head1 METHODS
+
+=head2 directions
+
+    my $aref = SignalWire::SWAIG::Tap->directions;
+
+Arrayref of the accepted tap-direction strings.
+
+=head2 codecs
+
+    my $aref = SignalWire::SWAIG::Tap->codecs;
+
+Arrayref of the accepted tap-codec strings.
+
+=head2 is_direction
+
+    my $bool = SignalWire::SWAIG::Tap->is_direction($value);
+
+True if C<$value> is an accepted tap direction. Accepts the bareword
+constant too (it is just the string).
+
+=head2 is_codec
+
+    my $bool = SignalWire::SWAIG::Tap->is_codec($value);
+
+True if C<$value> is an accepted tap codec.
+
+=head1 SEE ALSO
+
+L<SignalWire::SWAIG::FunctionResult>,
+L<SignalWire::SWAIG::RecordCall>,
+L<SignalWire::SWAIG::JoinConference>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut
