@@ -8,8 +8,14 @@
 #   1. prove -Ilib -It/lib t/             — language test runner
 #   2. signature regen                    — python adapter + signature_dump.pl
 #   3. drift gate                         — porting-sdk diff_port_signatures.py
-#   4. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
-#   5. emission gate                      — porting-sdk diff_port_emission.py
+#   4. surface-fresh gate                 — porting-sdk check_surface_freshness.py
+#                                           (regens port_surface.json via
+#                                           enumerate_surface.pl and fails if the
+#                                           committed copy is STALE — closes the
+#                                           Layer-B-not-gated hole; Layer A above
+#                                           only gates signatures)
+#   5. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
+#   6. emission gate                      — porting-sdk diff_port_emission.py
 #                                           (byte-compares bin/emit-corpus.pl's
 #                                           FunctionResult serialisation vs
 #                                           Python's to_dict() over the shared
@@ -81,11 +87,36 @@ run_gate "DRIFT" "diff_port_signatures vs python reference" \
         --surface-additions "$PORT_ROOT/PORT_ADDITIONS.md" \
         --omissions "$PORT_ROOT/PORT_SIGNATURE_OMISSIONS.md"
 
-# Gate 4: no-cheat
+# Gate 4: surface-fresh — Layer B (the symbol-level surface) is NOT gated by the
+# drift gate above (that's Layer A / signatures only), so port_surface.json can
+# silently rot. Regenerate it IN PLACE via the Perl surface enumerator and fail
+# if the committed copy differs (modulo the volatile generated_from git-sha,
+# which check_surface_freshness.py strips). Always restore the working copy so a
+# stale-but-uncommitted regen never leaks past this gate.
+surface_fresh_check() {
+    # Snapshot the committed surface (fallback to the working copy if HEAD has none).
+    if ! git show HEAD:port_surface.json > /tmp/committed_surface.json 2>/dev/null; then
+        cp "$PORT_ROOT/port_surface.json" /tmp/committed_surface.json
+    fi
+    # Regenerate in place (writes port_surface.json; warnings go to stderr).
+    perl scripts/enumerate_surface.pl >/dev/null || return $?
+    # Compare modulo provenance.
+    python3 "$PORTING_SDK_DIR/scripts/check_surface_freshness.py" \
+        --committed /tmp/committed_surface.json \
+        --fresh "$PORT_ROOT/port_surface.json"
+    local rc=$?
+    # Restore the working copy regardless of outcome.
+    git checkout -- port_surface.json 2>/dev/null
+    return $rc
+}
+run_gate "SURFACE-FRESH" "check_surface_freshness (regen port_surface.json)" \
+    surface_fresh_check
+
+# Gate 5: no-cheat
 run_gate "NO-CHEAT" "audit_no_cheat_tests" \
     python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
 
-# Gate 5: emission — byte-compare FunctionResult serialisation vs Python's
+# Gate 6: emission — byte-compare FunctionResult serialisation vs Python's
 # to_dict() over the shared 81-entry corpus. Pure serialisation: no mock
 # servers, no network — just signalwire-python adjacent (already required by
 # the drift gate) and bin/emit-corpus.pl. See porting-sdk/IDIOM_PASS_JOURNAL.md
