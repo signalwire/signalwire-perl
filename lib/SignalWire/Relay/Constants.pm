@@ -9,6 +9,7 @@ our @EXPORT_OK = qw(
     CALL_TERMINAL_STATES
     CALL_END_REASONS
     DIAL_STATES DIAL_STATE_DIALING DIAL_STATE_ANSWERED DIAL_STATE_FAILED
+    DIAL_TERMINAL_STATES
     MESSAGE_STATES MESSAGE_STATE_QUEUED MESSAGE_STATE_INITIATED MESSAGE_STATE_SENT
     MESSAGE_STATE_DELIVERED MESSAGE_STATE_UNDELIVERED MESSAGE_STATE_FAILED MESSAGE_STATE_RECEIVED
     MESSAGE_TERMINAL_STATES
@@ -62,6 +63,15 @@ use constant DIAL_STATES => [
     DIAL_STATE_ANSWERED,
     DIAL_STATE_FAILED,
 ];
+
+# A dial completes when it is answered (success) or failed (failure);
+# 'dialing' is the in-progress, non-terminal state. This matches the
+# client's dial dispatch: DIAL_STATE_ANSWERED resolves the pending dial,
+# DIAL_STATE_FAILED rejects it (see Relay::Client::_handle_dial_event).
+use constant DIAL_TERMINAL_STATES => {
+    (DIAL_STATE_ANSWERED) => 1,
+    (DIAL_STATE_FAILED)   => 1,
+};
 
 # --- Message States ---
 use constant MESSAGE_STATE_QUEUED      => 'queued';

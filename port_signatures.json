@@ -9282,6 +9282,15 @@
               ],
               "returns": "any"
             },
+            "current_state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "denoise": {
               "params": [
                 {
@@ -9541,6 +9550,15 @@
               "returns": "any"
             },
             "hold": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "is_terminal": {
               "params": [
                 {
                   "name": "self",
@@ -14085,6 +14103,15 @@
               ],
               "returns": "any"
             },
+            "current_state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "direction": {
               "params": [
                 {
@@ -14118,6 +14145,15 @@
               "returns": "any"
             },
             "is_done": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "is_terminal": {
               "params": [
                 {
                   "name": "self",

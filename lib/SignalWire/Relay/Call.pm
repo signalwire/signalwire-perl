@@ -11,6 +11,7 @@ use Carp ();
 
 use SignalWire::Relay::Action;
 use SignalWire::Relay::Constants qw(CALL_TERMINAL_STATES ACTION_TERMINAL_STATES);
+use SignalWire::Relay::CallState ();
 
 # isa: call_id is the required correlation key — a bad construction must
 # die immediately rather than yield a call the server can never route.
@@ -156,6 +157,30 @@ sub on ($self, $cb) {
     Carp::croak("on() callback must be a coderef") unless ref $cb eq 'CODE';
     push @{$self->_on_event}, $cb;
     return $self;
+}
+
+# --- Typed state accessors (parity alongside the string `state`) ---
+#
+# `state` stays the canonical bare-string accessor (Python parity). These
+# add the SignalWire::Relay::CallState-backed view: a named entry point for
+# reading the lifecycle state and asking whether the call has terminated,
+# without the caller hard-coding the 'ended' literal. Perl has no enum
+# object, so current_state returns the same wire string `state` does — it
+# is the typed COMPANION to the CallState predicates, not a different value.
+
+# current_state — the call's lifecycle state as the CallState-typed view.
+# Same wire string as ->state (the constants ARE the wire strings); paired
+# with CallState->is_state / ->is_terminal for membership/terminality.
+sub current_state ($self) {
+    return $self->state;
+}
+
+# is_terminal — true once the call has reached a terminal lifecycle state
+# (CallState terminal set = { ended }). Delegates to CallState so the
+# terminal definition lives in one place; returns false (never dies) on an
+# unknown/forward-compat state.
+sub is_terminal ($self) {
+    return SignalWire::Relay::CallState->is_terminal($self->state);
 }
 
 # Resolve all pending actions (e.g., on call ended or call-gone)
@@ -540,10 +565,31 @@ called by the client).
 
 =back
 
+=head2 Typed state
+
+C<state> remains the canonical bare-string accessor (Python parity). These
+add the L<SignalWire::Relay::CallState>-backed view:
+
+=over 4
+
+=item * C<current_state> — the call's lifecycle state as the CallState-typed
+view. Returns the same wire string as C<state> (the CallState constants
+B<are> the wire strings); pair it with
+C<< SignalWire::Relay::CallState->is_state >> /
+C<< ->is_terminal >> for membership and terminality.
+
+=item * C<is_terminal> — true once the call has reached a terminal lifecycle
+state (C<ended>). Delegates to L<SignalWire::Relay::CallState> so the
+terminal definition lives in one place; returns false (never dies) on an
+unknown/forward-compatible state.
+
+=back
+
 =head1 SEE ALSO
 
 L<SignalWire::Relay::Client>, L<SignalWire::Relay::Action>,
-L<SignalWire::Relay::Event>, L<SignalWire::Relay::Constants>.
+L<SignalWire::Relay::Event>, L<SignalWire::Relay::Constants>,
+L<SignalWire::Relay::CallState>, L<SignalWire::Relay::Device>.
 
 =head1 LICENSE
 

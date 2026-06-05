@@ -11,6 +11,7 @@ use Scalar::Util ();
 use Carp ();
 
 use SignalWire::Relay::Constants qw(MESSAGE_TERMINAL_STATES);
+use SignalWire::Relay::MessageState ();
 
 # --- isa constraint helpers (coderefs; no extra deps). Each dies on a
 # bad value so construction / accessor-writes fail fast. Moo skips isa on
@@ -51,6 +52,32 @@ has '_on_event'     => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );
 # Check if message has reached a terminal state
 sub is_done ($self) {
     return $self->completed;
+}
+
+# --- Typed state accessors (parity alongside the string `state`) ---
+#
+# `state` stays the canonical bare-string accessor (Python parity). These
+# add the SignalWire::Relay::MessageState-backed view. Perl has no enum
+# object, so current_state returns the same wire string `state` does — it
+# is the typed COMPANION to the MessageState predicates.
+
+# current_state — the message's delivery state as the MessageState-typed
+# view. Same wire string as ->state (the constants ARE the wire strings);
+# paired with MessageState->is_state / ->is_terminal.
+sub current_state ($self) {
+    return $self->state;
+}
+
+# is_terminal — true when the message's current state is a terminal
+# delivery state (MessageState terminal set = { delivered, undelivered,
+# failed }). Delegates to MessageState so the terminal definition lives in
+# one place; returns false (never dies) on an unknown/forward-compat state.
+#
+# Distinct from is_done: is_done reports the resolved/`completed` flag set
+# by dispatch_event, whereas is_terminal classifies the current `state`
+# string itself via the MessageState vocabulary.
+sub is_terminal ($self) {
+    return SignalWire::Relay::MessageState->is_terminal($self->state);
 }
 
 # Register on_completed callback
@@ -149,7 +176,27 @@ number (Moo C<isa> constraints).
 
     my $bool = $msg->is_done;
 
-True once the message has reached a terminal state.
+True once the message has reached a terminal state (the resolved
+C<completed> flag set by L</dispatch_event>).
+
+=head2 current_state
+
+    my $state = $msg->current_state;
+
+The message's delivery state as the L<SignalWire::Relay::MessageState>-typed
+view. Returns the same wire string as C<state> (the MessageState constants
+B<are> the wire strings); pair it with
+C<< SignalWire::Relay::MessageState->is_state >> / C<< ->is_terminal >>.
+
+=head2 is_terminal
+
+    my $bool = $msg->is_terminal;
+
+True when the message's current C<state> string is a terminal delivery
+state (C<delivered>, C<undelivered>, or C<failed>). Delegates to
+L<SignalWire::Relay::MessageState>; returns false (never dies) on an
+unknown/forward-compatible state. Distinct from L</is_done>, which reports
+the resolved C<completed> flag rather than classifying the C<state> string.
 
 =head2 on_completed
 
@@ -185,7 +232,7 @@ called by L<SignalWire::Relay::Client>, not user code.
 =head1 SEE ALSO
 
 L<SignalWire::Relay::Client>, L<SignalWire::Relay::Event>,
-L<SignalWire::Relay::Constants>.
+L<SignalWire::Relay::Constants>, L<SignalWire::Relay::MessageState>.
 
 =head1 LICENSE
 

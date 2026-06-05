@@ -292,6 +292,10 @@ subtest 'POD: documented modules are Pod::Checker-clean' => sub {
         SignalWire/Relay/Action.pm
         SignalWire/Relay/Call.pm
         SignalWire/Relay/Client.pm
+        SignalWire/Relay/CallState.pm
+        SignalWire/Relay/DialState.pm
+        SignalWire/Relay/MessageState.pm
+        SignalWire/Relay/Device.pm
         SignalWire/POM/Section.pm
     );
 

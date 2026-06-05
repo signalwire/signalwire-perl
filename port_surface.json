@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 9d5a3dd8a7c7fb8a75b3ad93af51e4091432403f",
+   "generated_from" : "signalwire-perl @ 0df0d52705e7080fd86bbc0011e2fb44e7eaecee",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -493,6 +493,7 @@
                "clear_digit_bindings",
                "collect",
                "connect",
+               "current_state",
                "denoise",
                "denoise_stop",
                "detect",
@@ -504,6 +505,7 @@
                "echo",
                "hangup",
                "hold",
+               "is_terminal",
                "join_conference",
                "join_room",
                "leave_conference",
@@ -626,8 +628,10 @@
          "classes" : {
             "Message" : [
                "__init__",
+               "current_state",
                "dispatch_event",
                "is_done",
+               "is_terminal",
                "on",
                "on_completed",
                "wait"
