@@ -14,7 +14,7 @@ use Test::More;
 use_ok('SignalWire::SWAIG::RecordCall');
 use_ok('SignalWire::SWAIG::FunctionResult');
 
-use SignalWire::SWAIG::RecordCall qw(WAV MP3 SPEAK LISTEN BOTH);
+use SignalWire::SWAIG::RecordCall qw(WAV MP3 MP4 SPEAK LISTEN BOTH);
 
 # Pull the record_call params back out of a FunctionResult's serialized
 # action list (record_call -> add_action('SWML', ...) under
@@ -45,8 +45,8 @@ subtest 'constants equal wire strings' => sub {
 #    drift from the accepted sets.
 # ------------------------------------------------------------------
 subtest 'formats/directions match what record_call accepts' => sub {
-    is_deeply(SignalWire::SWAIG::RecordCall->formats, [qw(wav mp3)],
-        'formats lists wav, mp3');
+    is_deeply(SignalWire::SWAIG::RecordCall->formats, [qw(wav mp3 mp4)],
+        'formats lists wav, mp3, mp4');
     is_deeply(SignalWire::SWAIG::RecordCall->directions, [qw(speak listen both)],
         'directions lists speak, listen, both');
 
@@ -67,10 +67,10 @@ subtest 'formats/directions match what record_call accepts' => sub {
     # module's set is exactly record_call's accepted set, not a superset.
     {
         my $r = SignalWire::SWAIG::FunctionResult->new;
-        ok(!eval { $r->record_call(format => 'mp4'); 1 },
-            "record_call rejects format 'mp4' (outside the set)");
-        ok(!SignalWire::SWAIG::RecordCall->is_format('mp4'),
-            "is_format('mp4') false — module agrees");
+        ok(!eval { $r->record_call(format => 'ogg'); 1 },
+            "record_call rejects format 'ogg' (outside the set)");
+        ok(!SignalWire::SWAIG::RecordCall->is_format('ogg'),
+            "is_format('ogg') false — module agrees");
     }
     {
         my $r = SignalWire::SWAIG::FunctionResult->new;
@@ -126,7 +126,7 @@ subtest 'constant and string produce the identical record_call action' => sub {
 
     # And every advertised value round-trips onto the wire unchanged when
     # passed as the constant.
-    my %fmt_const = (wav => WAV, mp3 => MP3);
+    my %fmt_const = (wav => WAV, mp3 => MP3, mp4 => MP4);
     for my $fmt (@{ SignalWire::SWAIG::RecordCall->formats }) {
         my $r = SignalWire::SWAIG::FunctionResult->new;
         $r->record_call(format => $fmt_const{$fmt});

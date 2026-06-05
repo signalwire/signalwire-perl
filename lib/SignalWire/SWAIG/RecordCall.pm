@@ -43,10 +43,11 @@ use Exporter 'import';
 
 # Recording container formats. Values are the exact strings record_call
 # accepts (anything else dies). Keep in lockstep with record_call's
-# `die "format must be 'wav' or 'mp3'"` guard.
+# `die "format must be 'wav', 'mp3', or 'mp4'"` guard.
 use constant {
     WAV => 'wav',
     MP3 => 'mp3',
+    MP4 => 'mp4',
 };
 
 # Record channel directions. Values are the exact strings record_call
@@ -58,16 +59,16 @@ use constant {
     BOTH   => 'both',
 };
 
-our @EXPORT_OK = qw( WAV MP3 SPEAK LISTEN BOTH );
+our @EXPORT_OK = qw( WAV MP3 MP4 SPEAK LISTEN BOTH );
 our %EXPORT_TAGS = (
     all        => [@EXPORT_OK],
-    formats    => [qw( WAV MP3 )],
+    formats    => [qw( WAV MP3 MP4 )],
     directions => [qw( SPEAK LISTEN BOTH )],
 );
 
 # Canonical accepted sets, in the order record_call lists them in its
 # validation messages.
-my @FORMATS    = qw( wav mp3 );
+my @FORMATS    = qw( wav mp3 mp4 );
 my @DIRECTIONS = qw( speak listen both );
 
 my %IS_FORMAT    = map { $_ => 1 } @FORMATS;

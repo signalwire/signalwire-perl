@@ -238,7 +238,7 @@ sub record_call {
     my $format     = $opts{format}    // 'wav';
     my $direction  = $opts{direction} // 'both';
 
-    die "format must be 'wav' or 'mp3'" unless $format eq 'wav' || $format eq 'mp3';
+    die "format must be 'wav', 'mp3', or 'mp4'" unless $format eq 'wav' || $format eq 'mp3' || $format eq 'mp4';
     die "direction must be 'speak', 'listen', or 'both'"
         unless $direction eq 'speak' || $direction eq 'listen' || $direction eq 'both';
 
