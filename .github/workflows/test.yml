@@ -1,0 +1,79 @@
+name: Test
+
+# Runs the full per-port CI gate set via scripts/run-ci.sh:
+#   TEST → SIGNATURES → DRIFT → SURFACE-FRESH → NO-CHEAT → EMISSION
+# Mirrors `bash scripts/run-ci.sh` exactly so there's no drift between local
+# and CI behavior. Until now the Perl port had no Test workflow at all — the
+# language test suite and the EMISSION / NO-CHEAT gates ran nowhere in CI
+# (only surface-audit.yml / doc-audit.yml ran, covering surface + docs). This
+# closes that hole: a behavioral-emission regression (wrong to_dict() shape
+# from bin/emit-corpus.pl) can no longer land green.
+
+env:
+  # Opt into Node.js 24 ahead of GitHub's 2026-06-02 default switch.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout signalwire-perl
+        uses: actions/checkout@v5
+        with:
+          path: signalwire-perl
+
+      - name: Checkout porting-sdk (mock servers + audit scripts + EMISSION corpus)
+        uses: actions/checkout@v5
+        with:
+          repository: signalwire/porting-sdk
+          path: porting-sdk
+          token: ${{ secrets.PORTING_SDK_TOKEN }}
+
+      # The EMISSION gate compares this port's to_dict() output (bin/emit-corpus.pl)
+      # against the signalwire-python oracle (FunctionResult), which pulls fastapi
+      # via signalwire/__init__. Check it out as a sibling so the gate has its
+      # reference.
+      - name: Checkout signalwire-python (EMISSION oracle)
+        uses: actions/checkout@v5
+        with:
+          repository: signalwire/signalwire-python
+          path: signalwire-python
+          ref: main
+
+      - name: Setup Perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: '5.38'
+
+      - name: Setup Python (porting-sdk audit scripts + mock servers)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Perl dependencies
+        working-directory: signalwire-perl
+        run: cpanm --notest --quiet --installdeps .
+
+      - name: Install Python test harnesses (mock_relay + mock_signalwire)
+        run: |
+          pip install -e porting-sdk/test_harness/mock_relay
+          pip install -e porting-sdk/test_harness/mock_signalwire
+
+      - name: Install signalwire-python (EMISSION oracle) if not importable
+        run: |
+          if python -c "import signalwire.core.function_result" 2>/dev/null; then
+            echo "signalwire-python already importable; skipping install"
+          else
+            pip install ./signalwire-python
+          fi
+
+      - name: Run CI gate script (TEST → SIGNATURES → DRIFT → SURFACE-FRESH → NO-CHEAT → EMISSION)
+        working-directory: signalwire-perl
+        env:
+          PORTING_SDK: ${{ github.workspace }}/porting-sdk
+        run: bash scripts/run-ci.sh
