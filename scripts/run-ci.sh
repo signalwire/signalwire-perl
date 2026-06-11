@@ -93,7 +93,7 @@ run_gate "DRIFT" "diff_port_signatures vs python reference" \
 # if the committed copy differs (modulo the volatile generated_from git-sha,
 # which check_surface_freshness.py strips). Always restore the working copy so a
 # stale-but-uncommitted regen never leaks past this gate.
-surface_fresh_check() {
+surface_fresh_gate() {
     # Snapshot the committed surface (fallback to the working copy if HEAD has none).
     if ! git show HEAD:port_surface.json > /tmp/committed_surface.json 2>/dev/null; then
         cp "$PORT_ROOT/port_surface.json" /tmp/committed_surface.json
@@ -110,7 +110,7 @@ surface_fresh_check() {
     return $rc
 }
 run_gate "SURFACE-FRESH" "check_surface_freshness (regen port_surface.json)" \
-    surface_fresh_check
+    surface_fresh_gate
 
 # Gate 5: no-cheat
 run_gate "NO-CHEAT" "audit_no_cheat_tests" \
