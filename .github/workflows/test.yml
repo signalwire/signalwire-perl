@@ -33,12 +33,12 @@ jobs:
         perl: ['5.36', '5.38']
     steps:
       - name: Checkout signalwire-perl
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: signalwire-perl
 
       - name: Checkout porting-sdk (mock servers + audit scripts + EMISSION corpus)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: signalwire/porting-sdk
           path: porting-sdk
@@ -49,7 +49,7 @@ jobs:
       # via signalwire/__init__. Check it out as a sibling so the gate has its
       # reference.
       - name: Checkout signalwire-python (EMISSION oracle)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: signalwire/signalwire-python
           path: signalwire-python
