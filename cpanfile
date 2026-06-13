@@ -1,12 +1,12 @@
-requires 'perl', '5.026';
+requires 'perl', '5.43.11';
 
 # Core
-requires 'Moo', '2.0';
-requires 'JSON', '4.0';
+requires 'Moo', '2.005005';
+requires 'JSON', '4.11';
 requires 'JSON::PP';
 requires 'YAML::PP';
 requires 'Tie::IxHash';
-requires 'Plack', '1.0';
+requires 'Plack', '1.0054';
 requires 'Plack::Request';
 requires 'HTTP::Tiny';
 requires 'Digest::SHA';
