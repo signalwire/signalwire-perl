@@ -21,6 +21,16 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test the declared floor (5.36 — where subroutine signatures became a
+        # stable, warning-free feature, per cpanfile/Makefile.PL MIN_PERL_VERSION)
+        # AND a current release, so the version we *claim* to support is actually
+        # exercised. Each matrix entry runs on its own runner, so the per-test
+        # mock servers don't contend across versions. fail-fast off so one
+        # version's failure still reports the other's result.
+        perl: ['5.36', '5.38']
     steps:
       - name: Checkout signalwire-perl
         uses: actions/checkout@v5
@@ -48,7 +58,7 @@ jobs:
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1
         with:
-          perl-version: '5.38'
+          perl-version: ${{ matrix.perl }}
 
       - name: Setup Python (porting-sdk audit scripts + mock servers)
         uses: actions/setup-python@v5

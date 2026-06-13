@@ -2,11 +2,8 @@ package SignalWire::Relay::Action;
 use strict;
 use warnings;
 use Moo;
-# Subroutine signatures (Perl 5.20+; floor 5.026). Must follow `use Moo;`
-# — Moo's import re-enables the default warning set, which would otherwise
-# un-silence experimental::signatures.
+# Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-no warnings 'experimental::signatures';
 use Scalar::Util ();
 use Carp ();
 
@@ -112,7 +109,6 @@ sub _stop_method { return '' }
 # --- PlayAction ---
 package SignalWire::Relay::Action::Play;
 use Moo;
-no warnings 'experimental::signatures';  # re-silence: use Moo re-enabled it
 extends 'SignalWire::Relay::Action';
 
 sub _stop_method { 'calling.play.stop' }
@@ -139,7 +135,6 @@ sub volume ($self, $vol) {
 # --- RecordAction ---
 package SignalWire::Relay::Action::Record;
 use Moo;
-no warnings 'experimental::signatures';  # re-silence: use Moo re-enabled it
 extends 'SignalWire::Relay::Action';
 
 sub _stop_method { 'calling.record.stop' }
@@ -168,7 +163,6 @@ sub size     { $_[0]->payload->{size}      // 0 }
 # --- DetectAction ---
 package SignalWire::Relay::Action::Detect;
 use Moo;
-no warnings 'experimental::signatures';  # re-silence: use Moo re-enabled it
 extends 'SignalWire::Relay::Action';
 
 sub _stop_method { 'calling.detect.stop' }
@@ -193,7 +187,6 @@ sub _handle_event ($self, $event) {
 # --- CollectAction (used by play_and_collect) ---
 package SignalWire::Relay::Action::Collect;
 use Moo;
-no warnings 'experimental::signatures';  # re-silence: use Moo re-enabled it
 extends 'SignalWire::Relay::Action';
 
 # play_and_collect's stop verb is calling.play_and_collect.stop, not
@@ -250,7 +243,6 @@ sub _stop_method { 'calling.collect.stop' }
 # --- FaxAction ---
 package SignalWire::Relay::Action::Fax;
 use Moo;
-no warnings 'experimental::signatures';  # re-silence: use Moo re-enabled it
 extends 'SignalWire::Relay::Action';
 
 has '_fax_type' => ( is => 'ro', default => sub { 'send' } );

@@ -6,7 +6,7 @@ WriteMakefile(
     ABSTRACT     => 'SignalWire AI Agents SDK for Perl',
     AUTHOR       => 'SignalWire <support@signalwire.com>',
     LICENSE      => 'mit',
-    MIN_PERL_VERSION => '5.026',
+    MIN_PERL_VERSION => '5.036',
     PREREQ_PM => {
         'Moo'               => '2.0',
         'JSON'              => '4.0',

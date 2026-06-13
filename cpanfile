@@ -1,4 +1,4 @@
-requires 'perl', '5.026';
+requires 'perl', '5.036';
 
 # Core
 requires 'Moo', '2.0';
