@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload surface snapshot on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: doc-audit-debug-${{ github.sha }}
           path: |
