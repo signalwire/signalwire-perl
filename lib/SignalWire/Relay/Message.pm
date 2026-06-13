@@ -2,11 +2,8 @@ package SignalWire::Relay::Message;
 use strict;
 use warnings;
 use Moo;
-# Subroutine signatures (Perl 5.20+; floor 5.026). Placed AFTER `use Moo;`
-# because Moo's import re-enables the default warning set and would
-# otherwise un-silence experimental::signatures.
+# Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-no warnings 'experimental::signatures';
 use Scalar::Util ();
 use Carp ();
 

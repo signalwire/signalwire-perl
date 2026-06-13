@@ -5,11 +5,8 @@ package SignalWire::Skills::SkillBase;
 use strict;
 use warnings;
 use Moo;
-# Subroutine signatures (Perl 5.20+; floor 5.026). Must follow `use Moo;`
-# (Moo re-enables the default warning set, which would otherwise
-# un-silence experimental::signatures).
+# Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-no warnings 'experimental::signatures';
 use Carp qw(croak);
 use Scalar::Util ();
 

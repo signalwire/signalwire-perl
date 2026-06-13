@@ -2,11 +2,9 @@ package SignalWire::Relay::Event;
 use strict;
 use warnings;
 use Moo;
-# Subroutine signatures (Perl 5.20+; floor 5.026), enabled file-wide.
-# Must follow `use Moo;` (Moo re-enables the default warning set). The
-# factory at the bottom re-silences after its package's own `use Moo`.
+# Subroutine signatures (stable since Perl 5.36, the SDK's floor), enabled
+# file-wide.
 use feature 'signatures';
-no warnings 'experimental::signatures';
 
 # Base event class -- all relay events inherit from this.
 has 'event_type' => ( is => 'ro', default => sub { '' } );
@@ -228,7 +226,6 @@ has 'restart' => ( is => 'ro', default => sub { 0 } );
 
 # --- Factory method ---
 package SignalWire::Relay::Event;
-no warnings 'experimental::signatures';  # re-silence after subclass use Moo
 
 # Map event_type string to class name
 my %EVENT_CLASS_MAP = (
