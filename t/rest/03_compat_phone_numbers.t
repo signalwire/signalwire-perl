@@ -32,7 +32,7 @@ subtest 'TestCompatPhoneNumbersList' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'GET', 'GET recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/IncomingPhoneNumbers",
            'path is /IncomingPhoneNumbers');
     };
 };
@@ -52,7 +52,7 @@ subtest 'TestCompatPhoneNumbersGet' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'GET', 'GET recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers/PN_GET',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/IncomingPhoneNumbers/PN_GET",
            'GET path includes sid');
     };
 };
@@ -78,7 +78,7 @@ subtest 'TestCompatPhoneNumbersUpdate' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers/PN_UU',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/IncomingPhoneNumbers/PN_UU",
            'path includes sid');
         is(ref $j->{body}, 'HASH', 'body is a hashref');
         is($j->{body}{FriendlyName}, 'updated',          'FriendlyName forwarded');
@@ -99,7 +99,7 @@ subtest 'TestCompatPhoneNumbersDelete' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'DELETE', 'DELETE recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers/PN_DEL',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/IncomingPhoneNumbers/PN_DEL",
            'DELETE path includes sid');
     };
 };
@@ -124,7 +124,7 @@ subtest 'TestCompatPhoneNumbersPurchase' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/IncomingPhoneNumbers",
            'POST goes to /IncomingPhoneNumbers');
         is(ref $j->{body}, 'HASH', 'body is a hashref');
         is($j->{body}{PhoneNumber},  '+15555550100', 'PhoneNumber forwarded');
@@ -152,7 +152,7 @@ subtest 'TestCompatPhoneNumbersImportNumber' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/ImportedPhoneNumbers',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/ImportedPhoneNumbers",
            'POST goes to /ImportedPhoneNumbers (not /IncomingPhoneNumbers)');
         is(ref $j->{body}, 'HASH', 'body is a hashref');
         is($j->{body}{PhoneNumber}, '+15555550111', 'PhoneNumber forwarded');
@@ -175,7 +175,7 @@ subtest 'TestCompatPhoneNumbersListAvailableCountries' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'GET', 'GET recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/AvailablePhoneNumbers',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/AvailablePhoneNumbers",
            'GET goes to /AvailablePhoneNumbers');
     };
 };
@@ -199,7 +199,7 @@ subtest 'TestCompatPhoneNumbersSearchTollFree' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'GET', 'GET recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/AvailablePhoneNumbers/US/TollFree',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/AvailablePhoneNumbers/US/TollFree",
            'GET path includes country');
         ok(exists $j->{query_params}{AreaCode},
             'AreaCode appears on the query string');

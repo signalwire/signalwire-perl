@@ -34,7 +34,7 @@ subtest 'TestCompatCallsStartStream' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Calls/CA_JX1/Streams',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Calls/CA_JX1/Streams",
            'path is /Calls/{sid}/Streams');
         is(ref $j->{body}, 'HASH', 'body decoded as hashref');
         is($j->{body}{Url},  'wss://a.b/s', 'body Url forwarded');
@@ -59,7 +59,7 @@ subtest 'TestCompatCallsStopStream' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Calls/CA_S1/Streams/ST_S1',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Calls/CA_S1/Streams/ST_S1",
            'path is /Streams/{stream_sid}');
         is(ref $j->{body}, 'HASH', 'body decoded as hashref');
         is($j->{body}{Status}, 'stopped', 'body Status forwarded');
@@ -85,7 +85,7 @@ subtest 'TestCompatCallsUpdateRecording' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Calls/CA_R1/Recordings/RE_R1',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Calls/CA_R1/Recordings/RE_R1",
            'path is /Recordings/{recording_sid}');
         is(ref $j->{body}, 'HASH', 'body decoded as hashref');
         is($j->{body}{Status}, 'paused', 'body Status forwarded');

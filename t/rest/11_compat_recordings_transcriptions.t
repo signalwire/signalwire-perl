@@ -15,7 +15,7 @@ use Test::More;
 
 use MockTest;
 
-my $BASE = '/api/laml/2010-04-01/Accounts/test_proj';
+my $BASE = "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT";
 
 # ---- Recordings ----------------------------------------------------------
 

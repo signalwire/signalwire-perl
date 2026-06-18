@@ -265,7 +265,12 @@ sub authenticate ($self) {
 
     if (ref $result eq 'HASH') {
         $self->protocol($result->{protocol}) if $result->{protocol};
-        $self->session_id($result->{session_id}) if $result->{session_id};
+        # The RELAY connect handshake returns the server-assigned session id
+        # under the key `sessionid` (no underscore) — see the ConnectResult
+        # wire shape (mock_relay connect_result_payload / production switchblade).
+        # Capturing it lets a test scope its journal/scenario calls to its own
+        # session for parallel-safe isolation.
+        $self->session_id($result->{sessionid}) if $result->{sessionid};
     }
 
     return $result;
