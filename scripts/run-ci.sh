@@ -68,6 +68,21 @@ run_gate() {
 
 cd "$PORT_ROOT"
 
+# Make a local::lib visible to the gates when one is present.
+#
+# In CI the SDK's CPAN deps are installed onto the runner's perl via
+# `cpanm --installdeps .` (see .github/workflows/test.yml), so they're already
+# on @INC and this is a no-op. For LOCAL `bash scripts/run-ci.sh` runs, devs
+# install deps into a local::lib at ~/perl5 (the convention documented in
+# CLAUDE.md); that dir is NOT on the default @INC, so without this the TEST
+# gate fails with "Can't locate Plack/Request.pm" / "Protocol/WebSocket" even
+# though the code is fine. Prepend it when it exists — keyed off $HOME (never a
+# hard-coded path), and guarded so CI/containers without ~/perl5 are unaffected.
+LOCAL_LIB_DIR="${PERL_LOCAL_LIB_ROOT:-$HOME/perl5}/lib/perl5"
+if [ -d "$LOCAL_LIB_DIR" ]; then
+    export PERL5LIB="$LOCAL_LIB_DIR${PERL5LIB:+:$PERL5LIB}"
+fi
+
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
 # Gate 1: prove
