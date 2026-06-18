@@ -13,7 +13,7 @@ use Test::More;
 
 use MockTest;
 
-my $BASE = '/api/laml/2010-04-01/Accounts/test_proj/tokens';
+my $BASE = "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/tokens";
 
 subtest 'TestCompatTokensCreate' => sub {
     subtest 'test_returns_token_resource' => sub {

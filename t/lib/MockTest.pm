@@ -5,9 +5,14 @@ package MockTest;
 # Mirrors the Python conftest fixtures and the Go pilot's mocktest package:
 # - On first call to MockTest::client(), probe http://127.0.0.1:8770/__mock__/health
 #   and either reuse a running mock server or spawn one as a subprocess.
-# - Each test calls MockTest::journal_reset() before exercising the SDK so it
-#   only sees its own request, then MockTest::journal_last() to inspect what
-#   the SDK actually sent over the wire.
+# - This process mints a UNIQUE random project (test_proj_<hex>) =>
+#   unique Authorization header. journal_all()/journal_last() filter the shared
+#   global journal client-side by that header, so a test sees ONLY its own
+#   request — making the shared mock safe under file parallelism (`prove -j`)
+#   with no SDK or mock-server change. Inspect the wire request via
+#   MockTest::journal_last(). No reset is needed (the auth-filtered view starts
+#   empty), and a global wipe would race a concurrent test.
+# - Tests assert LAML AccountSid paths against $MockTest::PROJECT.
 # - PORT 8770 is reserved for the Perl rollout (see porting-sdk/test_harness/
 #   mock_signalwire/README.md).
 
@@ -16,6 +21,7 @@ use warnings;
 
 use HTTP::Tiny;
 use JSON qw(encode_json decode_json);
+use MIME::Base64 qw(encode_base64);
 use POSIX ();
 use Time::HiRes qw(sleep);
 use IPC::Open3 ();
@@ -33,8 +39,38 @@ our $PORT = $ENV{MOCK_SIGNALWIRE_PORT} || 8770;
 our $HOST = '127.0.0.1';
 our $BASE_URL = "http://$HOST:$PORT";
 
-our $PROJECT = 'test_proj';
 our $TOKEN   = 'test_tok';
+
+# The per-PROCESS project + its Authorization header. REST is pure
+# request/response with no session handshake, so the isolation key is the
+# Authorization header: each test process mints a UNIQUE random project
+# (test_proj_<12 hex>) => Basic base64(project:token) => a unique header. The
+# harness filters the shared global journal by that header (client-side) and
+# scopes scenario overrides by it (server-side), so a test only ever
+# sees/consumes its own requests and scenarios — parallel-safe under `prove -j`
+# with NO SDK or mock-server change. Random (not a counter) so concurrent
+# processes/machines hitting one shared mock can't collide.
+#
+# Minted at module-load time so $MockTest::PROJECT is final before a test file's
+# top-level `my $BASE = ".../$MockTest::PROJECT/..."` runs. Tests assert LAML
+# AccountSid paths against $MockTest::PROJECT, never a hard-coded test_proj.
+our $ACTIVE_PROJECT;
+our $ACTIVE_AUTH;
+our $PROJECT;
+
+_mint_project();
+
+sub _mint_project {
+    return if defined $ACTIVE_PROJECT;
+    my $rand = '';
+    $rand .= sprintf('%x', int(rand(16))) for 1 .. 12;
+    $ACTIVE_PROJECT = "test_proj_$rand";
+    $PROJECT = $ACTIVE_PROJECT;
+    # Match SignalWire::REST::HttpClient->_build__auth_header exactly:
+    # 'Basic ' . encode_base64("$project:$token", '').
+    $ACTIVE_AUTH = 'Basic ' . encode_base64("$ACTIVE_PROJECT:$TOKEN", '');
+    return;
+}
 
 # Singleton state. The mock server's lifetime is per-process: the first
 # client() call probes for a running instance, then either reuses it or
@@ -47,15 +83,29 @@ our $_SKIP_REASON;
 # Public API ---------------------------------------------------------------
 
 # client() returns a SignalWire::REST::RestClient pointed at the mock.
-# Resets the journal so every test starts clean.
+#
+# Each call mints a UNIQUE per-process random project (test_proj_<12 hex>) on
+# first use and reuses it for the lifetime of the process. REST is pure
+# request/response with no session handshake, so the isolation key is the
+# Authorization header: a unique project => Basic base64(project:token) => a
+# unique header. journal()/journal_last() filter the shared global journal by
+# that header (client-side), so a test only ever sees its own requests even
+# when the shared mock is driven concurrently by other test files under
+# `prove -j` — parallel-safe with NO SDK and NO mock-server change.
+#
+# Mirrors the TS frozen design (tests/rest/mocktest.ts newMockClient): random
+# (not a counter) suffix so concurrent processes/machines can't collide. Tests
+# that assert on the AccountSid in a LAML path read $MockTest::PROJECT instead
+# of hard-coding test_proj.
+#
+# No journal reset is performed: this client starts with zero entries in its
+# auth-filtered view, and a global wipe would race a concurrent test's frames.
 sub client {
     _ensure_server();
     if ($_SKIP_REASON) {
         Test::More::plan(skip_all => "MockTest: $_SKIP_REASON");
         exit 0;
     }
-    journal_reset();
-    scenario_reset();
     return SignalWire::REST::RestClient->new(
         project => $PROJECT,
         token   => $TOKEN,
@@ -63,49 +113,72 @@ sub client {
     );
 }
 
-# journal_reset clears all request entries on the mock.
+# journal_reset clears request entries on the mock. With a per-test scoped
+# project active, this is a NO-OP: the auth-filtered view starts empty for a
+# fresh project and a global wipe would race a concurrent test's in-flight
+# frames on the shared mock. Only an unscoped harness (no client() yet) does
+# the legacy global reset. (Mirrors TS MockHarness.reset.)
 sub journal_reset {
     _ensure_server();
     return if $_SKIP_REASON;
+    return if defined $ACTIVE_AUTH;
     my $resp = _ua()->post("$BASE_URL/__mock__/journal/reset");
     die "journal_reset failed: $resp->{status}" unless $resp->{success};
 }
 
-# scenario_reset clears any one-shot scenarios.
+# scenario_reset clears one-shot scenarios. Scoped to this client's auth header
+# when a project is active (so a concurrent test's armed scenarios are left
+# alone); unscoped harness clears the shared bucket.
 sub scenario_reset {
     _ensure_server();
     return if $_SKIP_REASON;
-    my $resp = _ua()->post("$BASE_URL/__mock__/scenarios/reset");
+    my $q = _scope_query();
+    my $resp = _ua()->post("$BASE_URL/__mock__/scenarios/reset$q");
     die "scenario_reset failed: $resp->{status}" unless $resp->{success};
 }
 
 # scenario_set stages a one-shot response override for the named OperationId.
 # scenario_set("calling.call-commands", 500, { error => "boom" })
+# Scoped to this client's auth header (?session_id=<urlencoded auth>) when a
+# project is active, so a concurrent test can't consume it; unscoped =>
+# shared bucket. Matches the mock's REST session key == Authorization header.
 sub scenario_set {
     my ($endpoint_id, $status, $response_body) = @_;
     _ensure_server();
     return if $_SKIP_REASON;
     my $payload = encode_json({ status => $status, response => $response_body });
     my $resp = _ua()->post(
-        "$BASE_URL/__mock__/scenarios/$endpoint_id",
+        "$BASE_URL/__mock__/scenarios/$endpoint_id" . _scope_query(),
         { content => $payload, headers => { 'Content-Type' => 'application/json' } },
     );
     die "scenario_set failed: $resp->{status} - $resp->{content}" unless $resp->{success};
 }
 
-# journal_all returns the array-of-hashref of every recorded request since
-# the last reset, in arrival order.
+# Build a `?session_id=<urlencoded auth header>` suffix scoping a control-plane
+# call to this client, or '' when no project is active (unscoped/shared).
+sub _scope_query {
+    return '' unless defined $ACTIVE_AUTH;
+    (my $enc = $ACTIVE_AUTH) =~ s/([^A-Za-z0-9_.~-])/sprintf('%%%02X', ord($1))/ge;
+    return "?session_id=$enc";
+}
+
+# journal_all returns the array-of-hashref of recorded requests in arrival
+# order. Scoped to THIS client's Authorization header (client-side filter on
+# the lowercase `authorization` key — Starlette lowercases header names) when a
+# project is active, so a parallel test never sees another test's requests.
 sub journal_all {
     _ensure_server();
     die "MockTest: $_SKIP_REASON" if $_SKIP_REASON;
     my $resp = _ua()->get("$BASE_URL/__mock__/journal");
     die "journal fetch failed: $resp->{status}" unless $resp->{success};
-    return decode_json($resp->{content} || '[]');
+    my $entries = decode_json($resp->{content} || '[]');
+    return $entries unless defined $ACTIVE_AUTH;
+    return [ grep { ($_->{headers}{authorization} // '') eq $ACTIVE_AUTH } @$entries ];
 }
 
-# journal_last returns the most recently recorded request. Dies if the
-# journal is empty - every test that calls a mock-backed SDK method should
-# produce at least one entry.
+# journal_last returns the most recently recorded request for THIS client.
+# Dies if the journal is empty - every test that calls a mock-backed SDK
+# method should produce at least one entry.
 sub journal_last {
     my @entries = @{ journal_all() };
     die "MockTest: journal is empty - SDK call did not reach mock server"
@@ -220,10 +293,18 @@ sub _probe_health {
 }
 
 END {
-    if ($_MOCK_PID && $_MOCK_PID > 0) {
-        # Politely terminate; the OS will clean up either way.
-        eval { kill 'TERM', $_MOCK_PID };
-    }
+    # We deliberately do NOT kill the spawned mock here. Under `prove -jN` the
+    # mock is a per-PORT singleton shared across test-file PROCESSES: the first
+    # file spawns it, the rest probe and REUSE it (only the spawner sets
+    # $_MOCK_PID). If the spawner tore it down at its END, a sibling file still
+    # issuing requests would lose the server mid-suite. So we leave the detached
+    # mock running for the lifetime of the prove run; the next invocation's
+    # probe reuses it (idempotent), and per-client auth-header journal scoping
+    # keeps cross-run state clean. Strays are reaped by the suite's stale-mock
+    # cleanup (`lsof -ti :8770 | xargs kill`). Mirrors the relay harness and the
+    # TS `child.unref()` lifecycle. (REST is quick request/response so the race
+    # is far less likely than the relay WS case, but the fix is identical and
+    # makes both harnesses uniformly parallel-safe.)
 }
 
 1;
@@ -249,7 +330,7 @@ MockTest - test helper for the porting-sdk mock_signalwire HTTP server.
     my $j = MockTest::journal_last();
     is($j->{method}, 'POST', 'POST recorded');
     is($j->{path},
-       '/api/laml/2010-04-01/Accounts/test_proj/Calls/CA_TEST/Streams',
+       "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Calls/CA_TEST/Streams",
        'path matches');
     is($j->{body}{Url}, 'wss://example.com/stream', 'body Url forwarded');
 
@@ -257,9 +338,12 @@ MockTest - test helper for the porting-sdk mock_signalwire HTTP server.
 
 The mock server's lifetime is per-process: the first MockTest::client()
 call probes http://127.0.0.1:8770/__mock__/health and either confirms
-a running server or starts one via `python -m mock_signalwire`. Each
-test that calls C<client()> gets a freshly-reset journal so subsequent
-journal_last() calls return only that test's request.
+a running server or starts one via `python -m mock_signalwire`. The
+process mints a unique random project (C<test_proj_E<lt>hexE<gt>>), so its
+Basic-Auth header is unique; journal_all()/journal_last() filter the shared
+journal by that header and return only this process's requests, making the
+shared mock safe under file parallelism (C<prove -j>) with no reset. Tests
+assert LAML AccountSid paths against C<$MockTest::PROJECT>.
 
 =head1 PORT
 

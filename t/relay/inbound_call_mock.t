@@ -336,6 +336,9 @@ subtest 'inbound without handler does not crash' => sub {
         contexts => ['default'],
     );
     $client->connect;
+    # Hand-built client (not via client()): point default scoping at it so the
+    # inbound-call sequence targets THIS client's session.
+    RelayMockTest::scope($client);
     RelayMockTest::inbound_call(call_id => 'c-nohandler', auto_states => ['created']);
     # Pump for ~1s; the receive event should be processed without crashing.
     _pump_until($client, 1, sub { 0 });

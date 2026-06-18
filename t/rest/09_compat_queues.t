@@ -12,7 +12,7 @@ use Test::More;
 
 use MockTest;
 
-my $BASE = '/api/laml/2010-04-01/Accounts/test_proj/Queues';
+my $BASE = "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Queues";
 
 subtest 'TestCompatQueuesUpdate' => sub {
     subtest 'test_returns_queue_resource' => sub {

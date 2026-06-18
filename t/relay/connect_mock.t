@@ -109,10 +109,17 @@ subtest 'reconnect with protocol string includes protocol in frame' => sub {
     );
     $c2->protocol($issued);
     $c2->connect;
+    # Scope journal reads to c2's session (it was built by hand, not via
+    # client()) and capture the session id before disconnect clears nothing
+    # server-side but keeps the scope pointed at c2.
+    my $c2_session = $c2->session_id;
     $c2->disconnect;
 
-    # The second connect frame must carry that protocol field.
-    my $entries = RelayMockTest::journal_recv(method => 'signalwire.connect');
+    # The second connect frame must carry that protocol field. Read scoped to
+    # c2's session so a parallel test's connect frame is invisible here.
+    my $entries = RelayMockTest::journal_recv(
+        method => 'signalwire.connect', session_id => $c2_session,
+    );
     my @resume = grep { ($_->{frame}{params}{protocol} // '') eq $issued } @$entries;
     ok(scalar @resume, 'resume connect frame carries the protocol')
         or diag "saw protocols: "
@@ -164,8 +171,9 @@ subtest 'unauthenticated raw connect rejected by mock' => sub {
     require Protocol::WebSocket::Client;
     require JSON;
 
-    # Reset journal so this test only sees its own connect.
-    RelayMockTest::journal_reset();
+    # No journal reset needed: this test reads the WebSocket error response
+    # directly off the raw socket, not the mock journal. (A global reset here
+    # would also race a concurrent test's frames under prove -j.)
 
     my $sock = IO::Socket::INET->new(
         PeerHost => '127.0.0.1',
@@ -245,7 +253,6 @@ subtest 'unauthenticated raw connect rejected by mock' => sub {
 # ---------------------------------------------------------------------------
 
 subtest 'connect with jwt carries jwt on wire' => sub {
-    RelayMockTest::journal_reset();
     my $client = SignalWire::Relay::Client->new(
         project   => '',
         token     => '',
@@ -255,9 +262,15 @@ subtest 'connect with jwt carries jwt on wire' => sub {
         path      => '',
     );
     $client->connect;
+    # Scope the journal read to THIS client's session (captured before
+    # disconnect) so a parallel test's connect frame can't be read here.
+    # Mirrors the TS frozen design's `mock.sessionId = sessionIdOf(c)`.
+    my $session = $client->session_id;
     $client->disconnect;
 
-    my $entries = RelayMockTest::journal_recv(method => 'signalwire.connect');
+    my $entries = RelayMockTest::journal_recv(
+        method => 'signalwire.connect', session_id => $session,
+    );
     is(scalar @$entries, 1, 'one connect frame');
     my $auth = $entries->[0]{frame}{params}{authentication};
     is($auth->{jwt_token}, 'fake-jwt-eyJ.AaaA.BbB', 'jwt_token on wire');

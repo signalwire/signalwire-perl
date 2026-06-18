@@ -32,7 +32,7 @@ subtest 'TestCompatMessagesUpdate' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Messages/MM_U1',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Messages/MM_U1",
            'path is /Messages/{sid}');
         is(ref $j->{body}, 'HASH', 'body is a hashref');
         is($j->{body}{Body},   'x',        'Body forwarded');
@@ -55,7 +55,7 @@ subtest 'TestCompatMessagesGetMedia' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'GET', 'GET recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Messages/MM_X/Media/ME_X',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Messages/MM_X/Media/ME_X",
            'path is /Messages/{sid}/Media/{media_sid}');
     };
 };
@@ -73,7 +73,7 @@ subtest 'TestCompatMessagesDeleteMedia' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'DELETE', 'DELETE recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Messages/MM_D/Media/ME_D',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Messages/MM_D/Media/ME_D",
            'DELETE path is /Messages/{sid}/Media/{media_sid}');
     };
 };
@@ -95,7 +95,7 @@ subtest 'TestCompatFaxesUpdate' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Faxes/FX_U2',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Faxes/FX_U2",
            'path is /Faxes/{sid}');
         is(ref $j->{body}, 'HASH', 'body is a hashref');
         is($j->{body}{Status}, 'canceled', 'Status forwarded');
@@ -117,7 +117,7 @@ subtest 'TestCompatFaxesListMedia' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'GET', 'GET recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Faxes/FX_LM_X/Media',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Faxes/FX_LM_X/Media",
            'path is /Faxes/{sid}/Media');
     };
 };
@@ -137,7 +137,7 @@ subtest 'TestCompatFaxesGetMedia' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'GET', 'GET recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Faxes/FX_G/Media/ME_G',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Faxes/FX_G/Media/ME_G",
            'path is /Faxes/{sid}/Media/{media_sid}');
     };
 };
@@ -155,7 +155,7 @@ subtest 'TestCompatFaxesDeleteMedia' => sub {
         my $j = MockTest::journal_last();
         is($j->{method}, 'DELETE', 'DELETE recorded');
         is($j->{path},
-           '/api/laml/2010-04-01/Accounts/test_proj/Faxes/FX_D/Media/ME_D',
+           "/api/laml/2010-04-01/Accounts/$MockTest::PROJECT/Faxes/FX_D/Media/ME_D",
            'DELETE path is /Faxes/{sid}/Media/{media_sid}');
     };
 };

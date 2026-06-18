@@ -92,10 +92,16 @@ use HTTP::Tiny;
 use JSON qw(encode_json decode_json);
 use Time::HiRes qw(sleep);
 my $base = $ENV{RMT_HTTP_URL};
+my $sid  = $ENV{RMT_SESSION_ID} // '';
+# Scope the journal scan to the parent client's session so a stale
+# calling.dial frame left by a prior subtest (we no longer globally reset
+# the journal) can't be mistaken for this subtest's dial.
+my $jurl = $sid ne '' ? "$base/__mock__/journal?session_id=$sid"
+                      : "$base/__mock__/journal";
 my $ua = HTTP::Tiny->new(timeout => 5);
 my $tag;
 for my $i (1..400) {
-    my $r = $ua->get("$base/__mock__/journal");
+    my $r = $ua->get($jurl);
     if ($r->{success}) {
         for my $e (@{ decode_json($r->{content}) }) {
             if (($e->{direction}//'') eq 'recv'
@@ -133,7 +139,9 @@ my $body = encode_json({
         },
     },
 });
-$ua->post("$base/__mock__/push",
+my $purl = $sid ne '' ? "$base/__mock__/push?session_id=$sid"
+                      : "$base/__mock__/push";
+$ua->post($purl,
     { content => $body, headers => { 'Content-Type' => 'application/json' } });
 exit 0;
 PERLEOF
@@ -143,7 +151,8 @@ PERLEOF
     print $fh $watcher_script;
     close $fh;
 
-    local $ENV{RMT_HTTP_URL} = $RelayMockTest::HTTP_URL;
+    local $ENV{RMT_HTTP_URL}   = $RelayMockTest::HTTP_URL;
+    local $ENV{RMT_SESSION_ID} = $client->session_id // '';
     my $pid = fork();
     if ($pid == 0) {
         # Use exec to fully detach (no shared sockets, no Moo state, etc.)
