@@ -1,4 +1,5 @@
 package SignalWire::SWAIG::Tap;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -61,7 +62,7 @@ use constant {
     PCMA => 'PCMA',
 };
 
-our @EXPORT_OK = qw( SPEAK HEAR BOTH PCMU PCMA );
+our @EXPORT_OK   = qw( SPEAK HEAR BOTH PCMU PCMA );
 our %EXPORT_TAGS = (
     all        => [@EXPORT_OK],
     directions => [qw( SPEAK HEAR BOTH )],
@@ -89,7 +90,7 @@ sub codecs {
 # Tap->is_direction($value) — true if $value is an accepted tap direction.
 # Accepts the bareword constant too (it's just the string).
 sub is_direction {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_DIRECTION{$value} ? 1 : 0;
 }
@@ -97,7 +98,7 @@ sub is_direction {
 # Tap->is_codec($value) — true if $value is an accepted tap codec.
 # Accepts the bareword constant too.
 sub is_codec {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_CODEC{$value} ? 1 : 0;
 }

@@ -1,4 +1,5 @@
 package SignalWire::Relay::DialState;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -63,7 +64,7 @@ use constant {
     FAILED   => 'failed',
 };
 
-our @EXPORT_OK = qw( DIALING ANSWERED FAILED );
+our @EXPORT_OK   = qw( DIALING ANSWERED FAILED );
 our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
 
 # Canonical ordered set, single-sourced from Relay::Constants.
@@ -83,7 +84,7 @@ sub states {
 # DialState->is_state($value) — true if $value is a known dial state.
 # Returns false (never dies) on undef or an unknown/forward-compat value.
 sub is_state {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_STATE{$value} ? 1 : 0;
 }
@@ -93,7 +94,7 @@ sub is_state {
 # in-progress 'dialing' state, or an unknown/forward-compat value — it
 # never dies.
 sub is_terminal {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return $IS_TERMINAL{$value} ? 1 : 0;
 }

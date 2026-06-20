@@ -1,4 +1,5 @@
 package SignalWire::SWAIG::ParameterSchema;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -57,9 +58,10 @@ package SignalWire::SWAIG::ParameterSchema;
 use strict;
 use warnings;
 use Moo;
+
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-use Carp qw(croak);
+use Carp         qw(croak);
 use Scalar::Util qw(blessed reftype);
 use Tie::IxHash;
 
@@ -97,23 +99,23 @@ has _required => (
 # Every method returns $self so calls chain.
 
 # A free-form string property: { type => 'string', ... }.
-sub string ($self, $name, $description = undef, %opts) {
-    return $self->_add($name, 'string', $description, {}, %opts);
+sub string ( $self, $name, $description = undef, %opts ) {
+    return $self->_add( $name, 'string', $description, {}, %opts );
 }
 
 # A JSON number (float) property: { type => 'number', ... }.
-sub number ($self, $name, $description = undef, %opts) {
-    return $self->_add($name, 'number', $description, {}, %opts);
+sub number ( $self, $name, $description = undef, %opts ) {
+    return $self->_add( $name, 'number', $description, {}, %opts );
 }
 
 # An integer property: { type => 'integer', ... }.
-sub integer ($self, $name, $description = undef, %opts) {
-    return $self->_add($name, 'integer', $description, {}, %opts);
+sub integer ( $self, $name, $description = undef, %opts ) {
+    return $self->_add( $name, 'integer', $description, {}, %opts );
 }
 
 # A boolean property: { type => 'boolean', ... }.
-sub boolean ($self, $name, $description = undef, %opts) {
-    return $self->_add($name, 'boolean', $description, {}, %opts);
+sub boolean ( $self, $name, $description = undef, %opts ) {
+    return $self->_add( $name, 'boolean', $description, {}, %opts );
 }
 
 # A closed-set string property: { type => 'string', enum => [...], ... }.
@@ -123,14 +125,13 @@ sub boolean ($self, $name, $description = undef, %opts) {
 # the schema verbatim as `enum`. Defaults the JSON type to 'string' (the
 # usual case); override with type => 'integer' etc. via %opts for a
 # numeric-enum.
-sub enum ($self, $name, $values, $description = undef, %opts) {
+sub enum ( $self, $name, $values, $description = undef, %opts ) {
     croak("enum('$name', ...) requires an arrayref of accepted values")
         unless ref $values eq 'ARRAY';
     croak("enum('$name', ...) requires a non-empty value set")
         unless @$values;
     my $type = delete $opts{type} // 'string';
-    return $self->_add($name, $type, $description,
-        { enum => [@$values] }, %opts);
+    return $self->_add( $name, $type, $description, { enum => [@$values] }, %opts );
 }
 
 # An array property: { type => 'array', items => {...}, ... }.
@@ -143,14 +144,14 @@ sub enum ($self, $name, $values, $description = undef, %opts) {
 #   * a raw hashref items schema, used verbatim.
 # `of` is optional: omit it for an untyped array (no `items`), which is how
 # the hand-written `{ type => 'array' }` form is most often written.
-sub array ($self, $name, $description = undef, %opts) {
-    my $of    = delete $opts{of};
+sub array ( $self, $name, $description = undef, %opts ) {
+    my $of = delete $opts{of};
     my %facets;
     tie %facets, 'Tie::IxHash';
-    if (defined $of) {
-        $facets{items} = $self->_items_schema($name, $of);
+    if ( defined $of ) {
+        $facets{items} = $self->_items_schema( $name, $of );
     }
-    return $self->_add($name, 'array', $description, \%facets, %opts);
+    return $self->_add( $name, 'array', $description, \%facets, %opts );
 }
 
 # A nested object property: { type => 'object', properties => {...},
@@ -170,20 +171,20 @@ sub array ($self, $name, $description = undef, %opts) {
 # this property's body — they are emitted verbatim and must not be confused
 # with the property-level `required => 1` shorthand (which marks THIS object
 # property required on the PARENT). _add keeps the two apart.
-sub object ($self, $name, $description = undef, %opts) {
+sub object ( $self, $name, $description = undef, %opts ) {
     my $props = delete $opts{properties};
     my %facets;
     tie %facets, 'Tie::IxHash';
-    if (defined $props) {
-        my %body = $self->_object_body($name, $props);
+    if ( defined $props ) {
+        my %body = $self->_object_body( $name, $props );
         $facets{$_} = $body{$_} for keys %body;
     }
-    return $self->_add($name, 'object', $description, \%facets, %opts);
+    return $self->_add( $name, 'object', $description, \%facets, %opts );
 }
 
 # Mark one or more already-declared properties as required. Accumulates across
 # calls and de-duplicates on emit, preserving first-seen order. Returns $self.
-sub required ($self, @names) {
+sub required ( $self, @names ) {
     for my $n (@names) {
         croak("required(...) takes property name strings")
             if ref $n;
@@ -207,8 +208,8 @@ sub required ($self, @names) {
 sub to_hash ($self) {
     my %properties;
     my $props = $self->_properties;
-    for my $name (keys %$props) {
-        $properties{$name} = $self->_clone($props->{$name});
+    for my $name ( keys %$props ) {
+        $properties{$name} = $self->_clone( $props->{$name} );
     }
 
     my %schema = (
@@ -238,7 +239,7 @@ sub to_dict ($self) { return $self->to_hash }
 # parent (stripped from the body), `description` is the alt description
 # channel, and everything else (default / format / minimum / ...) is a scalar
 # JSON-Schema facet emitted verbatim.
-sub _add ($self, $name, $type, $description, $facets, %opts) {
+sub _add ( $self, $name, $type, $description, $facets, %opts ) {
     croak("property name is required") unless defined $name && length $name;
     croak("property '$name' is already defined")
         if exists $self->_properties->{$name};
@@ -256,19 +257,19 @@ sub _add ($self, $name, $type, $description, $facets, %opts) {
 
     my %prop;
     tie %prop, 'Tie::IxHash';
-    $prop{type} = $type;
+    $prop{type}        = $type;
     $prop{description} = $desc if defined $desc;
 
     # Structural facets first (enum / items / properties / nested required),
     # in the order the kind method assembled them.
-    for my $k (keys %$facets) {
+    for my $k ( keys %$facets ) {
         $prop{$k} = $facets->{$k};
     }
 
     # Then trailing scalar facets (default / format / minimum / ...) in
     # caller-given order. `default` may legitimately be false-y (0, '', []),
     # so they are copied unconditionally rather than truth-gated.
-    for my $k (keys %opts) {
+    for my $k ( keys %opts ) {
         $prop{$k} = $opts{$k};
     }
 
@@ -278,54 +279,55 @@ sub _add ($self, $name, $type, $description, $facets, %opts) {
 }
 
 # Resolve an array `of => ...` element spec to an items schema hashref.
-sub _items_schema ($self, $name, $of) {
-    if (blessed($of) && $of->isa(__PACKAGE__)) {
+sub _items_schema ( $self, $name, $of ) {
+    if ( blessed($of) && $of->isa(__PACKAGE__) ) {
         return $of->to_hash;
     }
-    if (ref $of eq 'HASH') {
+    if ( ref $of eq 'HASH' ) {
         return $self->_clone($of);
     }
-    if (!ref $of) {
+    if ( !ref $of ) {
         my %items;
         tie %items, 'Tie::IxHash';
         $items{type} = $of;
         return \%items;
     }
-    croak("array('$name', of => ...): 'of' must be a kind name, a "
-        . "ParameterSchema, or a hashref items schema");
+    croak(    "array('$name', of => ...): 'of' must be a kind name, a "
+            . "ParameterSchema, or a hashref items schema" );
 }
 
 # Resolve an object `properties => ...` spec to the (properties => ...,
 # required => ...) pair to splice into the property body.
-sub _object_body ($self, $name, $props) {
-    if (blessed($props) && $props->isa(__PACKAGE__)) {
-        return $self->_object_body_from_hash($props->to_hash);
+sub _object_body ( $self, $name, $props ) {
+    if ( blessed($props) && $props->isa(__PACKAGE__) ) {
+        return $self->_object_body_from_hash( $props->to_hash );
     }
-    if (ref $props eq 'CODE') {
+    if ( ref $props eq 'CODE' ) {
         my $child = __PACKAGE__->new;
         $props->($child);
-        return $self->_object_body_from_hash($child->to_hash);
+        return $self->_object_body_from_hash( $child->to_hash );
     }
-    if (ref $props eq 'HASH') {
+    if ( ref $props eq 'HASH' ) {
+
         # Either a full { type=>object, properties=>..., required=>... } or a
         # bare properties map. Detect the former by its `properties` key.
-        if (exists $props->{properties}) {
+        if ( exists $props->{properties} ) {
             return $self->_object_body_from_hash($props);
         }
-        return (properties => $self->_clone($props));
+        return ( properties => $self->_clone($props) );
     }
-    croak("object('$name', properties => ...): 'properties' must be a "
-        . "ParameterSchema, a coderef, or a hashref");
+    croak(    "object('$name', properties => ...): 'properties' must be a "
+            . "ParameterSchema, a coderef, or a hashref" );
 }
 
 # Pull (properties => ..., required => ...) out of an already-built object
 # schema hashref, dropping its redundant top-level `type => 'object'` (the
 # caller's _add re-sets `type` for the nesting property).
-sub _object_body_from_hash ($self, $hash) {
+sub _object_body_from_hash ( $self, $hash ) {
     my %out;
-    $out{properties} = $self->_clone($hash->{properties})
+    $out{properties} = $self->_clone( $hash->{properties} )
         if exists $hash->{properties};
-    $out{required} = [@{ $hash->{required} }]
+    $out{required} = [ @{ $hash->{required} } ]
         if exists $hash->{required};
     return %out;
 }
@@ -343,16 +345,16 @@ sub _unique_required ($self) {
 # property bodies — yields keys in insertion order, but the COPY is a plain
 # hash (a tied copy would defeat JSON's canonical key sorting and surprise any
 # serialiser that special-cases tied hashes).
-sub _clone ($self, $value) {
+sub _clone ( $self, $value ) {
     my $r = ref $value;
-    if ($r eq 'HASH' || (blessed($value) && reftype($value) && reftype($value) eq 'HASH')) {
+    if ( $r eq 'HASH' || ( blessed($value) && reftype($value) && reftype($value) eq 'HASH' ) ) {
         my %copy;
-        for my $k (keys %$value) {
-            $copy{$k} = $self->_clone($value->{$k});
+        for my $k ( keys %$value ) {
+            $copy{$k} = $self->_clone( $value->{$k} );
         }
         return \%copy;
     }
-    if ($r eq 'ARRAY' || (blessed($value) && reftype($value) && reftype($value) eq 'ARRAY')) {
+    if ( $r eq 'ARRAY' || ( blessed($value) && reftype($value) && reftype($value) eq 'ARRAY' ) ) {
         return [ map { $self->_clone($_) } @$value ];
     }
     return $value;

@@ -31,15 +31,18 @@ sub get_logger {
 # Returns one of: 'cgi', 'lambda', 'google_cloud_function',
 # 'azure_function', or 'server'.
 sub get_execution_mode {
-    return 'cgi'                    if _is_set('GATEWAY_INTERFACE');
-    return 'lambda'                 if _is_set('AWS_LAMBDA_FUNCTION_NAME')
-                                    || _is_set('LAMBDA_TASK_ROOT');
-    return 'google_cloud_function'  if _is_set('FUNCTION_TARGET')
-                                    || _is_set('K_SERVICE')
-                                    || _is_set('GOOGLE_CLOUD_PROJECT');
-    return 'azure_function'         if _is_set('AZURE_FUNCTIONS_ENVIRONMENT')
-                                    || _is_set('FUNCTIONS_WORKER_RUNTIME')
-                                    || _is_set('AzureWebJobsStorage');
+    return 'cgi' if _is_set('GATEWAY_INTERFACE');
+    return 'lambda'
+        if _is_set('AWS_LAMBDA_FUNCTION_NAME')
+        || _is_set('LAMBDA_TASK_ROOT');
+    return 'google_cloud_function'
+        if _is_set('FUNCTION_TARGET')
+        || _is_set('K_SERVICE')
+        || _is_set('GOOGLE_CLOUD_PROJECT');
+    return 'azure_function'
+        if _is_set('AZURE_FUNCTIONS_ENVIRONMENT')
+        || _is_set('FUNCTIONS_WORKER_RUNTIME')
+        || _is_set('AzureWebJobsStorage');
     return 'server';
 }
 

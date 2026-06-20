@@ -23,3 +23,13 @@ on 'test' => sub {
     requires 'Plack::Test';
     requires 'HTTP::Request::Common';
 };
+
+# Developer tooling for the CI quality gates (scripts/run-ci.sh):
+#   * Perl::Tidy  — the FMT gate's formatter (.perltidyrc).
+# These are author/develop-phase deps, not needed to RUN the SDK. Install with
+#   cpanm --installdeps --with-develop .
+# (CI installs them so the FMT gate's `perltidy` resolves).
+on 'develop' => sub {
+    requires 'Perl::Tidy';
+    requires 'Perl::Critic';
+};

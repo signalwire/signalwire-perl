@@ -25,10 +25,10 @@ package SignalWire::REST::Pagination::PaginatedIterator;
 use Moo;
 use URI;
 
-has 'http'      => ( is => 'ro', required => 1 );
-has 'path'      => ( is => 'ro', required => 1 );
-has 'params'    => ( is => 'rw', default => sub { {} } );
-has 'data_key'  => ( is => 'ro', default => sub { 'data' } );
+has 'http'     => ( is => 'ro', required => 1 );
+has 'path'     => ( is => 'ro', required => 1 );
+has 'params'   => ( is => 'rw', default  => sub { {} } );
+has 'data_key' => ( is => 'ro', default  => sub { 'data' } );
 
 # Internal mutable state mirrors Python's _items/_index/_done. We store
 # it directly on the blessed hashref under leading-underscore keys
@@ -41,41 +41,45 @@ sub BUILD {
     $self->{_items} = [];
     $self->{_index} = 0;
     $self->{_done}  = 0;
+    return;
 }
 
 sub _items {
-    my $self = shift;
-    $self->{_items} = $_[0] if @_;
+    my ( $self, @args ) = @_;
+    $self->{_items} = $args[0] if @args;
     return $self->{_items};
 }
 
 sub _index {
-    my $self = shift;
-    $self->{_index} = $_[0] if @_;
+    my ( $self, @args ) = @_;
+    $self->{_index} = $args[0] if @args;
     return $self->{_index};
 }
 
 sub _done {
-    my $self = shift;
-    $self->{_done} = $_[0] if @_;
+    my ( $self, @args ) = @_;
+    $self->{_done} = $args[0] if @args;
     return $self->{_done};
 }
 
 # Iterable interface (Python-mirroring, returns self so `iter()` parity).
-sub __iter__ { return $_[0]; }
+sub __iter__ {
+    my ($self) = @_;
+    return $self;
+}
 
 # Pull the next item; returns undef when exhausted (Perl-idiomatic
 # alternative to Python's StopIteration).
 sub __next__ {
     my ($self) = @_;
-    while ($self->_index >= scalar @{ $self->_items }) {
-        if ($self->_done) {
-            return; # empty list scalar context => undef; signals exhaustion
+    while ( $self->_index >= scalar @{ $self->_items } ) {
+        if ( $self->_done ) {
+            return;    # empty list scalar context => undef; signals exhaustion
         }
         $self->_fetch_next;
     }
-    my $item = $self->_items->[$self->_index];
-    $self->_index($self->_index + 1);
+    my $item = $self->_items->[ $self->_index ];
+    $self->_index( $self->_index + 1 );
     return $item;
 }
 
@@ -85,7 +89,7 @@ sub __next__ {
 sub all {
     my ($self) = @_;
     my @out;
-    while (defined(my $item = $self->__next__)) {
+    while ( defined( my $item = $self->__next__ ) ) {
         push @out, $item;
     }
     return @out;
@@ -93,18 +97,19 @@ sub all {
 
 sub _fetch_next {
     my ($self) = @_;
-    my $params = (keys %{ $self->params || {} }) ? $self->params : undef;
-    my $resp = $self->http->get($self->path, params => $params);
-    my $data = $resp->{ $self->data_key } || [];
+    my $params = ( keys %{ $self->params || {} } ) ? $self->params : undef;
+    my $resp   = $self->http->get( $self->path, params => $params );
+    my $data   = $resp->{ $self->data_key } || [];
     push @{ $self->_items }, @$data;
 
-    my $links = $resp->{links} || {};
+    my $links    = $resp->{links} || {};
     my $next_url = $links->{next};
-    if ($next_url && @$data) {
+    if ( $next_url && @$data ) {
+
         # Parse cursor/page params from next URL query.
-        my $u = URI->new($next_url);
+        my $u     = URI->new($next_url);
         my %query = $u->query_form;
-        $self->params(\%query);
+        $self->params( \%query );
     } else {
         $self->_done(1);
     }

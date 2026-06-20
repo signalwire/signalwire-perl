@@ -20,6 +20,11 @@
 #                                           FunctionResult serialisation vs
 #                                           Python's to_dict() over the shared
 #                                           81-entry corpus; no mocks/network)
+#   7. fmt gate                           — Perl::Tidy (local: apply; CI: --assert-tidy)
+#   8. lint gate                          — Perl::Critic severity 4, zero findings
+#   9. doc-audit gate                     — porting-sdk audit_docs.py
+#  10. surface-diff gate                  — porting-sdk diff_port_surface.py
+#  11. skill-contract gate                — porting-sdk diff_skill_contracts.py
 
 set -u
 set -o pipefail
@@ -83,6 +88,17 @@ if [ -d "$LOCAL_LIB_DIR" ]; then
     export PERL5LIB="$LOCAL_LIB_DIR${PERL5LIB:+:$PERL5LIB}"
 fi
 
+# Same local::lib, same reason — but for the FMT/LINT gate EXECUTABLES. The
+# perltidy / perlcritic scripts (CPAN develop-deps) install into the local::lib's
+# bin/ alongside the modules above; that dir is NOT on the default PATH, so a
+# LOCAL run would hit `perltidy: command not found` even though it's installed.
+# Prepend it when it exists — same $HOME keying + existence guard as PERL5LIB, so
+# CI (deps on the system perl, already on PATH) is unaffected.
+LOCAL_LIB_BIN="${PERL_LOCAL_LIB_ROOT:-$HOME/perl5}/bin"
+if [ -d "$LOCAL_LIB_BIN" ]; then
+    export PATH="$LOCAL_LIB_BIN:$PATH"
+fi
+
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
 # Gate 1: prove
@@ -139,6 +155,136 @@ run_gate "NO-CHEAT" "audit_no_cheat_tests" \
 run_gate "EMISSION" "diff_port_emission vs python to_dict()" \
     python3 "$PORTING_SDK_DIR/scripts/diff_port_emission.py" \
         --dump-cmd "perl bin/emit-corpus.pl" \
+        --port-repo "$PORT_ROOT"
+
+# The set of Perl source files the FMT + LINT gates police: every module under
+# lib/ plus the repo's hand-written Perl tooling (bin/ + scripts/). Kept in one
+# place so FMT and LINT police exactly the same files. enumerate_signatures.py
+# is Python (skipped); enumerate_surface.pl / signature_dump.pl are Perl.
+perl_source_files() {
+    find lib -type f -name '*.pm'
+    echo bin/emit-corpus.pl
+    echo bin/emit-skills.pl
+    echo bin/swaig-test
+    echo scripts/enumerate_surface.pl
+    echo scripts/signature_dump.pl
+}
+
+# Gate 7: FMT — the language format gate (perl: Perl::Tidy). perltidy is the
+# Perl analog of gofmt / rustfmt / google-java-format: SOURCE-STYLE ONLY and
+# proven wire-/surface-neutral (a full reformat leaves port_signatures.json +
+# port_surface.json byte-identical and EMISSION 81/81 — verified in the FMT
+# rollout). Config is the committed .perltidyrc. Mirrors the go/ruby/java FMT
+# shape:
+#   * LOCAL ($CI unset)  → `perltidy -b`: reformats your working tree in place
+#     (deleting the .bak via -bext='/') so you never hand-run it; notes if it
+#     changed files. A residual non-tidy file then still fails the --assert-tidy
+#     check below.
+#   * CI ($CI=true)      → `perltidy --assert-tidy` (read-only, output to
+#     /dev/null): FAILS if any source file is not already tidy.
+fmt_gate() {
+    local f rc=0
+    if [ -n "${CI:-}" ]; then
+        while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            perltidy --profile="$PORT_ROOT/.perltidyrc" --assert-tidy \
+                -nst -se --outfile=/dev/null "$f" || rc=1
+        done < <(perl_source_files)
+    else
+        while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            perltidy --profile="$PORT_ROOT/.perltidyrc" -b -bext='/' "$f"
+        done < <(perl_source_files)
+        if ! git diff --quiet 2>/dev/null; then
+            echo "    (FMT auto-applied formatting to your working tree — review & stage)"
+        fi
+        # A residual issue perltidy can't fix must still fail the gate.
+        while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            perltidy --profile="$PORT_ROOT/.perltidyrc" --assert-tidy \
+                -nst -se --outfile=/dev/null "$f" || rc=1
+        done < <(perl_source_files)
+    fi
+    return $rc
+}
+run_gate "FMT" "perltidy (local: apply; CI: --assert-tidy)" fmt_gate
+
+# Gate 8: LINT — the language lint gate (perl: Perl::Critic at severity 4,
+# burned to ZERO). This is the blocking quality floor, ratcheted from the
+# original severity-5 floor to 4 by FIXING source idiomatically
+# (RequireFinalReturn / RequireArgUnpacking / RequireLocalizedPunctuationVars).
+# The only disabled policies (.perlcriticrc) are the handful justified by
+# wire/surface parity or a heuristic that does not fit the code — never style,
+# never to hide a finding (each carries a one-line rationale; see the file).
+# severity is pinned both in .perlcriticrc and on the command line so the gate
+# reproduces a bare `perlcritic lib/`. Mirrors the go vet+golangci / ruby
+# rubocop blocking-lint gate.
+lint_gate() {
+    local f rc=0
+    while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        perlcritic --profile "$PORT_ROOT/.perlcriticrc" --severity 4 "$f" || rc=1
+    done < <(perl_source_files)
+    return $rc
+}
+run_gate "LINT" "perlcritic severity 4, zero findings" lint_gate
+
+# Gate 9: DOC-AUDIT — every method/class referenced in docs/ + examples/ fenced
+# code blocks must resolve to a real symbol in the port surface (catches
+# phantom-API doc promises). Uses the committed port_surface.json (the
+# SURFACE-FRESH gate above already proved it is fresh) + DOC_AUDIT_IGNORE.md for
+# intentional non-symbol references. Mirrors .github/workflows/doc-audit.yml.
+run_gate "DOC-AUDIT" "audit_docs vs port_surface.json" \
+    python3 "$PORTING_SDK_DIR/scripts/audit_docs.py" \
+        --root "$PORT_ROOT" \
+        --surface "$PORT_ROOT/port_surface.json" \
+        --ignore "$PORT_ROOT/DOC_AUDIT_IGNORE.md"
+
+# Gate 10: SURFACE-DIFF — diff the port's public surface against the Python
+# reference (omissions + additions). The signature DRIFT gate (Layer A) checks
+# method *signatures*; this checks surface *membership* — public symbols the
+# port has that Python doesn't and vice-versa. Mirrors
+# .github/workflows/surface-audit.yml. Regenerate the surface in place via the
+# Perl enumerator, diff, then restore the committed copy unconditionally so the
+# gate is side-effect free.
+surface_diff_gate() {
+    local committed="/tmp/committed_surface_diff_${PORT_NAME}.$$"
+    git show HEAD:port_surface.json >"$committed" 2>/dev/null \
+        || cp port_surface.json "$committed"
+    perl scripts/enumerate_surface.pl --output port_surface.json
+    local regen_rc=$?
+    if [ "$regen_rc" -ne 0 ]; then
+        git checkout -- port_surface.json 2>/dev/null || true
+        rm -f "$committed"
+        echo "surface regen failed (exit $regen_rc)" >&2
+        return "$regen_rc"
+    fi
+    python3 "$PORTING_SDK_DIR/scripts/diff_port_surface.py" \
+        --reference "$PORTING_SDK_DIR/python_surface.json" \
+        --port-surface port_surface.json \
+        --omissions "$PORT_ROOT/PORT_OMISSIONS.md" \
+        --additions "$PORT_ROOT/PORT_ADDITIONS.md"
+    local rc=$?
+    git checkout -- port_surface.json 2>/dev/null || true
+    rm -f "$committed"
+    return $rc
+}
+run_gate "SURFACE-DIFF" "diff_port_surface vs python reference" \
+    surface_diff_gate
+
+# Gate 11: SKILL-CONTRACT — the surface/drift/emission gates see signatures +
+# symbol names + FunctionResult serialisation; NONE sees a built-in skill's
+# SWAIG tool contract ({name, parameters, required, enum} each skill registers).
+# This differ closes that gap: it builds the Python oracle by instantiating each
+# covered reference skill, runs the Perl skill-dump program (bin/emit-skills.pl,
+# which reads the SAME shared corpus), and structurally compares the two.
+# DESCRIPTIONS + implementation (handler vs DataMap) are not compared — only
+# name/param-name/param-type/enum/required. Mirrors the go/ruby/java SKILL-
+# CONTRACT gate. Same prereqs as EMISSION (signalwire-python adjacent; no
+# network).
+run_gate "SKILL-CONTRACT" "diff_skill_contracts vs python reference" \
+    python3 "$PORTING_SDK_DIR/scripts/diff_skill_contracts.py" \
+        --dump-cmd "perl bin/emit-skills.pl" \
         --port-repo "$PORT_ROOT"
 
 if [ -z "$FAILED_GATES" ]; then

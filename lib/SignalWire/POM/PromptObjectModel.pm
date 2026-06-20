@@ -1,4 +1,5 @@
 package SignalWire::POM::PromptObjectModel;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -18,8 +19,8 @@ use strict;
 use warnings;
 use Moo;
 use Scalar::Util qw(blessed);
-use Carp qw(croak);
-use JSON::PP ();
+use Carp         qw(croak);
+use JSON::PP     ();
 use Tie::IxHash;
 use SignalWire::POM::Section;
 
@@ -46,10 +47,10 @@ has debug => (
 # ``Class->from_json($data)`` and ``$instance->from_json($data)`` work,
 # and the cross-language signature diff strips the receiver entirely.
 sub from_json {
-    my ($class_or_self, $json_data) = @_;
+    my ( $class_or_self, $json_data ) = @_;
     my $class = ref($class_or_self) || $class_or_self;
     my $data;
-    if (!ref $json_data) {
+    if ( !ref $json_data ) {
         $data = JSON::PP::decode_json($json_data);
     } else {
         $data = $json_data;
@@ -65,15 +66,13 @@ sub from_json {
 # ``$class_or_self`` receiver name marks it as a static helper for
 # the cross-language diff (see ``from_json`` above).
 sub from_yaml {
-    my ($class_or_self, $yaml_data) = @_;
+    my ( $class_or_self, $yaml_data ) = @_;
     my $class = ref($class_or_self) || $class_or_self;
     my $data;
-    if (!ref $yaml_data) {
+    if ( !ref $yaml_data ) {
         require YAML::PP;
         require YAML::PP::Common;
-        my $yp = YAML::PP->new(
-            preserve => YAML::PP::Common::PRESERVE_ORDER(),
-        );
+        my $yp = YAML::PP->new( preserve => YAML::PP::Common::PRESERVE_ORDER(), );
         $data = $yp->load_string($yaml_data);
     } else {
         $data = $yaml_data;
@@ -87,75 +86,76 @@ sub from_yaml {
 # bullets or subsections, only the first top-level section may omit
 # its title).
 sub _from_data {
-    my ($class, $data) = @_;
+    my ( $class, $data ) = @_;
     croak "POM data must be an arrayref of section hashes"
         unless ref $data eq 'ARRAY';
 
     my $self = $class->new;
-    my $i = 0;
+    my $i    = 0;
     for my $sec (@$data) {
         croak "Each POM section must be a hashref" unless ref $sec eq 'HASH';
+
         # Python: "only the first section can have no title" — Python
         # silently sets a default title; mirror that.
-        if ($i > 0 && !exists $sec->{title}) {
+        if ( $i > 0 && !exists $sec->{title} ) {
             $sec->{title} = 'Untitled Section';
         }
-        push @{ $self->sections }, _build_section_from_hash($sec, 0);
+        push @{ $self->sections }, _build_section_from_hash( $sec, 0 );
         $i++;
     }
     return $self;
 }
 
 sub _build_section_from_hash {
-    my ($d, $is_subsection) = @_;
+    my ( $d, $is_subsection ) = @_;
     croak "Each section must be a hashref" unless ref $d eq 'HASH';
 
-    if (exists $d->{title} && defined $d->{title} && ref $d->{title}) {
+    if ( exists $d->{title} && defined $d->{title} && ref $d->{title} ) {
         croak "'title' must be a string if present";
     }
-    if (exists $d->{subsections} && ref $d->{subsections} ne 'ARRAY') {
+    if ( exists $d->{subsections} && ref $d->{subsections} ne 'ARRAY' ) {
         croak "'subsections' must be an arrayref if provided";
     }
-    if (exists $d->{bullets} && ref $d->{bullets} ne 'ARRAY') {
+    if ( exists $d->{bullets} && ref $d->{bullets} ne 'ARRAY' ) {
         croak "'bullets' must be an arrayref if provided";
     }
-    if (exists $d->{numbered}) {
+    if ( exists $d->{numbered} ) {
         my $v = $d->{numbered};
         croak "'numbered' must be a boolean if provided"
             if ref $v && !( JSON::PP::is_bool($v) );
     }
-    if (exists $d->{numberedBullets}) {
+    if ( exists $d->{numberedBullets} ) {
         my $v = $d->{numberedBullets};
         croak "'numberedBullets' must be a boolean if provided"
             if ref $v && !( JSON::PP::is_bool($v) );
     }
 
-    my $has_body        = (exists $d->{body} && defined $d->{body} && length $d->{body}) ? 1 : 0;
-    my $has_bullets     = (exists $d->{bullets} && @{ $d->{bullets} || [] }) ? 1 : 0;
-    my $has_subsections = (exists $d->{subsections} && @{ $d->{subsections} || [] }) ? 1 : 0;
-    if (!$has_body && !$has_bullets && !$has_subsections) {
+    my $has_body        = ( exists $d->{body} && defined $d->{body} && length $d->{body} ) ? 1 : 0;
+    my $has_bullets     = ( exists $d->{bullets}     && @{ $d->{bullets} || [] } )     ? 1 : 0;
+    my $has_subsections = ( exists $d->{subsections} && @{ $d->{subsections} || [] } ) ? 1 : 0;
+    if ( !$has_body && !$has_bullets && !$has_subsections ) {
         croak "All sections must have either a non-empty body, non-empty bullets, or subsections";
     }
 
-    if ($is_subsection && !exists $d->{title}) {
+    if ( $is_subsection && !exists $d->{title} ) {
         croak "All subsections must have a title";
     }
 
     my %args = (
         title   => $d->{title},
-        body    => exists $d->{body}    ? $d->{body}    : '',
+        body    => exists $d->{body}    ? $d->{body}             : '',
         bullets => exists $d->{bullets} ? [ @{ $d->{bullets} } ] : [],
     );
-    if (exists $d->{numbered}) {
+    if ( exists $d->{numbered} ) {
         $args{numbered} = $d->{numbered} ? 1 : 0;
     }
-    if (exists $d->{numberedBullets}) {
+    if ( exists $d->{numberedBullets} ) {
         $args{numberedBullets} = $d->{numberedBullets} ? 1 : 0;
     }
 
     my $section = SignalWire::POM::Section->new(%args);
-    for my $sub (@{ $d->{subsections} || [] }) {
-        push @{ $section->subsections }, _build_section_from_hash($sub, 1);
+    for my $sub ( @{ $d->{subsections} || [] } ) {
+        push @{ $section->subsections }, _build_section_from_hash( $sub, 1 );
     }
     return $section;
 }
@@ -167,24 +167,24 @@ sub _build_section_from_hash {
 # is the Python contract — the first section of a POM may render
 # title-less prose).
 sub add_section {
-    my ($self, %opts) = @_;
+    my ( $self, %opts ) = @_;
 
-    if (!defined $opts{title} && @{ $self->sections } > 0) {
+    if ( !defined $opts{title} && @{ $self->sections } > 0 ) {
         croak "Only the first section can have no title";
     }
 
     # Python accepts either a single string OR a list for ``bullets``;
     # normalize to a list here.
     my $bullets = $opts{bullets};
-    if (defined $bullets && !ref $bullets) {
-        $bullets = [ $bullets ];
-    } elsif (!defined $bullets) {
+    if ( defined $bullets && !ref $bullets ) {
+        $bullets = [$bullets];
+    } elsif ( !defined $bullets ) {
         $bullets = [];
     }
 
     my $section = SignalWire::POM::Section->new(
         title           => $opts{title},
-        body            => exists $opts{body}            ? $opts{body}            : '',
+        body            => exists $opts{body} ? $opts{body} : '',
         bullets         => $bullets,
         numbered        => exists $opts{numbered}        ? $opts{numbered}        : undef,
         numberedBullets => exists $opts{numberedBullets} ? $opts{numberedBullets} : 0,
@@ -196,18 +196,18 @@ sub add_section {
 # Recursive depth-first search by title. Returns the first matching
 # Section (or undef). Mirrors Python's find_section.
 sub find_section {
-    my ($self, $title) = @_;
-    return _find_in($self->sections, $title);
+    my ( $self, $title ) = @_;
+    return _find_in( $self->sections, $title );
 }
 
 sub _find_in {
-    my ($sections, $title) = @_;
+    my ( $sections, $title ) = @_;
     for my $s (@$sections) {
         return $s if defined $s->title && $s->title eq $title;
-        my $found = _find_in($s->subsections, $title);
+        my $found = _find_in( $s->subsections, $title );
         return $found if defined $found;
     }
-    return undef;
+    return;
 }
 
 # JSON-encoded representation. Output is byte-for-byte identical to
@@ -216,12 +216,9 @@ sub _find_in {
 # numberedBullets).
 sub to_json {
     my ($self) = @_;
-    my $j = JSON::PP->new
-        ->indent(1)
-        ->indent_length(2)
-        ->space_after
-        ->canonical(0);
-    my $out = $j->encode($self->to_hash);
+    my $j      = JSON::PP->new->indent(1)->indent_length(2)->space_after->canonical(0);
+    my $out    = $j->encode( $self->to_hash );
+
     # JSON::PP appends ``\n`` in indent mode; Python's ``json.dumps`` does not.
     chomp $out;
     return $out;
@@ -237,7 +234,7 @@ sub to_yaml {
         header   => 0,
         preserve => YAML::PP::Common::PRESERVE_ORDER(),
     );
-    return $yp->dump_string($self->to_hash);
+    return $yp->dump_string( $self->to_hash );
 }
 
 # Convert to an arrayref of section hashes (one per top-level section).
@@ -255,28 +252,29 @@ sub render_markdown {
     my ($self) = @_;
 
     my $any_section_numbered = 0;
-    for my $sec (@{ $self->sections }) {
-        if ($sec->numbered) { $any_section_numbered = 1; last; }
+    for my $sec ( @{ $self->sections } ) {
+        if ( $sec->numbered ) { $any_section_numbered = 1; last; }
     }
 
     my @md;
     my $section_counter = 0;
-    for my $sec (@{ $self->sections }) {
+    for my $sec ( @{ $self->sections } ) {
         my $section_number;
-        if (defined $sec->title) {
+        if ( defined $sec->title ) {
             $section_counter++;
-            if ($any_section_numbered
-                && !(defined $sec->numbered && !$sec->numbered)) {
-                $section_number = [ $section_counter ];
+            if ( $any_section_numbered
+                && !( defined $sec->numbered && !$sec->numbered ) )
+            {
+                $section_number = [$section_counter];
             } else {
                 $section_number = [];
             }
         } else {
             $section_number = [];
         }
-        push @md, $sec->render_markdown(2, $section_number);
+        push @md, $sec->render_markdown( 2, $section_number );
     }
-    return join("\n", @md);
+    return join( "\n", @md );
 }
 
 # Render the entire POM as XML. Wraps a series of <section> elements in
@@ -285,47 +283,45 @@ sub render_markdown {
 sub render_xml {
     my ($self) = @_;
 
-    my @xml = (
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        '<prompt>',
-    );
+    my @xml = ( '<?xml version="1.0" encoding="UTF-8"?>', '<prompt>', );
 
     my $any_section_numbered = 0;
-    for my $sec (@{ $self->sections }) {
-        if ($sec->numbered) { $any_section_numbered = 1; last; }
+    for my $sec ( @{ $self->sections } ) {
+        if ( $sec->numbered ) { $any_section_numbered = 1; last; }
     }
 
     my $section_counter = 0;
-    for my $sec (@{ $self->sections }) {
+    for my $sec ( @{ $self->sections } ) {
         my $section_number;
-        if (defined $sec->title) {
+        if ( defined $sec->title ) {
             $section_counter++;
-            if ($any_section_numbered
-                && !(defined $sec->numbered && !$sec->numbered)) {
-                $section_number = [ $section_counter ];
+            if ( $any_section_numbered
+                && !( defined $sec->numbered && !$sec->numbered ) )
+            {
+                $section_number = [$section_counter];
             } else {
                 $section_number = [];
             }
         } else {
             $section_number = [];
         }
-        push @xml, $sec->render_xml(1, $section_number);
+        push @xml, $sec->render_xml( 1, $section_number );
     }
 
     push @xml, '</prompt>';
-    return join("\n", @xml);
+    return join( "\n", @xml );
 }
 
 # Append the sections of another POM as subsections of a section in
 # this POM, identified either by title (string lookup) or by passing a
 # Section object directly. Mirrors Python's add_pom_as_subsection.
 sub add_pom_as_subsection {
-    my ($self, $target, $pom_to_add) = @_;
+    my ( $self, $target, $pom_to_add ) = @_;
     my $target_section;
-    if (!ref $target) {
+    if ( !ref $target ) {
         $target_section = $self->find_section($target);
         croak "No section with title '${target}' found." unless $target_section;
-    } elsif (blessed($target) && $target->isa('SignalWire::POM::Section')) {
+    } elsif ( blessed($target) && $target->isa('SignalWire::POM::Section') ) {
         $target_section = $target;
     } else {
         croak "Target must be a string or a SignalWire::POM::Section object.";
@@ -335,7 +331,7 @@ sub add_pom_as_subsection {
         unless blessed($pom_to_add)
         && $pom_to_add->isa('SignalWire::POM::PromptObjectModel');
 
-    for my $sec (@{ $pom_to_add->sections }) {
+    for my $sec ( @{ $pom_to_add->sections } ) {
         push @{ $target_section->subsections }, $sec;
     }
     return $self;

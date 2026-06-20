@@ -2,6 +2,7 @@ package SignalWire::Relay::Call;
 use strict;
 use warnings;
 use Moo;
+
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
 use Carp ();
@@ -23,31 +24,31 @@ my $ArrayRef = sub {
     Carp::croak("must be an arrayref") unless ref $_[0] eq 'ARRAY';
 };
 
-has 'call_id'    => ( is => 'ro', required => 1, isa => $NonEmptyStr );
-has 'node_id'    => ( is => 'rw', default => sub { '' } );
-has 'tag'        => ( is => 'ro', default => sub { '' } );
-has 'state'      => ( is => 'rw', default => sub { 'created' } );
-has 'device'     => ( is => 'rw', default => sub { {} }, isa => $HashRef );
-has 'end_reason' => ( is => 'rw', default => sub { '' } );
-has 'peer'       => ( is => 'rw', default => sub { {} }, isa => $HashRef );
-has 'context'    => ( is => 'rw', default => sub { '' } );
-has 'dial_winner' => ( is => 'rw', default => sub { 0 } );
+has 'call_id'     => ( is => 'ro', required => 1, isa => $NonEmptyStr );
+has 'node_id'     => ( is => 'rw', default  => sub { '' } );
+has 'tag'         => ( is => 'ro', default  => sub { '' } );
+has 'state'       => ( is => 'rw', default  => sub { 'created' } );
+has 'device'      => ( is => 'rw', default  => sub { {} }, isa => $HashRef );
+has 'end_reason'  => ( is => 'rw', default  => sub { '' } );
+has 'peer'        => ( is => 'rw', default  => sub { {} }, isa => $HashRef );
+has 'context'     => ( is => 'rw', default  => sub { '' } );
+has 'dial_winner' => ( is => 'rw', default  => sub { 0 } );
 
-has '_client'  => ( is => 'rw', default => sub { undef } );
-has '_actions' => ( is => 'rw', default => sub { {} }, isa => $HashRef );   # control_id => Action
-has '_on_event' => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );  # event callbacks
+has '_client'   => ( is => 'rw', default => sub { undef } );
+has '_actions'  => ( is => 'rw', default => sub { {} }, isa => $HashRef );    # control_id => Action
+has '_on_event' => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );   # event callbacks
 
 # Helper to generate a UUID-like control_id
 sub _generate_uuid {
-    my @hex = map { sprintf('%02x', int(rand(256))) } 1..16;
-    $hex[6] = sprintf('%02x', (hex($hex[6]) & 0x0f) | 0x40);
-    $hex[8] = sprintf('%02x', (hex($hex[8]) & 0x3f) | 0x80);
-    return join('-',
-        join('', @hex[0..3]),
-        join('', @hex[4..5]),
-        join('', @hex[6..7]),
-        join('', @hex[8..9]),
-        join('', @hex[10..15]),
+    my @hex = map { sprintf( '%02x', int( rand(256) ) ) } 1 .. 16;
+    $hex[6] = sprintf( '%02x', ( hex( $hex[6] ) & 0x0f ) | 0x40 );
+    $hex[8] = sprintf( '%02x', ( hex( $hex[8] ) & 0x3f ) | 0x80 );
+    return join( '-',
+        join( '', @hex[ 0 .. 3 ] ),
+        join( '', @hex[ 4 .. 5 ] ),
+        join( '', @hex[ 6 .. 7 ] ),
+        join( '', @hex[ 8 .. 9 ] ),
+        join( '', @hex[ 10 .. 15 ] ),
     );
 }
 
@@ -58,17 +59,17 @@ sub _base_params ($self) {
     );
 }
 
-sub _execute ($self, $method, %extra) {
+sub _execute ( $self, $method, %extra ) {
     my $client = $self->_client;
     die "No client attached to call" unless $client;
-    my %params = ($self->_base_params, %extra);
-    return $client->execute($method, \%params);
+    my %params = ( $self->_base_params, %extra );
+    return $client->execute( $method, \%params );
 }
 
 # Start an action-based method: creates the Action, registers it, executes the RPC
-sub _start_action ($self, $method, $action_class, %extra) {
+sub _start_action ( $self, $method, $action_class, %extra ) {
     my $control_id = _generate_uuid();
-    my %params = ($self->_base_params, control_id => $control_id, %extra);
+    my %params     = ( $self->_base_params, control_id => $control_id, %extra );
 
     my $action = $action_class->new(
         control_id => $control_id,
@@ -80,9 +81,10 @@ sub _start_action ($self, $method, $action_class, %extra) {
 
     my $client = $self->_client;
     if ($client) {
-        my $result = $client->execute($method, \%params);
+        my $result = $client->execute( $method, \%params );
+
         # If call is gone (404/410), resolve action immediately
-        if (ref $result eq 'HASH' && $result->{code} && $result->{code} =~ /^(404|410)$/) {
+        if ( ref $result eq 'HASH' && $result->{code} && $result->{code} =~ /^(404|410)$/ ) {
             $action->_resolve(undef);
         }
     }
@@ -92,34 +94,35 @@ sub _start_action ($self, $method, $action_class, %extra) {
 
 # --- Event dispatch ---
 
-sub dispatch_event ($self, $event) {
+sub dispatch_event ( $self, $event ) {
     my $event_type = $event->event_type // '';
 
     # Update call state from state events
-    if ($event_type eq 'calling.call.state') {
+    if ( $event_type eq 'calling.call.state' ) {
         my $new_state = $event->call_state // '';
         $self->state($new_state);
-        $self->end_reason($event->end_reason) if $event->can('end_reason') && $event->end_reason;
-        $self->peer($event->peer) if $event->can('peer') && ref $event->peer eq 'HASH' && %{$event->peer};
+        $self->end_reason( $event->end_reason ) if $event->can('end_reason') && $event->end_reason;
+        $self->peer( $event->peer )
+            if $event->can('peer') && ref $event->peer eq 'HASH' && %{ $event->peer };
 
         # If call ended, resolve all pending actions
-        if (CALL_TERMINAL_STATES->{$new_state}) {
+        if ( CALL_TERMINAL_STATES->{$new_state} ) {
             $self->_resolve_all_actions;
         }
-    }
-    elsif ($event_type eq 'calling.call.connect') {
-        $self->peer($event->peer) if $event->can('peer');
+    } elsif ( $event_type eq 'calling.call.connect' ) {
+        $self->peer( $event->peer ) if $event->can('peer');
     }
 
     # Route to action by control_id
     my $control_id = $event->can('control_id') ? $event->control_id : '';
-    if ($control_id && exists $self->_actions->{$control_id}) {
+    if ( $control_id && exists $self->_actions->{$control_id} ) {
         my $action = $self->_actions->{$control_id};
+
         # The action decides whether to consume the event. play_and_collect's
         # CollectAction filters calling.call.play events out entirely so they
         # neither dispatch nor terminally resolve.
         my $consumed = 1;
-        if ($action->can('_should_consume_event')) {
+        if ( $action->can('_should_consume_event') ) {
             $consumed = $action->_should_consume_event($event);
         }
         if ($consumed) {
@@ -129,30 +132,31 @@ sub dispatch_event ($self, $event) {
             # the action consumed, AND only if the action hasn't already
             # decided to resolve itself in _handle_event (e.g. Detect on
             # first detect payload).
-            unless ($action->completed) {
-                my $terminal = ACTION_TERMINAL_STATES->{$event_type} // {};
-                my $action_state = $event->can('state') ? ($event->state // '') : '';
-                if ($terminal->{$action_state}) {
+            unless ( $action->completed ) {
+                my $terminal     = ACTION_TERMINAL_STATES->{$event_type} // {};
+                my $action_state = $event->can('state') ? ( $event->state // '' ) : '';
+                if ( $terminal->{$action_state} ) {
                     $action->_resolve($event);
                 }
             }
-            if ($action->completed) {
+            if ( $action->completed ) {
                 delete $self->_actions->{$control_id};
             }
         }
     }
 
     # Fire registered event callbacks
-    for my $cb (@{$self->_on_event}) {
-        eval { $cb->($self, $event) };
+    for my $cb ( @{ $self->_on_event } ) {
+        eval { $cb->( $self, $event ) };
         warn "Call event callback error: $@" if $@;
     }
+    return;
 }
 
 # Register an event listener
-sub on ($self, $cb) {
+sub on ( $self, $cb ) {
     Carp::croak("on() callback must be a coderef") unless ref $cb eq 'CODE';
-    push @{$self->_on_event}, $cb;
+    push @{ $self->_on_event }, $cb;
     return $self;
 }
 
@@ -177,33 +181,34 @@ sub current_state ($self) {
 # terminal definition lives in one place; returns false (never dies) on an
 # unknown/forward-compat state.
 sub is_terminal ($self) {
-    return SignalWire::Relay::CallState->is_terminal($self->state);
+    return SignalWire::Relay::CallState->is_terminal( $self->state );
 }
 
 # Resolve all pending actions (e.g., on call ended or call-gone)
 sub _resolve_all_actions ($self) {
-    for my $action (values %{$self->_actions}) {
+    for my $action ( values %{ $self->_actions } ) {
         $action->_resolve(undef) unless $action->completed;
     }
-    $self->_actions({});
+    $self->_actions( {} );
+    return;
 }
 
 # --- Simple fire-and-response methods ---
 
-sub answer ($self, %opts) {
-    return $self->_execute('calling.answer', %opts);
+sub answer ( $self, %opts ) {
+    return $self->_execute( 'calling.answer', %opts );
 }
 
-sub hangup ($self, %opts) {
-    return $self->_execute('calling.end', %opts);
+sub hangup ( $self, %opts ) {
+    return $self->_execute( 'calling.end', %opts );
 }
 
 sub pass ($self) {
     return $self->_execute('calling.pass');
 }
 
-sub connect ($self, %opts) {
-    return $self->_execute('calling.connect', %opts);
+sub connect ( $self, %opts ) {
+    return $self->_execute( 'calling.connect', %opts );
 }
 
 sub disconnect ($self) {
@@ -226,89 +231,90 @@ sub denoise_stop ($self) {
     return $self->_execute('calling.denoise.stop');
 }
 
-sub transfer ($self, %opts) {
-    return $self->_execute('calling.transfer', %opts);
+sub transfer ( $self, %opts ) {
+    return $self->_execute( 'calling.transfer', %opts );
 }
 
-sub join_conference ($self, %opts) {
-    return $self->_execute('calling.join_conference', %opts);
+sub join_conference ( $self, %opts ) {
+    return $self->_execute( 'calling.join_conference', %opts );
 }
 
-sub leave_conference ($self, %opts) {
-    return $self->_execute('calling.leave_conference', %opts);
+sub leave_conference ( $self, %opts ) {
+    return $self->_execute( 'calling.leave_conference', %opts );
 }
 
-sub echo ($self, %opts) {
-    return $self->_execute('calling.echo', %opts);
+sub echo ( $self, %opts ) {
+    return $self->_execute( 'calling.echo', %opts );
 }
 
-sub bind_digit ($self, %opts) {
-    return $self->_execute('calling.bind_digit', %opts);
+sub bind_digit ( $self, %opts ) {
+    return $self->_execute( 'calling.bind_digit', %opts );
 }
 
-sub clear_digit_bindings ($self, %opts) {
-    return $self->_execute('calling.clear_digit_bindings', %opts);
+sub clear_digit_bindings ( $self, %opts ) {
+    return $self->_execute( 'calling.clear_digit_bindings', %opts );
 }
 
-sub live_transcribe ($self, %opts) {
-    return $self->_execute('calling.live_transcribe', %opts);
+sub live_transcribe ( $self, %opts ) {
+    return $self->_execute( 'calling.live_transcribe', %opts );
 }
 
-sub live_translate ($self, %opts) {
-    return $self->_execute('calling.live_translate', %opts);
+sub live_translate ( $self, %opts ) {
+    return $self->_execute( 'calling.live_translate', %opts );
 }
 
-sub join_room ($self, %opts) {
-    return $self->_execute('calling.join_room', %opts);
+sub join_room ( $self, %opts ) {
+    return $self->_execute( 'calling.join_room', %opts );
 }
 
-sub leave_room ($self, %opts) {
+sub leave_room ( $self, %opts ) {
+
     # Python parity: Call.leave_room(**kwargs). Forwards any caller-provided
     # kwargs to the Relay leave_room dispatch (slurpy hash on the Perl side
     # ≡ **kwargs on the Python side).
-    return $self->_execute('calling.leave_room', %opts);
+    return $self->_execute( 'calling.leave_room', %opts );
 }
 
-sub amazon_bedrock ($self, %opts) {
-    return $self->_execute('calling.amazon_bedrock', %opts);
+sub amazon_bedrock ( $self, %opts ) {
+    return $self->_execute( 'calling.amazon_bedrock', %opts );
 }
 
-sub ai_message ($self, %opts) {
-    return $self->_execute('calling.ai_message', %opts);
+sub ai_message ( $self, %opts ) {
+    return $self->_execute( 'calling.ai_message', %opts );
 }
 
-sub ai_hold ($self, %opts) {
-    return $self->_execute('calling.ai_hold', %opts);
+sub ai_hold ( $self, %opts ) {
+    return $self->_execute( 'calling.ai_hold', %opts );
 }
 
-sub ai_unhold ($self, %opts) {
-    return $self->_execute('calling.ai_unhold', %opts);
+sub ai_unhold ( $self, %opts ) {
+    return $self->_execute( 'calling.ai_unhold', %opts );
 }
 
-sub user_event ($self, %opts) {
-    return $self->_execute('calling.user_event', %opts);
+sub user_event ( $self, %opts ) {
+    return $self->_execute( 'calling.user_event', %opts );
 }
 
-sub queue_enter ($self, %opts) {
-    return $self->_execute('calling.queue.enter', %opts);
+sub queue_enter ( $self, %opts ) {
+    return $self->_execute( 'calling.queue.enter', %opts );
 }
 
-sub queue_leave ($self, %opts) {
-    return $self->_execute('calling.queue.leave', %opts);
+sub queue_leave ( $self, %opts ) {
+    return $self->_execute( 'calling.queue.leave', %opts );
 }
 
-sub refer ($self, %opts) {
-    return $self->_execute('calling.refer', %opts);
+sub refer ( $self, %opts ) {
+    return $self->_execute( 'calling.refer', %opts );
 }
 
-sub send_digits ($self, %opts) {
-    return $self->_execute('calling.send_digits', %opts);
+sub send_digits ( $self, %opts ) {
+    return $self->_execute( 'calling.send_digits', %opts );
 }
 
 # --- Action-based methods (control_id tracking) ---
 
-sub play ($self, %opts) {
-    return $self->_start_action('calling.play', 'SignalWire::Relay::Action::Play', %opts);
+sub play ( $self, %opts ) {
+    return $self->_start_action( 'calling.play', 'SignalWire::Relay::Action::Play', %opts );
 }
 
 # --- Play convenience: typed wrappers over play() ---
@@ -320,45 +326,45 @@ sub play ($self, %opts) {
 # are only included when the caller supplies them, so the wire shape
 # carries no undef keys.
 
-sub play_tts ($self, $text, %opts) {
+sub play_tts ( $self, $text, %opts ) {
     my %tts = ( text => $text );
     $tts{language} = $opts{language} if defined $opts{language};
     $tts{gender}   = $opts{gender}   if defined $opts{gender};
     $tts{voice}    = $opts{voice}    if defined $opts{voice};
     my @play = ( play => [ { type => 'tts', params => \%tts } ] );
-    push @play, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @play, ( volume       => $opts{volume} )       if defined $opts{volume};
     push @play, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->play(@play);
 }
 
-sub play_audio ($self, $url, %opts) {
+sub play_audio ( $self, $url, %opts ) {
     my @play = ( play => [ { type => 'audio', params => { url => $url } } ] );
-    push @play, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @play, ( volume       => $opts{volume} )       if defined $opts{volume};
     push @play, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->play(@play);
 }
 
-sub play_silence ($self, $duration, %opts) {
+sub play_silence ( $self, $duration, %opts ) {
     my @play = ( play => [ { type => 'silence', params => { duration => $duration } } ] );
     push @play, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->play(@play);
 }
 
-sub play_ringtone ($self, $name, %opts) {
+sub play_ringtone ( $self, $name, %opts ) {
     my %rt = ( name => $name );
     $rt{duration} = $opts{duration} if defined $opts{duration};
     my @play = ( play => [ { type => 'ringtone', params => \%rt } ] );
-    push @play, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @play, ( volume       => $opts{volume} )       if defined $opts{volume};
     push @play, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->play(@play);
 }
 
-sub record ($self, %opts) {
-    return $self->_start_action('calling.record', 'SignalWire::Relay::Action::Record', %opts);
+sub record ( $self, %opts ) {
+    return $self->_start_action( 'calling.record', 'SignalWire::Relay::Action::Record', %opts );
 }
 
-sub detect ($self, %opts) {
-    return $self->_start_action('calling.detect', 'SignalWire::Relay::Action::Detect', %opts);
+sub detect ( $self, %opts ) {
+    return $self->_start_action( 'calling.detect', 'SignalWire::Relay::Action::Detect', %opts );
 }
 
 # --- Detect convenience: typed wrappers over detect() ---
@@ -368,46 +374,52 @@ sub detect ($self, %opts) {
 # the calling.detect params, not inside the detect object — same as
 # Python's Call.detect_*.
 
-sub detect_digit ($self, %opts) {
+sub detect_digit ( $self, %opts ) {
     my %params;
     $params{digits} = $opts{digits} if defined $opts{digits};
     my @args = ( detect => { type => 'digit', params => \%params } );
-    push @args, ( timeout => $opts{timeout} ) if defined $opts{timeout};
+    push @args, ( timeout      => $opts{timeout} )      if defined $opts{timeout};
     push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->detect(@args);
 }
 
-sub detect_answering_machine ($self, %opts) {
+sub detect_answering_machine ( $self, %opts ) {
     my %params;
+
     # Only the AMD knobs the caller actually provided land in params; the
     # server fills the rest from its defaults.
-    for my $key (qw(
+    for my $key (
+        qw(
         initial_timeout end_silence_timeout machine_voice_threshold
         machine_words_threshold detect_interruptions detect_message_end
-    )) {
+        )
+        )
+    {
         $params{$key} = $opts{$key} if defined $opts{$key};
     }
     my @args = ( detect => { type => 'machine', params => \%params } );
-    push @args, ( timeout => $opts{timeout} ) if defined $opts{timeout};
+    push @args, ( timeout      => $opts{timeout} )      if defined $opts{timeout};
     push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->detect(@args);
 }
 
-sub detect_fax ($self, %opts) {
+sub detect_fax ( $self, %opts ) {
     my %params;
     $params{tone} = $opts{tone} if defined $opts{tone};
     my @args = ( detect => { type => 'fax', params => \%params } );
-    push @args, ( timeout => $opts{timeout} ) if defined $opts{timeout};
+    push @args, ( timeout      => $opts{timeout} )      if defined $opts{timeout};
     push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->detect(@args);
 }
 
-sub collect ($self, %opts) {
-    return $self->_start_action('calling.collect', 'SignalWire::Relay::Action::StandaloneCollect', %opts);
+sub collect ( $self, %opts ) {
+    return $self->_start_action( 'calling.collect', 'SignalWire::Relay::Action::StandaloneCollect',
+        %opts );
 }
 
-sub play_and_collect ($self, %opts) {
-    return $self->_start_action('calling.play_and_collect', 'SignalWire::Relay::Action::Collect', %opts);
+sub play_and_collect ( $self, %opts ) {
+    return $self->_start_action( 'calling.play_and_collect', 'SignalWire::Relay::Action::Collect',
+        %opts );
 }
 
 # --- Prompt convenience: typed media over play_and_collect() ---
@@ -416,7 +428,7 @@ sub play_and_collect ($self, %opts) {
 # hashref is passed through verbatim (see RELAY guide "Collect Object");
 # only the play media is built from the typed args.
 
-sub prompt_tts ($self, $text, $collect, %opts) {
+sub prompt_tts ( $self, $text, $collect, %opts ) {
     my %tts = ( text => $text );
     $tts{language} = $opts{language} if defined $opts{language};
     $tts{gender}   = $opts{gender}   if defined $opts{gender};
@@ -425,29 +437,30 @@ sub prompt_tts ($self, $text, $collect, %opts) {
         play    => [ { type => 'tts', params => \%tts } ],
         collect => $collect,
     );
-    push @args, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @args, ( volume       => $opts{volume} )       if defined $opts{volume};
     push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->play_and_collect(@args);
 }
 
-sub prompt_audio ($self, $url, $collect, %opts) {
+sub prompt_audio ( $self, $url, $collect, %opts ) {
     my @args = (
         play    => [ { type => 'audio', params => { url => $url } } ],
         collect => $collect,
     );
-    push @args, ( volume => $opts{volume} ) if defined $opts{volume};
+    push @args, ( volume       => $opts{volume} )       if defined $opts{volume};
     push @args, ( on_completed => $opts{on_completed} ) if defined $opts{on_completed};
     return $self->play_and_collect(@args);
 }
 
-sub send_fax ($self, %opts) {
-    my $action = $self->_start_action('calling.send_fax', 'SignalWire::Relay::Action::Fax', %opts);
+sub send_fax ( $self, %opts ) {
+    my $action =
+        $self->_start_action( 'calling.send_fax', 'SignalWire::Relay::Action::Fax', %opts );
     return $action;
 }
 
-sub receive_fax ($self, %opts) {
+sub receive_fax ( $self, %opts ) {
     my $control_id = _generate_uuid();
-    my %params = ($self->_base_params, control_id => $control_id, %opts);
+    my %params     = ( $self->_base_params, control_id => $control_id, %opts );
 
     my $action = SignalWire::Relay::Action::Fax->new(
         control_id => $control_id,
@@ -460,8 +473,8 @@ sub receive_fax ($self, %opts) {
 
     my $client = $self->_client;
     if ($client) {
-        my $result = $client->execute('calling.receive_fax', \%params);
-        if (ref $result eq 'HASH' && $result->{code} && $result->{code} =~ /^(404|410)$/) {
+        my $result = $client->execute( 'calling.receive_fax', \%params );
+        if ( ref $result eq 'HASH' && $result->{code} && $result->{code} =~ /^(404|410)$/ ) {
             $action->_resolve(undef);
         }
     }
@@ -469,24 +482,25 @@ sub receive_fax ($self, %opts) {
     return $action;
 }
 
-sub tap ($self, %opts) {
-    return $self->_start_action('calling.tap', 'SignalWire::Relay::Action::Tap', %opts);
+sub tap ( $self, %opts ) {
+    return $self->_start_action( 'calling.tap', 'SignalWire::Relay::Action::Tap', %opts );
 }
 
-sub stream ($self, %opts) {
-    return $self->_start_action('calling.stream', 'SignalWire::Relay::Action::Stream', %opts);
+sub stream ( $self, %opts ) {
+    return $self->_start_action( 'calling.stream', 'SignalWire::Relay::Action::Stream', %opts );
 }
 
-sub pay ($self, %opts) {
-    return $self->_start_action('calling.pay', 'SignalWire::Relay::Action::Pay', %opts);
+sub pay ( $self, %opts ) {
+    return $self->_start_action( 'calling.pay', 'SignalWire::Relay::Action::Pay', %opts );
 }
 
-sub transcribe ($self, %opts) {
-    return $self->_start_action('calling.transcribe', 'SignalWire::Relay::Action::Transcribe', %opts);
+sub transcribe ( $self, %opts ) {
+    return $self->_start_action( 'calling.transcribe', 'SignalWire::Relay::Action::Transcribe',
+        %opts );
 }
 
-sub ai ($self, %opts) {
-    return $self->_start_action('calling.ai', 'SignalWire::Relay::Action::AI', %opts);
+sub ai ( $self, %opts ) {
+    return $self->_start_action( 'calling.ai', 'SignalWire::Relay::Action::AI', %opts );
 }
 
 1;

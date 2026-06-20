@@ -33,41 +33,46 @@ has 'suppressed' => (
 );
 
 sub _should_log {
-    my ($self, $msg_level) = @_;
+    my ( $self, $msg_level ) = @_;
     return 0 if $self->suppressed;
     my $current = $LEVELS{ $self->level } // 1;
-    my $target  = $LEVELS{ $msg_level }   // 1;
+    my $target  = $LEVELS{$msg_level}     // 1;
     return $target >= $current;
 }
 
 sub _log {
-    my ($self, $level, @msgs) = @_;
+    my ( $self, $level, @msgs ) = @_;
     return unless $self->_should_log($level);
-    my $tag = uc($level);
+    my $tag  = uc($level);
     my $name = $self->name;
-    my $msg = join(' ', @msgs);
-    my $ts = _timestamp();
+    my $msg  = join( ' ', @msgs );
+    my $ts   = _timestamp();
     print STDERR "[$ts] [$tag] [$name] $msg\n";
+    return;
 }
 
-sub debug { shift->_log('debug', @_) }
-sub info  { shift->_log('info',  @_) }
-sub warn  { shift->_log('warn',  @_) }
-sub error { shift->_log('error', @_) }
+sub debug { my ( $self, @args ) = @_; return $self->_log( 'debug', @args ); }
+sub info  { my ( $self, @args ) = @_; return $self->_log( 'info',  @args ); }
+sub warn  { my ( $self, @args ) = @_; return $self->_log( 'warn',  @args ); }
+sub error { my ( $self, @args ) = @_; return $self->_log( 'error', @args ); }
 
 sub _timestamp {
     my @t = localtime;
-    return sprintf('%04d-%02d-%02d %02d:%02d:%02d',
-        $t[5]+1900, $t[4]+1, $t[3], $t[2], $t[1], $t[0]);
+    return sprintf(
+        '%04d-%02d-%02d %02d:%02d:%02d',
+        $t[5] + 1900,
+        $t[4] + 1,
+        $t[3], $t[2], $t[1], $t[0]
+    );
 }
 
 # Singleton-ish factory
 my %loggers;
 
 sub get_logger {
-    my ($class, $name) = @_;
+    my ( $class, $name ) = @_;
     $name //= 'signalwire';
-    $loggers{$name} //= SignalWire::Logging->new(name => $name);
+    $loggers{$name} //= SignalWire::Logging->new( name => $name );
     return $loggers{$name};
 }
 

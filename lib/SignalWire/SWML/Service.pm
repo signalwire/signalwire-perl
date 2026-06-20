@@ -2,8 +2,8 @@ package SignalWire::SWML::Service;
 use strict;
 use warnings;
 use Moo;
-use JSON ();
-use Digest::SHA qw(hmac_sha256_hex);
+use JSON         ();
+use Digest::SHA  qw(hmac_sha256_hex);
 use MIME::Base64 ();
 use Scalar::Util ();
 use SignalWire::SWML::Document;
@@ -79,6 +79,7 @@ has 'schema_utils' => (
 has 'verb_registry' => (
     is      => 'lazy',
     default => sub {
+
         # Tiny stand-in registry for verb-handler dispatch. The Perl SDK
         # uses AUTOLOAD against the schema for verb lookup; this hashref
         # mirrors Python's VerbHandlerRegistry surface (handlers indexed
@@ -91,6 +92,7 @@ has 'security' => (
     is      => 'lazy',
     default => sub {
         my ($self) = @_;
+
         # Python's SWMLService.security is a SecurityConfig instance that
         # bundles SSL + basic-auth + CORS knobs. Perl SWMLService models
         # those as direct ``has`` attributes (basic_auth_user, etc.); the
@@ -99,8 +101,7 @@ has 'security' => (
         # working. Wrap in a blessed Moo-ish object so introspection still
         # sees it as an object (Python parity).
         require SignalWire::Security::SessionManager;
-        return $self->{_session_manager}
-            //= SignalWire::Security::SessionManager->new();
+        return $self->{_session_manager} //= SignalWire::Security::SessionManager->new();
     },
 );
 
@@ -117,25 +118,27 @@ sub _get_schema {
 }
 
 sub AUTOLOAD {
-    my $self = shift;
+    my $self   = shift;
     my $method = $AUTOLOAD;
-    $method =~ s/.*:://;  # strip package name
+    $method =~ s/.*:://;    # strip package name
 
     return if $method eq 'DESTROY';
 
     my $schema = _get_schema();
-    if ($schema->has_verb($method)) {
+    if ( $schema->has_verb($method) ) {
+
         # For 'sleep' verb: takes an integer (milliseconds), not a hashref
         my $section = shift // 'main';
         my $data;
-        if ($method eq 'sleep') {
+        if ( $method eq 'sleep' ) {
             $data = shift // 0;
+
             # Ensure it is a numeric value
             $data = int($data);
         } else {
             $data = shift // {};
         }
-        $self->document->add_verb($section, $method, $data);
+        $self->document->add_verb( $section, $method, $data );
         return $self;
     }
 
@@ -144,52 +147,56 @@ sub AUTOLOAD {
 
 # Provide can() that knows about schema verbs
 sub can {
-    my ($self, $method) = @_;
+    my ( $self, $method ) = @_;
+
     # Check if it is a regular method first
     my $code = $self->SUPER::can($method);
     return $code if $code;
+
     # Check schema verbs
     my $schema = _get_schema();
-    if ($schema && $schema->has_verb($method)) {
+    if ( $schema && $schema->has_verb($method) ) {
         return sub { $self->$method(@_) };
     }
-    return undef;
+    return;
 }
 
 sub _random_hex {
     my ($len) = @_;
+
     # Use /dev/urandom for cryptographically secure random bytes.
     # Die on failure rather than falling back to weak randomness.
-    if (open my $fh, '<:raw', '/dev/urandom') {
+    if ( open my $fh, '<:raw', '/dev/urandom' ) {
         my $bytes;
-        my $read = read($fh, $bytes, $len);
+        my $read = read( $fh, $bytes, $len );
         close $fh;
-        if (defined $read && $read == $len) {
-            return unpack('H*', $bytes);
+        if ( defined $read && $read == $len ) {
+            return unpack( 'H*', $bytes );
         }
     }
     die "FATAL: Cannot generate secure random bytes - /dev/urandom unavailable or read failed. "
-      . "Set SWML_BASIC_AUTH_USER and SWML_BASIC_AUTH_PASSWORD environment variables instead.\n";
+        . "Set SWML_BASIC_AUTH_USER and SWML_BASIC_AUTH_PASSWORD environment variables instead.\n";
 }
 
 sub _timing_safe_compare {
-    my ($a, $b) = @_;
+    my ( $a, $b ) = @_;
+
     # Compare HMAC of both values with a fixed key for constant-time comparison
-    my $key = 'timing-safe-comparison-key';
-    my $hmac_a = hmac_sha256_hex($a, $key);
-    my $hmac_b = hmac_sha256_hex($b, $key);
+    my $key    = 'timing-safe-comparison-key';
+    my $hmac_a = hmac_sha256_hex( $a, $key );
+    my $hmac_b = hmac_sha256_hex( $b, $key );
     return $hmac_a eq $hmac_b;
 }
 
 # Validate provided basic-auth credentials. (Python parity:
 # AuthMixin.validate_basic_auth(username, password).)
 sub validate_basic_auth {
-    my ($self, $username, $password) = @_;
+    my ( $self, $username, $password ) = @_;
     my $u = $self->basic_auth_user;
     my $p = $self->basic_auth_password;
     return 0 unless defined $u && defined $p;
-    return _timing_safe_compare($username, $u)
-        && _timing_safe_compare($password, $p);
+    return _timing_safe_compare( $username, $u )
+        && _timing_safe_compare( $password, $p );
 }
 
 # Returns ($user, $password) by default; if $include_source is truthy,
@@ -197,21 +204,21 @@ sub validate_basic_auth {
 # "environment", or "generated". (Python parity:
 # AuthMixin.get_basic_auth_credentials(include_source=False).)
 sub get_basic_auth_credentials {
-    my ($self, $include_source) = @_;
-    my $user = $self->basic_auth_user // '';
+    my ( $self, $include_source ) = @_;
+    my $user = $self->basic_auth_user     // '';
     my $pass = $self->basic_auth_password // '';
-    return ($user, $pass) unless $include_source;
-    my $env_user = $ENV{SWML_BASIC_AUTH_USER} // '';
+    return ( $user, $pass ) unless $include_source;
+    my $env_user = $ENV{SWML_BASIC_AUTH_USER}     // '';
     my $env_pass = $ENV{SWML_BASIC_AUTH_PASSWORD} // '';
     my $source;
-    if ($env_user ne '' && $env_pass ne '' && $user eq $env_user && $pass eq $env_pass) {
+    if ( $env_user ne '' && $env_pass ne '' && $user eq $env_user && $pass eq $env_pass ) {
         $source = 'environment';
-    } elsif ($user =~ /^user_/ && length($pass) > 20) {
+    } elsif ( $user =~ /^user_/ && length($pass) > 20 ) {
         $source = 'generated';
     } else {
         $source = 'provided';
     }
-    return ($user, $pass, $source);
+    return ( $user, $pass, $source );
 }
 
 # Backward-compat alias for Perl callers that used the named-helper form.
@@ -233,58 +240,60 @@ sub get_basic_auth_credentials_with_source {
 # what Python expresses with @staticmethod). The class_or_self receiver
 # is mirrored from FunctionResult and other static-method-shaped helpers.
 sub extract_sip_username {
-    my ($class_or_self, $request_body) = @_;
+    my ( $class_or_self, $request_body ) = @_;
+
     # Allow being called as a free function (single-arg form): if the
     # first arg is itself the request_body hashref, shift it forward.
-    if (!defined $request_body && ref $class_or_self eq 'HASH') {
+    if ( !defined $request_body && ref $class_or_self eq 'HASH' ) {
         $request_body = $class_or_self;
     }
-    return undef unless ref $request_body eq 'HASH';
+    return unless ref $request_body eq 'HASH';
     my $call = $request_body->{call};
-    return undef unless ref $call eq 'HASH';
+    return unless ref $call eq 'HASH';
     my $to = $call->{to};
+
     # Python's implementation calls ``to_field.startswith(...)`` which
     # raises AttributeError for non-string values (None / int / list)
     # and returns None via the except path. Mirror that policy: any
     # non-defined or ref value short-circuits to undef.
-    return undef unless defined $to && !ref $to;
+    return unless defined $to && !ref $to;
 
-    if ($to =~ m{^sip:([^@]+)\@}i) {
+    if ( $to =~ m{^sip:([^@]+)\@}i ) {
         return $1;
     }
-    if ($to =~ m{^tel:(.+)$}i) {
+    if ( $to =~ m{^tel:(.+)$}i ) {
         return $1;
     }
     return $to;
 }
 
 sub _check_basic_auth {
-    my ($self, $env) = @_;
+    my ( $self, $env ) = @_;
     my $auth = $env->{HTTP_AUTHORIZATION} // '';
     return 0 unless $auth =~ /^Basic\s+(.+)$/i;
     my $decoded = MIME::Base64::decode_base64($1);
-    my ($user, $pass) = split(/:/, $decoded, 2);
+    my ( $user, $pass ) = split( /:/, $decoded, 2 );
     return 0 unless defined $user && defined $pass;
-    return _timing_safe_compare($user, $self->basic_auth_user)
-        && _timing_safe_compare($pass, $self->basic_auth_password);
+    return _timing_safe_compare( $user, $self->basic_auth_user )
+        && _timing_safe_compare( $pass, $self->basic_auth_password );
 }
 
 sub _security_headers {
     return (
-        'X-Content-Type-Options'  => 'nosniff',
-        'X-Frame-Options'         => 'DENY',
-        'X-XSS-Protection'        => '1; mode=block',
-        'Cache-Control'           => 'no-store, no-cache, must-revalidate',
-        'Pragma'                  => 'no-cache',
-        'Content-Type'            => 'application/json',
+        'X-Content-Type-Options' => 'nosniff',
+        'X-Frame-Options'        => 'DENY',
+        'X-XSS-Protection'       => '1; mode=block',
+        'Cache-Control'          => 'no-store, no-cache, must-revalidate',
+        'Pragma'                 => 'no-cache',
+        'Content-Type'           => 'application/json',
     );
 }
 
 sub _json_response {
-    my ($status, $data) = @_;
+    my ( $status, $data ) = @_;
     my @headers = _security_headers();
-    my $body = JSON::encode_json($data);
-    return [$status, \@headers, [$body]];
+    my $body    = JSON::encode_json($data);
+    return [ $status, \@headers, [$body] ];
 }
 
 sub _read_body {
@@ -300,33 +309,37 @@ sub to_psgi_app {
     my ($self) = @_;
 
     return sub {
-        my ($env) = @_;
+        my ($env)  = @_;
         my $method = $env->{REQUEST_METHOD};
         my $path   = $env->{PATH_INFO} // '/';
 
         # Health/ready endpoints (no auth)
-        if ($path eq '/health' || $path eq '/ready') {
-            return _json_response(200, { status => 'ok' });
+        if ( $path eq '/health' || $path eq '/ready' ) {
+            return _json_response( 200, { status => 'ok' } );
         }
 
         # Normalize route for matching
         my $route = $self->route;
-        $route =~ s{/$}{};       # strip trailing slash
-        $path  =~ s{/$}{};       # strip trailing slash
+        $route =~ s{/$}{};    # strip trailing slash
+        $path  =~ s{/$}{};    # strip trailing slash
         $route = '' if $route eq '/';
         $path  = '' if $path eq '/';
 
         # Check if this request matches our routes
-        my $is_swml_route   = ($path eq $route);
-        my $is_swaig_route  = ($path eq "$route/swaig");
-        my $is_post_prompt  = ($path eq "$route/post_prompt");
+        my $is_swml_route  = ( $path eq $route );
+        my $is_swaig_route = ( $path eq "$route/swaig" );
+        my $is_post_prompt = ( $path eq "$route/post_prompt" );
 
-        if ($is_swml_route || $is_swaig_route || $is_post_prompt) {
+        if ( $is_swml_route || $is_swaig_route || $is_post_prompt ) {
+
             # Require basic auth for protected routes
-            unless ($self->_check_basic_auth($env)) {
+            unless ( $self->_check_basic_auth($env) ) {
                 return [
                     401,
-                    ['Content-Type' => 'text/plain', 'WWW-Authenticate' => 'Basic realm="SignalWire"'],
+                    [
+                        'Content-Type'     => 'text/plain',
+                        'WWW-Authenticate' => 'Basic realm="SignalWire"'
+                    ],
                     ['Authentication required'],
                 ];
             }
@@ -340,27 +353,27 @@ sub to_psgi_app {
             }
         }
 
-        return _json_response(404, { error => 'Not found' });
+        return _json_response( 404, { error => 'Not found' } );
     };
 }
 
 sub _handle_swml_request {
-    my ($self, $env) = @_;
+    my ( $self, $env ) = @_;
     my $doc = $self->render_main_swml($env);
-    return _json_response(200, $doc);
+    return _json_response( 200, $doc );
 }
 
 # Extension point: render the SWML document for the main path or for
 # GET /swaig. Default returns the currently-built Document. AgentBase
 # overrides to emit prompt + AI verb at request time.
 sub render_main_swml {
-    my ($self, $env) = @_;
+    my ( $self, $env ) = @_;
     return $self->document->to_hash;
 }
 
 # Backwards-compatible alias kept for subclasses that override render_swml.
 sub render_swml {
-    my ($self, $env) = @_;
+    my ( $self, $env ) = @_;
     return $self->render_main_swml($env);
 }
 
@@ -375,8 +388,8 @@ sub render_swml {
 # The Python third `request` argument is FastAPI-specific and
 # intentionally not mirrored.
 sub on_request {
-    my ($self, $request_data, $callback_path) = @_;
-    return $self->on_swml_request($request_data, $callback_path);
+    my ( $self, $request_data, $callback_path ) = @_;
+    return $self->on_swml_request( $request_data, $callback_path );
 }
 
 # Customization point for subclasses to modify SWML based on request
@@ -388,8 +401,8 @@ sub on_request {
 # wrapper produced by the calling code). Subclasses that don't need
 # direct request access can ignore it.
 sub on_swml_request {
-    my ($self, $request_data, $callback_path, $request) = @_;
-    return undef;
+    my ( $self, $request_data, $callback_path, $request ) = @_;
+    return;
 }
 
 # ------------------------------------------------------------------
@@ -400,9 +413,8 @@ sub on_swml_request {
 # parameter descriptions are LLM-facing prompt engineering — see
 # PORTING_GUIDE for guidance.
 sub define_tool {
-    my ($self, %opts) = @_;
-    my $name        = $opts{name}
-        // die("define_tool requires 'name'");
+    my ( $self, %opts ) = @_;
+    my $name        = $opts{name}        // die("define_tool requires 'name'");
     my $description = $opts{description} // '';
     my $parameters  = $opts{parameters}  // { type => 'object', properties => {} };
     my $handler     = $opts{handler};
@@ -411,9 +423,9 @@ sub define_tool {
         function    => $name,
         description => $description,
         parameters  => $parameters,
-        (defined $handler ? (_handler => $handler) : ()),
+        ( defined $handler ? ( _handler => $handler ) : () ),
     };
-    for my $k (keys %opts) {
+    for my $k ( keys %opts ) {
         next if $k =~ /^(name|description|parameters|handler)$/;
         $tool_def->{$k} = $opts{$k};
     }
@@ -425,7 +437,7 @@ sub define_tool {
 
 # Register a raw SWAIG function definition (e.g. from DataMap).
 sub register_swaig_function {
-    my ($self, $func_def) = @_;
+    my ( $self, $func_def ) = @_;
     my $name = $func_def->{function} // die("register_swaig_function needs 'function' key");
     $self->tools->{$name} = $func_def;
     push @{ $self->tool_order }, $name
@@ -436,14 +448,14 @@ sub register_swaig_function {
 # Whether a SWAIG function with the given name is registered.
 # (Python parity: ToolRegistry.has_function.)
 sub has_function {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
     return exists $self->tools->{$name} ? 1 : 0;
 }
 
 # Get a registered SWAIG function by name, or undef when absent.
 # (Python parity: ToolRegistry.get_function.)
 sub get_function {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
     return $self->tools->{$name};
 }
 
@@ -457,7 +469,7 @@ sub get_all_functions {
 # Remove a registered SWAIG function. Returns 1 on success, 0 if absent.
 # (Python parity: ToolRegistry.remove_function.)
 sub remove_function {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
     return 0 unless exists $self->tools->{$name};
     delete $self->tools->{$name};
     @{ $self->tool_order } = grep { $_ ne $name } @{ $self->tool_order };
@@ -466,10 +478,10 @@ sub remove_function {
 
 # Register multiple tool definitions at once.
 sub define_tools {
-    my ($self, @tool_defs) = @_;
+    my ( $self, @tool_defs ) = @_;
     for my $t (@tool_defs) {
-        if (ref $t eq 'HASH') {
-            if (exists $t->{function}) {
+        if ( ref $t eq 'HASH' ) {
+            if ( exists $t->{function} ) {
                 $self->register_swaig_function($t);
             } else {
                 $self->define_tool(%$t);
@@ -482,10 +494,10 @@ sub define_tools {
 # Dispatch a function call to the registered handler. Default plain
 # implementation. AgentBase may override to add token validation.
 sub on_function_call {
-    my ($self, $name, $args, $raw_data) = @_;
+    my ( $self, $name, $args, $raw_data ) = @_;
     my $tool = $self->tools->{$name};
-    return undef unless $tool && $tool->{_handler};
-    return $tool->{_handler}->($args, $raw_data);
+    return unless $tool && $tool->{_handler};
+    return $tool->{_handler}->( $args, $raw_data );
 }
 
 # List registered SWAIG tool names in registration order.
@@ -499,82 +511,82 @@ sub list_tool_names {
 # defined, it's encoded as the SWAIG response without calling
 # on_function_call. AgentBase may override to add session-token validation.
 sub swaig_pre_dispatch {
-    my ($self, $request_data, $func_name, $env) = @_;
-    return ($self, undef);
+    my ( $self, $request_data, $func_name, $env ) = @_;
+    return ( $self, undef );
 }
 
 # Extension point: subclasses may override to add /post_prompt, /mcp etc.
 # Receives the relative sub-path (after the route prefix) and parsed body.
 # Returns a PSGI response triple, or undef if not handled.
 sub handle_additional_route {
-    my ($self, $sub_path, $request_data, $env) = @_;
-    return undef;
+    my ( $self, $sub_path, $request_data, $env ) = @_;
+    return;
 }
 
 # Register a routing callback at a given sub-path under the service route.
 sub register_routing_callback {
-    my ($self, $path, $cb) = @_;
+    my ( $self, $path, $cb ) = @_;
     $self->routing_callbacks->{$path} = $cb;
     return $self;
 }
 
 sub _handle_swaig_request {
-    my ($self, $env) = @_;
+    my ( $self, $env ) = @_;
     my $method = $env->{REQUEST_METHOD} // 'GET';
 
-    if ($method eq 'GET') {
+    if ( $method eq 'GET' ) {
         my $doc = $self->render_main_swml($env);
-        return _json_response(200, $doc);
+        return _json_response( 200, $doc );
     }
 
     my $body = _read_body($env);
     my $payload;
     eval { $payload = JSON::decode_json($body) if length($body) };
-    if ($@ || !$payload || ref $payload ne 'HASH') {
-        return _json_response(400, { error => 'Invalid JSON' });
+    if ( $@ || !$payload || ref $payload ne 'HASH' ) {
+        return _json_response( 400, { error => 'Invalid JSON' } );
     }
 
     my $func_name = $payload->{function};
-    if (!defined $func_name || $func_name eq '') {
-        return _json_response(400, { error => 'Missing function name' });
+    if ( !defined $func_name || $func_name eq '' ) {
+        return _json_response( 400, { error => 'Missing function name' } );
     }
-    if ($func_name !~ $SWAIG_FN_NAME) {
-        return _json_response(400, { error => "Invalid function name format: '$func_name'" });
+    if ( $func_name !~ $SWAIG_FN_NAME ) {
+        return _json_response( 400, { error => "Invalid function name format: '$func_name'" } );
     }
 
     # Argument extraction: nested {argument:{parsed:[...]}} OR flat {arguments}
     my $args = {};
-    if (ref $payload->{argument} eq 'HASH') {
+    if ( ref $payload->{argument} eq 'HASH' ) {
         my $parsed = $payload->{argument}{parsed};
         $args = $parsed->[0] if ref $parsed eq 'ARRAY' && @$parsed;
-    } elsif (ref $payload->{arguments} eq 'HASH') {
+    } elsif ( ref $payload->{arguments} eq 'HASH' ) {
         $args = $payload->{arguments};
     }
     $args //= {};
 
-    my ($target, $short_circuit) = $self->swaig_pre_dispatch($payload, $func_name, $env);
-    return _json_response(200, $short_circuit) if defined $short_circuit;
+    my ( $target, $short_circuit ) = $self->swaig_pre_dispatch( $payload, $func_name, $env );
+    return _json_response( 200, $short_circuit ) if defined $short_circuit;
 
-    my $result = $target->on_function_call($func_name, $args, $payload);
-    return _json_response(404, { error => "Unknown function: $func_name" })
+    my $result = $target->on_function_call( $func_name, $args, $payload );
+    return _json_response( 404, { error => "Unknown function: $func_name" } )
         unless defined $result;
 
     # FunctionResult-like objects respond to to_hash; handlers may also
     # return plain hashrefs.
     my $result_hash;
-    if (ref $result eq 'HASH') {
+    if ( ref $result eq 'HASH' ) {
         $result_hash = $result;
-    } elsif (Scalar::Util::blessed($result) && $result->can('to_hash')) {
+    } elsif ( Scalar::Util::blessed($result) && $result->can('to_hash') ) {
         $result_hash = $result->to_hash;
     } else {
         $result_hash = { response => "$result" };
     }
-    return _json_response(200, $result_hash);
+    return _json_response( 200, $result_hash );
 }
 
 sub _handle_post_prompt {
-    my ($self, $env) = @_;
-    return _json_response(200, { response => 'Post prompt endpoint' });
+    my ( $self, $env ) = @_;
+    return _json_response( 200, { response => 'Post prompt endpoint' } );
 }
 
 1;

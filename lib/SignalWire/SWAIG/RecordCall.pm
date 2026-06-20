@@ -1,4 +1,5 @@
 package SignalWire::SWAIG::RecordCall;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -59,7 +60,7 @@ use constant {
     BOTH   => 'both',
 };
 
-our @EXPORT_OK = qw( WAV MP3 MP4 SPEAK LISTEN BOTH );
+our @EXPORT_OK   = qw( WAV MP3 MP4 SPEAK LISTEN BOTH );
 our %EXPORT_TAGS = (
     all        => [@EXPORT_OK],
     formats    => [qw( WAV MP3 MP4 )],
@@ -87,7 +88,7 @@ sub directions {
 # RecordCall->is_format($value) — true if $value is an accepted recording
 # format. Accepts the bareword constant too (it's just the string).
 sub is_format {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_FORMAT{$value} ? 1 : 0;
 }
@@ -95,7 +96,7 @@ sub is_format {
 # RecordCall->is_direction($value) — true if $value is an accepted record
 # direction. Accepts the bareword constant too.
 sub is_direction {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_DIRECTION{$value} ? 1 : 0;
 }

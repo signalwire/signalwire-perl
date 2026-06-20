@@ -1,13 +1,15 @@
 package SignalWire::Skills::SkillBase;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 
 use strict;
 use warnings;
 use Moo;
+
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-use Carp qw(croak);
+use Carp         qw(croak);
 use Scalar::Util ();
 
 # --- isa constraint helpers (coderefs; no extra deps). Each dies on a bad
@@ -17,50 +19,55 @@ my $NonEmptyStr = sub {
         unless defined $_[0] && !ref $_[0] && length $_[0];
 };
 my $ArrayRef = sub { croak("must be an arrayref") unless ref $_[0] eq 'ARRAY' };
-my $HashRef  = sub { croak("must be a hashref")  unless ref $_[0] eq 'HASH'  };
+my $HashRef  = sub { croak("must be a hashref")   unless ref $_[0] eq 'HASH' };
+
 # agent must be a blessed object (the AgentBase the skill is attached to),
 # not a plain string/hashref.
-my $Object   = sub { croak("must be an object") unless Scalar::Util::blessed($_[0]) };
+my $Object = sub { croak("must be an object") unless Scalar::Util::blessed( $_[0] ) };
 
 # Required class-level constants (subclasses override via 'has' or '+')
-has skill_name        => (is => 'ro', required => 1, isa => $NonEmptyStr);
-has skill_description => (is => 'ro', required => 1, isa => $NonEmptyStr);
-has skill_version     => (is => 'ro', default => sub { '1.0.0' }, isa => $NonEmptyStr);
+has skill_name        => ( is => 'ro', required => 1, isa => $NonEmptyStr );
+has skill_description => ( is => 'ro', required => 1, isa => $NonEmptyStr );
+has skill_version     => ( is => 'ro', default  => sub { '1.0.0' }, isa => $NonEmptyStr );
 
-has supports_multiple_instances => (is => 'ro', default => sub { 0 });
-has required_packages           => (is => 'ro', default => sub { [] }, isa => $ArrayRef);
-has required_env_vars           => (is => 'ro', default => sub { [] }, isa => $ArrayRef);
+has supports_multiple_instances => ( is => 'ro', default => sub { 0 } );
+has required_packages           => ( is => 'ro', default => sub { [] }, isa => $ArrayRef );
+has required_env_vars           => ( is => 'ro', default => sub { [] }, isa => $ArrayRef );
 
 # The agent this skill is attached to
-has agent  => (is => 'ro', required => 1, weak_ref => 1, isa => $Object);
+has agent => ( is => 'ro', required => 1, weak_ref => 1, isa => $Object );
+
 # Config params passed at registration
-has params => (is => 'rw', default => sub { {} }, isa => $HashRef);
+has params => ( is => 'rw', default => sub { {} }, isa => $HashRef );
 
 # Extra SWAIG fields to merge into tool definitions
-has swaig_fields => (is => 'rw', default => sub { {} }, isa => $HashRef);
+has swaig_fields => ( is => 'rw', default => sub { {} }, isa => $HashRef );
 
-sub BUILD ($self, @) {
+sub BUILD ( $self, @ ) {
+
     # Extract swaig_fields from params if present
-    if (exists $self->params->{swaig_fields}) {
-        $self->swaig_fields(delete $self->params->{swaig_fields});
+    if ( exists $self->params->{swaig_fields} ) {
+        $self->swaig_fields( delete $self->params->{swaig_fields} );
     }
+    return;
 }
 
 # --- Abstract interface (subclasses must override) ---
 
 sub setup ($self) {
-    croak(ref($self) . " must implement setup()");
+    croak( ref($self) . " must implement setup()" );
 }
 
 sub register_tools ($self) {
-    croak(ref($self) . " must implement register_tools()");
+    croak( ref($self) . " must implement register_tools()" );
 }
 
 # --- Default implementations ---
 
-sub define_tool ($self, %opts) {
+sub define_tool ( $self, %opts ) {
+
     # Merge swaig_fields into the tool definition
-    my %merged = (%{ $self->swaig_fields }, %opts);
+    my %merged = ( %{ $self->swaig_fields }, %opts );
     return $self->agent->define_tool(%merged);
 }
 
@@ -82,11 +89,12 @@ sub _get_prompt_sections {
 }
 
 sub cleanup {
+
     # no-op by default
 }
 
 sub validate_env_vars ($self) {
-    for my $var (@{ $self->required_env_vars }) {
+    for my $var ( @{ $self->required_env_vars } ) {
         return 0 unless $ENV{$var};
     }
     return 1;
@@ -95,14 +103,15 @@ sub validate_env_vars ($self) {
 sub get_parameter_schema {
     return {
         swaig_fields => { type => 'object', description => 'Additional SWAIG fields' },
-        skip_prompt  => { type => 'boolean', description => 'Skip injecting prompt sections', default => 0 },
-        tool_name    => { type => 'string',  description => 'Override the default tool name' },
+        skip_prompt  =>
+            { type => 'boolean', description => 'Skip injecting prompt sections', default => 0 },
+        tool_name => { type => 'string', description => 'Override the default tool name' },
     };
 }
 
 sub get_instance_key ($self) {
     my $base = $self->skill_name;
-    if ($self->params->{tool_name}) {
+    if ( $self->params->{tool_name} ) {
         return $base . ':' . $self->params->{tool_name};
     }
     return $base;

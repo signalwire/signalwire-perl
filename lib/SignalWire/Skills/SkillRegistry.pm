@@ -1,4 +1,5 @@
 package SignalWire::Skills::SkillRegistry;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 
@@ -7,37 +8,46 @@ use warnings;
 
 # Global registry mapping skill name -> class name
 my %REGISTRY;
+
 # External skill directories registered via add_skill_directory.
 # Mirrors Python's SkillRegistry._external_paths.
 my @EXTERNAL_PATHS;
 
 sub register_skill {
-    my ($class, $skill_name, $skill_class) = @_;
+    my ( $class, $skill_name, $skill_class ) = @_;
     $REGISTRY{$skill_name} = $skill_class;
+    return;
 }
 
 sub get_factory {
-    my ($class, $skill_name) = @_;
+    my ( $class, $skill_name ) = @_;
 
     # Return if already registered
     return $REGISTRY{$skill_name} if exists $REGISTRY{$skill_name};
 
-    # Attempt to auto-load from Builtin namespace
+    # Attempt to auto-load from Builtin namespace. Translate the package name to
+    # its .pm path and require THAT (a path string), so we avoid a stringy
+    # `eval "require $module"` (perlcritic ProhibitStringyEval) entirely — no
+    # registry input ever reaches the Perl compiler.
     my $module = 'SignalWire::Skills::Builtin::' . _camelize($skill_name);
-    eval "require $module";  ## no critic
-    if (!$@) {
+    ( my $module_path = "$module.pm" ) =~ s{::}{/}g;
+    eval { require $module_path; 1 };
+    if ( !$@ ) {
+
         # If the module registered itself, return it
         return $REGISTRY{$skill_name} if exists $REGISTRY{$skill_name};
+
         # Otherwise register it
         $REGISTRY{$skill_name} = $module;
         return $module;
     }
 
-    return undef;
+    return;
 }
 
 sub list_skills {
     my ($class) = @_;
+
     # Make sure all builtins are loaded
     $class->_load_all_builtins;
     return [ sort keys %REGISTRY ];
@@ -53,28 +63,30 @@ sub list_skills {
 # expose ``parameter_schema`` get richer detail.
 sub get_all_skills_schema {
     my ($self) = @_;
+
     # Accept both class-method (SkillRegistry->get_all_skills_schema) and
     # instance-method ($registry->get_all_skills_schema) calls.
     my $class = ref($self) || $self || __PACKAGE__;
     $class->_load_all_builtins;
     my %schema;
-    for my $name (sort keys %REGISTRY) {
+    for my $name ( sort keys %REGISTRY ) {
         my $skill_class = $REGISTRY{$name};
-        my %entry = (name => $name, parameters => {});
-        if (ref($skill_class) eq 'CODE') {
+        my %entry       = ( name => $name, parameters => {} );
+        if ( ref($skill_class) eq 'CODE' ) {
+
             # Factory closure; can't introspect statically
             ;
-        } elsif (defined $skill_class) {
-            if ($skill_class->can('parameter_schema')) {
+        } elsif ( defined $skill_class ) {
+            if ( $skill_class->can('parameter_schema') ) {
                 eval {
                     my $params = $skill_class->parameter_schema;
                     $entry{parameters} = $params if ref($params) eq 'HASH';
                 };
             }
-            if ($skill_class->can('skill_description')) {
+            if ( $skill_class->can('skill_description') ) {
                 eval { $entry{description} = $skill_class->skill_description };
             }
-            if ($skill_class->can('skill_version')) {
+            if ( $skill_class->can('skill_version') ) {
                 eval { $entry{version} = $skill_class->skill_version };
             }
         }
@@ -92,20 +104,23 @@ sub _load_all_builtins {
         weather_api web_search wikipedia_search custom_skills
     );
     for my $name (@names) {
-        $class->get_factory($name);  # triggers auto-load
+        $class->get_factory($name);    # triggers auto-load
     }
+    return;
 }
 
 sub _camelize {
     my ($name) = @_;
+
     # Convert snake_case to CamelCase: api_ninjas_trivia -> ApiNinjasTrivia
     $name =~ s/_(.)/uc($1)/ge;
     return ucfirst($name);
 }
 
 sub clear_registry {
-    %REGISTRY = ();
+    %REGISTRY       = ();
     @EXTERNAL_PATHS = ();
+    return;
 }
 
 # Add a directory to search for skills.
@@ -116,7 +131,7 @@ sub clear_registry {
 # raising ValueError) when the path doesn't exist or isn't a directory,
 # and de-duplicate entries in the external paths list.
 sub add_skill_directory {
-    my ($class, $path) = @_;
+    my ( $class, $path ) = @_;
     die "Skill directory does not exist: $path\n" unless -e $path;
     die "Path is not a directory: $path\n"        unless -d $path;
     return if grep { $_ eq $path } @EXTERNAL_PATHS;

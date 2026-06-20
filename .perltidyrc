@@ -1,0 +1,31 @@
+# .perltidyrc — canonical source-formatting config for signalwire-perl.
+#
+# perltidy is the Perl port's FMT gate (analogous to gofmt / rustfmt /
+# google-java-format in the sibling ports). It is SOURCE-STYLE ONLY: a reformat
+# is proven surface- and emission-neutral (port_surface.json byte-identical and
+# the EMISSION differ still 81/81 after a full reformat — verified in the FMT
+# rollout). It never moves the wire or the audited surface.
+#
+# Settings are mainstream "Perl Best Practices"-flavoured with a 100-column
+# line limit (the SDK's existing code already sits comfortably under it, which
+# keeps the initial reformat churn to whitespace/alignment rather than mass
+# re-wrapping that could obscure review).
+
+--maximum-line-length=100      # -l : a touch wider than PBP's 78; matches the SDK's existing lines
+--indent-columns=4             # -i : 4-space indent (the SDK's established style)
+--continuation-indentation=4   # -ci: continuation lines indent one level
+--no-tabs                      # -nt: spaces only, never hard tabs
+
+# Bracing / blocks
+--cuddled-else                 # -ce: } else { / } elsif { on one line
+
+# Whitespace
+--paren-tightness=1            # -pt=1: moderate tightness inside ( )
+--brace-tightness=1            # -bt=1
+--square-bracket-tightness=1   # -sbt=1
+--block-brace-tightness=0      # -bbt=0: space inside sub/block { ... }
+--trim-qw                      # -tqw: tidy qw( ) contents
+
+# Comments: leave existing indentation of full-line comments alone so the
+# heavily-commented wire/contract notes are not reflowed away from their code.
+--nooutdent-long-comments

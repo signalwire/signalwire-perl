@@ -1,4 +1,5 @@
 package SignalWire::Skills::Builtin::Spider;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -18,11 +19,11 @@ use JSON ();
 extends 'SignalWire::Skills::SkillBase';
 
 use SignalWire::Skills::SkillRegistry;
-SignalWire::Skills::SkillRegistry->register_skill('spider', __PACKAGE__);
+SignalWire::Skills::SkillRegistry->register_skill( 'spider', __PACKAGE__ );
 
-has '+skill_name'        => (default => sub { 'spider' });
-has '+skill_description' => (default => sub { 'Fast web scraping and crawling capabilities' });
-has '+supports_multiple_instances' => (default => sub { 1 });
+has '+skill_name'        => ( default => sub { 'spider' } );
+has '+skill_description' => ( default => sub { 'Fast web scraping and crawling capabilities' } );
+has '+supports_multiple_instances' => ( default => sub { 1 } );
 
 # Honor SPIDER_BASE_URL env var. When set, the skill rewrites the
 # user-supplied URL onto the base — useful for the audit fixture
@@ -45,12 +46,12 @@ has '_http' => (
     },
 );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
-    my ($self) = @_;
+    my ($self)      = @_;
     my $tool_prefix = $self->params->{tool_prefix} // '';
-    my $weak_self = $self;
+    my $weak_self   = $self;
     require Scalar::Util;
     Scalar::Util::weaken($weak_self);
 
@@ -65,11 +66,11 @@ sub register_tools {
             required => ['url'],
         },
         handler => sub {
-            my ($args, $raw) = @_;
+            my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
-            my $url = $args->{url} // '';
+            my $url  = $args->{url} // '';
             my $text = $weak_self->scrape_url($url);
-            return SignalWire::SWAIG::FunctionResult->new(response => $text);
+            return SignalWire::SWAIG::FunctionResult->new( response => $text );
         },
     );
 
@@ -84,19 +85,20 @@ sub register_tools {
             required => ['start_url'],
         },
         handler => sub {
-            my ($args, $raw) = @_;
+            my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
             my $url = $args->{start_url} // '';
+
             # crawl_site is a single-page wrapper around scrape_url here;
             # multi-page crawl + URL frontier is out of scope for the
             # Perl port (Python's lxml-based crawl tree is its own
             # 600-line concern).
             my $text = $weak_self->scrape_url($url);
-            return SignalWire::SWAIG::FunctionResult->new(response => $text);
+            return SignalWire::SWAIG::FunctionResult->new( response => $text );
         },
     );
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => "${tool_prefix}extract_structured_data",
         description => 'Extract structured data from a URL',
         parameters  => {
@@ -107,31 +109,32 @@ sub register_tools {
             required => ['url'],
         },
         handler => sub {
-            my ($args, $raw) = @_;
+            my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
-            my $url = $args->{url} // '';
+            my $url  = $args->{url} // '';
             my $text = $weak_self->scrape_url($url);
-            return SignalWire::SWAIG::FunctionResult->new(response => $text);
+            return SignalWire::SWAIG::FunctionResult->new( response => $text );
         },
     );
 }
 
 sub scrape_url {
-    my ($self, $url) = @_;
+    my ( $self, $url ) = @_;
     my $target = $self->_resolve_url($url);
-    my $resp = $self->_http->get($target);
-    unless ($resp->{success}) {
+    my $resp   = $self->_http->get($target);
+    unless ( $resp->{success} ) {
         return "Spider error: $resp->{status} $resp->{reason} ($target)";
     }
 
     my $body = $resp->{content} // '';
+
     # The audit fixture serves JSON like {"_raw_html": "<html>...</html>"}
     # because http.server can't easily decide between content types.
     # If the response decodes as JSON, lift the embedded HTML out;
     # otherwise treat the body as HTML directly.
-    if ($body =~ /^\s*\{/) {
+    if ( $body =~ /^\s*\{/ ) {
         my $parsed = eval { JSON::decode_json($body) };
-        if (!$@ && ref $parsed eq 'HASH' && exists $parsed->{_raw_html}) {
+        if ( !$@ && ref $parsed eq 'HASH' && exists $parsed->{_raw_html} ) {
             $body = $parsed->{_raw_html};
         }
     }
@@ -140,13 +143,14 @@ sub scrape_url {
 }
 
 sub _resolve_url {
-    my ($self, $url) = @_;
+    my ( $self, $url ) = @_;
     return $url unless $self->base_url;
+
     # When a base URL is configured, route the request through it,
     # preserving the path/query of the requested URL. This mirrors
     # the audit harness contract in SUBAGENT_PLAYBOOK § audit_skills.
     my $path;
-    if ($url =~ m{^https?://[^/]+(/.*)?$}) {
+    if ( $url =~ m{^https?://[^/]+(/.*)?$} ) {
         $path = $1 // '/';
     } else {
         $path = $url;
@@ -164,6 +168,7 @@ sub _extract_text {
     # Strip <script> and <style> blocks entirely.
     $html =~ s{<script\b[^>]*>.*?</script\s*>}{}gisx;
     $html =~ s{<style\b[^>]*>.*?</style\s*>}{}gisx;
+
     # Strip remaining tags, decode common entities, collapse whitespace.
     $html =~ s/<[^>]+>/ /g;
     $html =~ s/&nbsp;/ /gi;
@@ -178,7 +183,7 @@ sub _extract_text {
 }
 
 sub get_hints {
-    return ['scrape', 'crawl', 'extract', 'web page', 'website', 'spider'];
+    return [ 'scrape', 'crawl', 'extract', 'web page', 'website', 'spider' ];
 }
 
 sub get_parameter_schema {

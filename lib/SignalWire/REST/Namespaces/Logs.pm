@@ -9,14 +9,14 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub get {
-    my ($self, $log_id) = @_;
-    return $self->_http->get($self->_path($log_id));
+    my ( $self, $log_id ) = @_;
+    return $self->_http->get( $self->_path($log_id) );
 }
 
 # --- VoiceLogs ---
@@ -25,20 +25,20 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub get {
-    my ($self, $log_id) = @_;
-    return $self->_http->get($self->_path($log_id));
+    my ( $self, $log_id ) = @_;
+    return $self->_http->get( $self->_path($log_id) );
 }
 
 sub list_events {
-    my ($self, $log_id, %params) = @_;
+    my ( $self, $log_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($log_id, 'events'), params => $p);
+    return $self->_http->get( $self->_path( $log_id, 'events' ), params => $p );
 }
 
 # --- FaxLogs ---
@@ -47,14 +47,14 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub get {
-    my ($self, $log_id) = @_;
-    return $self->_http->get($self->_path($log_id));
+    my ( $self, $log_id ) = @_;
+    return $self->_http->get( $self->_path($log_id) );
 }
 
 # --- ConferenceLogs ---
@@ -63,9 +63,9 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 # --- LogsNamespace ---
@@ -78,9 +78,36 @@ has 'voice'       => ( is => 'lazy' );
 has 'fax'         => ( is => 'lazy' );
 has 'conferences' => ( is => 'lazy' );
 
-sub _build_messages    { SignalWire::REST::Namespaces::Logs::Messages->new(_http => $_[0]->_http, _base_path => '/api/messaging/logs') }
-sub _build_voice       { SignalWire::REST::Namespaces::Logs::Voice->new(_http => $_[0]->_http, _base_path => '/api/voice/logs') }
-sub _build_fax         { SignalWire::REST::Namespaces::Logs::Fax->new(_http => $_[0]->_http, _base_path => '/api/fax/logs') }
-sub _build_conferences { SignalWire::REST::Namespaces::Logs::Conferences->new(_http => $_[0]->_http, _base_path => '/api/logs/conferences') }
+sub _build_messages {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Logs::Messages->new(
+        _http      => $self->_http,
+        _base_path => '/api/messaging/logs'
+    );
+}
+
+sub _build_voice {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Logs::Voice->new(
+        _http      => $self->_http,
+        _base_path => '/api/voice/logs'
+    );
+}
+
+sub _build_fax {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Logs::Fax->new(
+        _http      => $self->_http,
+        _base_path => '/api/fax/logs'
+    );
+}
+
+sub _build_conferences {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Logs::Conferences->new(
+        _http      => $self->_http,
+        _base_path => '/api/logs/conferences'
+    );
+}
 
 1;

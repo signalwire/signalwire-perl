@@ -2,10 +2,12 @@ package SignalWire::Relay::Action;
 use strict;
 use warnings;
 use Moo;
+
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
 use Scalar::Util ();
-use Carp ();
+use Carp         ();
+use Time::HiRes  ();
 
 # Base Action class for long-running RELAY operations.
 # Tracks control_id, completion state, and supports blocking wait.
@@ -25,23 +27,24 @@ my $HashRef = sub {
 };
 
 has 'control_id' => ( is => 'ro', required => 1, isa => $NonEmptyStr );
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
-has 'state'      => ( is => 'rw', default => sub { 'created' } );
-has 'completed'  => ( is => 'rw', default => sub { 0 } );  # boolean
-has 'result'     => ( is => 'rw', default => sub { undef } );
-has 'events'     => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );
-has 'payload'    => ( is => 'rw', default => sub { {} }, isa => $HashRef ); # latest event payload
+has 'call_id'    => ( is => 'ro', default  => sub { '' } );
+has 'node_id'    => ( is => 'ro', default  => sub { '' } );
+has 'state'      => ( is => 'rw', default  => sub { 'created' } );
+has 'completed'  => ( is => 'rw', default  => sub { 0 } );                    # boolean
+has 'result'     => ( is => 'rw', default  => sub { undef } );
+has 'events'     => ( is => 'rw', default  => sub { [] }, isa => $ArrayRef );
+has 'payload'    => ( is => 'rw', default  => sub { {} }, isa => $HashRef );  # latest event payload
 
 has '_on_completed' => ( is => 'rw', default => sub { undef } );
 has '_client'       => ( is => 'rw', default => sub { undef } );
 
 # Register on_completed callback
-sub on_completed ($self, $cb = undef) {
+sub on_completed ( $self, $cb = undef ) {
     if ($cb) {
         $self->_on_completed($cb);
+
         # If already done, fire immediately
-        if ($self->completed) {
+        if ( $self->completed ) {
             eval { $cb->($self) };
             warn "on_completed callback error: $@" if $@;
         }
@@ -56,51 +59,56 @@ sub is_done ($self) {
 }
 
 # Blocking wait using select() polling loop
-sub wait ($self, %opts) {
+sub wait ( $self, %opts ) {
     my $timeout = $opts{timeout} || 30;
-    my $start = time();
-    while (!$self->completed && (time() - $start) < $timeout) {
-        select(undef, undef, undef, 0.1);  # sleep 100ms
+    my $start   = time();
+    while ( !$self->completed && ( time() - $start ) < $timeout ) {
+        Time::HiRes::sleep(0.1);    # poll every 100ms
     }
     return $self->result;
 }
 
 # Called by event dispatch when an event is received for this action
-sub _handle_event ($self, $event) {
-    push @{$self->events}, $event;
-    $self->payload($event->params // {});
+sub _handle_event ( $self, $event ) {
+    push @{ $self->events }, $event;
+    $self->payload( $event->params // {} );
 
     my $state = $event->can('state') ? $event->state : '';
     $self->state($state) if $state;
+    return;
 }
 
 # Mark the action as completed with a result
-sub _resolve ($self, $result) {
+sub _resolve ( $self, $result ) {
     return if $self->completed;
     $self->completed(1);
     $self->result($result);
 
-    if (my $cb = $self->_on_completed) {
+    if ( my $cb = $self->_on_completed ) {
         eval { $cb->($self) };
         warn "on_completed callback error: $@" if $@;
     }
+    return;
 }
 
 # Send a sub-command on this action (e.g., play.stop, record.pause)
-sub _execute_subcommand ($self, $method) {
+sub _execute_subcommand ( $self, $method ) {
     my $client = $self->_client;
     return unless $client;
-    return $client->execute($method, {
-        node_id    => $self->node_id,
-        call_id    => $self->call_id,
-        control_id => $self->control_id,
-    });
+    return $client->execute(
+        $method,
+        {
+            node_id    => $self->node_id,
+            call_id    => $self->call_id,
+            control_id => $self->control_id,
+        }
+    );
 }
 
 # Stop the action
 sub stop ($self) {
     return if $self->completed;
-    return $self->_execute_subcommand($self->_stop_method);
+    return $self->_execute_subcommand( $self->_stop_method );
 }
 
 # Override in subclasses
@@ -111,7 +119,7 @@ package SignalWire::Relay::Action::Play;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.play.stop' }
+sub _stop_method { return 'calling.play.stop' }
 
 sub pause ($self) {
     return $self->_execute_subcommand('calling.play.pause');
@@ -121,15 +129,18 @@ sub resume ($self) {
     return $self->_execute_subcommand('calling.play.resume');
 }
 
-sub volume ($self, $vol) {
+sub volume ( $self, $vol ) {
     my $client = $self->_client;
     return unless $client;
-    return $client->execute('calling.play.volume', {
-        node_id    => $self->node_id,
-        call_id    => $self->call_id,
-        control_id => $self->control_id,
-        volume     => $vol,
-    });
+    return $client->execute(
+        'calling.play.volume',
+        {
+            node_id    => $self->node_id,
+            call_id    => $self->call_id,
+            control_id => $self->control_id,
+            volume     => $vol,
+        }
+    );
 }
 
 # --- RecordAction ---
@@ -137,9 +148,9 @@ package SignalWire::Relay::Action::Record;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.record.stop' }
+sub _stop_method { return 'calling.record.stop' }
 
-sub pause ($self, %opts) {
+sub pause ( $self, %opts ) {
     my $client = $self->_client;
     return unless $client;
     my $params = {
@@ -148,7 +159,7 @@ sub pause ($self, %opts) {
         control_id => $self->control_id,
     };
     $params->{behavior} = $opts{behavior} if $opts{behavior};
-    return $client->execute('calling.record.pause', $params);
+    return $client->execute( 'calling.record.pause', $params );
 }
 
 sub resume ($self) {
@@ -156,32 +167,33 @@ sub resume ($self) {
 }
 
 # Result accessors
-sub url      { $_[0]->payload->{url}      // '' }
-sub duration { $_[0]->payload->{duration}  // 0 }
-sub size     { $_[0]->payload->{size}      // 0 }
+sub url      { my ($self) = @_; return $self->payload->{url}      // '' }
+sub duration { my ($self) = @_; return $self->payload->{duration} // 0 }
+sub size     { my ($self) = @_; return $self->payload->{size}     // 0 }
 
 # --- DetectAction ---
 package SignalWire::Relay::Action::Detect;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.detect.stop' }
+sub _stop_method { return 'calling.detect.stop' }
 
-sub detect_result { $_[0]->payload->{detect} // {} }
+sub detect_result { my ($self) = @_; return $self->payload->{detect} // {} }
 
 # Detect resolves on the FIRST `params.detect` payload (the actual
 # detection result), not on a state(finished). Mirror Python's
 # ``DetectAction._check_event``.
-sub _handle_event ($self, $event) {
+sub _handle_event ( $self, $event ) {
     $self->SUPER::_handle_event($event);
     return if $self->completed;
     my $params = $event->params // {};
-    if (ref $params eq 'HASH'
+    if (   ref $params eq 'HASH'
         && ref $params->{detect} eq 'HASH'
-        && %{$params->{detect}})
+        && %{ $params->{detect} } )
     {
         $self->_resolve($event);
     }
+    return;
 }
 
 # --- CollectAction (used by play_and_collect) ---
@@ -192,42 +204,44 @@ extends 'SignalWire::Relay::Action';
 # play_and_collect's stop verb is calling.play_and_collect.stop, not
 # calling.collect.stop. The standalone collect uses StandaloneCollect
 # below.
-sub _stop_method { 'calling.play_and_collect.stop' }
+sub _stop_method { return 'calling.play_and_collect.stop' }
 
 sub start_input_timers ($self) {
     return $self->_execute_subcommand('calling.collect.start_input_timers');
 }
 
-sub collect_result { $_[0]->payload->{result} // {} }
+sub collect_result { my ($self) = @_; return $self->payload->{result} // {} }
 
 # Override event handling: for play_and_collect, ignore play events
 # (play(finished) must NOT resolve a play_and_collect; only the collect
 # terminal event should — see RELAY_IMPLEMENTATION_GUIDE). Resolves on a
 # calling.call.collect event that carries a result, or a state in the
 # terminal-state map.
-sub _handle_event ($self, $event) {
+sub _handle_event ( $self, $event ) {
+
     # Defense-in-depth: even if a caller hands us a play event (e.g. the
     # legacy unit test that drives the action directly), we drop it so
     # state doesn't update.
-    if (($event->event_type // '') eq 'calling.call.play') {
+    if ( ( $event->event_type // '' ) eq 'calling.call.play' ) {
         return;
     }
     $self->SUPER::_handle_event($event);
     return if $self->completed;
-    if ($event->event_type eq 'calling.call.collect') {
+    if ( $event->event_type eq 'calling.call.collect' ) {
         my $params = $event->params // {};
         my $result = ref $params eq 'HASH' ? $params->{result} : undef;
-        if (ref $result eq 'HASH' && %$result) {
+        if ( ref $result eq 'HASH' && %$result ) {
             $self->_resolve($event);
         }
     }
+    return;
 }
 
 # Filter calling.call.play events: Call's dispatcher consults this method
 # before handing the event to the action so play events neither dispatch
 # nor (more importantly) trigger terminal-state auto-resolve.
-sub _should_consume_event ($self, $event) {
-    return 0 if ($event->event_type // '') eq 'calling.call.play';
+sub _should_consume_event ( $self, $event ) {
+    return 0 if ( $event->event_type // '' ) eq 'calling.call.play';
     return 1;
 }
 
@@ -238,7 +252,7 @@ extends 'SignalWire::Relay::Action::Collect';
 
 # Standalone collect uses calling.collect.stop, not the
 # play_and_collect.stop variant.
-sub _stop_method { 'calling.collect.stop' }
+sub _stop_method { return 'calling.collect.stop' }
 
 # --- FaxAction ---
 package SignalWire::Relay::Action::Fax;
@@ -253,44 +267,44 @@ sub _stop_method ($self) {
         : 'calling.send_fax.stop';
 }
 
-sub fax_result { $_[0]->payload->{fax} // {} }
+sub fax_result { my ($self) = @_; return $self->payload->{fax} // {} }
 
 # --- TapAction ---
 package SignalWire::Relay::Action::Tap;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.tap.stop' }
+sub _stop_method { return 'calling.tap.stop' }
 
 # --- StreamAction ---
 package SignalWire::Relay::Action::Stream;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.stream.stop' }
+sub _stop_method { return 'calling.stream.stop' }
 
 # --- PayAction ---
 package SignalWire::Relay::Action::Pay;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.pay.stop' }
+sub _stop_method { return 'calling.pay.stop' }
 
-sub pay_result { $_[0]->payload->{result} // {} }
+sub pay_result { my ($self) = @_; return $self->payload->{result} // {} }
 
 # --- TranscribeAction ---
 package SignalWire::Relay::Action::Transcribe;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.transcribe.stop' }
+sub _stop_method { return 'calling.transcribe.stop' }
 
 # --- AIAction ---
 package SignalWire::Relay::Action::AI;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.ai.stop' }
+sub _stop_method { return 'calling.ai.stop' }
 
 1;
 

@@ -1,4 +1,5 @@
 package SignalWire::SWAIG::JoinConference;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -92,7 +93,7 @@ our %EXPORT_TAGS = (
 # validation messages (matching Python's list rendering exactly).
 my @BEEPS   = qw( true false onEnter onExit );
 my @RECORDS = ( 'do-not-record', 'record-from-start' );
-my @TRIMS   = ( 'trim-silence', 'do-not-trim' );
+my @TRIMS   = ( 'trim-silence',  'do-not-trim' );
 my @METHODS = qw( GET POST );
 
 my %IS_BEEP   = map { $_ => 1 } @BEEPS;
@@ -101,13 +102,13 @@ my %IS_TRIM   = map { $_ => 1 } @TRIMS;
 my %IS_METHOD = map { $_ => 1 } @METHODS;
 
 # JoinConference->beeps — arrayref of the accepted beep strings.
-sub beeps   { return [@BEEPS]; }
+sub beeps { return [@BEEPS]; }
 
 # JoinConference->records — arrayref of the accepted record-mode strings.
 sub records { return [@RECORDS]; }
 
 # JoinConference->trims — arrayref of the accepted trim strings.
-sub trims   { return [@TRIMS]; }
+sub trims { return [@TRIMS]; }
 
 # JoinConference->methods — arrayref of the accepted callback HTTP methods.
 sub methods { return [@METHODS]; }
@@ -115,7 +116,7 @@ sub methods { return [@METHODS]; }
 # JoinConference->is_beep($value) — true if $value is an accepted beep
 # value. Accepts the bareword constant too (it's just the string).
 sub is_beep {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_BEEP{$value} ? 1 : 0;
 }
@@ -123,7 +124,7 @@ sub is_beep {
 # JoinConference->is_record($value) — true if $value is an accepted record
 # mode.
 sub is_record {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_RECORD{$value} ? 1 : 0;
 }
@@ -131,7 +132,7 @@ sub is_record {
 # JoinConference->is_trim($value) — true if $value is an accepted trim
 # value.
 sub is_trim {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_TRIM{$value} ? 1 : 0;
 }
@@ -139,7 +140,7 @@ sub is_trim {
 # JoinConference->is_method($value) — true if $value is an accepted
 # callback HTTP method.
 sub is_method {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_METHOD{$value} ? 1 : 0;
 }

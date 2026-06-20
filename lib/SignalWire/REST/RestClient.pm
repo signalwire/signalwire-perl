@@ -80,7 +80,7 @@ sub _build__http {
 
 sub _build_fabric {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Fabric->new(_http => $self->_http);
+    return SignalWire::REST::Namespaces::Fabric->new( _http => $self->_http );
 }
 
 sub _build_calling {
@@ -181,27 +181,27 @@ sub _build_mfa {
 
 sub _build_registry {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Registry->new(_http => $self->_http);
+    return SignalWire::REST::Namespaces::Registry->new( _http => $self->_http );
 }
 
 sub _build_datasphere {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Datasphere->new(_http => $self->_http);
+    return SignalWire::REST::Namespaces::Datasphere->new( _http => $self->_http );
 }
 
 sub _build_video {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Video->new(_http => $self->_http);
+    return SignalWire::REST::Namespaces::Video->new( _http => $self->_http );
 }
 
 sub _build_logs {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Logs->new(_http => $self->_http);
+    return SignalWire::REST::Namespaces::Logs->new( _http => $self->_http );
 }
 
 sub _build_project_ns {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Project->new(_http => $self->_http);
+    return SignalWire::REST::Namespaces::Project->new( _http => $self->_http );
 }
 
 sub _build_pubsub {

@@ -2,12 +2,14 @@ package SignalWire::Relay::Message;
 use strict;
 use warnings;
 use Moo;
+
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
 use Scalar::Util ();
-use Carp ();
+use Carp         ();
+use Time::HiRes  ();
 
-use SignalWire::Relay::Constants qw(MESSAGE_TERMINAL_STATES);
+use SignalWire::Relay::Constants    qw(MESSAGE_TERMINAL_STATES);
 use SignalWire::Relay::MessageState ();
 
 # --- isa constraint helpers (coderefs; no extra deps). Each dies on a
@@ -19,7 +21,7 @@ my $NonEmptyStr = sub {
 };
 my $Num = sub {
     Carp::croak("must be a number")
-        unless defined $_[0] && !ref $_[0] && Scalar::Util::looks_like_number($_[0]);
+        unless defined $_[0] && !ref $_[0] && Scalar::Util::looks_like_number( $_[0] );
 };
 my $ArrayRef = sub {
     Carp::croak("must be an arrayref") unless ref $_[0] eq 'ARRAY';
@@ -29,22 +31,22 @@ my $CodeRef = sub {
 };
 
 has 'message_id'  => ( is => 'ro', required => 1, isa => $NonEmptyStr );
-has 'context'     => ( is => 'rw', default => sub { '' } );
-has 'direction'   => ( is => 'rw', default => sub { '' } );
-has 'from_number' => ( is => 'rw', default => sub { '' } );
-has 'to_number'   => ( is => 'rw', default => sub { '' } );
-has 'body'        => ( is => 'rw', default => sub { '' } );
-has 'media'       => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );
-has 'segments'    => ( is => 'rw', default => sub { 0 }, isa => $Num );
-has 'state'       => ( is => 'rw', default => sub { '' } );
-has 'reason'      => ( is => 'rw', default => sub { '' } );
-has 'tags'        => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );
+has 'context'     => ( is => 'rw', default  => sub { '' } );
+has 'direction'   => ( is => 'rw', default  => sub { '' } );
+has 'from_number' => ( is => 'rw', default  => sub { '' } );
+has 'to_number'   => ( is => 'rw', default  => sub { '' } );
+has 'body'        => ( is => 'rw', default  => sub { '' } );
+has 'media'       => ( is => 'rw', default  => sub { [] }, isa => $ArrayRef );
+has 'segments'    => ( is => 'rw', default  => sub { 0 }, isa => $Num );
+has 'state'       => ( is => 'rw', default  => sub { '' } );
+has 'reason'      => ( is => 'rw', default  => sub { '' } );
+has 'tags'        => ( is => 'rw', default  => sub { [] }, isa => $ArrayRef );
 
 has 'completed' => ( is => 'rw', default => sub { 0 } );
 has 'result'    => ( is => 'rw', default => sub { undef } );
 
 has '_on_completed' => ( is => 'rw', default => sub { undef } );
-has '_on_event'     => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );
+has '_on_event' => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );
 
 # Check if message has reached a terminal state
 sub is_done ($self) {
@@ -74,15 +76,15 @@ sub current_state ($self) {
 # by dispatch_event, whereas is_terminal classifies the current `state`
 # string itself via the MessageState vocabulary.
 sub is_terminal ($self) {
-    return SignalWire::Relay::MessageState->is_terminal($self->state);
+    return SignalWire::Relay::MessageState->is_terminal( $self->state );
 }
 
 # Register on_completed callback
-sub on_completed ($self, $cb = undef) {
+sub on_completed ( $self, $cb = undef ) {
     if ($cb) {
         $CodeRef->($cb);
         $self->_on_completed($cb);
-        if ($self->completed) {
+        if ( $self->completed ) {
             eval { $cb->($self) };
             warn "Message on_completed callback error: $@" if $@;
         }
@@ -92,46 +94,47 @@ sub on_completed ($self, $cb = undef) {
 }
 
 # Register event listener
-sub on ($self, $cb) {
+sub on ( $self, $cb ) {
     $CodeRef->($cb);
-    push @{$self->_on_event}, $cb;
+    push @{ $self->_on_event }, $cb;
     return $self;
 }
 
 # Blocking wait
-sub wait ($self, %opts) {
+sub wait ( $self, %opts ) {
     my $timeout = $opts{timeout} || 30;
-    my $start = time();
-    while (!$self->completed && (time() - $start) < $timeout) {
-        select(undef, undef, undef, 0.1);
+    my $start   = time();
+    while ( !$self->completed && ( time() - $start ) < $timeout ) {
+        Time::HiRes::sleep(0.1);
     }
     return $self->result;
 }
 
 # Handle a messaging.state event
-sub dispatch_event ($self, $event) {
+sub dispatch_event ( $self, $event ) {
 
     my $message_state = $event->can('message_state') ? $event->message_state : '';
     $self->state($message_state) if $message_state;
 
     # Update fields from event
-    $self->reason($event->reason) if $event->can('reason') && $event->reason;
+    $self->reason( $event->reason ) if $event->can('reason') && $event->reason;
 
     # Fire event callbacks
-    for my $cb (@{$self->_on_event}) {
-        eval { $cb->($self, $event) };
+    for my $cb ( @{ $self->_on_event } ) {
+        eval { $cb->( $self, $event ) };
         warn "Message event callback error: $@" if $@;
     }
 
     # Check for terminal state
-    if (MESSAGE_TERMINAL_STATES->{$message_state}) {
+    if ( MESSAGE_TERMINAL_STATES->{$message_state} ) {
         $self->completed(1);
         $self->result($event);
-        if (my $cb = $self->_on_completed) {
+        if ( my $cb = $self->_on_completed ) {
             eval { $cb->($self) };
             warn "Message on_completed callback error: $@" if $@;
         }
     }
+    return;
 }
 
 1;

@@ -1,4 +1,5 @@
 package SignalWire::Prefabs::FAQBot;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 
@@ -8,12 +9,16 @@ use Moo;
 use JSON qw(encode_json);
 extends 'SignalWire::Agent::AgentBase';
 
-has faqs            => (is => 'ro', default => sub { [] });
-has suggest_related => (is => 'ro', default => sub { 1 });
-has persona         => (is => 'ro', default => sub { 'You are a helpful FAQ bot that provides accurate answers to common questions.' });
+has faqs            => ( is => 'ro', default => sub { [] } );
+has suggest_related => ( is => 'ro', default => sub { 1 } );
+has persona => (
+    is      => 'ro',
+    default =>
+        sub { 'You are a helpful FAQ bot that provides accurate answers to common questions.' }
+);
 
 sub BUILD {
-    my ($self, $args) = @_;
+    my ( $self, $args ) = @_;
 
     $self->name('faq_bot') if $self->name eq 'agent';
     $self->route('/faq')   if $self->route eq '/';
@@ -21,15 +26,14 @@ sub BUILD {
 
     my $faqs = $self->faqs;
 
-    $self->set_global_data({
-        faqs           => $faqs,
-        suggest_related => $self->suggest_related ? JSON::true : JSON::false,
-    });
-
-    $self->prompt_add_section(
-        'Personality',
-        $self->persona,
+    $self->set_global_data(
+        {
+            faqs            => $faqs,
+            suggest_related => $self->suggest_related ? JSON::true : JSON::false,
+        }
     );
+
+    $self->prompt_add_section( 'Personality', $self->persona, );
 
     # Build FAQ knowledge
     my @faq_bullets;
@@ -43,7 +47,7 @@ sub BUILD {
         bullets => \@faq_bullets,
     );
 
-    if ($self->suggest_related) {
+    if ( $self->suggest_related ) {
         $self->prompt_add_section(
             'Related Questions',
             'When appropriate, suggest related questions the user might also be interested in.',
@@ -62,21 +66,19 @@ sub BUILD {
             required => ['query'],
         },
         handler => sub {
-            my ($a, $raw) = @_;
+            my ( $a, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
-            my $query = lc($a->{query} // '');
+            my $query = lc( $a->{query} // '' );
             for my $faq (@$faqs) {
-                if (index(lc($faq->{question}), $query) >= 0) {
-                    return SignalWire::SWAIG::FunctionResult->new(
-                        response => $faq->{answer},
-                    );
+                if ( index( lc( $faq->{question} ), $query ) >= 0 ) {
+                    return SignalWire::SWAIG::FunctionResult->new( response => $faq->{answer}, );
                 }
             }
             return SignalWire::SWAIG::FunctionResult->new(
-                response => "No FAQ found matching: $a->{query}",
-            );
+                response => "No FAQ found matching: $a->{query}", );
         },
     );
+    return;
 }
 
 1;

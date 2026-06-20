@@ -46,7 +46,7 @@ package SignalWire::Security::WebhookMiddleware;
 use strict;
 use warnings;
 
-use Carp qw(croak);
+use Carp                                   qw(croak);
 use SignalWire::Security::WebhookValidator qw(validate_webhook_signature);
 
 # ``wrap`` returns a PSGI app that performs validation and forwards
@@ -61,14 +61,14 @@ use SignalWire::Security::WebhookValidator qw(validate_webhook_signature);
 #   public_url_base => string           (overrides everything; usually for
 #                                        tests)
 sub wrap {
-    my ($class, %opts) = @_;
+    my ( $class, %opts ) = @_;
     my $app = $opts{app} or croak "wrap: 'app' is required";
     croak "wrap: 'app' must be a CODE ref" unless ref($app) eq 'CODE';
 
-    my $signing_key = $opts{signing_key};
-    my $paths       = $opts{paths};                # arrayref or undef
-    my $methods     = $opts{methods} || ['POST'];
-    my $trust_proxy = exists $opts{trust_proxy} ? $opts{trust_proxy} : 1;
+    my $signing_key     = $opts{signing_key};
+    my $paths           = $opts{paths};                                         # arrayref or undef
+    my $methods         = $opts{methods} || ['POST'];
+    my $trust_proxy     = exists $opts{trust_proxy} ? $opts{trust_proxy} : 1;
     my $public_url_base = $opts{public_url_base};
 
     my %method_set = map { uc($_) => 1 } @$methods;
@@ -77,7 +77,7 @@ sub wrap {
 
     # If no signing key, this middleware is a no-op. (AgentBase emits the
     # warning at startup; we don't double-log here.)
-    if (!defined $signing_key || $signing_key eq '') {
+    if ( !defined $signing_key || $signing_key eq '' ) {
         return $app;
     }
 
@@ -85,15 +85,15 @@ sub wrap {
         my $env = shift;
 
         # Method gating: only validate POST (or whichever methods caller asked).
-        my $method = uc($env->{REQUEST_METHOD} || 'GET');
-        if (!$method_set{$method}) {
+        my $method = uc( $env->{REQUEST_METHOD} || 'GET' );
+        if ( !$method_set{$method} ) {
             return $app->($env);
         }
 
         # Path gating: if a whitelist was configured, only those paths
         # require a signature; everything else passes through.
         my $path = $env->{PATH_INFO} || '/';
-        if (%path_set && !$path_set{$path}) {
+        if ( %path_set && !$path_set{$path} ) {
             return $app->($env);
         }
 
@@ -104,21 +104,17 @@ sub wrap {
 
         # Header lookup: prefer X-SignalWire-Signature, fall back to
         # X-Twilio-Signature for cXML compat.
-        my $sig = $env->{HTTP_X_SIGNALWIRE_SIGNATURE}
-               // $env->{HTTP_X_TWILIO_SIGNATURE}
-               // '';
+        my $sig = $env->{HTTP_X_SIGNALWIRE_SIGNATURE} // $env->{HTTP_X_TWILIO_SIGNATURE} // '';
 
-        if ($sig eq '') {
-            return [403, ['Content-Type' => 'text/plain'], ['Forbidden']];
+        if ( $sig eq '' ) {
+            return [ 403, [ 'Content-Type' => 'text/plain' ], ['Forbidden'] ];
         }
 
-        my $url = _reconstruct_url($env, $trust_proxy, $public_url_base);
+        my $url = _reconstruct_url( $env, $trust_proxy, $public_url_base );
 
-        my $ok = eval {
-            validate_webhook_signature($signing_key, $sig, $url, $raw_body);
-        };
-        if ($@ || !$ok) {
-            return [403, ['Content-Type' => 'text/plain'], ['Forbidden']];
+        my $ok = eval { validate_webhook_signature( $signing_key, $sig, $url, $raw_body ); };
+        if ( $@ || !$ok ) {
+            return [ 403, [ 'Content-Type' => 'text/plain' ], ['Forbidden'] ];
         }
 
         return $app->($env);
@@ -134,36 +130,39 @@ sub _slurp_body {
 
     my $body = '';
     my $buf;
+
     # Limit to CONTENT_LENGTH if present so we don't hang on a streaming
     # source, but still allow chunked / unknown-length when not.
     my $cl = $env->{CONTENT_LENGTH};
-    if (defined $cl && $cl =~ /\A\d+\z/) {
+    if ( defined $cl && $cl =~ /\A\d+\z/ ) {
         my $remaining = $cl;
-        while ($remaining > 0) {
+        while ( $remaining > 0 ) {
             my $chunk = $remaining > 8192 ? 8192 : $remaining;
-            my $n = $input->read($buf, $chunk);
+            my $n     = $input->read( $buf, $chunk );
             last unless defined $n && $n > 0;
             $body .= $buf;
             $remaining -= $n;
         }
-    }
-    else {
-        while (my $n = $input->read($buf, 8192)) {
+    } else {
+        while ( my $n = $input->read( $buf, 8192 ) ) {
             $body .= $buf;
         }
     }
 
     # Rewind so downstream code can re-read. If seek isn't supported,
     # swap in a string-handle pointing at the buffered body.
-    if ($input->can('seek')) {
-        eval { $input->seek(0, 0) };
+    if ( $input->can('seek') ) {
+        eval { $input->seek( 0, 0 ) };
     }
-    if ($@ || !$input->can('seek')) {
+    if ( $@ || !$input->can('seek') ) {
+
+        # In-memory handle is deliberately handed off as psgi.input for
+        # downstream re-reads; it must NOT be closed here (see RequireBriefOpen
+        # exemption rationale in .perlcriticrc).
         open my $fh, '<', \$body;
-        $env->{'psgi.input'} = $fh;
+        $env->{'psgi.input'}   = $fh;
         $env->{CONTENT_LENGTH} = length($body);
-    }
-    elsif (!defined $cl) {
+    } elsif ( !defined $cl ) {
         $env->{CONTENT_LENGTH} = length($body);
     }
 
@@ -172,40 +171,42 @@ sub _slurp_body {
 
 # Reconstruct the full public URL SignalWire actually POSTed to.
 sub _reconstruct_url {
-    my ($env, $trust_proxy, $public_url_base) = @_;
+    my ( $env, $trust_proxy, $public_url_base ) = @_;
 
     # 1) Explicit override (caller / config / tests).
-    if (defined $public_url_base && $public_url_base ne '') {
-        return _join_base_path($public_url_base, $env);
+    if ( defined $public_url_base && $public_url_base ne '' ) {
+        return _join_base_path( $public_url_base, $env );
     }
 
     # 2) SWML_PROXY_URL_BASE env var (per spec).
-    if (defined $ENV{SWML_PROXY_URL_BASE} && $ENV{SWML_PROXY_URL_BASE} ne '') {
-        return _join_base_path($ENV{SWML_PROXY_URL_BASE}, $env);
+    if ( defined $ENV{SWML_PROXY_URL_BASE} && $ENV{SWML_PROXY_URL_BASE} ne '' ) {
+        return _join_base_path( $ENV{SWML_PROXY_URL_BASE}, $env );
     }
 
     # 3) X-Forwarded-* headers when trust_proxy is on.
-    my ($scheme, $host);
+    my ( $scheme, $host );
     if ($trust_proxy) {
         my $xfp = $env->{HTTP_X_FORWARDED_PROTO};
         my $xfh = $env->{HTTP_X_FORWARDED_HOST};
-        if ($xfp && $xfh) {
-            ($scheme, $host) = ($xfp, $xfh);
+        if ( $xfp && $xfh ) {
+            ( $scheme, $host ) = ( $xfp, $xfh );
         }
     }
 
     # 4) Fallback to raw request fields.
     $scheme //= $env->{'psgi.url_scheme'} // 'http';
     $host   //= $env->{HTTP_HOST}
-              // (($env->{SERVER_NAME} // 'localhost') . ':'
-                  . ($env->{SERVER_PORT} // '80'));
+        // ( ( $env->{SERVER_NAME} // 'localhost' ) . ':' . ( $env->{SERVER_PORT} // '80' ) );
 
-    my $req_uri = defined $env->{REQUEST_URI} && $env->{REQUEST_URI} ne ''
-        ? $env->{REQUEST_URI}
-        : (($env->{PATH_INFO} // '/')
-            . (defined $env->{QUERY_STRING} && $env->{QUERY_STRING} ne ''
-               ? '?' . $env->{QUERY_STRING}
-               : ''));
+    my $req_uri =
+        defined $env->{REQUEST_URI} && $env->{REQUEST_URI} ne '' ? $env->{REQUEST_URI}
+        : (
+        ( $env->{PATH_INFO} // '/' )
+        . (
+            defined $env->{QUERY_STRING} && $env->{QUERY_STRING} ne '' ? '?' . $env->{QUERY_STRING}
+            : ''
+        )
+        );
 
     return "$scheme://$host$req_uri";
 }
@@ -213,14 +214,17 @@ sub _reconstruct_url {
 # Join an external base ("https://foo.ngrok.io") with the path+query
 # from the request env.
 sub _join_base_path {
-    my ($base, $env) = @_;
+    my ( $base, $env ) = @_;
     $base =~ s{/+\z}{};
-    my $req_uri = defined $env->{REQUEST_URI} && $env->{REQUEST_URI} ne ''
-        ? $env->{REQUEST_URI}
-        : (($env->{PATH_INFO} // '/')
-            . (defined $env->{QUERY_STRING} && $env->{QUERY_STRING} ne ''
-               ? '?' . $env->{QUERY_STRING}
-               : ''));
+    my $req_uri =
+        defined $env->{REQUEST_URI} && $env->{REQUEST_URI} ne '' ? $env->{REQUEST_URI}
+        : (
+        ( $env->{PATH_INFO} // '/' )
+        . (
+            defined $env->{QUERY_STRING} && $env->{QUERY_STRING} ne '' ? '?' . $env->{QUERY_STRING}
+            : ''
+        )
+        );
     return $base . $req_uri;
 }
 

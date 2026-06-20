@@ -1,4 +1,5 @@
 package SignalWire::Skills::SkillName;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -106,7 +107,7 @@ sub all {
 # skills, false for custom / unknown names. Accepts the bareword constant
 # too (it's just the string).
 sub is_builtin {
-    my ($class, $name) = @_;
+    my ( $class, $name ) = @_;
     return 0 unless defined $name;
     return exists $IS_BUILTIN{$name} ? 1 : 0;
 }

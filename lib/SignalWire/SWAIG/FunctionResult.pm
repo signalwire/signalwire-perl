@@ -2,6 +2,7 @@ package SignalWire::SWAIG::FunctionResult;
 use strict;
 use warnings;
 use Moo;
+
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
 use JSON ();
@@ -31,10 +32,10 @@ has 'post_process' => (
 sub _py_truthy {
     my ($v) = @_;
     return 0 unless defined $v;
-    if (ref $v eq 'HASH') {
-        return scalar(keys %$v) ? 1 : 0;
+    if ( ref $v eq 'HASH' ) {
+        return scalar( keys %$v ) ? 1 : 0;
     }
-    if (ref $v eq 'ARRAY') {
+    if ( ref $v eq 'ARRAY' ) {
         return scalar(@$v) ? 1 : 0;
     }
     return $v ? 1 : 0;
@@ -42,42 +43,42 @@ sub _py_truthy {
 
 # Constructor: new(response => "text") or new("text") or new("text", post_process => 1)
 around BUILDARGS => sub {
-    my ($orig, $class, @args) = @_;
-    if (@args == 1 && !ref $args[0]) {
-        return $class->$orig(response => $args[0]);
+    my ( $orig, $class, @args ) = @_;
+    if ( @args == 1 && !ref $args[0] ) {
+        return $class->$orig( response => $args[0] );
     }
-    if (@args >= 1 && !ref $args[0] && $args[0] !~ /^(response|action|post_process)$/) {
+    if ( @args >= 1 && !ref $args[0] && $args[0] !~ /^(response|action|post_process)$/ ) {
         my $resp = shift @args;
-        return $class->$orig(response => $resp, @args);
+        return $class->$orig( response => $resp, @args );
     }
     return $class->$orig(@args);
 };
 
 # --- Core methods ---
 
-sub set_response ($self, $response) {
+sub set_response ( $self, $response ) {
     $self->response($response);
     return $self;
 }
 
-sub set_post_process ($self, $post_process) {
-    $self->post_process($post_process ? 1 : 0);
+sub set_post_process ( $self, $post_process ) {
+    $self->post_process( $post_process ? 1 : 0 );
     return $self;
 }
 
-sub add_action ($self, $name, $data) {
+sub add_action ( $self, $name, $data ) {
     push @{ $self->action }, { $name => $data };
     return $self;
 }
 
-sub add_actions ($self, $actions) {
+sub add_actions ( $self, $actions ) {
     push @{ $self->action }, @$actions;
     return $self;
 }
 
 # --- Call Control ---
 
-sub connect ($self, $destination, %opts) {
+sub connect ( $self, $destination, %opts ) {
     my $final = exists $opts{final} ? $opts{final} : 1;
     my $from  = $opts{from};
 
@@ -87,7 +88,7 @@ sub connect ($self, $destination, %opts) {
     my $swml_action = {
         SWML => {
             sections => {
-                main => [{ connect => $connect_params }],
+                main => [ { connect => $connect_params } ],
             },
             version => '1.0.0',
         },
@@ -98,7 +99,7 @@ sub connect ($self, $destination, %opts) {
     return $self;
 }
 
-sub swml_transfer ($self, $dest, $ai_response, %opts) {
+sub swml_transfer ( $self, $dest, $ai_response, %opts ) {
     my $final = exists $opts{final} ? $opts{final} : 1;
 
     my $swml_action = {
@@ -119,17 +120,17 @@ sub swml_transfer ($self, $dest, $ai_response, %opts) {
 }
 
 sub hangup ($self) {
-    return $self->add_action('hangup', JSON::true);
+    return $self->add_action( 'hangup', JSON::true );
 }
 
-sub hold ($self, $timeout = undef) {
+sub hold ( $self, $timeout = undef ) {
     $timeout //= 300;
     $timeout = 0   if $timeout < 0;
     $timeout = 900 if $timeout > 900;
-    return $self->add_action('hold', $timeout);
+    return $self->add_action( 'hold', $timeout );
 }
 
-sub wait_for_user ($self, %opts) {
+sub wait_for_user ( $self, %opts ) {
     my $enabled      = $opts{enabled};
     my $timeout      = $opts{timeout};
     my $answer_first = $opts{answer_first};
@@ -137,66 +138,68 @@ sub wait_for_user ($self, %opts) {
     my $value;
     if ($answer_first) {
         $value = 'answer_first';
-    } elsif (defined $timeout) {
+    } elsif ( defined $timeout ) {
         $value = $timeout;
-    } elsif (defined $enabled) {
+    } elsif ( defined $enabled ) {
         $value = $enabled ? JSON::true : JSON::false;
     } else {
         $value = JSON::true;
     }
-    return $self->add_action('wait_for_user', $value);
+    return $self->add_action( 'wait_for_user', $value );
 }
 
 sub stop ($self) {
-    return $self->add_action('stop', JSON::true);
+    return $self->add_action( 'stop', JSON::true );
 }
 
 # --- State & Data ---
 
-sub update_global_data ($self, $data) {
-    return $self->add_action('set_global_data', $data);
+sub update_global_data ( $self, $data ) {
+    return $self->add_action( 'set_global_data', $data );
 }
 
-sub remove_global_data ($self, $keys) {
-    return $self->add_action('unset_global_data', $keys);
+sub remove_global_data ( $self, $keys ) {
+    return $self->add_action( 'unset_global_data', $keys );
 }
 
-sub set_metadata ($self, $data) {
-    return $self->add_action('set_meta_data', $data);
+sub set_metadata ( $self, $data ) {
+    return $self->add_action( 'set_meta_data', $data );
 }
 
-sub remove_metadata ($self, $keys) {
-    return $self->add_action('unset_meta_data', $keys);
+sub remove_metadata ( $self, $keys ) {
+    return $self->add_action( 'unset_meta_data', $keys );
 }
 
-sub swml_user_event ($self, $event_data) {
+sub swml_user_event ( $self, $event_data ) {
     my $swml_action = {
         sections => {
-            main => [{
-                user_event => { event => $event_data },
-            }],
+            main => [
+                {
+                    user_event => { event => $event_data },
+                }
+            ],
         },
         version => '1.0.0',
     };
-    return $self->add_action('SWML', $swml_action);
+    return $self->add_action( 'SWML', $swml_action );
 }
 
-sub swml_change_step ($self, $step_name) {
-    return $self->add_action('change_step', $step_name);
+sub swml_change_step ( $self, $step_name ) {
+    return $self->add_action( 'change_step', $step_name );
 }
 
-sub swml_change_context ($self, $context_name) {
-    return $self->add_action('change_context', $context_name);
+sub swml_change_context ( $self, $context_name ) {
+    return $self->add_action( 'change_context', $context_name );
 }
 
-sub switch_context ($self, %opts) {
+sub switch_context ( $self, %opts ) {
     my $system_prompt = $opts{system_prompt};
     my $user_prompt   = $opts{user_prompt};
     my $consolidate   = $opts{consolidate};
     my $full_reset    = $opts{full_reset};
 
-    if ($system_prompt && !$user_prompt && !$consolidate && !$full_reset) {
-        return $self->add_action('context_switch', $system_prompt);
+    if ( $system_prompt && !$user_prompt && !$consolidate && !$full_reset ) {
+        return $self->add_action( 'context_switch', $system_prompt );
     }
 
     my %ctx;
@@ -204,47 +207,49 @@ sub switch_context ($self, %opts) {
     $ctx{user_prompt}   = $user_prompt   if $user_prompt;
     $ctx{consolidate}   = JSON::true     if $consolidate;
     $ctx{full_reset}    = JSON::true     if $full_reset;
-    return $self->add_action('context_switch', \%ctx);
+    return $self->add_action( 'context_switch', \%ctx );
 }
 
-sub replace_in_history ($self, $text = undef) {
+sub replace_in_history ( $self, $text = undef ) {
     $text //= JSON::true;
-    return $self->add_action('replace_in_history', $text);
+    return $self->add_action( 'replace_in_history', $text );
 }
 
 # --- Media ---
 
-sub say ($self, $text) {
-    return $self->add_action('say', $text);
+sub say ( $self, $text ) {
+    return $self->add_action( 'say', $text );
 }
 
-sub play_background_file ($self, $filename, %opts) {
+sub play_background_file ( $self, $filename, %opts ) {
     my $wait = $opts{wait};
     if ($wait) {
-        return $self->add_action('playback_bg', { file => $filename, wait => JSON::true });
+        return $self->add_action( 'playback_bg', { file => $filename, wait => JSON::true } );
     }
-    return $self->add_action('playback_bg', $filename);
+    return $self->add_action( 'playback_bg', $filename );
 }
 
 sub stop_background_file ($self) {
-    return $self->add_action('stop_playback_bg', JSON::true);
+    return $self->add_action( 'stop_playback_bg', JSON::true );
 }
 
-sub record_call ($self, %opts) {
+sub record_call ( $self, %opts ) {
+
     # Defaults mirror the Python reference's argument defaults.
     my $control_id          = $opts{control_id};
-    my $stereo              = $opts{stereo}            // 0;
-    my $format              = $opts{format}            // 'wav';
-    my $direction           = $opts{direction}         // 'both';
+    my $stereo              = $opts{stereo}    // 0;
+    my $format              = $opts{format}    // 'wav';
+    my $direction           = $opts{direction} // 'both';
     my $terminators         = $opts{terminators};
-    my $beep                = $opts{beep}              // 0;
+    my $beep                = $opts{beep} // 0;
     my $input_sensitivity   = exists $opts{input_sensitivity} ? $opts{input_sensitivity} : 44.0;
     my $initial_timeout     = $opts{initial_timeout};
     my $end_silence_timeout = $opts{end_silence_timeout};
     my $max_length          = $opts{max_length};
     my $status_url          = $opts{status_url};
 
-    die "format must be 'wav', 'mp3', or 'mp4'" unless $format eq 'wav' || $format eq 'mp3' || $format eq 'mp4';
+    die "format must be 'wav', 'mp3', or 'mp4'"
+        unless $format eq 'wav' || $format eq 'mp3' || $format eq 'mp4';
     die "direction must be 'speak', 'listen', or 'both'"
         unless $direction eq 'speak' || $direction eq 'listen' || $direction eq 'both';
 
@@ -264,36 +269,36 @@ sub record_call ($self, %opts) {
     # Conditional keys. control_id/terminators/status_url use Python's
     # truthiness gate (`if x:`); the three numeric timeouts use the
     # `is not None` gate, so a literal 0 still emits — `defined` mirrors that.
-    $params{control_id}          = $control_id          if $control_id;
-    $params{terminators}         = $terminators         if $terminators;
+    $params{control_id}          = $control_id              if $control_id;
+    $params{terminators}         = $terminators             if $terminators;
     $params{initial_timeout}     = $initial_timeout + 0     if defined $initial_timeout;
     $params{end_silence_timeout} = $end_silence_timeout + 0 if defined $end_silence_timeout;
     $params{max_length}          = $max_length + 0          if defined $max_length;
-    $params{status_url}          = $status_url          if $status_url;
+    $params{status_url}          = $status_url              if $status_url;
 
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ record_call => \%params }] },
+        sections => { main => [ { record_call => \%params } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
-sub stop_record_call ($self, %opts) {
+sub stop_record_call ( $self, %opts ) {
     my $control_id = $opts{control_id};
     my %params;
     $params{control_id} = $control_id if $control_id;
 
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ stop_record_call => \%params }] },
+        sections => { main => [ { stop_record_call => \%params } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
 # --- Speech & AI ---
 
-sub add_dynamic_hints ($self, $hints) {
-    return $self->add_action('add_dynamic_hints', $hints);
+sub add_dynamic_hints ( $self, $hints ) {
+    return $self->add_action( 'add_dynamic_hints', $hints );
 }
 
 sub clear_dynamic_hints ($self) {
@@ -301,46 +306,46 @@ sub clear_dynamic_hints ($self) {
     return $self;
 }
 
-sub set_end_of_speech_timeout ($self, $ms) {
-    return $self->add_action('end_of_speech_timeout', $ms);
+sub set_end_of_speech_timeout ( $self, $ms ) {
+    return $self->add_action( 'end_of_speech_timeout', $ms );
 }
 
-sub set_speech_event_timeout ($self, $ms) {
-    return $self->add_action('speech_event_timeout', $ms);
+sub set_speech_event_timeout ( $self, $ms ) {
+    return $self->add_action( 'speech_event_timeout', $ms );
 }
 
-sub toggle_functions ($self, $toggles) {
-    return $self->add_action('toggle_functions', $toggles);
+sub toggle_functions ( $self, $toggles ) {
+    return $self->add_action( 'toggle_functions', $toggles );
 }
 
-sub enable_functions_on_timeout ($self, $enabled = undef) {
+sub enable_functions_on_timeout ( $self, $enabled = undef ) {
     $enabled //= 1;
-    return $self->add_action('functions_on_speaker_timeout', $enabled ? JSON::true : JSON::false);
+    return $self->add_action( 'functions_on_speaker_timeout', $enabled ? JSON::true : JSON::false );
 }
 
-sub enable_extensive_data ($self, $enabled = undef) {
+sub enable_extensive_data ( $self, $enabled = undef ) {
     $enabled //= 1;
-    return $self->add_action('extensive_data', $enabled ? JSON::true : JSON::false);
+    return $self->add_action( 'extensive_data', $enabled ? JSON::true : JSON::false );
 }
 
-sub update_settings ($self, $settings) {
-    return $self->add_action('settings', $settings);
+sub update_settings ( $self, $settings ) {
+    return $self->add_action( 'settings', $settings );
 }
 
 # --- Advanced ---
 
-sub execute_swml ($self, $swml_content, %opts) {
+sub execute_swml ( $self, $swml_content, %opts ) {
     my $transfer = $opts{transfer} // 0;
 
     my $swml_data;
-    if (ref $swml_content eq 'HASH') {
+    if ( ref $swml_content eq 'HASH' ) {
+
         # Deep-copy to avoid mutating caller's data
-        $swml_data = JSON::decode_json(JSON::encode_json($swml_content));
-    } elsif (!ref $swml_content) {
+        $swml_data = JSON::decode_json( JSON::encode_json($swml_content) );
+    } elsif ( !ref $swml_content ) {
+
         # String - try parsing as JSON
-        eval {
-            $swml_data = JSON::decode_json($swml_content);
-        };
+        eval { $swml_data = JSON::decode_json($swml_content); };
         if ($@) {
             $swml_data = { raw_swml => $swml_content };
         }
@@ -352,7 +357,7 @@ sub execute_swml ($self, $swml_content, %opts) {
         $swml_data->{transfer} = 'true';
     }
 
-    return $self->add_action('SWML', $swml_data);
+    return $self->add_action( 'SWML', $swml_data );
 }
 
 # join_conference — join an ad-hoc audio conference (RELAY + CXML) via
@@ -365,21 +370,22 @@ sub execute_swml ($self, $swml_content, %opts) {
 # (BEEP/RECORD/TRIM/METHOD), but the `die` guards here are the single
 # source of truth at runtime — they reproduce Python's f-string list
 # rendering ("beep must be one of ['true', 'false', 'onEnter', 'onExit']").
-sub join_conference ($self, $name, %opts) {
+sub join_conference ( $self, $name, %opts ) {
+
     # Defaults — exactly the Python reference's argument defaults.
-    my $muted                            = $opts{muted}                            // 0;
-    my $beep                             = $opts{beep}                             // 'true';
+    my $muted                            = $opts{muted} // 0;
+    my $beep                             = $opts{beep}  // 'true';
     my $start_on_enter                   = exists $opts{start_on_enter} ? $opts{start_on_enter} : 1;
-    my $end_on_exit                      = $opts{end_on_exit}                      // 0;
+    my $end_on_exit                      = $opts{end_on_exit} // 0;
     my $wait_url                         = $opts{wait_url};
-    my $max_participants                 = $opts{max_participants}                 // 250;
-    my $record                           = $opts{record}                           // 'do-not-record';
+    my $max_participants                 = $opts{max_participants} // 250;
+    my $record                           = $opts{record}           // 'do-not-record';
     my $region                           = $opts{region};
-    my $trim                             = $opts{trim}                             // 'trim-silence';
+    my $trim                             = $opts{trim} // 'trim-silence';
     my $coach                            = $opts{coach};
     my $status_callback_event            = $opts{status_callback_event};
     my $status_callback                  = $opts{status_callback};
-    my $status_callback_method           = $opts{status_callback_method}           // 'POST';
+    my $status_callback_method           = $opts{status_callback_method} // 'POST';
     my $recording_status_callback        = $opts{recording_status_callback};
     my $recording_status_callback_method = $opts{recording_status_callback_method} // 'POST';
     my $recording_status_callback_event  = $opts{recording_status_callback_event}  // 'completed';
@@ -389,8 +395,10 @@ sub join_conference ($self, $name, %opts) {
 
     # beep ∈ {true, false, onEnter, onExit}
     die "beep must be one of ['true', 'false', 'onEnter', 'onExit']"
-        unless $beep eq 'true' || $beep eq 'false'
-            || $beep eq 'onEnter' || $beep eq 'onExit';
+        unless $beep eq 'true'
+        || $beep eq 'false'
+        || $beep eq 'onEnter'
+        || $beep eq 'onExit';
 
     # 0 < max_participants <= 250
     die "max_participants must be a positive integer <= 250"
@@ -411,7 +419,7 @@ sub join_conference ($self, $name, %opts) {
     # recording_status_callback_method ∈ {GET, POST}
     die "recording_status_callback_method must be one of ['GET', 'POST']"
         unless $recording_status_callback_method eq 'GET'
-            || $recording_status_callback_method eq 'POST';
+        || $recording_status_callback_method eq 'POST';
 
     # name not empty after trimming whitespace
     my $trimmed = defined $name ? $name : '';
@@ -422,7 +430,7 @@ sub join_conference ($self, $name, %opts) {
     # --- Build the join_conference payload ---
 
     my $join_params;
-    if (   !$muted
+    if (  !$muted
         && $beep eq 'true'
         && $start_on_enter
         && !$end_on_exit
@@ -438,62 +446,69 @@ sub join_conference ($self, $name, %opts) {
         && !defined $recording_status_callback
         && $recording_status_callback_method eq 'POST'
         && $recording_status_callback_event eq 'completed'
-        && !defined $result)
+        && !defined $result )
     {
         # Simple form — just the conference name as a bare string.
         $join_params = $name;
-    }
-    else {
+    } else {
+
         # Full-object form: name + every NON-DEFAULT param under its
         # snake_case wire key. Each key is emitted only when ≠ default.
-        $join_params = { name => $name };
-        $join_params->{muted}                            = JSON::true        if $muted;
-        $join_params->{beep}                             = $beep             if $beep ne 'true';
-        $join_params->{start_on_enter}                   = JSON::false       if !$start_on_enter;
-        $join_params->{end_on_exit}                      = JSON::true        if $end_on_exit;
+        $join_params                   = { name => $name };
+        $join_params->{muted}          = JSON::true  if $muted;
+        $join_params->{beep}           = $beep       if $beep ne 'true';
+        $join_params->{start_on_enter} = JSON::false if !$start_on_enter;
+        $join_params->{end_on_exit}    = JSON::true  if $end_on_exit;
+
         # The six Optional[str] params use Python's truthiness emission
         # gate (`if wait_url:`), i.e. omit when undef OR empty string,
         # while emitting the literal "0" (Python treats "" / None as falsy
         # but "0" as truthy for str). `defined && length` reproduces that.
-        $join_params->{wait_url}                         = $wait_url         if defined $wait_url && length $wait_url;
-        $join_params->{max_participants}                 = $max_participants if $max_participants != 250;
-        $join_params->{record}                           = $record           if $record ne 'do-not-record';
-        $join_params->{region}                           = $region           if defined $region && length $region;
-        $join_params->{trim}                             = $trim             if $trim ne 'trim-silence';
-        $join_params->{coach}                            = $coach            if defined $coach && length $coach;
-        $join_params->{status_callback_event}            = $status_callback_event            if defined $status_callback_event && length $status_callback_event;
-        $join_params->{status_callback}                  = $status_callback                  if defined $status_callback && length $status_callback;
-        $join_params->{status_callback_method}           = $status_callback_method           if $status_callback_method ne 'POST';
-        $join_params->{recording_status_callback}        = $recording_status_callback        if defined $recording_status_callback && length $recording_status_callback;
-        $join_params->{recording_status_callback_method} = $recording_status_callback_method if $recording_status_callback_method ne 'POST';
-        $join_params->{recording_status_callback_event}  = $recording_status_callback_event  if $recording_status_callback_event ne 'completed';
-        $join_params->{result}                           = $result           if defined $result;
+        $join_params->{wait_url}         = $wait_url if defined $wait_url && length $wait_url;
+        $join_params->{max_participants} = $max_participants if $max_participants != 250;
+        $join_params->{record}           = $record           if $record ne 'do-not-record';
+        $join_params->{region}           = $region           if defined $region && length $region;
+        $join_params->{trim}             = $trim             if $trim ne 'trim-silence';
+        $join_params->{coach}            = $coach            if defined $coach && length $coach;
+        $join_params->{status_callback_event} = $status_callback_event
+            if defined $status_callback_event && length $status_callback_event;
+        $join_params->{status_callback} = $status_callback
+            if defined $status_callback && length $status_callback;
+        $join_params->{status_callback_method} = $status_callback_method
+            if $status_callback_method ne 'POST';
+        $join_params->{recording_status_callback} = $recording_status_callback
+            if defined $recording_status_callback && length $recording_status_callback;
+        $join_params->{recording_status_callback_method} = $recording_status_callback_method
+            if $recording_status_callback_method ne 'POST';
+        $join_params->{recording_status_callback_event} = $recording_status_callback_event
+            if $recording_status_callback_event ne 'completed';
+        $join_params->{result} = $result if defined $result;
     }
 
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ join_conference => $join_params }] },
+        sections => { main => [ { join_conference => $join_params } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
-sub join_room ($self, $name) {
+sub join_room ( $self, $name ) {
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ join_room => { name => $name } }] },
+        sections => { main => [ { join_room => { name => $name } } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
-sub sip_refer ($self, $to_uri) {
+sub sip_refer ( $self, $to_uri ) {
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ sip_refer => { to_uri => $to_uri } }] },
+        sections => { main => [ { sip_refer => { to_uri => $to_uri } } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
-sub tap ($self, $uri, %opts) {
+sub tap ( $self, $uri, %opts ) {
     my $control_id = $opts{control_id};
     my $direction  = $opts{direction} // 'both';
     my $codec      = $opts{codec}     // 'PCMU';
@@ -504,38 +519,40 @@ sub tap ($self, $uri, %opts) {
         unless $direction eq 'speak' || $direction eq 'hear' || $direction eq 'both';
     die "codec must be 'PCMU' or 'PCMA'"
         unless $codec eq 'PCMU' || $codec eq 'PCMA';
+
     # Python: `if rtp_ptime <= 0: raise ValueError(...)`.
     die "rtp_ptime must be a positive integer" if $rtp_ptime <= 0;
 
-    my %params = (uri => $uri);
+    my %params = ( uri => $uri );
+
     # Conditional keys — each emitted only when it differs from its default,
     # matching Python's per-key gating.
-    $params{control_id} = $control_id   if $control_id;
-    $params{direction}  = $direction    if $direction ne 'both';
-    $params{codec}      = $codec        if $codec ne 'PCMU';
+    $params{control_id} = $control_id    if $control_id;
+    $params{direction}  = $direction     if $direction ne 'both';
+    $params{codec}      = $codec         if $codec ne 'PCMU';
     $params{rtp_ptime}  = $rtp_ptime + 0 if $rtp_ptime != 20;
-    $params{status_url} = $status_url   if $status_url;
+    $params{status_url} = $status_url    if $status_url;
 
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ tap => \%params }] },
+        sections => { main => [ { tap => \%params } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
-sub stop_tap ($self, %opts) {
+sub stop_tap ( $self, %opts ) {
     my $control_id = $opts{control_id};
     my %params;
     $params{control_id} = $control_id if $control_id;
 
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ stop_tap => \%params }] },
+        sections => { main => [ { stop_tap => \%params } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
-sub send_sms ($self, %opts) {
+sub send_sms ( $self, %opts ) {
     my $to_number   = $opts{to_number}   // die "to_number is required";
     my $from_number = $opts{from_number} // die "from_number is required";
     my $body        = $opts{body};
@@ -549,7 +566,8 @@ sub send_sms ($self, %opts) {
         to_number   => $to_number,
         from_number => $from_number,
     );
-    $sms_params{body}   = $body   if $body;
+    $sms_params{body} = $body if $body;
+
     # Python gates media/tags with `if media:` / `if tags:` — an EMPTY list is
     # falsy and omitted. A Perl arrayref is truthy even when empty, so use the
     # Python-truthiness helper (an empty [] must not reach the wire).
@@ -559,17 +577,18 @@ sub send_sms ($self, %opts) {
 
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ send_sms => \%sms_params }] },
+        sections => { main => [ { send_sms => \%sms_params } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
-sub pay ($self, %opts) {
+sub pay ( $self, %opts ) {
     my $connector_url = $opts{payment_connector_url} // die "payment_connector_url required";
-    my $input_method  = $opts{input_method}  // 'dtmf';
-    my $timeout       = $opts{timeout}       // 5;
-    my $max_attempts  = $opts{max_attempts}  // 1;
-    my $ai_response   = $opts{ai_response}   // 'The payment status is ${pay_result}, do not mention anything else about collecting payment if successful.';
+    my $input_method  = $opts{input_method}          // 'dtmf';
+    my $timeout       = $opts{timeout}               // 5;
+    my $max_attempts  = $opts{max_attempts}          // 1;
+    my $ai_response   = $opts{ai_response}
+        // 'The payment status is ${pay_result}, do not mention anything else about collecting payment if successful.';
 
     # min_postal_code_length is an always-on key in Python
     # (str(min_postal_code_length), default "0"); emit it as a string too.
@@ -581,17 +600,17 @@ sub pay ($self, %opts) {
         payment_method         => $opts{payment_method} // 'credit-card',
         timeout                => "$timeout",
         max_attempts           => "$max_attempts",
-        security_code          => (($opts{security_code} // 1) ? 'true' : 'false'),
+        security_code          => ( ( $opts{security_code} // 1 ) ? 'true' : 'false' ),
         min_postal_code_length => "$min_postal_code_length",
-        token_type             => $opts{token_type}  // 'reusable',
-        currency               => $opts{currency}    // 'usd',
-        language               => $opts{language}    // 'en-US',
-        voice                  => $opts{voice}       // 'woman',
+        token_type             => $opts{token_type}       // 'reusable',
+        currency               => $opts{currency}         // 'usd',
+        language               => $opts{language}         // 'en-US',
+        voice                  => $opts{voice}            // 'woman',
         valid_card_types       => $opts{valid_card_types} // 'visa mastercard amex',
     );
 
     my $postal = $opts{postal_code} // 1;
-    if (ref $postal || $postal =~ /^[01]$/) {
+    if ( ref $postal || $postal =~ /^[01]$/ ) {
         $pay_params{postal_code} = $postal ? 'true' : 'false';
     } else {
         $pay_params{postal_code} = $postal;
@@ -600,18 +619,16 @@ sub pay ($self, %opts) {
     $pay_params{status_url}    = $opts{status_url}    if $opts{status_url};
     $pay_params{charge_amount} = $opts{charge_amount} if $opts{charge_amount};
     $pay_params{description}   = $opts{description}   if $opts{description};
+
     # Python gates parameters/prompts with `if parameters:` / `if prompts:` — an
     # EMPTY list is falsy and omitted. Mirror that (a Perl [] is truthy).
-    $pay_params{parameters}    = $opts{parameters}    if _py_truthy($opts{parameters});
-    $pay_params{prompts}       = $opts{prompts}       if _py_truthy($opts{prompts});
+    $pay_params{parameters} = $opts{parameters} if _py_truthy( $opts{parameters} );
+    $pay_params{prompts}    = $opts{prompts}    if _py_truthy( $opts{prompts} );
 
     my $swml_doc = {
         version  => '1.0.0',
         sections => {
-            main => [
-                { set => { ai_response => $ai_response } },
-                { pay => \%pay_params },
-            ],
+            main => [ { set => { ai_response => $ai_response } }, { pay => \%pay_params }, ],
         },
     };
     return $self->execute_swml($swml_doc);
@@ -619,15 +636,16 @@ sub pay ($self, %opts) {
 
 # --- RPC ---
 
-sub execute_rpc ($self, %opts) {
-    my $method  = $opts{method}  // die "method is required";
+sub execute_rpc ( $self, %opts ) {
+    my $method  = $opts{method} // die "method is required";
     my $params  = $opts{params};
     my $call_id = $opts{call_id};
     my $node_id = $opts{node_id};
 
-    my %rpc_params = (method => $method);
+    my %rpc_params = ( method => $method );
     $rpc_params{call_id} = $call_id if $call_id;
     $rpc_params{node_id} = $node_id if $node_id;
+
     # Python gates this with `if params:`, where an EMPTY dict {} is falsy and
     # therefore OMITTED (rpc_ai_unhold passes params={}, which never reaches the
     # wire). A Perl hashref is truthy even when empty, so mirror Python's
@@ -637,12 +655,12 @@ sub execute_rpc ($self, %opts) {
 
     my $swml_doc = {
         version  => '1.0.0',
-        sections => { main => [{ execute_rpc => \%rpc_params }] },
+        sections => { main => [ { execute_rpc => \%rpc_params } ] },
     };
     return $self->execute_swml($swml_doc);
 }
 
-sub rpc_dial ($self, %opts) {
+sub rpc_dial ( $self, %opts ) {
     my $to_number   = $opts{to_number}   // die "to_number is required";
     my $from_number = $opts{from_number} // die "from_number is required";
     my $dest_swml   = $opts{dest_swml}   // die "dest_swml is required";
@@ -663,7 +681,7 @@ sub rpc_dial ($self, %opts) {
     );
 }
 
-sub rpc_ai_message ($self, %opts) {
+sub rpc_ai_message ( $self, %opts ) {
     my $call_id      = $opts{call_id}      // die "call_id is required";
     my $message_text = $opts{message_text} // die "message_text is required";
     my $role         = $opts{role}         // 'system';
@@ -678,7 +696,7 @@ sub rpc_ai_message ($self, %opts) {
     );
 }
 
-sub rpc_ai_unhold ($self, %opts) {
+sub rpc_ai_unhold ( $self, %opts ) {
     my $call_id = $opts{call_id} // die "call_id is required";
 
     return $self->execute_rpc(
@@ -688,13 +706,13 @@ sub rpc_ai_unhold ($self, %opts) {
     );
 }
 
-sub simulate_user_input ($self, $text) {
-    return $self->add_action('user_input', $text);
+sub simulate_user_input ( $self, $text ) {
+    return $self->add_action( 'user_input', $text );
 }
 
 # --- Payment helpers (class methods) ---
 
-sub create_payment_prompt ($class_or_self, %opts) {
+sub create_payment_prompt ( $class_or_self, %opts ) {
     my $for_situation = $opts{for_situation} // die "for_situation is required";
     my $actions       = $opts{actions}       // die "actions is required";
     my $card_type     = $opts{card_type};
@@ -710,11 +728,11 @@ sub create_payment_prompt ($class_or_self, %opts) {
     return \%prompt;
 }
 
-sub create_payment_action ($class_or_self, $action_type, $phrase) {
+sub create_payment_action ( $class_or_self, $action_type, $phrase ) {
     return { type => $action_type, phrase => $phrase };
 }
 
-sub create_payment_parameter ($class_or_self, $name, $value) {
+sub create_payment_parameter ( $class_or_self, $name, $value ) {
     return { name => $name, value => $value };
 }
 
@@ -725,13 +743,13 @@ sub to_hash ($self) {
 
     $result{response} = $self->response if length $self->response;
 
-    if (@{ $self->action }) {
-        $result{action} = $self->action;
+    if ( @{ $self->action } ) {
+        $result{action}       = $self->action;
         $result{post_process} = JSON::true if $self->post_process;
     }
 
     # Ensure at least one of response or action
-    if (!keys %result) {
+    if ( !keys %result ) {
         $result{response} = 'Action completed.';
     }
 
@@ -739,7 +757,7 @@ sub to_hash ($self) {
 }
 
 sub to_json ($self) {
-    return JSON::encode_json($self->to_hash);
+    return JSON::encode_json( $self->to_hash );
 }
 
 1;

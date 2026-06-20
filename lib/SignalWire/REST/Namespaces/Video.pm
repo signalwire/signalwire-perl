@@ -10,14 +10,14 @@ extends 'SignalWire::REST::Namespaces::CrudResource';
 has '+_update_method' => ( default => sub { 'PUT' } );
 
 sub list_streams {
-    my ($self, $room_id, %params) = @_;
+    my ( $self, $room_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($room_id, 'streams'), params => $p);
+    return $self->_http->get( $self->_path( $room_id, 'streams' ), params => $p );
 }
 
 sub create_stream {
-    my ($self, $room_id, %kwargs) = @_;
-    return $self->_http->post($self->_path($room_id, 'streams'), body => \%kwargs);
+    my ( $self, $room_id, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $room_id, 'streams' ), body => \%kwargs );
 }
 
 # --- VideoRoomTokens ---
@@ -26,8 +26,8 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub create {
-    my ($self, %kwargs) = @_;
-    return $self->_http->post($self->_base_path, body => \%kwargs);
+    my ( $self, %kwargs ) = @_;
+    return $self->_http->post( $self->_base_path, body => \%kwargs );
 }
 
 # --- VideoRoomSessions ---
@@ -36,32 +36,32 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub get {
-    my ($self, $session_id) = @_;
-    return $self->_http->get($self->_path($session_id));
+    my ( $self, $session_id ) = @_;
+    return $self->_http->get( $self->_path($session_id) );
 }
 
 sub list_events {
-    my ($self, $session_id, %params) = @_;
+    my ( $self, $session_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($session_id, 'events'), params => $p);
+    return $self->_http->get( $self->_path( $session_id, 'events' ), params => $p );
 }
 
 sub list_members {
-    my ($self, $session_id, %params) = @_;
+    my ( $self, $session_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($session_id, 'members'), params => $p);
+    return $self->_http->get( $self->_path( $session_id, 'members' ), params => $p );
 }
 
 sub list_recordings {
-    my ($self, $session_id, %params) = @_;
+    my ( $self, $session_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($session_id, 'recordings'), params => $p);
+    return $self->_http->get( $self->_path( $session_id, 'recordings' ), params => $p );
 }
 
 # --- VideoRoomRecordings ---
@@ -70,31 +70,31 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub get {
-    my ($self, $recording_id) = @_;
-    return $self->_http->get($self->_path($recording_id));
+    my ( $self, $recording_id ) = @_;
+    return $self->_http->get( $self->_path($recording_id) );
 }
 
 sub delete_recording {
-    my ($self, $recording_id) = @_;
-    return $self->_http->delete_request($self->_path($recording_id));
+    my ( $self, $recording_id ) = @_;
+    return $self->_http->delete_request( $self->_path($recording_id) );
 }
 
 # Python parity alias.
 sub delete {
-    my ($self, $recording_id) = @_;
-    return $self->_http->delete_request($self->_path($recording_id));
+    my ( $self, $recording_id ) = @_;
+    return $self->_http->delete_request( $self->_path($recording_id) );
 }
 
 sub list_events {
-    my ($self, $recording_id, %params) = @_;
+    my ( $self, $recording_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($recording_id, 'events'), params => $p);
+    return $self->_http->get( $self->_path( $recording_id, 'events' ), params => $p );
 }
 
 # --- VideoConferences ---
@@ -104,20 +104,20 @@ extends 'SignalWire::REST::Namespaces::CrudResource';
 has '+_update_method' => ( default => sub { 'PUT' } );
 
 sub list_conference_tokens {
-    my ($self, $conference_id, %params) = @_;
+    my ( $self, $conference_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($conference_id, 'conference_tokens'), params => $p);
+    return $self->_http->get( $self->_path( $conference_id, 'conference_tokens' ), params => $p );
 }
 
 sub list_streams {
-    my ($self, $conference_id, %params) = @_;
+    my ( $self, $conference_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($conference_id, 'streams'), params => $p);
+    return $self->_http->get( $self->_path( $conference_id, 'streams' ), params => $p );
 }
 
 sub create_stream {
-    my ($self, $conference_id, %kwargs) = @_;
-    return $self->_http->post($self->_path($conference_id, 'streams'), body => \%kwargs);
+    my ( $self, $conference_id, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $conference_id, 'streams' ), body => \%kwargs );
 }
 
 # --- VideoConferenceTokens ---
@@ -126,13 +126,13 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub get {
-    my ($self, $token_id) = @_;
-    return $self->_http->get($self->_path($token_id));
+    my ( $self, $token_id ) = @_;
+    return $self->_http->get( $self->_path($token_id) );
 }
 
 sub reset {
-    my ($self, $token_id) = @_;
-    return $self->_http->post($self->_path($token_id, 'reset'));
+    my ( $self, $token_id ) = @_;
+    return $self->_http->post( $self->_path( $token_id, 'reset' ) );
 }
 
 # --- VideoStreams ---
@@ -141,24 +141,24 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub get {
-    my ($self, $stream_id) = @_;
-    return $self->_http->get($self->_path($stream_id));
+    my ( $self, $stream_id ) = @_;
+    return $self->_http->get( $self->_path($stream_id) );
 }
 
 sub update {
-    my ($self, $stream_id, %kwargs) = @_;
-    return $self->_http->put($self->_path($stream_id), body => \%kwargs);
+    my ( $self, $stream_id, %kwargs ) = @_;
+    return $self->_http->put( $self->_path($stream_id), body => \%kwargs );
 }
 
 sub delete_stream {
-    my ($self, $stream_id) = @_;
-    return $self->_http->delete_request($self->_path($stream_id));
+    my ( $self, $stream_id ) = @_;
+    return $self->_http->delete_request( $self->_path($stream_id) );
 }
 
 # Python parity alias.
 sub delete {
-    my ($self, $stream_id) = @_;
-    return $self->_http->delete_request($self->_path($stream_id));
+    my ( $self, $stream_id ) = @_;
+    return $self->_http->delete_request( $self->_path($stream_id) );
 }
 
 # --- VideoNamespace ---
@@ -176,12 +176,60 @@ has 'streams'           => ( is => 'lazy' );
 
 my $base = '/api/video';
 
-sub _build_rooms             { SignalWire::REST::Namespaces::Video::Rooms->new(_http => $_[0]->_http, _base_path => "$base/rooms") }
-sub _build_room_tokens       { SignalWire::REST::Namespaces::Video::RoomTokens->new(_http => $_[0]->_http, _base_path => "$base/room_tokens") }
-sub _build_room_sessions     { SignalWire::REST::Namespaces::Video::RoomSessions->new(_http => $_[0]->_http, _base_path => "$base/room_sessions") }
-sub _build_room_recordings   { SignalWire::REST::Namespaces::Video::RoomRecordings->new(_http => $_[0]->_http, _base_path => "$base/room_recordings") }
-sub _build_conferences       { SignalWire::REST::Namespaces::Video::Conferences->new(_http => $_[0]->_http, _base_path => "$base/conferences") }
-sub _build_conference_tokens { SignalWire::REST::Namespaces::Video::ConferenceTokens->new(_http => $_[0]->_http, _base_path => "$base/conference_tokens") }
-sub _build_streams           { SignalWire::REST::Namespaces::Video::Streams->new(_http => $_[0]->_http, _base_path => "$base/streams") }
+sub _build_rooms {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::Rooms->new(
+        _http      => $self->_http,
+        _base_path => "$base/rooms"
+    );
+}
+
+sub _build_room_tokens {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::RoomTokens->new(
+        _http      => $self->_http,
+        _base_path => "$base/room_tokens"
+    );
+}
+
+sub _build_room_sessions {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::RoomSessions->new(
+        _http      => $self->_http,
+        _base_path => "$base/room_sessions"
+    );
+}
+
+sub _build_room_recordings {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::RoomRecordings->new(
+        _http      => $self->_http,
+        _base_path => "$base/room_recordings"
+    );
+}
+
+sub _build_conferences {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::Conferences->new(
+        _http      => $self->_http,
+        _base_path => "$base/conferences"
+    );
+}
+
+sub _build_conference_tokens {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::ConferenceTokens->new(
+        _http      => $self->_http,
+        _base_path => "$base/conference_tokens"
+    );
+}
+
+sub _build_streams {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::Streams->new(
+        _http      => $self->_http,
+        _base_path => "$base/streams"
+    );
+}
 
 1;

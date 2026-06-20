@@ -1,4 +1,5 @@
 package SignalWire::Contexts::ContextBuilder;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #

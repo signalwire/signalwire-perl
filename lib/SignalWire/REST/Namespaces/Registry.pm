@@ -9,30 +9,30 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub create {
-    my ($self, %kwargs) = @_;
-    return $self->_http->post($self->_base_path, body => \%kwargs);
+    my ( $self, %kwargs ) = @_;
+    return $self->_http->post( $self->_base_path, body => \%kwargs );
 }
 
 sub get {
-    my ($self, $brand_id) = @_;
-    return $self->_http->get($self->_path($brand_id));
+    my ( $self, $brand_id ) = @_;
+    return $self->_http->get( $self->_path($brand_id) );
 }
 
 sub list_campaigns {
-    my ($self, $brand_id, %params) = @_;
+    my ( $self, $brand_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($brand_id, 'campaigns'), params => $p);
+    return $self->_http->get( $self->_path( $brand_id, 'campaigns' ), params => $p );
 }
 
 sub create_campaign {
-    my ($self, $brand_id, %kwargs) = @_;
-    return $self->_http->post($self->_path($brand_id, 'campaigns'), body => \%kwargs);
+    my ( $self, $brand_id, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $brand_id, 'campaigns' ), body => \%kwargs );
 }
 
 # --- RegistryCampaigns ---
@@ -41,30 +41,30 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub get {
-    my ($self, $campaign_id) = @_;
-    return $self->_http->get($self->_path($campaign_id));
+    my ( $self, $campaign_id ) = @_;
+    return $self->_http->get( $self->_path($campaign_id) );
 }
 
 sub update {
-    my ($self, $campaign_id, %kwargs) = @_;
-    return $self->_http->put($self->_path($campaign_id), body => \%kwargs);
+    my ( $self, $campaign_id, %kwargs ) = @_;
+    return $self->_http->put( $self->_path($campaign_id), body => \%kwargs );
 }
 
 sub list_numbers {
-    my ($self, $campaign_id, %params) = @_;
+    my ( $self, $campaign_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($campaign_id, 'numbers'), params => $p);
+    return $self->_http->get( $self->_path( $campaign_id, 'numbers' ), params => $p );
 }
 
 sub list_orders {
-    my ($self, $campaign_id, %params) = @_;
+    my ( $self, $campaign_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($campaign_id, 'orders'), params => $p);
+    return $self->_http->get( $self->_path( $campaign_id, 'orders' ), params => $p );
 }
 
 sub create_order {
-    my ($self, $campaign_id, %kwargs) = @_;
-    return $self->_http->post($self->_path($campaign_id, 'orders'), body => \%kwargs);
+    my ( $self, $campaign_id, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $campaign_id, 'orders' ), body => \%kwargs );
 }
 
 # --- RegistryOrders ---
@@ -73,8 +73,8 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub get {
-    my ($self, $order_id) = @_;
-    return $self->_http->get($self->_path($order_id));
+    my ( $self, $order_id ) = @_;
+    return $self->_http->get( $self->_path($order_id) );
 }
 
 # --- RegistryNumbers ---
@@ -83,14 +83,14 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub delete_number {
-    my ($self, $number_id) = @_;
-    return $self->_http->delete_request($self->_path($number_id));
+    my ( $self, $number_id ) = @_;
+    return $self->_http->delete_request( $self->_path($number_id) );
 }
 
 # Python parity alias.
 sub delete {
-    my ($self, $number_id) = @_;
-    return $self->_http->delete_request($self->_path($number_id));
+    my ( $self, $number_id ) = @_;
+    return $self->_http->delete_request( $self->_path($number_id) );
 }
 
 # --- RegistryNamespace ---
@@ -105,9 +105,36 @@ has 'numbers'   => ( is => 'lazy' );
 
 my $base = '/api/relay/rest/registry/beta';
 
-sub _build_brands    { SignalWire::REST::Namespaces::Registry::Brands->new(_http => $_[0]->_http, _base_path => "$base/brands") }
-sub _build_campaigns { SignalWire::REST::Namespaces::Registry::Campaigns->new(_http => $_[0]->_http, _base_path => "$base/campaigns") }
-sub _build_orders    { SignalWire::REST::Namespaces::Registry::Orders->new(_http => $_[0]->_http, _base_path => "$base/orders") }
-sub _build_numbers   { SignalWire::REST::Namespaces::Registry::Numbers->new(_http => $_[0]->_http, _base_path => "$base/numbers") }
+sub _build_brands {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Registry::Brands->new(
+        _http      => $self->_http,
+        _base_path => "$base/brands"
+    );
+}
+
+sub _build_campaigns {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Registry::Campaigns->new(
+        _http      => $self->_http,
+        _base_path => "$base/campaigns"
+    );
+}
+
+sub _build_orders {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Registry::Orders->new(
+        _http      => $self->_http,
+        _base_path => "$base/orders"
+    );
+}
+
+sub _build_numbers {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Registry::Numbers->new(
+        _http      => $self->_http,
+        _base_path => "$base/numbers"
+    );
+}
 
 1;
