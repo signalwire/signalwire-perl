@@ -83,7 +83,10 @@ sub register_tools {
                     description => 'The search query - what information you are looking for',
                 },
             },
-            required => ['query'],
+
+            # No `required`: the Python reference (skills/datasphere/skill.py)
+            # passes none and the handler guards an empty query. Adding it would
+            # over-constrain the SWAIG schema vs the reference contract.
         },
         handler => sub {
             my ( $args, $raw ) = @_;

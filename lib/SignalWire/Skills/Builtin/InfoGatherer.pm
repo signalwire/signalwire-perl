@@ -44,13 +44,18 @@ sub register_tools {
                 answer            => { type => 'string',  description => 'The answer' },
                 confirmed_by_user => { type => 'boolean', description => 'Whether user confirmed' },
             },
-            required => ['answer'],
+
+            # No `required`: the Python reference (skills/info_gatherer/skill.py)
+            # passes none on submit_answer and the handler reads answer with a
+            # default. Adding it would over-constrain the SWAIG schema vs the
+            # reference contract.
         },
         handler => sub {
             my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
+            my $answer = $args->{answer} // '';
             return SignalWire::SWAIG::FunctionResult->new(
-                response => "Answer recorded: $args->{answer}", );
+                response => "Answer recorded: $answer", );
         },
     );
 }
