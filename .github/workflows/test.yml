@@ -67,7 +67,12 @@ jobs:
 
       - name: Install Perl dependencies
         working-directory: signalwire-perl
-        run: cpanm --notest --quiet --installdeps .
+        # --with-develop so the cpanfile's `on 'develop'` block (Perl::Tidy +
+        # Perl::Critic) installs — the FMT + LINT gates in run-ci.sh need the
+        # perltidy/perlcritic binaries on PATH. Without it the gate fails with
+        # `perltidy: command not found`. (doc-audit/surface-audit workflows don't
+        # run those gates, so they keep plain --installdeps.)
+        run: cpanm --notest --quiet --with-develop --installdeps .
 
       - name: Install Python test harnesses (mock_relay + mock_signalwire)
         run: |
