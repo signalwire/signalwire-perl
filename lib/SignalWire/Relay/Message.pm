@@ -7,6 +7,7 @@ use Moo;
 use feature 'signatures';
 use Scalar::Util ();
 use Carp         ();
+use Time::HiRes  ();
 
 use SignalWire::Relay::Constants    qw(MESSAGE_TERMINAL_STATES);
 use SignalWire::Relay::MessageState ();
@@ -104,7 +105,7 @@ sub wait ( $self, %opts ) {
     my $timeout = $opts{timeout} || 30;
     my $start   = time();
     while ( !$self->completed && ( time() - $start ) < $timeout ) {
-        select( undef, undef, undef, 0.1 );
+        Time::HiRes::sleep(0.1);
     }
     return $self->result;
 }

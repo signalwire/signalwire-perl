@@ -257,7 +257,7 @@ sub get_prompt {
 # internal section list so caller mutations cannot leak back.
 sub pom {
     my ($self) = @_;
-    return undef unless $self->use_pom;
+    return unless $self->use_pom;
     require Storable;
     require SignalWire::POM::PromptObjectModel;
     my $cloned = Storable::dclone( $self->pom_sections );
@@ -313,7 +313,7 @@ sub set_prompt_pom {
 sub get_contexts {
     my ($self) = @_;
     my $cb = $self->context_builder;
-    return undef unless defined $cb;
+    return unless defined $cb;
     return $cb->to_hash;
 }
 
@@ -499,7 +499,7 @@ sub get_language_params {
         next unless defined $language->{code} && $language->{code} eq $code;
         return $language->{params};
     }
-    return undef;
+    return;
 }
 
 sub add_pronunciation {
@@ -898,7 +898,7 @@ sub on_summary {
     if ($cb) {
         return $cb->( $summary, $raw_data );
     }
-    return undef;
+    return;
 }
 
 sub on_debug_event {
@@ -1787,7 +1787,7 @@ sub extract_sip_username {
 
     # Extract SIP username from a request body (hashref).
     # Looks in standard SignalWire fields for the SIP caller identity.
-    return undef unless ref $body eq 'HASH';
+    return unless ref $body eq 'HASH';
 
     # Check call.from field (e.g., "sip:user@domain")
     my $from = $body->{call}{from} // $body->{sip_from} // $body->{from} // '';
@@ -1801,7 +1801,7 @@ sub extract_sip_username {
         return $cid;
     }
 
-    return undef;
+    return;
 }
 
 1;

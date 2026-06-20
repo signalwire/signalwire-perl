@@ -158,7 +158,7 @@ sub can {
     if ( $schema && $schema->has_verb($method) ) {
         return sub { $self->$method(@_) };
     }
-    return undef;
+    return;
 }
 
 sub _random_hex {
@@ -247,16 +247,16 @@ sub extract_sip_username {
     if ( !defined $request_body && ref $class_or_self eq 'HASH' ) {
         $request_body = $class_or_self;
     }
-    return undef unless ref $request_body eq 'HASH';
+    return unless ref $request_body eq 'HASH';
     my $call = $request_body->{call};
-    return undef unless ref $call eq 'HASH';
+    return unless ref $call eq 'HASH';
     my $to = $call->{to};
 
     # Python's implementation calls ``to_field.startswith(...)`` which
     # raises AttributeError for non-string values (None / int / list)
     # and returns None via the except path. Mirror that policy: any
     # non-defined or ref value short-circuits to undef.
-    return undef unless defined $to && !ref $to;
+    return unless defined $to && !ref $to;
 
     if ( $to =~ m{^sip:([^@]+)\@}i ) {
         return $1;
@@ -402,7 +402,7 @@ sub on_request {
 # direct request access can ignore it.
 sub on_swml_request {
     my ( $self, $request_data, $callback_path, $request ) = @_;
-    return undef;
+    return;
 }
 
 # ------------------------------------------------------------------
@@ -496,7 +496,7 @@ sub define_tools {
 sub on_function_call {
     my ( $self, $name, $args, $raw_data ) = @_;
     my $tool = $self->tools->{$name};
-    return undef unless $tool && $tool->{_handler};
+    return unless $tool && $tool->{_handler};
     return $tool->{_handler}->( $args, $raw_data );
 }
 
@@ -520,7 +520,7 @@ sub swaig_pre_dispatch {
 # Returns a PSGI response triple, or undef if not handled.
 sub handle_additional_route {
     my ( $self, $sub_path, $request_data, $env ) = @_;
-    return undef;
+    return;
 }
 
 # Register a routing callback at a given sub-path under the service route.

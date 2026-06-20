@@ -24,9 +24,13 @@ sub get_factory {
     # Return if already registered
     return $REGISTRY{$skill_name} if exists $REGISTRY{$skill_name};
 
-    # Attempt to auto-load from Builtin namespace
+    # Attempt to auto-load from Builtin namespace. Translate the package name to
+    # its .pm path and require THAT (a path string), so we avoid a stringy
+    # `eval "require $module"` (perlcritic ProhibitStringyEval) entirely — no
+    # registry input ever reaches the Perl compiler.
     my $module = 'SignalWire::Skills::Builtin::' . _camelize($skill_name);
-    eval "require $module";    ## no critic
+    ( my $module_path = "$module.pm" ) =~ s{::}{/}g;
+    eval { require $module_path; 1 };
     if ( !$@ ) {
 
         # If the module registered itself, return it
@@ -37,7 +41,7 @@ sub get_factory {
         return $module;
     }
 
-    return undef;
+    return;
 }
 
 sub list_skills {

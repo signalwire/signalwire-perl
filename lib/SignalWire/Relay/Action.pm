@@ -7,6 +7,7 @@ use Moo;
 use feature 'signatures';
 use Scalar::Util ();
 use Carp         ();
+use Time::HiRes  ();
 
 # Base Action class for long-running RELAY operations.
 # Tracks control_id, completion state, and supports blocking wait.
@@ -62,7 +63,7 @@ sub wait ( $self, %opts ) {
     my $timeout = $opts{timeout} || 30;
     my $start   = time();
     while ( !$self->completed && ( time() - $start ) < $timeout ) {
-        select( undef, undef, undef, 0.1 );    # sleep 100ms
+        Time::HiRes::sleep(0.1);    # poll every 100ms
     }
     return $self->result;
 }

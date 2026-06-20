@@ -112,7 +112,7 @@ sub _resolve {
         return [$hostname];
     }
     my ( $err, @res ) = getaddrinfo( $hostname, undef, { socktype => 1 } );
-    return undef if $err;
+    return if $err;
     my @ips;
     for my $r (@res) {
         my $fam = $r->{family};
@@ -172,7 +172,7 @@ sub _cidr_contains {
 
 sub _ip_to_bytes {
     my ($ip) = @_;
-    return undef unless defined $ip;
+    return unless defined $ip;
     if ( $ip =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/ ) {
         return pack( 'C4', $1, $2, $3, $4 );
     }
@@ -187,15 +187,15 @@ sub _ip_to_bytes {
             my @h       = $head eq '' ? () : split( ':', $head );
             my @t       = $tail eq '' ? () : split( ':', $tail );
             my $missing = 8 - ( @h + @t );
-            return undef if $missing < 0;
+            return if $missing < 0;
             @groups = ( @h, ('0') x $missing, @t );
         } else {
             @groups = split( ':', $ip );
         }
-        return undef if @groups != 8;
+        return if @groups != 8;
         return pack( 'n8', map { hex($_) } @groups );
     }
-    return undef;
+    return;
 }
 
 1;

@@ -80,9 +80,11 @@ sub register_skill {
     my $name;
     if ( $skill_class->can('skill_name') ) {
         $name = $skill_class->skill_name;
-    } elsif ( defined &{"${skill_class}::SKILL_NAME"} ) {
-        no strict 'refs';
-        $name = ${"${skill_class}::SKILL_NAME"};
+    } elsif ( $skill_class->can('SKILL_NAME') ) {
+
+        # SKILL_NAME is exposed as a constant sub; call it as a method so we
+        # never need a symbolic ref (which would force `no strict 'refs'`).
+        $name = $skill_class->SKILL_NAME;
     } else {
         die "skill class $skill_class must define ::skill_name or SKILL_NAME\n";
     }

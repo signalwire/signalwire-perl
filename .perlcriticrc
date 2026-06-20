@@ -1,0 +1,38 @@
+# .perlcriticrc — canonical lint config for signalwire-perl.
+#
+# perlcritic is the Perl port's LINT gate (the analog of go vet+golangci /
+# clippy / rubocop's lint face in the sibling ports). This is the blocking
+# quality FLOOR: the configured policy set is burned to ZERO and kept there.
+#
+# SEVERITY FLOOR
+# ==============
+# severity = 5 ("gentle" — the most-severe policies only). This port had never
+# been linted; severity 5 is the honest floor we can hold at ZERO by FIXING the
+# code idiomatically rather than suppressing. (Severity 4 "stern" surfaces ~400
+# findings dominated by RequireFinalReturn / ProhibitMultiplePackages /
+# RequireArgUnpacking — policing legitimate Moo/accessor idioms — which cannot be
+# reconciled with the SDK's established style without churn that risks the wire;
+# tightening the floor is a future, separate pass.) The severity-5 burndown was
+# done by FIXING source, not by suppression:
+#   * Subroutines::ProhibitExplicitReturnUndef  — `return undef` -> `return` (24)
+#   * BuiltinFunctions::ProhibitSleepViaSelect   — select(...) -> Time::HiRes::sleep (3)
+#   * TestingAndDebugging::ProhibitNoStrict      — removed via a method call + a
+#                                                  non-stringy require (2)
+#   * BuiltinFunctions::ProhibitStringyEval      — Math safe-eval parser + path
+#                                                  require replace `eval "..."` (1)
+#   * Subroutines::ProhibitReturnSort            — `return sort ...` -> list+return (1)
+#
+# severity is set on the command line by the gate (`perlcritic --severity 5`),
+# but pinned here too so a bare `perlcritic lib/` reproduces the gate locally.
+severity = 5
+
+# Show the policy name + PBP page on each violation so a regression is
+# actionable straight from the gate output.
+verbose = %f:%l:%c %p — %m\n
+
+# NOTE: no policies are disabled and there are NO `## no critic` annotations in
+# lib/. Every severity-5 finding was fixed in source. If a future finding can
+# ONLY be resolved by changing the SWAIG wire bytes / tokens, prefer a
+# site-scoped `## no critic (Policy)` with a one-line rationale over disabling a
+# whole policy here — and never suppress a finding merely because a type-shape or
+# naming idiom is inconvenient (RULES.md: idiom is free, parity is enforced).

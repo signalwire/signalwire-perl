@@ -207,7 +207,7 @@ sub _find_in {
         my $found = _find_in( $s->subsections, $title );
         return $found if defined $found;
     }
-    return undef;
+    return;
 }
 
 # JSON-encoded representation. Output is byte-for-byte identical to

@@ -86,7 +86,7 @@ sub is_valid {
 # threshold numbers SignalWire::Logging uses internally.
 sub severity {
     my ( $class, $level ) = @_;
-    return undef unless defined $level;
+    return unless defined $level;
     return $SEVERITY{$level};
 }
 

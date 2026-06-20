@@ -31,4 +31,5 @@ on 'test' => sub {
 # (CI installs them so the FMT gate's `perltidy` resolves).
 on 'develop' => sub {
     requires 'Perl::Tidy';
+    requires 'Perl::Critic';
 };

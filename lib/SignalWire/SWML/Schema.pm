@@ -72,7 +72,8 @@ sub instance {
 
 sub get_verb_names {
     my ($self) = @_;
-    return sort keys %{ $self->verbs };
+    my @names = sort keys %{ $self->verbs };
+    return @names;
 }
 
 sub has_verb {

@@ -557,14 +557,14 @@ sub add_exit_filler {
 sub _render_prompt {
     my ($self) = @_;
     return $self->_prompt_text if defined $self->_prompt_text;
-    return undef unless @{ $self->_prompt_sections };
+    return unless @{ $self->_prompt_sections };
     return _render_sections( $self->_prompt_sections );
 }
 
 sub _render_system_prompt {
     my ($self) = @_;
     return $self->_system_prompt if defined $self->_system_prompt;
-    return undef unless @{ $self->_system_prompt_sections };
+    return unless @{ $self->_system_prompt_sections };
     return _render_sections( $self->_system_prompt_sections );
 }
 

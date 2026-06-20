@@ -5,7 +5,8 @@ use Moo;
 
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-use Carp ();
+use Carp        ();
+use Time::HiRes ();
 
 use JSON qw(encode_json decode_json);
 use IO::Socket::INET;
@@ -780,7 +781,7 @@ sub reconnect ($self) {
     $delay = $self->_max_backoff if $delay > $self->_max_backoff;
 
     $logger->info( "Reconnecting in ${delay}s (attempt " . ( $attempts + 1 ) . ")" );
-    select( undef, undef, undef, $delay );
+    Time::HiRes::sleep($delay);
 
     $self->_reconnect_attempts( $attempts + 1 );
 
@@ -788,7 +789,7 @@ sub reconnect ($self) {
         return $self->authenticate;
     }
 
-    return undef;
+    return;
 }
 
 # --- Disconnect ---
