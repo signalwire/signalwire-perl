@@ -49,6 +49,7 @@ sub BUILD ( $self, @ ) {
     if ( exists $self->params->{swaig_fields} ) {
         $self->swaig_fields( delete $self->params->{swaig_fields} );
     }
+    return;
 }
 
 # --- Abstract interface (subclasses must override) ---

@@ -1042,6 +1042,10 @@ my %SKIP_FILE = ();
 # -------------------------------------------------------------------------
 sub parse_file {
     my ($path) = @_;
+
+    # Whole-file line-by-line parse; the handle is read across the loop below
+    # and explicitly closed once the file is consumed (close $fh, ~45 lines on).
+    # See RequireBriefOpen exemption rationale in .perlcriticrc.
     open my $fh, '<', $path or die "open $path: $!";
     my @packages;    # list of { name => ..., subs => [...], _seen => {...} }
     my $current;

@@ -11,7 +11,7 @@ has '+skill_name'        => ( default => sub { 'claude_skills' } );
 has '+skill_description' => ( default => sub { 'Load Claude SKILL.md files as agent tools' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self) = @_;
@@ -19,7 +19,7 @@ sub register_tools {
 
     # In the Perl port, we register a stub tool that represents the skill.
     # Full file-discovery would require YAML parsing (not available in minimal installs).
-    $self->define_tool(
+    return $self->define_tool(
         name        => "${prefix}skill",
         description => "Claude skill tool (stub)",
         parameters  => {

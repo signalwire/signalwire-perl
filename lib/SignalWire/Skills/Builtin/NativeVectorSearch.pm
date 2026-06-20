@@ -15,7 +15,7 @@ has '+skill_description' => (
 );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)      = @_;
@@ -23,7 +23,7 @@ sub register_tools {
     my $description = $self->params->{description}
         // 'Search the local knowledge base for information';
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => $tool_name,
         description => $description,
         parameters  => {

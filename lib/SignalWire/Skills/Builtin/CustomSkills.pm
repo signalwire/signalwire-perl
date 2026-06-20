@@ -11,7 +11,7 @@ has '+skill_name'                  => ( default => sub { 'custom_skills' } );
 has '+skill_description'           => ( default => sub { 'Register user-defined custom tools' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self) = @_;
@@ -25,6 +25,7 @@ sub register_tools {
             $self->agent->define_tool(%$tool_def);
         }
     }
+    return;
 }
 
 sub get_parameter_schema {

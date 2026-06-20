@@ -155,6 +155,10 @@ sub _slurp_body {
         eval { $input->seek( 0, 0 ) };
     }
     if ( $@ || !$input->can('seek') ) {
+
+        # In-memory handle is deliberately handed off as psgi.input for
+        # downstream re-reads; it must NOT be closed here (see RequireBriefOpen
+        # exemption rationale in .perlcriticrc).
         open my $fh, '<', \$body;
         $env->{'psgi.input'}   = $fh;
         $env->{CONTENT_LENGTH} = length($body);

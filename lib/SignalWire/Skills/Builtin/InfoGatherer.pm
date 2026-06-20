@@ -13,7 +13,7 @@ has '+skill_description' =>
     ( default => sub { 'Gather answers to a configurable list of questions' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)    = @_;
@@ -35,7 +35,7 @@ sub register_tools {
         },
     );
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => $submit_name,
         description => 'Submit an answer to the current question',
         parameters  => {

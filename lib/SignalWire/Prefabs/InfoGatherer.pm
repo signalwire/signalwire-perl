@@ -74,6 +74,7 @@ sub BUILD {
                 response => "Answer recorded: $a->{answer}", );
         },
     );
+    return;
 }
 
 1;

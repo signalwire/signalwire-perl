@@ -177,50 +177,57 @@ has 'streams'           => ( is => 'lazy' );
 my $base = '/api/video';
 
 sub _build_rooms {
-    SignalWire::REST::Namespaces::Video::Rooms->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::Rooms->new(
+        _http      => $self->_http,
         _base_path => "$base/rooms"
     );
 }
 
 sub _build_room_tokens {
-    SignalWire::REST::Namespaces::Video::RoomTokens->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::RoomTokens->new(
+        _http      => $self->_http,
         _base_path => "$base/room_tokens"
     );
 }
 
 sub _build_room_sessions {
-    SignalWire::REST::Namespaces::Video::RoomSessions->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::RoomSessions->new(
+        _http      => $self->_http,
         _base_path => "$base/room_sessions"
     );
 }
 
 sub _build_room_recordings {
-    SignalWire::REST::Namespaces::Video::RoomRecordings->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::RoomRecordings->new(
+        _http      => $self->_http,
         _base_path => "$base/room_recordings"
     );
 }
 
 sub _build_conferences {
-    SignalWire::REST::Namespaces::Video::Conferences->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::Conferences->new(
+        _http      => $self->_http,
         _base_path => "$base/conferences"
     );
 }
 
 sub _build_conference_tokens {
-    SignalWire::REST::Namespaces::Video::ConferenceTokens->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::ConferenceTokens->new(
+        _http      => $self->_http,
         _base_path => "$base/conference_tokens"
     );
 }
 
 sub _build_streams {
-    SignalWire::REST::Namespaces::Video::Streams->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Video::Streams->new(
+        _http      => $self->_http,
         _base_path => "$base/streams"
     );
 }

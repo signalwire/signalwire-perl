@@ -16,6 +16,7 @@ my @EXTERNAL_PATHS;
 sub register_skill {
     my ( $class, $skill_name, $skill_class ) = @_;
     $REGISTRY{$skill_name} = $skill_class;
+    return;
 }
 
 sub get_factory {
@@ -105,6 +106,7 @@ sub _load_all_builtins {
     for my $name (@names) {
         $class->get_factory($name);    # triggers auto-load
     }
+    return;
 }
 
 sub _camelize {
@@ -118,6 +120,7 @@ sub _camelize {
 sub clear_registry {
     %REGISTRY       = ();
     @EXTERNAL_PATHS = ();
+    return;
 }
 
 # Add a directory to search for skills.

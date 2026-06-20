@@ -11,7 +11,7 @@ has '+skill_name'                  => ( default => sub { 'play_background_file' 
 has '+skill_description'           => ( default => sub { 'Control background file playback' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)    = @_;
@@ -25,7 +25,7 @@ sub register_tools {
     }
 
     # DataMap-style registration with expressions
-    $self->agent->register_swaig_function(
+    return $self->agent->register_swaig_function(
         {
             function    => $tool_name,
             description => "Control background file playback for $tool_name",

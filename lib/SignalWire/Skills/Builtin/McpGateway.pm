@@ -11,7 +11,7 @@ has '+skill_name'        => ( default => sub { 'mcp_gateway' } );
 has '+skill_description' => ( default => sub { 'Bridge MCP servers with SWAIG functions' } );
 has '+supports_multiple_instances' => ( default => sub { 0 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)   = @_;
@@ -40,6 +40,7 @@ sub register_tools {
             },
         );
     }
+    return;
 }
 
 sub get_hints {

@@ -48,12 +48,13 @@ sub _log {
     my $msg  = join( ' ', @msgs );
     my $ts   = _timestamp();
     print STDERR "[$ts] [$tag] [$name] $msg\n";
+    return;
 }
 
-sub debug { shift->_log( 'debug', @_ ) }
-sub info  { shift->_log( 'info',  @_ ) }
-sub warn  { shift->_log( 'warn',  @_ ) }
-sub error { shift->_log( 'error', @_ ) }
+sub debug { my ( $self, @args ) = @_; return $self->_log( 'debug', @args ); }
+sub info  { my ( $self, @args ) = @_; return $self->_log( 'info',  @args ); }
+sub warn  { my ( $self, @args ) = @_; return $self->_log( 'warn',  @args ); }
+sub error { my ( $self, @args ) = @_; return $self->_log( 'error', @args ); }
 
 sub _timestamp {
     my @t = localtime;

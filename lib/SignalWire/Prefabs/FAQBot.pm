@@ -78,6 +78,7 @@ sub BUILD {
                 response => "No FAQ found matching: $a->{query}", );
         },
     );
+    return;
 }
 
 1;

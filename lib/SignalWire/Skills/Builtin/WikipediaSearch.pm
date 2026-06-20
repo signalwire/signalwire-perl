@@ -82,7 +82,7 @@ sub register_tools {
     require Scalar::Util;
     Scalar::Util::weaken($weak_self);
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => 'search_wiki',
         description => 'Search Wikipedia for information about a topic and get article summaries',
         parameters  => {

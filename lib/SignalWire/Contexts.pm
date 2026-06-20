@@ -858,7 +858,13 @@ package SignalWire::Contexts;
 #   - SignalWire::Contexts::create_simple_context('mycontext')   # free fn
 #   - SignalWire::Contexts->create_simple_context('mycontext')   # class method
 # Both forms collapse to a single optional ``$name`` argument.
-sub create_simple_context {
+sub create_simple_context {    ## no critic (Subroutines::RequireArgUnpacking)
+
+    # The regex signature extractor reads this exact ``my ($name) = @_;`` first
+    # line to emit the audited ``name`` param; and the dual free-fn / class-
+    # method calling convention needs @_/shift to drop a possible receiver.
+    # Unpacking into ``@args`` would rename the audited param and move the
+    # surface, so RequireArgUnpacking is suppressed here (parity, not laziness).
     my ($name) = @_;
     if ( defined $name && !ref($name) && $name eq __PACKAGE__ ) {
 

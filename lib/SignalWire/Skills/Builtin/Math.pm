@@ -11,12 +11,12 @@ has '+skill_name'        => ( default => sub { 'math' } );
 has '+skill_description' => ( default => sub { 'Perform basic mathematical calculations' } );
 has '+supports_multiple_instances' => ( default => sub { 0 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self) = @_;
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => 'calculate',
         description =>
             'Perform a mathematical calculation with basic operations (+, -, *, /, %, **)',

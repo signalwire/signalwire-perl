@@ -273,7 +273,7 @@ sub run {
         '--port'   => $port,
         '--server' => 'HTTP::Server::PSGI',
     );
-    $runner->run($app);
+    return $runner->run($app);
 }
 
 # _resolve_tls(\%opts) -> ($cert, $key) when TLS should be served, else
@@ -325,7 +325,7 @@ sub _run_tls {
         port        => $port,
         listen_sock => $ssl,
     );
-    $srv->run($app);
+    return $srv->run($app);
 }
 
 1;

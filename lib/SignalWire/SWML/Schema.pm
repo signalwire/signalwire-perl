@@ -21,6 +21,7 @@ has 'schema_data' => (
 sub BUILD {
     my ($self) = @_;
     $self->_load_schema();
+    return;
 }
 
 sub _load_schema {
@@ -62,6 +63,7 @@ sub _load_schema {
     }
 
     $self->{verbs} = \%verbs;
+    return;
 }
 
 sub instance {

@@ -412,86 +412,98 @@ sub _base {
 }
 
 sub _build_accounts {
-    SignalWire::REST::Namespaces::Compat::Accounts->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Accounts->new(
+        _http      => $self->_http,
         _base_path => '/api/laml/2010-04-01/Accounts'
     );
 }
 
 sub _build_calls {
-    SignalWire::REST::Namespaces::Compat::Calls->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/Calls'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Calls->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/Calls'
     );
 }
 
 sub _build_messages {
-    SignalWire::REST::Namespaces::Compat::Messages->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/Messages'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Messages->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/Messages'
     );
 }
 
 sub _build_faxes {
-    SignalWire::REST::Namespaces::Compat::Faxes->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/Faxes'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Faxes->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/Faxes'
     );
 }
 
 sub _build_conferences {
-    SignalWire::REST::Namespaces::Compat::Conferences->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/Conferences'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Conferences->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/Conferences'
     );
 }
 
 sub _build_phone_numbers {
-    SignalWire::REST::Namespaces::Compat::PhoneNumbers->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/IncomingPhoneNumbers'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::PhoneNumbers->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/IncomingPhoneNumbers'
     );
 }
 
 sub _build_applications {
-    SignalWire::REST::Namespaces::Compat::Applications->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/Applications'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Applications->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/Applications'
     );
 }
 
 sub _build_laml_bins {
-    SignalWire::REST::Namespaces::Compat::LamlBins->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/LamlBins'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::LamlBins->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/LamlBins'
     );
 }
 
 sub _build_queues {
-    SignalWire::REST::Namespaces::Compat::Queues->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/Queues'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Queues->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/Queues'
     );
 }
 
 sub _build_recordings {
-    SignalWire::REST::Namespaces::Compat::Recordings->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/Recordings'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Recordings->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/Recordings'
     );
 }
 
 sub _build_transcriptions {
-    SignalWire::REST::Namespaces::Compat::Transcriptions->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/Transcriptions'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Transcriptions->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/Transcriptions'
     );
 }
 
 sub _build_tokens {
-    SignalWire::REST::Namespaces::Compat::Tokens->new(
-        _http      => $_[0]->_http,
-        _base_path => $_[0]->_base . '/tokens'
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Compat::Tokens->new(
+        _http      => $self->_http,
+        _base_path => $self->_base . '/tokens'
     );
 }
 

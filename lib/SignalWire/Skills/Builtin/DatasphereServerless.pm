@@ -13,14 +13,14 @@ has '+skill_description' => ( default =>
         sub { 'Search knowledge using SignalWire DataSphere with serverless DataMap execution' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self) = @_;
     my $tool_name = $self->params->{tool_name} // 'search_knowledge';
 
     # DataMap-based tool: register as a SWAIG function definition
-    $self->agent->register_swaig_function(
+    return $self->agent->register_swaig_function(
         {
             function    => $tool_name,
             description =>

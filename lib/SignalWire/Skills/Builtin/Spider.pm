@@ -46,7 +46,7 @@ has '_http' => (
     },
 );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)      = @_;
@@ -98,7 +98,7 @@ sub register_tools {
         },
     );
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => "${tool_prefix}extract_structured_data",
         description => 'Extract structured data from a URL',
         parameters  => {

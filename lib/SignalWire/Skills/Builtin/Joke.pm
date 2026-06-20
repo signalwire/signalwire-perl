@@ -12,14 +12,14 @@ has '+skill_name'        => ( default => sub { 'joke' } );
 has '+skill_description' => ( default => sub { 'Tell jokes using the API Ninjas joke API' } );
 has '+supports_multiple_instances' => ( default => sub { 0 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self) = @_;
     my $tool_name = $self->params->{tool_name} // 'get_joke';
 
     # DataMap-style registration
-    $self->agent->register_swaig_function(
+    return $self->agent->register_swaig_function(
         {
             function    => $tool_name,
             description => 'Get a random joke from API Ninjas',

@@ -44,7 +44,7 @@ sub _trivia_url {
     return 'https://api.api-ninjas.com/v1/trivia';
 }
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)     = @_;
@@ -64,7 +64,7 @@ sub register_tools {
 
     my $url = _trivia_url();
 
-    $self->agent->register_swaig_function(
+    return $self->agent->register_swaig_function(
         {
             function    => $tool_name,
             description => "Get trivia questions for " . ( $tool_name =~ s/_/ /gr ),

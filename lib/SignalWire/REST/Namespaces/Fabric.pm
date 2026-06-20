@@ -260,36 +260,59 @@ has 'tokens'                => ( is => 'lazy' );
 
 my $base = '/api/fabric/resources';
 
-sub _build_swml_scripts       { $_[0]->_mk( 'ResourcePUT', "$base/swml_scripts" ) }
-sub _build_relay_applications { $_[0]->_mk( 'ResourcePUT', "$base/relay_applications" ) }
+sub _build_swml_scripts {
+    my ($self) = @_;
+    return $self->_mk( 'ResourcePUT', "$base/swml_scripts" );
+}
+
+sub _build_relay_applications {
+    my ($self) = @_;
+    return $self->_mk( 'ResourcePUT', "$base/relay_applications" );
+}
 
 sub _build_call_flows {
-    SignalWire::REST::Namespaces::Fabric::CallFlows->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::CallFlows->new(
+        _http      => $self->_http,
         _base_path => "$base/call_flows"
     );
 }
 
 sub _build_conference_rooms {
-    SignalWire::REST::Namespaces::Fabric::ConferenceRooms->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::ConferenceRooms->new(
+        _http      => $self->_http,
         _base_path => "$base/conference_rooms"
     );
 }
-sub _build_freeswitch_connectors { $_[0]->_mk( 'ResourcePUT', "$base/freeswitch_connectors" ) }
+
+sub _build_freeswitch_connectors {
+    my ($self) = @_;
+    return $self->_mk( 'ResourcePUT', "$base/freeswitch_connectors" );
+}
 
 sub _build_subscribers {
-    SignalWire::REST::Namespaces::Fabric::Subscribers->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::Subscribers->new(
+        _http      => $self->_http,
         _base_path => "$base/subscribers"
     );
 }
-sub _build_sip_endpoints { $_[0]->_mk( 'ResourcePUT', "$base/sip_endpoints" ) }
-sub _build_cxml_scripts  { $_[0]->_mk( 'ResourcePUT', "$base/cxml_scripts" ) }
+
+sub _build_sip_endpoints {
+    my ($self) = @_;
+    return $self->_mk( 'ResourcePUT', "$base/sip_endpoints" );
+}
+
+sub _build_cxml_scripts {
+    my ($self) = @_;
+    return $self->_mk( 'ResourcePUT', "$base/cxml_scripts" );
+}
 
 sub _build_cxml_applications {
-    SignalWire::REST::Namespaces::Fabric::CxmlApplications->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::CxmlApplications->new(
+        _http      => $self->_http,
         _base_path => "$base/cxml_applications"
     );
 }
@@ -298,38 +321,43 @@ sub _build_cxml_applications {
 # phone_numbers->set_swml_webhook / set_cxml_webhook. Direct create still
 # works for backcompat but emits a deprecation warning.
 sub _build_swml_webhooks {
-    SignalWire::REST::Namespaces::Fabric::SwmlWebhooks->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::SwmlWebhooks->new(
+        _http      => $self->_http,
         _base_path => "$base/swml_webhooks"
     );
 }
-sub _build_ai_agents    { $_[0]->_mk( 'Resource', "$base/ai_agents" ) }
-sub _build_sip_gateways { $_[0]->_mk( 'Resource', "$base/sip_gateways" ) }
+sub _build_ai_agents    { my ($self) = @_; return $self->_mk( 'Resource', "$base/ai_agents" ) }
+sub _build_sip_gateways { my ($self) = @_; return $self->_mk( 'Resource', "$base/sip_gateways" ) }
 
 sub _build_cxml_webhooks {
-    SignalWire::REST::Namespaces::Fabric::CxmlWebhooks->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::CxmlWebhooks->new(
+        _http      => $self->_http,
         _base_path => "$base/cxml_webhooks"
     );
 }
 
 sub _build_resources {
-    SignalWire::REST::Namespaces::Fabric::GenericResources->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::GenericResources->new(
+        _http      => $self->_http,
         _base_path => $base
     );
 }
 
 sub _build_addresses {
-    SignalWire::REST::Namespaces::Fabric::Addresses->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::Addresses->new(
+        _http      => $self->_http,
         _base_path => '/api/fabric/addresses'
     );
 }
 
 sub _build_tokens {
-    SignalWire::REST::Namespaces::Fabric::Tokens->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Fabric::Tokens->new(
+        _http      => $self->_http,
         _base_path => '/api/fabric'
     );
 }

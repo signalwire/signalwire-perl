@@ -12,7 +12,7 @@ has '+skill_description' =>
     ( default => sub { 'Validate addresses and compute driving routes using Google Maps' } );
 has '+supports_multiple_instances' => ( default => sub { 0 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)      = @_;
@@ -43,7 +43,7 @@ sub register_tools {
         },
     );
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => $route_name,
         description => 'Compute a driving route between two points',
         parameters  => {

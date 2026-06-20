@@ -75,6 +75,7 @@ sub BUILD {
                 response => "Survey answer for $a->{question_id}: $a->{answer}", );
         },
     );
+    return;
 }
 
 1;

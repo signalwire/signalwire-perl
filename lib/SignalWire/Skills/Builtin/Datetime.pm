@@ -13,7 +13,7 @@ has '+skill_description' =>
     ( default => sub { 'Get current date, time, and timezone information' } );
 has '+supports_multiple_instances' => ( default => sub { 0 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self) = @_;
@@ -44,7 +44,7 @@ sub register_tools {
         },
     );
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => 'get_current_date',
         description => 'Get the current date',
         parameters  => {

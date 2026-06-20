@@ -41,28 +41,32 @@ sub BUILD {
     $self->{_items} = [];
     $self->{_index} = 0;
     $self->{_done}  = 0;
+    return;
 }
 
 sub _items {
-    my $self = shift;
-    $self->{_items} = $_[0] if @_;
+    my ( $self, @args ) = @_;
+    $self->{_items} = $args[0] if @args;
     return $self->{_items};
 }
 
 sub _index {
-    my $self = shift;
-    $self->{_index} = $_[0] if @_;
+    my ( $self, @args ) = @_;
+    $self->{_index} = $args[0] if @args;
     return $self->{_index};
 }
 
 sub _done {
-    my $self = shift;
-    $self->{_done} = $_[0] if @_;
+    my ( $self, @args ) = @_;
+    $self->{_done} = $args[0] if @args;
     return $self->{_done};
 }
 
 # Iterable interface (Python-mirroring, returns self so `iter()` parity).
-sub __iter__ { return $_[0]; }
+sub __iter__ {
+    my ($self) = @_;
+    return $self;
+}
 
 # Pull the next item; returns undef when exhausted (Perl-idiomatic
 # alternative to Python's StopIteration).

@@ -75,6 +75,7 @@ sub _handle_event ( $self, $event ) {
 
     my $state = $event->can('state') ? $event->state : '';
     $self->state($state) if $state;
+    return;
 }
 
 # Mark the action as completed with a result
@@ -87,6 +88,7 @@ sub _resolve ( $self, $result ) {
         eval { $cb->($self) };
         warn "on_completed callback error: $@" if $@;
     }
+    return;
 }
 
 # Send a sub-command on this action (e.g., play.stop, record.pause)
@@ -117,7 +119,7 @@ package SignalWire::Relay::Action::Play;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.play.stop' }
+sub _stop_method { return 'calling.play.stop' }
 
 sub pause ($self) {
     return $self->_execute_subcommand('calling.play.pause');
@@ -146,7 +148,7 @@ package SignalWire::Relay::Action::Record;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.record.stop' }
+sub _stop_method { return 'calling.record.stop' }
 
 sub pause ( $self, %opts ) {
     my $client = $self->_client;
@@ -165,18 +167,18 @@ sub resume ($self) {
 }
 
 # Result accessors
-sub url      { $_[0]->payload->{url}      // '' }
-sub duration { $_[0]->payload->{duration} // 0 }
-sub size     { $_[0]->payload->{size}     // 0 }
+sub url      { my ($self) = @_; return $self->payload->{url}      // '' }
+sub duration { my ($self) = @_; return $self->payload->{duration} // 0 }
+sub size     { my ($self) = @_; return $self->payload->{size}     // 0 }
 
 # --- DetectAction ---
 package SignalWire::Relay::Action::Detect;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.detect.stop' }
+sub _stop_method { return 'calling.detect.stop' }
 
-sub detect_result { $_[0]->payload->{detect} // {} }
+sub detect_result { my ($self) = @_; return $self->payload->{detect} // {} }
 
 # Detect resolves on the FIRST `params.detect` payload (the actual
 # detection result), not on a state(finished). Mirror Python's
@@ -191,6 +193,7 @@ sub _handle_event ( $self, $event ) {
     {
         $self->_resolve($event);
     }
+    return;
 }
 
 # --- CollectAction (used by play_and_collect) ---
@@ -201,13 +204,13 @@ extends 'SignalWire::Relay::Action';
 # play_and_collect's stop verb is calling.play_and_collect.stop, not
 # calling.collect.stop. The standalone collect uses StandaloneCollect
 # below.
-sub _stop_method { 'calling.play_and_collect.stop' }
+sub _stop_method { return 'calling.play_and_collect.stop' }
 
 sub start_input_timers ($self) {
     return $self->_execute_subcommand('calling.collect.start_input_timers');
 }
 
-sub collect_result { $_[0]->payload->{result} // {} }
+sub collect_result { my ($self) = @_; return $self->payload->{result} // {} }
 
 # Override event handling: for play_and_collect, ignore play events
 # (play(finished) must NOT resolve a play_and_collect; only the collect
@@ -231,6 +234,7 @@ sub _handle_event ( $self, $event ) {
             $self->_resolve($event);
         }
     }
+    return;
 }
 
 # Filter calling.call.play events: Call's dispatcher consults this method
@@ -248,7 +252,7 @@ extends 'SignalWire::Relay::Action::Collect';
 
 # Standalone collect uses calling.collect.stop, not the
 # play_and_collect.stop variant.
-sub _stop_method { 'calling.collect.stop' }
+sub _stop_method { return 'calling.collect.stop' }
 
 # --- FaxAction ---
 package SignalWire::Relay::Action::Fax;
@@ -263,44 +267,44 @@ sub _stop_method ($self) {
         : 'calling.send_fax.stop';
 }
 
-sub fax_result { $_[0]->payload->{fax} // {} }
+sub fax_result { my ($self) = @_; return $self->payload->{fax} // {} }
 
 # --- TapAction ---
 package SignalWire::Relay::Action::Tap;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.tap.stop' }
+sub _stop_method { return 'calling.tap.stop' }
 
 # --- StreamAction ---
 package SignalWire::Relay::Action::Stream;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.stream.stop' }
+sub _stop_method { return 'calling.stream.stop' }
 
 # --- PayAction ---
 package SignalWire::Relay::Action::Pay;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.pay.stop' }
+sub _stop_method { return 'calling.pay.stop' }
 
-sub pay_result { $_[0]->payload->{result} // {} }
+sub pay_result { my ($self) = @_; return $self->payload->{result} // {} }
 
 # --- TranscribeAction ---
 package SignalWire::Relay::Action::Transcribe;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.transcribe.stop' }
+sub _stop_method { return 'calling.transcribe.stop' }
 
 # --- AIAction ---
 package SignalWire::Relay::Action::AI;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-sub _stop_method { 'calling.ai.stop' }
+sub _stop_method { return 'calling.ai.stop' }
 
 1;
 

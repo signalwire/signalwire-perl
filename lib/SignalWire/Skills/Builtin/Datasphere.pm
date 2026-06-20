@@ -71,7 +71,7 @@ sub register_tools {
     require Scalar::Util;
     Scalar::Util::weaken($weak_self);
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => $tool_name,
         description =>
             'Search the knowledge base for information on any topic and return relevant results',

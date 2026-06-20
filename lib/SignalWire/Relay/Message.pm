@@ -134,6 +134,7 @@ sub dispatch_event ( $self, $event ) {
             warn "Message on_completed callback error: $@" if $@;
         }
     }
+    return;
 }
 
 1;

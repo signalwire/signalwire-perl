@@ -12,7 +12,7 @@ has '+skill_description' =>
     ( default => sub { 'Transfer calls between agents based on pattern matching' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)      = @_;
@@ -39,7 +39,7 @@ sub register_tools {
             };
     }
 
-    $self->agent->register_swaig_function(
+    return $self->agent->register_swaig_function(
         {
             function    => $tool_name,
             description => $description,

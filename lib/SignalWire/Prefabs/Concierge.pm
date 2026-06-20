@@ -97,6 +97,7 @@ sub BUILD {
                 response => "Checking availability for $a->{service} at ${\$self->venue_name}", );
         },
     );
+    return;
 }
 
 1;

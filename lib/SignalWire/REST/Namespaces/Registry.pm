@@ -106,29 +106,33 @@ has 'numbers'   => ( is => 'lazy' );
 my $base = '/api/relay/rest/registry/beta';
 
 sub _build_brands {
-    SignalWire::REST::Namespaces::Registry::Brands->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Registry::Brands->new(
+        _http      => $self->_http,
         _base_path => "$base/brands"
     );
 }
 
 sub _build_campaigns {
-    SignalWire::REST::Namespaces::Registry::Campaigns->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Registry::Campaigns->new(
+        _http      => $self->_http,
         _base_path => "$base/campaigns"
     );
 }
 
 sub _build_orders {
-    SignalWire::REST::Namespaces::Registry::Orders->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Registry::Orders->new(
+        _http      => $self->_http,
         _base_path => "$base/orders"
     );
 }
 
 sub _build_numbers {
-    SignalWire::REST::Namespaces::Registry::Numbers->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Registry::Numbers->new(
+        _http      => $self->_http,
         _base_path => "$base/numbers"
     );
 }

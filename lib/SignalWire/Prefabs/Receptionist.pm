@@ -73,6 +73,7 @@ sub BUILD {
                 response => "Department '$dept_name' not found", );
         },
     );
+    return;
 }
 
 1;

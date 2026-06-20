@@ -79,29 +79,33 @@ has 'fax'         => ( is => 'lazy' );
 has 'conferences' => ( is => 'lazy' );
 
 sub _build_messages {
-    SignalWire::REST::Namespaces::Logs::Messages->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Logs::Messages->new(
+        _http      => $self->_http,
         _base_path => '/api/messaging/logs'
     );
 }
 
 sub _build_voice {
-    SignalWire::REST::Namespaces::Logs::Voice->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Logs::Voice->new(
+        _http      => $self->_http,
         _base_path => '/api/voice/logs'
     );
 }
 
 sub _build_fax {
-    SignalWire::REST::Namespaces::Logs::Fax->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Logs::Fax->new(
+        _http      => $self->_http,
         _base_path => '/api/fax/logs'
     );
 }
 
 sub _build_conferences {
-    SignalWire::REST::Namespaces::Logs::Conferences->new(
-        _http      => $_[0]->_http,
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Logs::Conferences->new(
+        _http      => $self->_http,
         _base_path => '/api/logs/conferences'
     );
 }

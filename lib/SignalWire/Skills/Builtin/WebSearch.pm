@@ -86,7 +86,7 @@ has '_clock' => (
     },
 );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 # --- Latency-control param readers (Python parity: 51101da) -------------
 #
@@ -146,7 +146,7 @@ sub register_tools {
     require Scalar::Util;
     Scalar::Util::weaken($weak_self);
 
-    $self->define_tool(
+    return $self->define_tool(
         name        => $tool_name,
         description =>
 'Search the web for high-quality information, automatically filtering low-quality results',

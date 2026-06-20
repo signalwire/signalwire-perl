@@ -172,6 +172,7 @@ sub BUILD {
     require SignalWire::Security::SessionManager;
     $self->session_manager(
         SignalWire::Security::SessionManager->new( token_expiry_secs => 3600 ) );
+    return;
 }
 
 # ---------- Prompt methods ----------
@@ -1400,7 +1401,10 @@ sub _build_psgi_app {
                     $body .= $buf;
                 }
 
-                # Replace psgi.input with the buffered content so handlers can re-read
+                # Replace psgi.input with the buffered content so handlers can
+                # re-read. In-memory handle is deliberately handed off as
+                # psgi.input for downstream re-reads; it must NOT be closed here
+                # (see RequireBriefOpen exemption rationale in .perlcriticrc).
                 open my $new_input, '<', \$body;
                 $env->{'psgi.input'}   = $new_input;
                 $env->{CONTENT_LENGTH} = length($body);
@@ -1460,6 +1464,7 @@ sub _warn_signing_key_disabled_once {
     $self->{_signing_warning_emitted} = 1;
     carp "[signalwire] webhook signature validation is disabled — "
         . "set signing_key or SIGNALWIRE_SIGNING_KEY to enable";
+    return;
 }
 
 sub _check_auth {
@@ -1676,7 +1681,7 @@ sub _clone_for_request {
 
 sub run {
     my ( $self, %opts ) = @_;
-    $self->serve(%opts);
+    return $self->serve(%opts);
 }
 
 sub serve {
@@ -1707,7 +1712,7 @@ sub serve {
         '--port'   => $port,
         '--server' => 'HTTP::Server::PSGI',
     );
-    $runner->run($app);
+    return $runner->run($app);
 }
 
 # _resolve_tls(\%opts) -> ($cert, $key) when TLS should be served, else
@@ -1759,7 +1764,7 @@ sub _serve_tls {
         port        => $port,
         listen_sock => $ssl,
     );
-    $srv->run($app);
+    return $srv->run($app);
 }
 
 # ---------- helpers ----------

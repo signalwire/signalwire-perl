@@ -109,6 +109,7 @@ sub do_dump_swml {
         }
         print JSON->new->utf8->pretty->canonical->encode($data);
     }
+    return;
 }
 
 sub do_list_tools {
@@ -145,6 +146,7 @@ sub do_list_tools {
     }
 
     print_tool_list( \@functions );
+    return;
 }
 
 sub do_exec {
@@ -195,6 +197,7 @@ sub do_exec {
             print JSON->new->utf8->pretty->canonical->encode($data);
         }
     }
+    return;
 }
 
 # ============================================================
@@ -237,6 +240,7 @@ sub do_file_mode {
     } elsif ($exec_name) {
         do_file_exec( $svc, $exec_name );
     }
+    return;
 }
 
 # Resolve a Service instance from the loaded script. Strategy, in order:
@@ -327,6 +331,7 @@ sub do_file_dump_swml {
     } else {
         print JSON->new->utf8->pretty->canonical->encode($doc);
     }
+    return;
 }
 
 sub do_file_list_tools {
@@ -341,6 +346,7 @@ sub do_file_list_tools {
 
     my @functions = map { $registry->{$_} } @names;
     print_tool_list( \@functions );
+    return;
 }
 
 sub do_file_exec {
@@ -379,6 +385,7 @@ sub do_file_exec {
     } else {
         print JSON->new->utf8->pretty->canonical->encode($hash);
     }
+    return;
 }
 
 # ============================================================
@@ -414,6 +421,7 @@ sub print_tool_list {
             print "\n";
         }
     }
+    return;
 }
 
 # ============================================================

@@ -66,9 +66,9 @@ has 'connected'           => ( is => 'rw', default => sub { 0 } );
 has 'session_id'          => ( is => 'rw', default => sub { '' } );
 
 # Aliases for Python parity (same value, different names).
-sub relay_protocol       { $_[0]->protocol }
-sub _connected           { $_[0]->connected }
-sub _authorization_state { $_[0]->authorization_state }
+sub relay_protocol       { my ($self) = @_; return $self->protocol }
+sub _connected           { my ($self) = @_; return $self->connected }
+sub _authorization_state { my ($self) = @_; return $self->authorization_state }
 
 # Correlation maps
 has '_pending' => ( is => 'rw', default => sub { {} } )
@@ -391,12 +391,16 @@ sub send_message ( $self, %opts ) {
 
 # --- Context management ---
 
-sub receive {
+sub receive {    ## no critic (Subroutines::RequireArgUnpacking)
 
-    # NB: left in classic my-@_ form (NOT a signature). The canonical
-    # arg is a single ``$contexts`` arrayref (Python parity), but this also
-    # accepts a bare list via @_ introspection; a signature would either
-    # lose the list form or change the parsed arity ($contexts -> @args).
+    # NB: left in classic my-@_ form (NOT a signature) AND it re-reads @_ for
+    # the bare-list path below. Both are load-bearing for PARITY, not laziness:
+    # the regex signature extractor (signature_dump.pl) reads this exact
+    # ``my ( $self, $contexts ) = @_;`` first line to emit the audited
+    # ``contexts`` param, and the dual arrayref/bare-list calling convention
+    # needs @_ to recover the extra args. Unpacking into ``@args`` would rename
+    # the audited param and move the surface — so RequireArgUnpacking is
+    # suppressed here (changing it would change the wire/surface contract).
     my ( $self, $contexts ) = @_;
 
     # Python parity: receive(contexts: list[str]). Canonical form takes
@@ -414,10 +418,11 @@ sub receive {
     return $self->execute( 'signalwire.receive', { contexts => \@ctxs } );
 }
 
-sub unreceive {
+sub unreceive {    ## no critic (Subroutines::RequireArgUnpacking)
 
-    # Left in classic my-@_ form for the same dual arrayref/list reason
-    # as receive() above.
+    # Left in classic my-@_ form + @_ re-read for the same dual arrayref/list
+    # parity reason as receive() above (see its note); RequireArgUnpacking is
+    # suppressed because obeying it would rename the audited ``contexts`` param.
     my ( $self, $contexts ) = @_;
 
     # Python parity: unreceive(contexts: list[str]).
@@ -497,6 +502,7 @@ sub _send ( $self, $msg ) {
     if ($ws) {
         $ws->write($json);
     }
+    return;
 }
 
 # --- Internal: read one frame from WebSocket ---
@@ -518,6 +524,7 @@ sub _read_once ($self) {
             $self->connected(0);
         }
     }
+    return;
 }
 
 # --- Internal: handle an incoming WebSocket message ---
@@ -582,6 +589,7 @@ sub _handle_message ( $self, $raw ) {
         $self->_send_ack( $msg->{id} );
         $self->_handle_disconnect( $msg->{params} // {} );
     }
+    return;
 }
 
 # --- Internal: send an ACK ---
@@ -594,6 +602,7 @@ sub _send_ack ( $self, $id ) {
             result  => {},
         }
     );
+    return;
 }
 
 # --- Internal: handle events ---
@@ -675,6 +684,7 @@ sub _handle_event ( $self, $outer_params ) {
             delete $self->_calls->{$call_id};
         }
     }
+    return;
 }
 
 # --- Internal: handle inbound call ---
@@ -698,6 +708,7 @@ sub _handle_inbound_call ( $self, $event, $params ) {
         eval { $cb->($call) };
         warn "on_call callback error: $@" if $@;
     }
+    return;
 }
 
 # --- Internal: handle inbound message ---
@@ -707,6 +718,7 @@ sub _handle_inbound_message ( $self, $event ) {
         eval { $cb->($event) };
         warn "on_message callback error: $@" if $@;
     }
+    return;
 }
 
 # --- Internal: handle dial completion event ---
@@ -740,6 +752,7 @@ sub _handle_dial_event ( $self, $event, $params ) {
     } elsif ( $dial_state eq DIAL_STATE_FAILED ) {
         $pending->{reject}->("Dial failed");
     }
+    return;
 }
 
 # --- Internal: handle server disconnect ---
@@ -757,6 +770,7 @@ sub _handle_disconnect ( $self, $params ) {
     $self->connected(0);
 
     # The client should reconnect (handled by the event loop)
+    return;
 }
 
 # --- Reconnection ---
@@ -801,6 +815,7 @@ sub disconnect_ws ($self) {
         $self->_socket(undef);
     }
     $self->_ws(undef);
+    return;
 }
 
 # --- Run event loop ---
@@ -809,6 +824,7 @@ sub run ($self) {
     while ( $self->connected ) {
         $self->_read_once();
     }
+    return;
 }
 
 1;

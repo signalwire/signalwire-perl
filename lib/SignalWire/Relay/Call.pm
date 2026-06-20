@@ -150,6 +150,7 @@ sub dispatch_event ( $self, $event ) {
         eval { $cb->( $self, $event ) };
         warn "Call event callback error: $@" if $@;
     }
+    return;
 }
 
 # Register an event listener
@@ -189,6 +190,7 @@ sub _resolve_all_actions ($self) {
         $action->_resolve(undef) unless $action->completed;
     }
     $self->_actions( {} );
+    return;
 }
 
 # --- Simple fire-and-response methods ---

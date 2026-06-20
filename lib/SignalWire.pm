@@ -57,8 +57,9 @@ sub RestClient {
     require SignalWire::REST::RestClient;
 
     # Three bare strings -> positional (project, token, host); anything
-    # else is a hash-style keyword args list passed via @_.
-    my @raw = @_;
+    # else is a hash-style keyword args list. @args slurped all of @_
+    # (Perl's slurpy-array semantics), so it is the full argument list.
+    my @raw = @args;
     if ( @raw == 3 && !ref( $raw[0] ) && $raw[0] !~ /^(?:project|token|host)$/ ) {
         return SignalWire::REST::RestClient->new(
             project => $raw[0],

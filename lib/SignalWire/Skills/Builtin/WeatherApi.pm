@@ -12,7 +12,7 @@ has '+skill_description' =>
     ( default => sub { 'Get current weather information from WeatherAPI.com' } );
 has '+supports_multiple_instances' => ( default => sub { 0 } );
 
-sub setup { 1 }
+sub setup { return 1 }
 
 sub register_tools {
     my ($self)    = @_;
@@ -40,7 +40,7 @@ sub register_tools {
 "https://api.weatherapi.com/v1/current.json?key=${api_key}&q=\${lc:enc:args.location}&aqi=no";
     }
 
-    $self->agent->register_swaig_function(
+    return $self->agent->register_swaig_function(
         {
             function    => $tool_name,
             description => 'Get current weather information for any location',
