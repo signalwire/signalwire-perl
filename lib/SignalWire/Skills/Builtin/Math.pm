@@ -26,7 +26,10 @@ sub register_tools {
                 expression =>
                     { type => 'string', description => 'Mathematical expression to evaluate' },
             },
-            required => ['expression'],
+
+            # No `required`: the Python reference (skills/math/skill.py) passes
+            # none, and the handler guards an empty/invalid expression. Adding it
+            # would over-constrain the SWAIG schema vs the reference contract.
         },
         handler => sub {
             my ( $args, $raw ) = @_;
