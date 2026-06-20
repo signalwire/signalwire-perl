@@ -21,7 +21,7 @@
 #                                           Python's to_dict() over the shared
 #                                           81-entry corpus; no mocks/network)
 #   7. fmt gate                           — Perl::Tidy (local: apply; CI: --assert-tidy)
-#   8. lint gate                          — Perl::Critic severity 5, zero findings
+#   8. lint gate                          — Perl::Critic severity 4, zero findings
 #   9. doc-audit gate                     — porting-sdk audit_docs.py
 #  10. surface-diff gate                  — porting-sdk diff_port_surface.py
 #  11. skill-contract gate                — porting-sdk diff_skill_contracts.py
@@ -209,22 +209,25 @@ fmt_gate() {
 }
 run_gate "FMT" "perltidy (local: apply; CI: --assert-tidy)" fmt_gate
 
-# Gate 8: LINT — the language lint gate (perl: Perl::Critic at severity 5,
-# burned to ZERO). This is the blocking quality floor: the severity-5 policy set
-# (.perlcriticrc) is held at zero by FIXING source idiomatically — there are NO
-# `## no critic` annotations in lib/ and NO disabled policies. severity is pinned
-# both in .perlcriticrc and on the command line so the gate reproduces a bare
-# `perlcritic lib/`. Mirrors the go vet+golangci / ruby rubocop blocking-lint
-# gate.
+# Gate 8: LINT — the language lint gate (perl: Perl::Critic at severity 4,
+# burned to ZERO). This is the blocking quality floor, ratcheted from the
+# original severity-5 floor to 4 by FIXING source idiomatically
+# (RequireFinalReturn / RequireArgUnpacking / RequireLocalizedPunctuationVars).
+# The only disabled policies (.perlcriticrc) are the handful justified by
+# wire/surface parity or a heuristic that does not fit the code — never style,
+# never to hide a finding (each carries a one-line rationale; see the file).
+# severity is pinned both in .perlcriticrc and on the command line so the gate
+# reproduces a bare `perlcritic lib/`. Mirrors the go vet+golangci / ruby
+# rubocop blocking-lint gate.
 lint_gate() {
     local f rc=0
     while IFS= read -r f; do
         [ -n "$f" ] || continue
-        perlcritic --profile "$PORT_ROOT/.perlcriticrc" --severity 5 "$f" || rc=1
+        perlcritic --profile "$PORT_ROOT/.perlcriticrc" --severity 4 "$f" || rc=1
     done < <(perl_source_files)
     return $rc
 }
-run_gate "LINT" "perlcritic severity 5, zero findings" lint_gate
+run_gate "LINT" "perlcritic severity 4, zero findings" lint_gate
 
 # Gate 9: DOC-AUDIT — every method/class referenced in docs/ + examples/ fenced
 # code blocks must resolve to a real symbol in the port surface (catches
