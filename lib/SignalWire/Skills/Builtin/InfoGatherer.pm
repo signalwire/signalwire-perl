@@ -54,8 +54,8 @@ sub register_tools {
             my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
             my $answer = $args->{answer} // '';
-            return SignalWire::SWAIG::FunctionResult->new(
-                response => "Answer recorded: $answer", );
+            return SignalWire::SWAIG::FunctionResult->new( response => "Answer recorded: $answer",
+            );
         },
     );
 }

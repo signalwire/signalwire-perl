@@ -277,7 +277,7 @@ sub _resolve_service_instance {
         }
     }
 
-    return undef;
+    return;
 }
 
 sub _find_service_subclasses {
@@ -296,10 +296,12 @@ sub _find_service_subclasses {
             my $pkg = $prefix ? "${prefix}::${name}" : $name;
             next if $seen{$pkg}++;
 
-            # Only treat as a class if it has any symbols at all.
-            no strict 'refs';
-            my $sub_stash = \%{"${pkg}::"};
-            use strict 'refs';
+            # Only treat as a class if it has any symbols at all. Reach the
+            # child namespace's symbol table through the parent stash glob
+            # (*glob{HASH}) rather than a symbolic ref by name, so no `no strict
+            # 'refs'` is needed (matches the lint-clean idiom used in lib/).
+            my $sub_stash = *{ $stash->{$entry} }{HASH};
+            next unless $sub_stash;
 
             if (   eval { $pkg->isa('SignalWire::SWML::Service') }
                 && $pkg ne 'SignalWire::SWML::Service'

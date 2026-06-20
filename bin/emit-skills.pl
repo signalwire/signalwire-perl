@@ -116,7 +116,7 @@ use SignalWire::Skills::SkillRegistry;
 # Walk upward from this file to find porting-sdk/scripts/skill_contract_corpus.py
 # (the adjacency convention), honoring $PORTING_SDK / $PORTING_SDK_PATH first.
 sub find_corpus_script {
-    for my $base ( grep {defined} $ENV{PORTING_SDK}, $ENV{PORTING_SDK_PATH} ) {
+    for my $base ( grep { defined } $ENV{PORTING_SDK}, $ENV{PORTING_SDK_PATH} ) {
         my $cand = File::Spec->catfile( $base, 'scripts', 'skill_contract_corpus.py' );
         return $cand if -f $cand;
     }

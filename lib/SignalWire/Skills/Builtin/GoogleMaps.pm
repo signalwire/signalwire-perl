@@ -63,8 +63,8 @@ sub register_tools {
         handler => sub {
             my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
-            my ( $olat, $olng, $dlat, $dlng ) = map { $args->{$_} // '' }
-                qw(origin_lat origin_lng dest_lat dest_lng);
+            my ( $olat, $olng, $dlat, $dlng ) =
+                map { $args->{$_} // '' } qw(origin_lat origin_lng dest_lat dest_lng);
             return SignalWire::SWAIG::FunctionResult->new(
                 response => "Route computed from ($olat,$olng) to ($dlat,$dlng)" );
         },
