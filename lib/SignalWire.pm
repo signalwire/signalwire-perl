@@ -47,17 +47,19 @@ sub _singleton_registry {
 # the array; keyword-style callers pass an even number of args (no
 # leading positional) so @args becomes the kwargs pairlist instead.
 sub RestClient {
+
     # Audit-shape declaration: declare both slurpy positional and slurpy
     # hash so the surface enumerator sees the canonical ``*args, **kwargs``
     # shape Python uses. We don't actually rely on %kwargs at runtime —
     # Perl's slurpy-array semantics consume everything into @args, so
     # %kwargs always ends up empty. Real argument splitting happens below.
-    my (@args, %kwargs) = @_;
+    my ( @args, %kwargs ) = @_;
     require SignalWire::REST::RestClient;
+
     # Three bare strings -> positional (project, token, host); anything
     # else is a hash-style keyword args list passed via @_.
     my @raw = @_;
-    if (@raw == 3 && !ref($raw[0]) && $raw[0] !~ /^(?:project|token|host)$/) {
+    if ( @raw == 3 && !ref( $raw[0] ) && $raw[0] !~ /^(?:project|token|host)$/ ) {
         return SignalWire::REST::RestClient->new(
             project => $raw[0],
             token   => $raw[1],
@@ -76,15 +78,15 @@ sub register_skill {
     my ($skill_class) = @_;
     require SignalWire::Skills::SkillRegistry;
     my $name;
-    if ($skill_class->can('skill_name')) {
+    if ( $skill_class->can('skill_name') ) {
         $name = $skill_class->skill_name;
-    } elsif (defined &{"${skill_class}::SKILL_NAME"}) {
+    } elsif ( defined &{"${skill_class}::SKILL_NAME"} ) {
         no strict 'refs';
         $name = ${"${skill_class}::SKILL_NAME"};
     } else {
         die "skill class $skill_class must define ::skill_name or SKILL_NAME\n";
     }
-    SignalWire::Skills::SkillRegistry->register_skill($name, $skill_class);
+    SignalWire::Skills::SkillRegistry->register_skill( $name, $skill_class );
     return;
 }
 
@@ -107,9 +109,10 @@ sub add_skill_directory {
 # programmatic skill discovery.
 sub list_skills_with_params {
     require SignalWire::Skills::SkillRegistry;
-    if (SignalWire::Skills::SkillRegistry->can('get_all_skills_schema')) {
+    if ( SignalWire::Skills::SkillRegistry->can('get_all_skills_schema') ) {
         return SignalWire::Skills::SkillRegistry->get_all_skills_schema;
     }
+
     # Fallback: list_skills returns names; pair them with empty params.
     my $names = SignalWire::Skills::SkillRegistry->list_skills;
     return { map { $_ => { name => $_, parameters => {} } } @$names };

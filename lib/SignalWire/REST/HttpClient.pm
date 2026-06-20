@@ -4,26 +4,27 @@ use warnings;
 use Moo;
 
 use HTTP::Tiny;
-use JSON qw(encode_json decode_json);
+use JSON         qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
-has 'project'   => ( is => 'ro', required => 1 );
-has 'token'     => ( is => 'ro', required => 1 );
-has 'host'      => ( is => 'ro', required => 1 );
-has 'base_url'  => ( is => 'lazy' );
-has '_ua'       => ( is => 'lazy' );
+has 'project'      => ( is => 'ro', required => 1 );
+has 'token'        => ( is => 'ro', required => 1 );
+has 'host'         => ( is => 'ro', required => 1 );
+has 'base_url'     => ( is => 'lazy' );
+has '_ua'          => ( is => 'lazy' );
 has '_auth_header' => ( is => 'lazy' );
 
 sub _build_base_url {
     my ($self) = @_;
     my $host = $self->host;
+
     # Allow callers to pass a fully-qualified URL (used by the audit
     # fixture, which serves http://127.0.0.1:NNN). When the value
     # already carries a scheme we use it verbatim; otherwise we
     # prepend the production https://. Strip trailing slashes either
     # way so request paths concatenate cleanly.
     my $base;
-    if ($host =~ m{^https?://}) {
+    if ( $host =~ m{^https?://} ) {
         $base = $host;
     } else {
         $base = 'https://' . $host;
@@ -42,43 +43,44 @@ sub _build__ua {
             'Authorization' => $self->_auth_header,
         },
         timeout => 30,
+
         # Verify TLS certificates by default, matching the Python reference
         # (requests/httpx verify by default). HTTP::Tiny otherwise defaults
         # verify_SSL => 0, which would silently accept any cert — a security
         # divergence from Python. Verification honors SSL_CERT_FILE / the OS
         # trust store; plaintext http:// requests are unaffected.
-        verify_SSL      => 1,
+        verify_SSL => 1,
     );
 }
 
 sub _build__auth_header {
     my ($self) = @_;
     my $credentials = $self->project . ':' . $self->token;
-    return 'Basic ' . encode_base64($credentials, '');
+    return 'Basic ' . encode_base64( $credentials, '' );
 }
 
 sub _request {
-    my ($self, $method, $path, %opts) = @_;
+    my ( $self, $method, $path, %opts ) = @_;
     my $url = $self->base_url . $path;
 
     # Add query params to URL
-    if ($opts{params} && ref $opts{params} eq 'HASH' && %{$opts{params}}) {
+    if ( $opts{params} && ref $opts{params} eq 'HASH' && %{ $opts{params} } ) {
         my @pairs;
-        for my $key (sort keys %{$opts{params}}) {
+        for my $key ( sort keys %{ $opts{params} } ) {
             my $val = $opts{params}{$key} // '';
             push @pairs, _uri_encode($key) . '=' . _uri_encode($val);
         }
-        $url .= '?' . join('&', @pairs);
+        $url .= '?' . join( '&', @pairs );
     }
 
     my %request_opts;
-    if ($opts{body}) {
-        $request_opts{content} = encode_json($opts{body});
+    if ( $opts{body} ) {
+        $request_opts{content} = encode_json( $opts{body} );
     }
 
-    my $response = $self->_ua->request($method, $url, \%request_opts);
+    my $response = $self->_ua->request( $method, $url, \%request_opts );
 
-    unless ($response->{success}) {
+    unless ( $response->{success} ) {
         my $body = $response->{content} // '';
         my $parsed;
         eval { $parsed = decode_json($body) };
@@ -92,12 +94,12 @@ sub _request {
     }
 
     # 204 No Content or empty body
-    if ($response->{status} == 204 || !$response->{content}) {
+    if ( $response->{status} == 204 || !$response->{content} ) {
         return {};
     }
 
     my $result;
-    eval { $result = decode_json($response->{content}) };
+    eval { $result = decode_json( $response->{content} ) };
     if ($@) {
         return { raw => $response->{content} };
     }
@@ -105,28 +107,28 @@ sub _request {
 }
 
 sub get {
-    my ($self, $path, %opts) = @_;
-    return $self->_request('GET', $path, params => $opts{params});
+    my ( $self, $path, %opts ) = @_;
+    return $self->_request( 'GET', $path, params => $opts{params} );
 }
 
 sub post {
-    my ($self, $path, %opts) = @_;
-    return $self->_request('POST', $path, body => $opts{body}, params => $opts{params});
+    my ( $self, $path, %opts ) = @_;
+    return $self->_request( 'POST', $path, body => $opts{body}, params => $opts{params} );
 }
 
 sub put {
-    my ($self, $path, %opts) = @_;
-    return $self->_request('PUT', $path, body => $opts{body});
+    my ( $self, $path, %opts ) = @_;
+    return $self->_request( 'PUT', $path, body => $opts{body} );
 }
 
 sub patch {
-    my ($self, $path, %opts) = @_;
-    return $self->_request('PATCH', $path, body => $opts{body});
+    my ( $self, $path, %opts ) = @_;
+    return $self->_request( 'PATCH', $path, body => $opts{body} );
 }
 
 sub delete_request {
-    my ($self, $path) = @_;
-    return $self->_request('DELETE', $path);
+    my ( $self, $path ) = @_;
+    return $self->_request( 'DELETE', $path );
 }
 
 # Simple URI encoding
@@ -142,15 +144,14 @@ use Moo;
 use JSON qw(encode_json);
 
 has 'status_code' => ( is => 'ro', required => 1 );
-has 'body'        => ( is => 'ro', default => sub { '' } );
-has 'url'         => ( is => 'ro', default => sub { '' } );
-has 'method'      => ( is => 'ro', default => sub { 'GET' } );
+has 'body'        => ( is => 'ro', default  => sub { '' } );
+has 'url'         => ( is => 'ro', default  => sub { '' } );
+has 'method'      => ( is => 'ro', default  => sub { 'GET' } );
 
 use overload '""' => sub {
     my ($self) = @_;
-    my $body = ref $self->body ? encode_json($self->body) : ($self->body // '');
-    return sprintf('%s %s returned %s: %s',
-        $self->method, $self->url, $self->status_code, $body);
+    my $body = ref $self->body ? encode_json( $self->body ) : ( $self->body // '' );
+    return sprintf( '%s %s returned %s: %s', $self->method, $self->url, $self->status_code, $body );
 };
 
 1;

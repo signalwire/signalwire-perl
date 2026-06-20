@@ -1,4 +1,5 @@
 package SignalWire::Skills::Builtin::WebSearch;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -18,17 +19,18 @@ use strict;
 use warnings;
 use Moo;
 use HTTP::Tiny;
-use JSON ();
+use JSON        ();
 use URI::Escape qw(uri_escape);
 extends 'SignalWire::Skills::SkillBase';
 
 use SignalWire::Skills::SkillRegistry;
-SignalWire::Skills::SkillRegistry->register_skill('web_search', __PACKAGE__);
+SignalWire::Skills::SkillRegistry->register_skill( 'web_search', __PACKAGE__ );
 
-has '+skill_name'        => (default => sub { 'web_search' });
-has '+skill_description' => (default => sub { 'Search the web for information using Google Custom Search API' });
-has '+skill_version'     => (default => sub { '2.0.0' });
-has '+supports_multiple_instances' => (default => sub { 1 });
+has '+skill_name' => ( default => sub { 'web_search' } );
+has '+skill_description' =>
+    ( default => sub { 'Search the web for information using Google Custom Search API' } );
+has '+skill_version'               => ( default => sub { '2.0.0' } );
+has '+supports_multiple_instances' => ( default => sub { 1 } );
 
 # Google CSE base URL. Honor WEB_SEARCH_BASE_URL env var so the audit
 # fixture (audit_skills_dispatch.py) can redirect us at a local HTTP
@@ -43,6 +45,7 @@ has 'base_url' => (
     default => sub {
         my $override = $ENV{WEB_SEARCH_BASE_URL};
         return 'https://www.googleapis.com/customsearch/v1' unless $override;
+
         # Strip trailing slash, then append the canonical Google CSE
         # path so callers see the same URL shape as production.
         $override =~ s{/+$}{};
@@ -112,21 +115,21 @@ sub _per_page_timeout {
     my ($self) = @_;
     my $t = $self->params->{per_page_timeout};
     $t = 2.0 unless defined $t;
-    $t += 0;                 # numify
-    return $t > 0 ? $t : 15; # never unbounded
+    $t += 0;                    # numify
+    return $t > 0 ? $t : 15;    # never unbounded
 }
 
 sub _overall_deadline {
     my ($self) = @_;
     my $d = $self->params->{overall_deadline};
     $d = 10.0 unless defined $d;
-    return $d + 0;           # numify
+    return $d + 0;              # numify
 }
 
 sub _parallel_scrape {
     my ($self) = @_;
     my $p = $self->params->{parallel_scrape};
-    return 1 unless defined $p;   # default true
+    return 1 unless defined $p;    # default true
     return $p ? 1 : 0;
 }
 
@@ -145,8 +148,9 @@ sub register_tools {
 
     $self->define_tool(
         name        => $tool_name,
-        description => 'Search the web for high-quality information, automatically filtering low-quality results',
-        parameters  => {
+        description =>
+'Search the web for high-quality information, automatically filtering low-quality results',
+        parameters => {
             type       => 'object',
             properties => {
                 query => { type => 'string', description => 'The search query' },
@@ -154,18 +158,18 @@ sub register_tools {
             required => ['query'],
         },
         handler => sub {
-            my ($args, $raw) = @_;
+            my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
             my $query = $args->{query} // '';
-            my $text = $weak_self->search_web($query);
+            my $text  = $weak_self->search_web($query);
             $text = $weak_self->_wrap_response($text);
-            return SignalWire::SWAIG::FunctionResult->new(response => $text);
+            return SignalWire::SWAIG::FunctionResult->new( response => $text );
         },
     );
 }
 
 sub search_web {
-    my ($self, $query) = @_;
+    my ( $self, $query ) = @_;
 
     # overall_deadline is the wall-clock budget for the WHOLE tool call.
     # Start the clock before the (slowest, non-cancelable) CSE fetch so a
@@ -176,27 +180,29 @@ sub search_web {
     my $deadline_at = $started_at + $self->_overall_deadline;
 
     my $api_key = $self->params->{api_key} || $ENV{GOOGLE_API_KEY} || '';
-    my $cse_id  = $self->params->{search_engine_id}
+    my $cse_id =
+           $self->params->{search_engine_id}
         || $self->params->{cx}
         || $ENV{GOOGLE_CSE_ID}
         || '';
-    my $num     = $self->params->{num_results} // 3;
+    my $num = $self->params->{num_results} // 3;
     $num = 10 if $num > 10;
-    $num = 1 if $num < 1;
+    $num = 1  if $num < 1;
 
-    my $url = $self->base_url
-        . '?key=' . uri_escape($api_key)
-        . '&cx=' . uri_escape($cse_id)
-        . '&q=' . uri_escape($query)
-        . '&num=' . $num;
+    my $url =
+          $self->base_url . '?key='
+        . uri_escape($api_key) . '&cx='
+        . uri_escape($cse_id) . '&q='
+        . uri_escape($query) . '&num='
+        . $num;
 
     # The CSE GET is bounded by per_page_timeout via the _http client's
     # HTTP::Tiny timeout (set from _per_page_timeout in the _http builder).
     my $resp = $self->_http->get($url);
-    unless ($resp->{success}) {
+    unless ( $resp->{success} ) {
         return "Web search error: $resp->{status} $resp->{reason}";
     }
-    my $data = eval { JSON::decode_json($resp->{content}) };
+    my $data = eval { JSON::decode_json( $resp->{content} ) };
     return "Web search parse error: $@" if $@;
 
     my $items = $data->{items} // [];
@@ -216,20 +222,21 @@ sub search_web {
     # fallback immediately so the caller always gets non-empty context
     # before the kernel webhook timeout fires — exactly as Python falls
     # back to _format_snippet_results when time runs out.
-    if ($self->_deadline_exceeded($deadline_at)) {
-        return $self->_format_snippet_results($query, $items, $num);
+    if ( $self->_deadline_exceeded($deadline_at) ) {
+        return $self->_format_snippet_results( $query, $items, $num );
     }
 
     my @lines;
     my $i = 1;
     for my $item (@$items) {
         last if $i > $num;
+
         # Re-check the deadline inside the loop. Formatting is cheap, but
         # the contract is "check before each unit of work and stop once
         # exceeded"; this keeps the guard honest even if a future change
         # makes per-item work expensive.
-        if ($self->_deadline_exceeded($deadline_at)) {
-            return $self->_format_snippet_results($query, $items, $num);
+        if ( $self->_deadline_exceeded($deadline_at) ) {
+            return $self->_format_snippet_results( $query, $items, $num );
         }
         my $title   = $item->{title}   // '';
         my $link    = $item->{link}    // '';
@@ -237,14 +244,14 @@ sub search_web {
         push @lines, "$i. $title\n   $snippet\n   $link";
         $i++;
     }
-    return join("\n\n", @lines);
+    return join( "\n\n", @lines );
 }
 
 # True once the monotonic clock has reached/passed the deadline. Reads the
 # overridable _clock hook so a test can inject elapsed time and drive the
 # deadline path deterministically (no real sleeping).
 sub _deadline_exceeded {
-    my ($self, $deadline_at) = @_;
+    my ( $self, $deadline_at ) = @_;
     return $self->_clock->() >= $deadline_at ? 1 : 0;
 }
 
@@ -257,13 +264,13 @@ sub _deadline_exceeded {
 # title + snippet + url for each item, so downstream sentinel/quality checks
 # still see the same content the happy path would emit.
 sub _format_snippet_results {
-    my ($self, $query, $items, $num) = @_;
+    my ( $self, $query, $items, $num ) = @_;
     $items ||= [];
     return "No results for: $query" unless @$items;
 
-    my $top = $num && $num > 0 ? $num : 1;
-    my @lines = ("Snippet-only results for '$query' (page content not scraped):", "");
-    my $i = 1;
+    my $top   = $num && $num > 0 ? $num : 1;
+    my @lines = ( "Snippet-only results for '$query' (page content not scraped):", "" );
+    my $i     = 1;
     for my $item (@$items) {
         last if $i > $top;
         my $title   = $item->{title}   // '';
@@ -278,7 +285,7 @@ sub _format_snippet_results {
         push @lines, "";
         $i++;
     }
-    my $out = join("\n", @lines);
+    my $out = join( "\n", @lines );
     $out =~ s/\n+$//;
     return $out;
 }
@@ -289,8 +296,9 @@ sub _format_snippet_results {
 # side. Error / no-result branches are passed through unwrapped so the
 # LLM still sees the failure mode verbatim.
 sub _wrap_response {
-    my ($self, $text) = @_;
+    my ( $self, $text ) = @_;
     return $text unless defined $text && length $text;
+
     # Match Python's "errors don't get wrapped" pattern. The Perl
     # search_web returns one of three known failure sentinels; anything
     # else is a real result list.
@@ -313,24 +321,27 @@ sub get_global_data {
 }
 
 sub _get_prompt_sections {
-    return [{
-        title   => 'Web Search Capability (Quality Enhanced)',
-        body    => '',
-        bullets => [
-            'Use web_search to find current information',
-            'Results are quality-filtered automatically',
-        ],
-    }];
+    return [
+        {
+            title   => 'Web Search Capability (Quality Enhanced)',
+            body    => '',
+            bullets => [
+                'Use web_search to find current information',
+                'Results are quality-filtered automatically',
+            ],
+        }
+    ];
 }
 
 sub get_parameter_schema {
     return {
         %{ SignalWire::Skills::SkillBase->get_parameter_schema },
-        api_key           => { type => 'string',  required => 1, hidden => 1 },
-        search_engine_id  => { type => 'string',  required => 1, hidden => 1 },
-        num_results       => { type => 'integer', default  => 3, min => 1, max => 10 },
-        response_prefix   => { type => 'string',  default  => '' },
-        response_postfix  => { type => 'string',  default  => '' },
+        api_key          => { type => 'string',  required => 1, hidden => 1 },
+        search_engine_id => { type => 'string',  required => 1, hidden => 1 },
+        num_results      => { type => 'integer', default  => 3, min    => 1, max => 10 },
+        response_prefix  => { type => 'string',  default  => '' },
+        response_postfix => { type => 'string',  default  => '' },
+
         # Latency-control parameters (Python parity: 51101da + 295745b). The
         # kernel times out webhook responses around 55s; these keep the
         # handler under that. per_page_timeout bounds the CSE HTTP fetch;
@@ -338,31 +349,35 @@ sub get_parameter_schema {
         # parallel_scrape is accepted for API parity (Perl runs sequentially,
         # not contracted); snippets_only returns CSE snippets directly (the
         # Perl skill's default behavior).
-        per_page_timeout  => {
+        per_page_timeout => {
             type        => 'number',
-            description => 'Maximum seconds to wait on a single page fetch (the Google CSE HTTP call for this snippet-only skill).',
-            default     => 2.0,
-            required    => 0,
-            min         => 0.1,
+            description =>
+'Maximum seconds to wait on a single page fetch (the Google CSE HTTP call for this snippet-only skill).',
+            default  => 2.0,
+            required => 0,
+            min      => 0.1,
         },
-        overall_deadline  => {
+        overall_deadline => {
             type        => 'number',
-            description => 'Wall-clock budget in seconds for the whole tool call. Once exceeded, format the CSE snippets we already have so the response beats the kernel webhook timeout.',
-            default     => 10.0,
-            required    => 0,
-            min         => 1.0,
+            description =>
+'Wall-clock budget in seconds for the whole tool call. Once exceeded, format the CSE snippets we already have so the response beats the kernel webhook timeout.',
+            default  => 10.0,
+            required => 0,
+            min      => 1.0,
         },
-        parallel_scrape   => {
+        parallel_scrape => {
             type        => 'boolean',
-            description => 'Accepted for API parity with the scraping ports. The Perl skill is snippet-only and runs sequentially; this flag has no effect.',
-            default     => 1,
-            required    => 0,
+            description =>
+'Accepted for API parity with the scraping ports. The Perl skill is snippet-only and runs sequentially; this flag has no effect.',
+            default  => 1,
+            required => 0,
         },
-        snippets_only     => {
+        snippets_only => {
             type        => 'boolean',
-            description => 'Return Google CSE snippets directly without deep-scraping result pages. This is the Perl skill\'s default behavior.',
-            default     => 0,
-            required    => 0,
+            description =>
+'Return Google CSE snippets directly without deep-scraping result pages. This is the Perl skill\'s default behavior.',
+            default  => 0,
+            required => 0,
         },
     };
 }

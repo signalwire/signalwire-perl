@@ -1,4 +1,5 @@
 package SignalWire::Logging::LogLevel;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -47,7 +48,7 @@ use constant {
     ERROR => 'error',
 };
 
-our @EXPORT_OK = qw( DEBUG INFO WARN ERROR );
+our @EXPORT_OK   = qw( DEBUG INFO WARN ERROR );
 our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
 
 # Ascending severity — the SAME ordering SignalWire::Logging's private
@@ -75,7 +76,7 @@ sub all {
 # levels, false otherwise. Accepts the bareword constant too (it's just
 # the string).
 sub is_valid {
-    my ($class, $level) = @_;
+    my ( $class, $level ) = @_;
     return 0 unless defined $level;
     return exists $IS_VALID{$level} ? 1 : 0;
 }
@@ -84,7 +85,7 @@ sub is_valid {
 # (debug=0 .. error=3), or undef for an unknown level. Mirrors the
 # threshold numbers SignalWire::Logging uses internally.
 sub severity {
-    my ($class, $level) = @_;
+    my ( $class, $level ) = @_;
     return undef unless defined $level;
     return $SEVERITY{$level};
 }

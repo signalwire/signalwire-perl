@@ -9,24 +9,24 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub create {
-    my ($self, %kwargs) = @_;
-    return $self->_http->post($self->_base_path, body => \%kwargs);
+    my ( $self, %kwargs ) = @_;
+    return $self->_http->post( $self->_base_path, body => \%kwargs );
 }
 
 sub update {
-    my ($self, $token_id, %kwargs) = @_;
-    return $self->_http->patch($self->_path($token_id), body => \%kwargs);
+    my ( $self, $token_id, %kwargs ) = @_;
+    return $self->_http->patch( $self->_path($token_id), body => \%kwargs );
 }
 
 sub delete_token {
-    my ($self, $token_id) = @_;
-    return $self->_http->delete_request($self->_path($token_id));
+    my ( $self, $token_id ) = @_;
+    return $self->_http->delete_request( $self->_path($token_id) );
 }
 
 # Python parity alias.
 sub delete {
-    my ($self, $token_id) = @_;
-    return $self->_http->delete_request($self->_path($token_id));
+    my ( $self, $token_id ) = @_;
+    return $self->_http->delete_request( $self->_path($token_id) );
 }
 
 # --- ProjectNamespace ---

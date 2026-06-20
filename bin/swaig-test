@@ -27,35 +27,35 @@ use Scalar::Util qw(blessed);
 my $VERSION = '1.0.0';
 
 # --- Parse CLI options ---
-my ($url, $file, $dump_swml, $list_tools, $exec_name, @params, $raw, $verbose, $help);
+my ( $url, $file, $dump_swml, $list_tools, $exec_name, @params, $raw, $verbose, $help );
 
 GetOptions(
-    'url=s'       => \$url,
-    'file=s'      => \$file,
-    'dump-swml'   => \$dump_swml,
-    'list-tools'  => \$list_tools,
-    'exec=s'      => \$exec_name,
-    'param=s@'    => \@params,
-    'raw'         => \$raw,
-    'verbose'     => \$verbose,
-    'help|h'      => \$help,
+    'url=s'      => \$url,
+    'file=s'     => \$file,
+    'dump-swml'  => \$dump_swml,
+    'list-tools' => \$list_tools,
+    'exec=s'     => \$exec_name,
+    'param=s@'   => \@params,
+    'raw'        => \$raw,
+    'verbose'    => \$verbose,
+    'help|h'     => \$help,
 ) or usage_exit();
 
 if ($help) {
     usage_exit(0);
 }
 
-unless ($url || $file) {
+unless ( $url || $file ) {
     print STDERR "Error: --url or --file is required\n\n";
     usage_exit(1);
 }
 
-if ($url && $file) {
+if ( $url && $file ) {
     print STDERR "Error: --url and --file are mutually exclusive\n\n";
     usage_exit(1);
 }
 
-unless ($dump_swml || $list_tools || $exec_name) {
+unless ( $dump_swml || $list_tools || $exec_name ) {
     print STDERR "Error: one of --dump-swml, --list-tools, or --exec NAME is required\n\n";
     usage_exit(1);
 }
@@ -67,9 +67,9 @@ if ($file) {
 }
 
 # --- URL mode: HTTP path ---
-my $uri = URI->new($url);
+my $uri      = URI->new($url);
 my $userinfo = $uri->userinfo // '';
-my ($auth_user, $auth_pass) = split(/:/, $userinfo, 2);
+my ( $auth_user, $auth_pass ) = split( /:/, $userinfo, 2 );
 
 # Build base URL without credentials
 my $clean_uri = $uri->clone;
@@ -79,17 +79,15 @@ my $base_url = $clean_uri->as_string;
 # Remove trailing slash
 $base_url =~ s{/$}{};
 
-my $http = HTTP::Tiny->new(timeout => 30);
+my $http = HTTP::Tiny->new( timeout => 30 );
 
 # --- Execute the requested operation ---
 
 if ($dump_swml) {
     do_dump_swml();
-}
-elsif ($list_tools) {
+} elsif ($list_tools) {
     do_list_tools();
-}
-elsif ($exec_name) {
+} elsif ($exec_name) {
     do_exec($exec_name);
 }
 
@@ -105,7 +103,7 @@ sub do_dump_swml {
         print $response->{content};
         print "\n" unless $response->{content} =~ /\n$/;
     } else {
-        my $data = eval { JSON::decode_json($response->{content}) };
+        my $data = eval { JSON::decode_json( $response->{content} ) };
         if ($@) {
             die "Error: Failed to parse JSON response: $@\n";
         }
@@ -115,7 +113,7 @@ sub do_dump_swml {
 
 sub do_list_tools {
     my $response = http_get($base_url);
-    my $data = eval { JSON::decode_json($response->{content}) };
+    my $data     = eval { JSON::decode_json( $response->{content} ) };
     if ($@) {
         die "Error: Failed to parse JSON response: $@\n";
     }
@@ -124,15 +122,15 @@ sub do_list_tools {
     my @functions;
 
     # Navigate the SWML structure to find AI verb functions
-    if (my $sections = $data->{sections}) {
-        for my $section_name (keys %$sections) {
+    if ( my $sections = $data->{sections} ) {
+        for my $section_name ( keys %$sections ) {
             my $verbs = $sections->{$section_name};
             next unless ref $verbs eq 'ARRAY';
             for my $verb (@$verbs) {
-                if (ref $verb eq 'HASH' && exists $verb->{ai}) {
+                if ( ref $verb eq 'HASH' && exists $verb->{ai} ) {
                     my $ai = $verb->{ai};
-                    if (my $swaig = $ai->{SWAIG}) {
-                        if (my $funcs = $swaig->{functions}) {
+                    if ( my $swaig = $ai->{SWAIG} ) {
+                        if ( my $funcs = $swaig->{functions} ) {
                             push @functions, @$funcs;
                         }
                     }
@@ -141,12 +139,12 @@ sub do_list_tools {
         }
     }
 
-    if (!@functions) {
+    if ( !@functions ) {
         print "No SWAIG functions found.\n";
         return;
     }
 
-    print_tool_list(\@functions);
+    print_tool_list( \@functions );
 }
 
 sub do_exec {
@@ -155,7 +153,7 @@ sub do_exec {
     # Parse --param key=value pairs
     my %args;
     for my $p (@params) {
-        if ($p =~ /^([^=]+)=(.*)$/) {
+        if ( $p =~ /^([^=]+)=(.*)$/ ) {
             $args{$1} = $2;
         } else {
             die "Error: Invalid --param format '$p'. Use key=value\n";
@@ -165,8 +163,8 @@ sub do_exec {
     my $swaig_url = $base_url . '/swaig';
 
     my $payload = {
-        function  => $func_name,
-        argument  => {
+        function => $func_name,
+        argument => {
             parsed => [ \%args ],
         },
     };
@@ -178,7 +176,7 @@ sub do_exec {
         print STDERR ">>> Body: $json_body\n";
     }
 
-    my $response = http_post($swaig_url, $json_body);
+    my $response = http_post( $swaig_url, $json_body );
 
     if ($verbose) {
         print STDERR "<<< Status: $response->{status}\n";
@@ -189,7 +187,7 @@ sub do_exec {
         print $response->{content};
         print "\n" unless $response->{content} =~ /\n$/;
     } else {
-        my $data = eval { JSON::decode_json($response->{content}) };
+        my $data = eval { JSON::decode_json( $response->{content} ) };
         if ($@) {
             print $response->{content};
             print "\n" unless $response->{content} =~ /\n$/;
@@ -204,7 +202,7 @@ sub do_exec {
 # ============================================================
 
 sub do_file_mode {
-    unless (-f $file) {
+    unless ( -f $file ) {
         die "Error: --file '$file' does not exist or is not a regular file\n";
     }
 
@@ -218,28 +216,26 @@ sub do_file_mode {
     # Run the file. The example scripts guard their server-start with
     # `unless caller`, so loading via `do` does NOT spin a server.
     my $rv = do $abs;
-    if (my $e = $@) {
+    if ( my $e = $@ ) {
         die "Error: failed to compile '$file': $e\n";
     }
-    if (!defined $rv && $!) {
+    if ( !defined $rv && $! ) {
         die "Error: failed to read '$file': $!\n";
     }
 
     my $svc = _resolve_service_instance($rv);
     unless ($svc) {
         die "Error: could not locate a SignalWire::SWML::Service instance in '$file'.\n"
-          . "Hint: define a build_service() sub that returns an instance, return one as\n"
-          . "the file's last value, or declare a package that ISA SignalWire::SWML::Service.\n";
+            . "Hint: define a build_service() sub that returns an instance, return one as\n"
+            . "the file's last value, or declare a package that ISA SignalWire::SWML::Service.\n";
     }
 
     if ($dump_swml) {
         do_file_dump_swml($svc);
-    }
-    elsif ($list_tools) {
+    } elsif ($list_tools) {
         do_file_list_tools($svc);
-    }
-    elsif ($exec_name) {
-        do_file_exec($svc, $exec_name);
+    } elsif ($exec_name) {
+        do_file_exec( $svc, $exec_name );
     }
 }
 
@@ -252,19 +248,19 @@ sub do_file_mode {
 sub _resolve_service_instance {
     my ($do_rv) = @_;
 
-    if (blessed($do_rv) && $do_rv->isa('SignalWire::SWML::Service')) {
+    if ( blessed($do_rv) && $do_rv->isa('SignalWire::SWML::Service') ) {
         if ($verbose) {
             print STDERR ">>> using service instance returned by file (" . ref($do_rv) . ")\n";
         }
         return $do_rv;
     }
 
-    if (my $builder = main->can('build_service')) {
+    if ( my $builder = main->can('build_service') ) {
         if ($verbose) {
             print STDERR ">>> calling main::build_service\n";
         }
         my $svc = $builder->();
-        if (blessed($svc) && $svc->isa('SignalWire::SWML::Service')) {
+        if ( blessed($svc) && $svc->isa('SignalWire::SWML::Service') ) {
             return $svc;
         }
     }
@@ -276,7 +272,7 @@ sub _resolve_service_instance {
             print STDERR ">>> attempting parameterless construction of $pkg\n";
         }
         my $svc = eval { $pkg->new };
-        if (!$@ && blessed($svc) && $svc->isa('SignalWire::SWML::Service')) {
+        if ( !$@ && blessed($svc) && $svc->isa('SignalWire::SWML::Service') ) {
             return $svc;
         }
     }
@@ -291,8 +287,8 @@ sub _find_service_subclasses {
     # Recursive walk of %:: → all loaded packages.
     my $walk;
     $walk = sub {
-        my ($stash, $prefix) = @_;
-        for my $entry (keys %$stash) {
+        my ( $stash, $prefix ) = @_;
+        for my $entry ( keys %$stash ) {
             next unless $entry =~ /::$/;
             my $name = $entry;
             $name =~ s/::$//;
@@ -302,27 +298,28 @@ sub _find_service_subclasses {
 
             # Only treat as a class if it has any symbols at all.
             no strict 'refs';
-            my $sub_stash = \%{ "${pkg}::" };
+            my $sub_stash = \%{"${pkg}::"};
             use strict 'refs';
 
-            if (eval { $pkg->isa('SignalWire::SWML::Service') }
+            if (   eval { $pkg->isa('SignalWire::SWML::Service') }
                 && $pkg ne 'SignalWire::SWML::Service'
-                && $pkg ne 'SignalWire::Agent::AgentBase')
+                && $pkg ne 'SignalWire::Agent::AgentBase' )
             {
                 push @found, $pkg;
             }
-            $walk->($sub_stash, $pkg);
+            $walk->( $sub_stash, $pkg );
         }
     };
-    $walk->(\%::, '');
+    $walk->( \%::, '' );
     return @found;
 }
 
 sub do_file_dump_swml {
     my ($svc) = @_;
+
     # Render the SWML document the same way the PSGI handler does. We
     # pass a minimal env hash so dynamic renderers don't blow up.
-    my $doc = $svc->render_main_swml({});
+    my $doc = $svc->render_main_swml( {} );
     if ($raw) {
         print JSON::encode_json($doc), "\n";
     } else {
@@ -331,25 +328,25 @@ sub do_file_dump_swml {
 }
 
 sub do_file_list_tools {
-    my ($svc) = @_;
-    my @names = $svc->list_tool_names;
+    my ($svc)    = @_;
+    my @names    = $svc->list_tool_names;
     my $registry = $svc->tools // {};
 
-    if (!@names) {
+    if ( !@names ) {
         print "No SWAIG functions found.\n";
         return;
     }
 
     my @functions = map { $registry->{$_} } @names;
-    print_tool_list(\@functions);
+    print_tool_list( \@functions );
 }
 
 sub do_file_exec {
-    my ($svc, $func_name) = @_;
+    my ( $svc, $func_name ) = @_;
 
     my %args;
     for my $p (@params) {
-        if ($p =~ /^([^=]+)=(.*)$/) {
+        if ( $p =~ /^([^=]+)=(.*)$/ ) {
             $args{$1} = $2;
         } else {
             die "Error: Invalid --param format '$p'. Use key=value\n";
@@ -361,15 +358,15 @@ sub do_file_exec {
         argument => { parsed => [ \%args ] },
     };
 
-    my $result = $svc->on_function_call($func_name, \%args, $payload);
-    unless (defined $result) {
+    my $result = $svc->on_function_call( $func_name, \%args, $payload );
+    unless ( defined $result ) {
         die "Error: function '$func_name' is not registered or returned undef.\n";
     }
 
     my $hash;
-    if (ref $result eq 'HASH') {
+    if ( ref $result eq 'HASH' ) {
         $hash = $result;
-    } elsif (blessed($result) && $result->can('to_hash')) {
+    } elsif ( blessed($result) && $result->can('to_hash') ) {
         $hash = $result->to_hash;
     } else {
         $hash = { response => "$result" };
@@ -395,18 +392,18 @@ sub print_tool_list {
     } else {
         printf "Found %d SWAIG function(s):\n\n", scalar @$functions;
         for my $f (@$functions) {
-            my $name = $f->{function} // 'unnamed';
+            my $name = $f->{function}    // 'unnamed';
             my $desc = $f->{description} // '(no description)';
             printf "  %-30s %s\n", $name, $desc;
 
             # Show parameters if any
-            if (my $params_schema = $f->{parameters}) {
-                if (my $props = $params_schema->{properties}) {
-                    my $required = $params_schema->{required} // [];
+            if ( my $params_schema = $f->{parameters} ) {
+                if ( my $props = $params_schema->{properties} ) {
+                    my $required     = $params_schema->{required} // [];
                     my %required_map = map { $_ => 1 } @$required;
-                    for my $pname (sort keys %$props) {
-                        my $ptype = $props->{$pname}{type} // 'any';
-                        my $pdesc = $props->{$pname}{description} // '';
+                    for my $pname ( sort keys %$props ) {
+                        my $ptype      = $props->{$pname}{type}        // 'any';
+                        my $pdesc      = $props->{$pname}{description} // '';
                         my $req_marker = $required_map{$pname} ? '*' : ' ';
                         printf "    %s %-20s %-10s %s\n", $req_marker, $pname, "($ptype)", $pdesc;
                     }
@@ -423,8 +420,8 @@ sub print_tool_list {
 
 sub _auth_headers {
     my %headers;
-    if (defined $auth_user && defined $auth_pass) {
-        my $encoded = encode_base64("$auth_user:$auth_pass", '');
+    if ( defined $auth_user && defined $auth_pass ) {
+        my $encoded = encode_base64( "$auth_user:$auth_pass", '' );
         $headers{Authorization} = "Basic $encoded";
     }
     return %headers;
@@ -438,33 +435,36 @@ sub http_get {
         print STDERR ">>> GET $target_url\n";
     }
 
-    my $response = $http->get($target_url, { headers => \%headers });
+    my $response = $http->get( $target_url, { headers => \%headers } );
 
     if ($verbose) {
         print STDERR "<<< Status: $response->{status}\n";
     }
 
-    unless ($response->{success}) {
-        die sprintf("Error: HTTP %s %s\n%s\n",
-            $response->{status}, $response->{reason}, $response->{content} // '');
+    unless ( $response->{success} ) {
+        die sprintf( "Error: HTTP %s %s\n%s\n",
+            $response->{status}, $response->{reason}, $response->{content} // '' );
     }
 
     return $response;
 }
 
 sub http_post {
-    my ($target_url, $body) = @_;
+    my ( $target_url, $body ) = @_;
     my %headers = _auth_headers();
     $headers{'Content-Type'} = 'application/json';
 
-    my $response = $http->post($target_url, {
-        headers => \%headers,
-        content => $body,
-    });
+    my $response = $http->post(
+        $target_url,
+        {
+            headers => \%headers,
+            content => $body,
+        }
+    );
 
-    unless ($response->{success}) {
-        die sprintf("Error: HTTP %s %s\n%s\n",
-            $response->{status}, $response->{reason}, $response->{content} // '');
+    unless ( $response->{success} ) {
+        die sprintf( "Error: HTTP %s %s\n%s\n",
+            $response->{status}, $response->{reason}, $response->{content} // '' );
     }
 
     return $response;

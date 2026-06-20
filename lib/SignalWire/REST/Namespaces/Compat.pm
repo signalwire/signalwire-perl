@@ -9,24 +9,24 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub create {
-    my ($self, %kwargs) = @_;
-    return $self->_http->post($self->_base_path, body => \%kwargs);
+    my ( $self, %kwargs ) = @_;
+    return $self->_http->post( $self->_base_path, body => \%kwargs );
 }
 
 sub get {
-    my ($self, $sid) = @_;
-    return $self->_http->get($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->get( $self->_path($sid) );
 }
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 # --- CompatCalls ---
@@ -35,28 +35,30 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::CrudResource';
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 sub start_recording {
-    my ($self, $call_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($call_sid, 'Recordings'), body => \%kwargs);
+    my ( $self, $call_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $call_sid, 'Recordings' ), body => \%kwargs );
 }
 
 sub update_recording {
-    my ($self, $call_sid, $recording_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($call_sid, 'Recordings', $recording_sid), body => \%kwargs);
+    my ( $self, $call_sid, $recording_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $call_sid, 'Recordings', $recording_sid ),
+        body => \%kwargs );
 }
 
 sub start_stream {
-    my ($self, $call_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($call_sid, 'Streams'), body => \%kwargs);
+    my ( $self, $call_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $call_sid, 'Streams' ), body => \%kwargs );
 }
 
 sub stop_stream {
-    my ($self, $call_sid, $stream_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($call_sid, 'Streams', $stream_sid), body => \%kwargs);
+    my ( $self, $call_sid, $stream_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $call_sid, 'Streams', $stream_sid ),
+        body => \%kwargs );
 }
 
 # --- CompatMessages ---
@@ -65,24 +67,24 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::CrudResource';
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 sub list_media {
-    my ($self, $message_sid, %params) = @_;
+    my ( $self, $message_sid, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($message_sid, 'Media'), params => $p);
+    return $self->_http->get( $self->_path( $message_sid, 'Media' ), params => $p );
 }
 
 sub get_media {
-    my ($self, $message_sid, $media_sid) = @_;
-    return $self->_http->get($self->_path($message_sid, 'Media', $media_sid));
+    my ( $self, $message_sid, $media_sid ) = @_;
+    return $self->_http->get( $self->_path( $message_sid, 'Media', $media_sid ) );
 }
 
 sub delete_media {
-    my ($self, $message_sid, $media_sid) = @_;
-    return $self->_http->delete_request($self->_path($message_sid, 'Media', $media_sid));
+    my ( $self, $message_sid, $media_sid ) = @_;
+    return $self->_http->delete_request( $self->_path( $message_sid, 'Media', $media_sid ) );
 }
 
 # --- CompatFaxes ---
@@ -91,24 +93,24 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::CrudResource';
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 sub list_media {
-    my ($self, $fax_sid, %params) = @_;
+    my ( $self, $fax_sid, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($fax_sid, 'Media'), params => $p);
+    return $self->_http->get( $self->_path( $fax_sid, 'Media' ), params => $p );
 }
 
 sub get_media {
-    my ($self, $fax_sid, $media_sid) = @_;
-    return $self->_http->get($self->_path($fax_sid, 'Media', $media_sid));
+    my ( $self, $fax_sid, $media_sid ) = @_;
+    return $self->_http->get( $self->_path( $fax_sid, 'Media', $media_sid ) );
 }
 
 sub delete_media {
-    my ($self, $fax_sid, $media_sid) = @_;
-    return $self->_http->delete_request($self->_path($fax_sid, 'Media', $media_sid));
+    my ( $self, $fax_sid, $media_sid ) = @_;
+    return $self->_http->delete_request( $self->_path( $fax_sid, 'Media', $media_sid ) );
 }
 
 # --- CompatConferences ---
@@ -117,71 +119,76 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub get {
-    my ($self, $sid) = @_;
-    return $self->_http->get($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->get( $self->_path($sid) );
 }
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 sub list_participants {
-    my ($self, $conference_sid, %params) = @_;
+    my ( $self, $conference_sid, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($conference_sid, 'Participants'), params => $p);
+    return $self->_http->get( $self->_path( $conference_sid, 'Participants' ), params => $p );
 }
 
 sub get_participant {
-    my ($self, $conference_sid, $call_sid) = @_;
-    return $self->_http->get($self->_path($conference_sid, 'Participants', $call_sid));
+    my ( $self, $conference_sid, $call_sid ) = @_;
+    return $self->_http->get( $self->_path( $conference_sid, 'Participants', $call_sid ) );
 }
 
 sub update_participant {
-    my ($self, $conference_sid, $call_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($conference_sid, 'Participants', $call_sid), body => \%kwargs);
+    my ( $self, $conference_sid, $call_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $conference_sid, 'Participants', $call_sid ),
+        body => \%kwargs );
 }
 
 sub remove_participant {
-    my ($self, $conference_sid, $call_sid) = @_;
-    return $self->_http->delete_request($self->_path($conference_sid, 'Participants', $call_sid));
+    my ( $self, $conference_sid, $call_sid ) = @_;
+    return $self->_http->delete_request(
+        $self->_path( $conference_sid, 'Participants', $call_sid ) );
 }
 
 sub list_recordings {
-    my ($self, $conference_sid, %params) = @_;
+    my ( $self, $conference_sid, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($conference_sid, 'Recordings'), params => $p);
+    return $self->_http->get( $self->_path( $conference_sid, 'Recordings' ), params => $p );
 }
 
 sub get_recording {
-    my ($self, $conference_sid, $recording_sid) = @_;
-    return $self->_http->get($self->_path($conference_sid, 'Recordings', $recording_sid));
+    my ( $self, $conference_sid, $recording_sid ) = @_;
+    return $self->_http->get( $self->_path( $conference_sid, 'Recordings', $recording_sid ) );
 }
 
 sub update_recording {
-    my ($self, $conference_sid, $recording_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($conference_sid, 'Recordings', $recording_sid), body => \%kwargs);
+    my ( $self, $conference_sid, $recording_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $conference_sid, 'Recordings', $recording_sid ),
+        body => \%kwargs );
 }
 
 sub delete_recording {
-    my ($self, $conference_sid, $recording_sid) = @_;
-    return $self->_http->delete_request($self->_path($conference_sid, 'Recordings', $recording_sid));
+    my ( $self, $conference_sid, $recording_sid ) = @_;
+    return $self->_http->delete_request(
+        $self->_path( $conference_sid, 'Recordings', $recording_sid ) );
 }
 
 sub start_stream {
-    my ($self, $conference_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($conference_sid, 'Streams'), body => \%kwargs);
+    my ( $self, $conference_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $conference_sid, 'Streams' ), body => \%kwargs );
 }
 
 sub stop_stream {
-    my ($self, $conference_sid, $stream_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($conference_sid, 'Streams', $stream_sid), body => \%kwargs);
+    my ( $self, $conference_sid, $stream_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $conference_sid, 'Streams', $stream_sid ),
+        body => \%kwargs );
 }
 
 # --- CompatPhoneNumbers ---
@@ -193,64 +200,64 @@ has '_available_base' => ( is => 'lazy' );
 
 sub _build__available_base {
     my ($self) = @_;
-    (my $path = $self->_base_path) =~ s/IncomingPhoneNumbers/AvailablePhoneNumbers/;
+    ( my $path = $self->_base_path ) =~ s/IncomingPhoneNumbers/AvailablePhoneNumbers/;
     return $path;
 }
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub purchase {
-    my ($self, %kwargs) = @_;
-    return $self->_http->post($self->_base_path, body => \%kwargs);
+    my ( $self, %kwargs ) = @_;
+    return $self->_http->post( $self->_base_path, body => \%kwargs );
 }
 
 sub get {
-    my ($self, $sid) = @_;
-    return $self->_http->get($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->get( $self->_path($sid) );
 }
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 sub delete_number {
-    my ($self, $sid) = @_;
-    return $self->_http->delete_request($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->delete_request( $self->_path($sid) );
 }
 
 # Python parity alias.
 sub delete {
-    my ($self, $sid) = @_;
-    return $self->_http->delete_request($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->delete_request( $self->_path($sid) );
 }
 
 sub import_number {
-    my ($self, %kwargs) = @_;
-    (my $path = $self->_base_path) =~ s/IncomingPhoneNumbers/ImportedPhoneNumbers/;
-    return $self->_http->post($path, body => \%kwargs);
+    my ( $self, %kwargs ) = @_;
+    ( my $path = $self->_base_path ) =~ s/IncomingPhoneNumbers/ImportedPhoneNumbers/;
+    return $self->_http->post( $path, body => \%kwargs );
 }
 
 sub list_available_countries {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_available_base, params => $p);
+    return $self->_http->get( $self->_available_base, params => $p );
 }
 
 sub search_local {
-    my ($self, $country, %params) = @_;
+    my ( $self, $country, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_available_base . "/$country/Local", params => $p);
+    return $self->_http->get( $self->_available_base . "/$country/Local", params => $p );
 }
 
 sub search_toll_free {
-    my ($self, $country, %params) = @_;
+    my ( $self, $country, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_available_base . "/$country/TollFree", params => $p);
+    return $self->_http->get( $self->_available_base . "/$country/TollFree", params => $p );
 }
 
 # --- CompatApplications ---
@@ -259,8 +266,8 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::CrudResource';
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 # --- CompatLamlBins ---
@@ -269,8 +276,8 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::CrudResource';
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 # --- CompatQueues ---
@@ -279,24 +286,24 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::CrudResource';
 
 sub update {
-    my ($self, $sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($sid), body => \%kwargs);
+    my ( $self, $sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path($sid), body => \%kwargs );
 }
 
 sub list_members {
-    my ($self, $queue_sid, %params) = @_;
+    my ( $self, $queue_sid, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path($queue_sid, 'Members'), params => $p);
+    return $self->_http->get( $self->_path( $queue_sid, 'Members' ), params => $p );
 }
 
 sub get_member {
-    my ($self, $queue_sid, $call_sid) = @_;
-    return $self->_http->get($self->_path($queue_sid, 'Members', $call_sid));
+    my ( $self, $queue_sid, $call_sid ) = @_;
+    return $self->_http->get( $self->_path( $queue_sid, 'Members', $call_sid ) );
 }
 
 sub dequeue_member {
-    my ($self, $queue_sid, $call_sid, %kwargs) = @_;
-    return $self->_http->post($self->_path($queue_sid, 'Members', $call_sid), body => \%kwargs);
+    my ( $self, $queue_sid, $call_sid, %kwargs ) = @_;
+    return $self->_http->post( $self->_path( $queue_sid, 'Members', $call_sid ), body => \%kwargs );
 }
 
 # --- CompatRecordings ---
@@ -305,25 +312,25 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub get {
-    my ($self, $sid) = @_;
-    return $self->_http->get($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->get( $self->_path($sid) );
 }
 
 sub delete_recording {
-    my ($self, $sid) = @_;
-    return $self->_http->delete_request($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->delete_request( $self->_path($sid) );
 }
 
 # Python parity alias.
 sub delete {
-    my ($self, $sid) = @_;
-    return $self->_http->delete_request($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->delete_request( $self->_path($sid) );
 }
 
 # --- CompatTranscriptions ---
@@ -332,25 +339,25 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_base_path, params => $p);
+    return $self->_http->get( $self->_base_path, params => $p );
 }
 
 sub get {
-    my ($self, $sid) = @_;
-    return $self->_http->get($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->get( $self->_path($sid) );
 }
 
 sub delete_transcription {
-    my ($self, $sid) = @_;
-    return $self->_http->delete_request($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->delete_request( $self->_path($sid) );
 }
 
 # Python parity alias.
 sub delete {
-    my ($self, $sid) = @_;
-    return $self->_http->delete_request($self->_path($sid));
+    my ( $self, $sid ) = @_;
+    return $self->_http->delete_request( $self->_path($sid) );
 }
 
 # --- CompatTokens ---
@@ -359,32 +366,32 @@ use Moo;
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub create {
-    my ($self, %kwargs) = @_;
-    return $self->_http->post($self->_base_path, body => \%kwargs);
+    my ( $self, %kwargs ) = @_;
+    return $self->_http->post( $self->_base_path, body => \%kwargs );
 }
 
 sub update {
-    my ($self, $token_id, %kwargs) = @_;
-    return $self->_http->patch($self->_path($token_id), body => \%kwargs);
+    my ( $self, $token_id, %kwargs ) = @_;
+    return $self->_http->patch( $self->_path($token_id), body => \%kwargs );
 }
 
 sub delete_token {
-    my ($self, $token_id) = @_;
-    return $self->_http->delete_request($self->_path($token_id));
+    my ( $self, $token_id ) = @_;
+    return $self->_http->delete_request( $self->_path($token_id) );
 }
 
 # Python parity alias.
 sub delete {
-    my ($self, $token_id) = @_;
-    return $self->_http->delete_request($self->_path($token_id));
+    my ( $self, $token_id ) = @_;
+    return $self->_http->delete_request( $self->_path($token_id) );
 }
 
 # --- CompatNamespace ---
 package SignalWire::REST::Namespaces::Compat;
 use Moo;
 
-has '_http'        => ( is => 'ro', required => 1 );
-has 'account_sid'  => ( is => 'ro', required => 1 );
+has '_http'       => ( is => 'ro', required => 1 );
+has 'account_sid' => ( is => 'ro', required => 1 );
 
 has 'accounts'       => ( is => 'lazy' );
 has 'calls'          => ( is => 'lazy' );
@@ -404,17 +411,88 @@ sub _base {
     return '/api/laml/2010-04-01/Accounts/' . $self->account_sid;
 }
 
-sub _build_accounts       { SignalWire::REST::Namespaces::Compat::Accounts->new(_http => $_[0]->_http, _base_path => '/api/laml/2010-04-01/Accounts') }
-sub _build_calls          { SignalWire::REST::Namespaces::Compat::Calls->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/Calls') }
-sub _build_messages       { SignalWire::REST::Namespaces::Compat::Messages->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/Messages') }
-sub _build_faxes          { SignalWire::REST::Namespaces::Compat::Faxes->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/Faxes') }
-sub _build_conferences    { SignalWire::REST::Namespaces::Compat::Conferences->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/Conferences') }
-sub _build_phone_numbers  { SignalWire::REST::Namespaces::Compat::PhoneNumbers->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/IncomingPhoneNumbers') }
-sub _build_applications   { SignalWire::REST::Namespaces::Compat::Applications->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/Applications') }
-sub _build_laml_bins      { SignalWire::REST::Namespaces::Compat::LamlBins->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/LamlBins') }
-sub _build_queues         { SignalWire::REST::Namespaces::Compat::Queues->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/Queues') }
-sub _build_recordings     { SignalWire::REST::Namespaces::Compat::Recordings->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/Recordings') }
-sub _build_transcriptions { SignalWire::REST::Namespaces::Compat::Transcriptions->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/Transcriptions') }
-sub _build_tokens         { SignalWire::REST::Namespaces::Compat::Tokens->new(_http => $_[0]->_http, _base_path => $_[0]->_base . '/tokens') }
+sub _build_accounts {
+    SignalWire::REST::Namespaces::Compat::Accounts->new(
+        _http      => $_[0]->_http,
+        _base_path => '/api/laml/2010-04-01/Accounts'
+    );
+}
+
+sub _build_calls {
+    SignalWire::REST::Namespaces::Compat::Calls->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/Calls'
+    );
+}
+
+sub _build_messages {
+    SignalWire::REST::Namespaces::Compat::Messages->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/Messages'
+    );
+}
+
+sub _build_faxes {
+    SignalWire::REST::Namespaces::Compat::Faxes->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/Faxes'
+    );
+}
+
+sub _build_conferences {
+    SignalWire::REST::Namespaces::Compat::Conferences->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/Conferences'
+    );
+}
+
+sub _build_phone_numbers {
+    SignalWire::REST::Namespaces::Compat::PhoneNumbers->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/IncomingPhoneNumbers'
+    );
+}
+
+sub _build_applications {
+    SignalWire::REST::Namespaces::Compat::Applications->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/Applications'
+    );
+}
+
+sub _build_laml_bins {
+    SignalWire::REST::Namespaces::Compat::LamlBins->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/LamlBins'
+    );
+}
+
+sub _build_queues {
+    SignalWire::REST::Namespaces::Compat::Queues->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/Queues'
+    );
+}
+
+sub _build_recordings {
+    SignalWire::REST::Namespaces::Compat::Recordings->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/Recordings'
+    );
+}
+
+sub _build_transcriptions {
+    SignalWire::REST::Namespaces::Compat::Transcriptions->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/Transcriptions'
+    );
+}
+
+sub _build_tokens {
+    SignalWire::REST::Namespaces::Compat::Tokens->new(
+        _http      => $_[0]->_http,
+        _base_path => $_[0]->_base . '/tokens'
+    );
+}
 
 1;

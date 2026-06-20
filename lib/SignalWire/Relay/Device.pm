@@ -2,6 +2,7 @@ package SignalWire::Relay::Device;
 use strict;
 use warnings;
 use Moo;
+
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
 use Carp ();
@@ -56,10 +57,10 @@ my $HashRef = sub {
 # passed through untouched so the `isa` constraint below rejects it cleanly.
 my $CopyHash = sub {
     my ($v) = @_;
-    return ref $v eq 'HASH' ? { %$v } : $v;
+    return ref $v eq 'HASH' ? {%$v} : $v;
 };
 
-has 'type'   => ( is => 'ro', required => 1, isa => $NonEmptyStr );
+has 'type' => ( is => 'ro', required => 1, isa => $NonEmptyStr );
 has 'params' => (
     is      => 'ro',
     default => sub { {} },

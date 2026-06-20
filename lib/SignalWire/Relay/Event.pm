@@ -2,6 +2,7 @@ package SignalWire::Relay::Event;
 use strict;
 use warnings;
 use Moo;
+
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor), enabled
 # file-wide.
 use feature 'signatures';
@@ -161,8 +162,8 @@ has 'state'      => ( is => 'ro', default => sub { '' } );
 package SignalWire::Relay::Event::CallRefer;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id'     => ( is => 'ro', default => sub { '' } );
+has 'node_id'     => ( is => 'ro', default => sub { '' } );
 has 'refer_state' => ( is => 'ro', default => sub { '' } );
 
 # Conference event
@@ -253,11 +254,12 @@ my %EVENT_CLASS_MAP = (
     'signalwire.disconnect'          => 'SignalWire::Relay::Event::Disconnect',
 );
 
-sub parse_event ($class_or_self, $event_type, $params = undef) {
+sub parse_event ( $class_or_self, $event_type, $params = undef ) {
     $params //= {};
 
     my $event_class = $EVENT_CLASS_MAP{$event_type};
     unless ($event_class) {
+
         # Return base event for unknown types
         return SignalWire::Relay::Event->new(
             event_type => $event_type,
@@ -272,7 +274,8 @@ sub parse_event ($class_or_self, $event_type, $params = undef) {
     );
 
     # Copy known fields from params into top-level attributes
-    for my $key (keys %$params) {
+    for my $key ( keys %$params ) {
+
         # Moo will silently ignore unknown attrs, so we just pass everything
         $args{$key} = $params->{$key};
     }

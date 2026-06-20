@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use JSON ();
 
-our $MAX_CONTEXTS        = 50;
+our $MAX_CONTEXTS          = 50;
 our $MAX_STEPS_PER_CONTEXT = 100;
 
 # Reserved tool names auto-injected by the runtime when contexts/steps are
@@ -16,9 +16,9 @@ our $MAX_STEPS_PER_CONTEXT = 100;
 # sharing one of these names (see the validation in
 # SignalWire::Contexts::ContextBuilder::validate below).
 our %RESERVED_NATIVE_TOOL_NAMES = (
-    next_step       => 1,
-    change_context  => 1,
-    gather_submit   => 1,
+    next_step      => 1,
+    change_context => 1,
+    gather_submit  => 1,
 );
 
 # ==========================================================================
@@ -28,20 +28,20 @@ package SignalWire::Contexts::GatherQuestion;
 use Moo;
 use JSON ();
 
-has 'key'       => (is => 'ro', required => 1);
-has 'question'  => (is => 'ro', required => 1);
-has 'type'      => (is => 'ro', default => sub { 'string' });
-has 'confirm'   => (is => 'ro', default => sub { 0 });
-has 'prompt'    => (is => 'ro', default => sub { undef });
-has 'functions' => (is => 'ro', default => sub { undef });
+has 'key'       => ( is => 'ro', required => 1 );
+has 'question'  => ( is => 'ro', required => 1 );
+has 'type'      => ( is => 'ro', default  => sub { 'string' } );
+has 'confirm'   => ( is => 'ro', default  => sub { 0 } );
+has 'prompt'    => ( is => 'ro', default  => sub { undef } );
+has 'functions' => ( is => 'ro', default  => sub { undef } );
 
 sub to_hash {
     my ($self) = @_;
-    my %d = (key => $self->key, question => $self->question);
+    my %d = ( key => $self->key, question => $self->question );
     $d{type}      = $self->type      if $self->type ne 'string';
     $d{confirm}   = JSON::true       if $self->confirm;
-    $d{prompt}    = $self->prompt     if defined $self->prompt;
-    $d{functions} = $self->functions  if defined $self->functions;
+    $d{prompt}    = $self->prompt    if defined $self->prompt;
+    $d{functions} = $self->functions if defined $self->functions;
     return \%d;
 }
 
@@ -51,18 +51,18 @@ sub to_hash {
 package SignalWire::Contexts::GatherInfo;
 use Moo;
 
-has '_questions'        => (is => 'rw', default => sub { [] });
-has '_output_key'       => (is => 'rw', default => sub { undef });
-has '_completion_action' => (is => 'rw', default => sub { undef });
-has '_prompt'           => (is => 'rw', default => sub { undef });
+has '_questions'         => ( is => 'rw', default => sub { [] } );
+has '_output_key'        => ( is => 'rw', default => sub { undef } );
+has '_completion_action' => ( is => 'rw', default => sub { undef } );
+has '_prompt'            => ( is => 'rw', default => sub { undef } );
 
 sub add_question {
-    my ($self, %opts) = @_;
+    my ( $self, %opts ) = @_;
     my $q = SignalWire::Contexts::GatherQuestion->new(
         key       => $opts{key},
         question  => $opts{question},
-        type      => $opts{type}      // 'string',
-        confirm   => $opts{confirm}   // 0,
+        type      => $opts{type}    // 'string',
+        confirm   => $opts{confirm} // 0,
         prompt    => $opts{prompt},
         functions => $opts{functions},
     );
@@ -73,10 +73,10 @@ sub add_question {
 sub to_hash {
     my ($self) = @_;
     die "gather_info must have at least one question" unless @{ $self->_questions };
-    my %d = (questions => [ map { $_->to_hash } @{ $self->_questions } ]);
+    my %d = ( questions => [ map { $_->to_hash } @{ $self->_questions } ] );
     $d{prompt}            = $self->_prompt            if defined $self->_prompt;
     $d{output_key}        = $self->_output_key        if defined $self->_output_key;
-    $d{completion_action} = $self->_completion_action  if defined $self->_completion_action;
+    $d{completion_action} = $self->_completion_action if defined $self->_completion_action;
     return \%d;
 }
 
@@ -87,25 +87,25 @@ package SignalWire::Contexts::Step;
 use Moo;
 use JSON ();
 
-has 'name' => (is => 'ro', required => 1);
+has 'name' => ( is => 'ro', required => 1 );
 
-has '_text'             => (is => 'rw', default => sub { undef });
-has '_step_criteria'    => (is => 'rw', default => sub { undef });
-has '_functions'        => (is => 'rw', default => sub { undef });
-has '_valid_steps'      => (is => 'rw', default => sub { undef });
-has '_valid_contexts'   => (is => 'rw', default => sub { undef });
-has '_sections'         => (is => 'rw', default => sub { [] });
-has '_gather_info'      => (is => 'rw', default => sub { undef });
-has '_end'              => (is => 'rw', default => sub { 0 });
-has '_skip_user_turn'   => (is => 'rw', default => sub { 0 });
-has '_skip_to_next_step' => (is => 'rw', default => sub { 0 });
-has '_reset_system_prompt' => (is => 'rw', default => sub { undef });
-has '_reset_user_prompt'   => (is => 'rw', default => sub { undef });
-has '_reset_consolidate'   => (is => 'rw', default => sub { 0 });
-has '_reset_full_reset'    => (is => 'rw', default => sub { 0 });
+has '_text'                => ( is => 'rw', default => sub { undef } );
+has '_step_criteria'       => ( is => 'rw', default => sub { undef } );
+has '_functions'           => ( is => 'rw', default => sub { undef } );
+has '_valid_steps'         => ( is => 'rw', default => sub { undef } );
+has '_valid_contexts'      => ( is => 'rw', default => sub { undef } );
+has '_sections'            => ( is => 'rw', default => sub { [] } );
+has '_gather_info'         => ( is => 'rw', default => sub { undef } );
+has '_end'                 => ( is => 'rw', default => sub { 0 } );
+has '_skip_user_turn'      => ( is => 'rw', default => sub { 0 } );
+has '_skip_to_next_step'   => ( is => 'rw', default => sub { 0 } );
+has '_reset_system_prompt' => ( is => 'rw', default => sub { undef } );
+has '_reset_user_prompt'   => ( is => 'rw', default => sub { undef } );
+has '_reset_consolidate'   => ( is => 'rw', default => sub { 0 } );
+has '_reset_full_reset'    => ( is => 'rw', default => sub { 0 } );
 
 sub set_text {
-    my ($self, $text) = @_;
+    my ( $self, $text ) = @_;
     die "Cannot use set_text() when POM sections have been added"
         if @{ $self->_sections };
     $self->_text($text);
@@ -113,7 +113,7 @@ sub set_text {
 }
 
 sub add_section {
-    my ($self, $title, $body) = @_;
+    my ( $self, $title, $body ) = @_;
     die "Cannot add POM sections when set_text() has been used"
         if defined $self->_text;
     push @{ $self->_sections }, { title => $title, body => $body };
@@ -121,7 +121,7 @@ sub add_section {
 }
 
 sub add_bullets {
-    my ($self, $title, $bullets) = @_;
+    my ( $self, $title, $bullets ) = @_;
     die "Cannot add POM sections when set_text() has been used"
         if defined $self->_text;
     push @{ $self->_sections }, { title => $title, bullets => $bullets };
@@ -129,7 +129,7 @@ sub add_bullets {
 }
 
 sub set_step_criteria {
-    my ($self, $criteria) = @_;
+    my ( $self, $criteria ) = @_;
     $self->_step_criteria($criteria);
     return $self;
 }
@@ -165,19 +165,19 @@ sub set_step_criteria {
 # this list and do not need to appear in it.
 #
 sub set_functions {
-    my ($self, $functions) = @_;
+    my ( $self, $functions ) = @_;
     $self->_functions($functions);
     return $self;
 }
 
 sub set_valid_steps {
-    my ($self, $steps) = @_;
+    my ( $self, $steps ) = @_;
     $self->_valid_steps($steps);
     return $self;
 }
 
 sub set_valid_contexts {
-    my ($self, $contexts) = @_;
+    my ( $self, $contexts ) = @_;
     $self->_valid_contexts($contexts);
     return $self;
 }
@@ -195,30 +195,32 @@ sub set_valid_contexts {
 # To actually end the call, call a hangup tool or define a hangup hook.
 #
 sub set_end {
-    my ($self, $end) = @_;
-    $self->_end($end ? 1 : 0);
+    my ( $self, $end ) = @_;
+    $self->_end( $end ? 1 : 0 );
     return $self;
 }
 
 sub set_skip_user_turn {
-    my ($self, $skip) = @_;
-    $self->_skip_user_turn($skip ? 1 : 0);
+    my ( $self, $skip ) = @_;
+    $self->_skip_user_turn( $skip ? 1 : 0 );
     return $self;
 }
 
 sub set_skip_to_next_step {
-    my ($self, $skip) = @_;
-    $self->_skip_to_next_step($skip ? 1 : 0);
+    my ( $self, $skip ) = @_;
+    $self->_skip_to_next_step( $skip ? 1 : 0 );
     return $self;
 }
 
 sub set_gather_info {
-    my ($self, %opts) = @_;
-    $self->_gather_info(SignalWire::Contexts::GatherInfo->new(
-        _output_key       => $opts{output_key},
-        _completion_action => $opts{completion_action},
-        _prompt           => $opts{prompt},
-    ));
+    my ( $self, %opts ) = @_;
+    $self->_gather_info(
+        SignalWire::Contexts::GatherInfo->new(
+            _output_key        => $opts{output_key},
+            _completion_action => $opts{completion_action},
+            _prompt            => $opts{prompt},
+        )
+    );
     return $self;
 }
 
@@ -243,7 +245,7 @@ sub set_gather_info {
 #   option. Functions listed here are active ONLY for this question.
 #
 sub add_gather_question {
-    my ($self, %opts) = @_;
+    my ( $self, %opts ) = @_;
     die "Must call set_gather_info() before add_gather_question()"
         unless defined $self->_gather_info;
     $self->_gather_info->add_question(%opts);
@@ -252,32 +254,32 @@ sub add_gather_question {
 
 sub clear_sections {
     my ($self) = @_;
-    $self->_sections([]);
+    $self->_sections( [] );
     $self->_text(undef);
     return $self;
 }
 
 sub set_reset_system_prompt {
-    my ($self, $sp) = @_;
+    my ( $self, $sp ) = @_;
     $self->_reset_system_prompt($sp);
     return $self;
 }
 
 sub set_reset_user_prompt {
-    my ($self, $up) = @_;
+    my ( $self, $up ) = @_;
     $self->_reset_user_prompt($up);
     return $self;
 }
 
 sub set_reset_consolidate {
-    my ($self, $c) = @_;
-    $self->_reset_consolidate($c ? 1 : 0);
+    my ( $self, $c ) = @_;
+    $self->_reset_consolidate( $c ? 1 : 0 );
     return $self;
 }
 
 sub set_reset_full_reset {
-    my ($self, $fr) = @_;
-    $self->_reset_full_reset($fr ? 1 : 0);
+    my ( $self, $fr ) = @_;
+    $self->_reset_full_reset( $fr ? 1 : 0 );
     return $self;
 }
 
@@ -289,8 +291,8 @@ sub _render_text {
         unless @{ $self->_sections };
 
     my @parts;
-    for my $sec (@{ $self->_sections }) {
-        if (exists $sec->{bullets}) {
+    for my $sec ( @{ $self->_sections } ) {
+        if ( exists $sec->{bullets} ) {
             push @parts, "## $sec->{title}";
             push @parts, map { "- $_" } @{ $sec->{bullets} };
         } else {
@@ -299,7 +301,7 @@ sub _render_text {
         }
         push @parts, '';
     }
-    my $text = join("\n", @parts);
+    my $text = join( "\n", @parts );
     $text =~ s/\s+$//;
     return $text;
 }
@@ -311,20 +313,20 @@ sub to_hash {
         text => $self->_render_text,
     );
 
-    $d{step_criteria}  = $self->_step_criteria  if defined $self->_step_criteria;
-    $d{functions}      = $self->_functions       if defined $self->_functions;
-    $d{valid_steps}    = $self->_valid_steps     if defined $self->_valid_steps;
-    $d{valid_contexts} = $self->_valid_contexts  if defined $self->_valid_contexts;
-    $d{end}            = JSON::true              if $self->_end;
-    $d{skip_user_turn} = JSON::true              if $self->_skip_user_turn;
-    $d{skip_to_next_step} = JSON::true           if $self->_skip_to_next_step;
+    $d{step_criteria}     = $self->_step_criteria  if defined $self->_step_criteria;
+    $d{functions}         = $self->_functions      if defined $self->_functions;
+    $d{valid_steps}       = $self->_valid_steps    if defined $self->_valid_steps;
+    $d{valid_contexts}    = $self->_valid_contexts if defined $self->_valid_contexts;
+    $d{end}               = JSON::true             if $self->_end;
+    $d{skip_user_turn}    = JSON::true             if $self->_skip_user_turn;
+    $d{skip_to_next_step} = JSON::true             if $self->_skip_to_next_step;
 
     my %reset;
     $reset{system_prompt} = $self->_reset_system_prompt if defined $self->_reset_system_prompt;
     $reset{user_prompt}   = $self->_reset_user_prompt   if defined $self->_reset_user_prompt;
     $reset{consolidate}   = JSON::true                  if $self->_reset_consolidate;
     $reset{full_reset}    = JSON::true                  if $self->_reset_full_reset;
-    $d{reset} = \%reset if keys %reset;
+    $d{reset}             = \%reset                     if keys %reset;
 
     $d{gather_info} = $self->_gather_info->to_hash if defined $self->_gather_info;
 
@@ -338,66 +340,66 @@ package SignalWire::Contexts::Context;
 use Moo;
 use JSON ();
 
-has 'name' => (is => 'ro', required => 1);
+has 'name' => ( is => 'ro', required => 1 );
 
-has '_steps'           => (is => 'rw', default => sub { {} });
-has '_step_order'      => (is => 'rw', default => sub { [] });
-has '_valid_contexts'  => (is => 'rw', default => sub { undef });
-has '_valid_steps'     => (is => 'rw', default => sub { undef });
-has '_initial_step'    => (is => 'rw', default => sub { undef });
-has '_post_prompt'     => (is => 'rw', default => sub { undef });
-has '_system_prompt'   => (is => 'rw', default => sub { undef });
-has '_system_prompt_sections' => (is => 'rw', default => sub { [] });
-has '_consolidate'     => (is => 'rw', default => sub { 0 });
-has '_full_reset'      => (is => 'rw', default => sub { 0 });
-has '_user_prompt'     => (is => 'rw', default => sub { undef });
-has '_isolated'        => (is => 'rw', default => sub { 0 });
-has '_prompt_text'     => (is => 'rw', default => sub { undef });
-has '_prompt_sections' => (is => 'rw', default => sub { [] });
-has '_enter_fillers'   => (is => 'rw', default => sub { undef });
-has '_exit_fillers'    => (is => 'rw', default => sub { undef });
+has '_steps'                  => ( is => 'rw', default => sub { {} } );
+has '_step_order'             => ( is => 'rw', default => sub { [] } );
+has '_valid_contexts'         => ( is => 'rw', default => sub { undef } );
+has '_valid_steps'            => ( is => 'rw', default => sub { undef } );
+has '_initial_step'           => ( is => 'rw', default => sub { undef } );
+has '_post_prompt'            => ( is => 'rw', default => sub { undef } );
+has '_system_prompt'          => ( is => 'rw', default => sub { undef } );
+has '_system_prompt_sections' => ( is => 'rw', default => sub { [] } );
+has '_consolidate'            => ( is => 'rw', default => sub { 0 } );
+has '_full_reset'             => ( is => 'rw', default => sub { 0 } );
+has '_user_prompt'            => ( is => 'rw', default => sub { undef } );
+has '_isolated'               => ( is => 'rw', default => sub { 0 } );
+has '_prompt_text'            => ( is => 'rw', default => sub { undef } );
+has '_prompt_sections'        => ( is => 'rw', default => sub { [] } );
+has '_enter_fillers'          => ( is => 'rw', default => sub { undef } );
+has '_exit_fillers'           => ( is => 'rw', default => sub { undef } );
 
 sub add_step {
-    my ($self, $name, %opts) = @_;
+    my ( $self, $name, %opts ) = @_;
     die "Step '$name' already exists in context '" . $self->name . "'"
         if exists $self->_steps->{$name};
     die "Maximum steps per context ($SignalWire::Contexts::MAX_STEPS_PER_CONTEXT) exceeded"
         if keys %{ $self->_steps } >= $SignalWire::Contexts::MAX_STEPS_PER_CONTEXT;
 
-    my $step = SignalWire::Contexts::Step->new(name => $name);
+    my $step = SignalWire::Contexts::Step->new( name => $name );
     $self->_steps->{$name} = $step;
     push @{ $self->_step_order }, $name;
 
-    $step->add_section('Task', $opts{task})     if defined $opts{task};
-    $step->add_bullets('Process', $opts{bullets}) if defined $opts{bullets};
-    $step->set_step_criteria($opts{criteria})     if defined $opts{criteria};
-    $step->set_functions($opts{functions})         if defined $opts{functions};
-    $step->set_valid_steps($opts{valid_steps})     if defined $opts{valid_steps};
+    $step->add_section( 'Task', $opts{task} )       if defined $opts{task};
+    $step->add_bullets( 'Process', $opts{bullets} ) if defined $opts{bullets};
+    $step->set_step_criteria( $opts{criteria} )     if defined $opts{criteria};
+    $step->set_functions( $opts{functions} )        if defined $opts{functions};
+    $step->set_valid_steps( $opts{valid_steps} )    if defined $opts{valid_steps};
 
     return $step;
 }
 
 sub get_step {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
     return $self->_steps->{$name};
 }
 
 sub remove_step {
-    my ($self, $name) = @_;
-    if (exists $self->_steps->{$name}) {
+    my ( $self, $name ) = @_;
+    if ( exists $self->_steps->{$name} ) {
         delete $self->_steps->{$name};
-        $self->_step_order([ grep { $_ ne $name } @{ $self->_step_order } ]);
+        $self->_step_order( [ grep { $_ ne $name } @{ $self->_step_order } ] );
     }
     return $self;
 }
 
 sub move_step {
-    my ($self, $name, $position) = @_;
+    my ( $self, $name, $position ) = @_;
     die "Step '$name' not found in context '" . $self->name . "'"
         unless exists $self->_steps->{$name};
     my @order = grep { $_ ne $name } @{ $self->_step_order };
     splice @order, $position, 0, $name;
-    $self->_step_order(\@order);
+    $self->_step_order( \@order );
     return $self;
 }
 
@@ -408,31 +410,31 @@ sub move_step {
 # to skip a preamble step on re-entry via change_context.
 #
 sub set_initial_step {
-    my ($self, $step_name) = @_;
+    my ( $self, $step_name ) = @_;
     $self->_initial_step($step_name);
     return $self;
 }
 
 sub set_valid_contexts {
-    my ($self, $contexts) = @_;
+    my ( $self, $contexts ) = @_;
     $self->_valid_contexts($contexts);
     return $self;
 }
 
 sub set_valid_steps {
-    my ($self, $steps) = @_;
+    my ( $self, $steps ) = @_;
     $self->_valid_steps($steps);
     return $self;
 }
 
 sub set_post_prompt {
-    my ($self, $pp) = @_;
+    my ( $self, $pp ) = @_;
     $self->_post_prompt($pp);
     return $self;
 }
 
 sub set_system_prompt {
-    my ($self, $sp) = @_;
+    my ( $self, $sp ) = @_;
     die "Cannot use set_system_prompt() when POM sections have been added for system prompt"
         if @{ $self->_system_prompt_sections };
     $self->_system_prompt($sp);
@@ -440,19 +442,19 @@ sub set_system_prompt {
 }
 
 sub set_consolidate {
-    my ($self, $c) = @_;
-    $self->_consolidate($c ? 1 : 0);
+    my ( $self, $c ) = @_;
+    $self->_consolidate( $c ? 1 : 0 );
     return $self;
 }
 
 sub set_full_reset {
-    my ($self, $fr) = @_;
-    $self->_full_reset($fr ? 1 : 0);
+    my ( $self, $fr ) = @_;
+    $self->_full_reset( $fr ? 1 : 0 );
     return $self;
 }
 
 sub set_user_prompt {
-    my ($self, $up) = @_;
+    my ( $self, $up ) = @_;
     $self->_user_prompt($up);
     return $self;
 }
@@ -477,13 +479,13 @@ sub set_user_prompt {
 # after a long off-topic detour.
 #
 sub set_isolated {
-    my ($self, $iso) = @_;
-    $self->_isolated($iso ? 1 : 0);
+    my ( $self, $iso ) = @_;
+    $self->_isolated( $iso ? 1 : 0 );
     return $self;
 }
 
 sub add_system_section {
-    my ($self, $title, $body) = @_;
+    my ( $self, $title, $body ) = @_;
     die "Cannot add POM sections for system prompt when set_system_prompt() has been used"
         if defined $self->_system_prompt;
     push @{ $self->_system_prompt_sections }, { title => $title, body => $body };
@@ -491,7 +493,7 @@ sub add_system_section {
 }
 
 sub add_system_bullets {
-    my ($self, $title, $bullets) = @_;
+    my ( $self, $title, $bullets ) = @_;
     die "Cannot add POM sections for system prompt when set_system_prompt() has been used"
         if defined $self->_system_prompt;
     push @{ $self->_system_prompt_sections }, { title => $title, bullets => $bullets };
@@ -499,7 +501,7 @@ sub add_system_bullets {
 }
 
 sub set_prompt {
-    my ($self, $prompt) = @_;
+    my ( $self, $prompt ) = @_;
     die "Cannot use set_prompt() when POM sections have been added"
         if @{ $self->_prompt_sections };
     $self->_prompt_text($prompt);
@@ -507,7 +509,7 @@ sub set_prompt {
 }
 
 sub add_section {
-    my ($self, $title, $body) = @_;
+    my ( $self, $title, $body ) = @_;
     die "Cannot add POM sections when set_prompt() has been used"
         if defined $self->_prompt_text;
     push @{ $self->_prompt_sections }, { title => $title, body => $body };
@@ -515,7 +517,7 @@ sub add_section {
 }
 
 sub add_bullets {
-    my ($self, $title, $bullets) = @_;
+    my ( $self, $title, $bullets ) = @_;
     die "Cannot add POM sections when set_prompt() has been used"
         if defined $self->_prompt_text;
     push @{ $self->_prompt_sections }, { title => $title, bullets => $bullets };
@@ -523,30 +525,30 @@ sub add_bullets {
 }
 
 sub set_enter_fillers {
-    my ($self, $fillers) = @_;
+    my ( $self, $fillers ) = @_;
     $self->_enter_fillers($fillers) if ref $fillers eq 'HASH';
     return $self;
 }
 
 sub set_exit_fillers {
-    my ($self, $fillers) = @_;
+    my ( $self, $fillers ) = @_;
     $self->_exit_fillers($fillers) if ref $fillers eq 'HASH';
     return $self;
 }
 
 sub add_enter_filler {
-    my ($self, $lang, $fillers) = @_;
-    if ($lang && ref $fillers eq 'ARRAY') {
-        $self->_enter_fillers({}) unless defined $self->_enter_fillers;
+    my ( $self, $lang, $fillers ) = @_;
+    if ( $lang && ref $fillers eq 'ARRAY' ) {
+        $self->_enter_fillers( {} ) unless defined $self->_enter_fillers;
         $self->_enter_fillers->{$lang} = $fillers;
     }
     return $self;
 }
 
 sub add_exit_filler {
-    my ($self, $lang, $fillers) = @_;
-    if ($lang && ref $fillers eq 'ARRAY') {
-        $self->_exit_fillers({}) unless defined $self->_exit_fillers;
+    my ( $self, $lang, $fillers ) = @_;
+    if ( $lang && ref $fillers eq 'ARRAY' ) {
+        $self->_exit_fillers( {} ) unless defined $self->_exit_fillers;
         $self->_exit_fillers->{$lang} = $fillers;
     }
     return $self;
@@ -556,21 +558,21 @@ sub _render_prompt {
     my ($self) = @_;
     return $self->_prompt_text if defined $self->_prompt_text;
     return undef unless @{ $self->_prompt_sections };
-    return _render_sections($self->_prompt_sections);
+    return _render_sections( $self->_prompt_sections );
 }
 
 sub _render_system_prompt {
     my ($self) = @_;
     return $self->_system_prompt if defined $self->_system_prompt;
     return undef unless @{ $self->_system_prompt_sections };
-    return _render_sections($self->_system_prompt_sections);
+    return _render_sections( $self->_system_prompt_sections );
 }
 
 sub _render_sections {
     my ($sections) = @_;
     my @parts;
     for my $sec (@$sections) {
-        if (exists $sec->{bullets}) {
+        if ( exists $sec->{bullets} ) {
             push @parts, "## $sec->{title}";
             push @parts, map { "- $_" } @{ $sec->{bullets} };
         } else {
@@ -579,7 +581,7 @@ sub _render_sections {
         }
         push @parts, '';
     }
-    my $text = join("\n", @parts);
+    my $text = join( "\n", @parts );
     $text =~ s/\s+$//;
     return $text;
 }
@@ -589,9 +591,7 @@ sub to_hash {
     die "Context '" . $self->name . "' has no steps defined"
         unless keys %{ $self->_steps };
 
-    my %d = (
-        steps => [ map { $self->_steps->{$_}->to_hash } @{ $self->_step_order } ],
-    );
+    my %d = ( steps => [ map { $self->_steps->{$_}->to_hash } @{ $self->_step_order } ], );
 
     $d{valid_contexts} = $self->_valid_contexts if defined $self->_valid_contexts;
     $d{valid_steps}    = $self->_valid_steps    if defined $self->_valid_steps;
@@ -601,14 +601,14 @@ sub to_hash {
     my $sp = $self->_render_system_prompt;
     $d{system_prompt} = $sp if defined $sp;
 
-    $d{consolidate} = JSON::true if $self->_consolidate;
-    $d{full_reset}  = JSON::true if $self->_full_reset;
+    $d{consolidate} = JSON::true          if $self->_consolidate;
+    $d{full_reset}  = JSON::true          if $self->_full_reset;
     $d{user_prompt} = $self->_user_prompt if defined $self->_user_prompt;
-    $d{isolated}    = JSON::true if $self->_isolated;
+    $d{isolated}    = JSON::true          if $self->_isolated;
 
-    if (@{ $self->_prompt_sections }) {
+    if ( @{ $self->_prompt_sections } ) {
         $d{pom} = $self->_prompt_sections;
-    } elsif (defined $self->_prompt_text) {
+    } elsif ( defined $self->_prompt_text ) {
         $d{prompt} = $self->_prompt_text;
     }
 
@@ -654,50 +654,51 @@ sub to_hash {
 #
 package SignalWire::Contexts::ContextBuilder;
 use Moo;
-use JSON ();
+use JSON         ();
 use Scalar::Util ();
 
-has '_contexts'      => (is => 'rw', default => sub { {} });
-has '_context_order' => (is => 'rw', default => sub { [] });
+has '_contexts'      => ( is => 'rw', default => sub { {} } );
+has '_context_order' => ( is => 'rw', default => sub { [] } );
+
 # Weak reference to the owning agent so validate() can check
 # user-defined tool names against RESERVED_NATIVE_TOOL_NAMES. Set via
 # attach_agent(); AgentBase->define_contexts wires this up automatically.
-has '_agent' => (is => 'rw', default => sub { undef });
+has '_agent' => ( is => 'rw', default => sub { undef } );
 
 sub attach_agent {
-    my ($self, $agent) = @_;
+    my ( $self, $agent ) = @_;
     $self->_agent($agent);
-    Scalar::Util::weaken($self->{_agent}) if defined $agent;
+    Scalar::Util::weaken( $self->{_agent} ) if defined $agent;
     return $self;
 }
 
 sub reset {
     my ($self) = @_;
-    $self->_contexts({});
-    $self->_context_order([]);
+    $self->_contexts( {} );
+    $self->_context_order( [] );
     return $self;
 }
 
 sub add_context {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
     die "Context '$name' already exists" if exists $self->_contexts->{$name};
     die "Maximum number of contexts ($SignalWire::Contexts::MAX_CONTEXTS) exceeded"
         if keys %{ $self->_contexts } >= $SignalWire::Contexts::MAX_CONTEXTS;
 
-    my $ctx = SignalWire::Contexts::Context->new(name => $name);
+    my $ctx = SignalWire::Contexts::Context->new( name => $name );
     $self->_contexts->{$name} = $ctx;
     push @{ $self->_context_order }, $name;
     return $ctx;
 }
 
 sub get_context {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
     return $self->_contexts->{$name};
 }
 
 sub has_contexts {
     my ($self) = @_;
-    return scalar(keys %{ $self->_contexts }) ? 1 : 0;
+    return scalar( keys %{ $self->_contexts } ) ? 1 : 0;
 }
 
 sub validate {
@@ -705,38 +706,37 @@ sub validate {
     die "At least one context must be defined" unless keys %{ $self->_contexts };
 
     # Single context must be "default"
-    if (keys %{ $self->_contexts } == 1) {
+    if ( keys %{ $self->_contexts } == 1 ) {
         my ($name) = keys %{ $self->_contexts };
         die 'When using a single context, it must be named "default"'
             unless $name eq 'default';
     }
 
     # Each context must have steps
-    for my $cname (keys %{ $self->_contexts }) {
+    for my $cname ( keys %{ $self->_contexts } ) {
         my $ctx = $self->_contexts->{$cname};
         die "Context '$cname' must have at least one step"
             unless keys %{ $ctx->_steps };
     }
 
     # Validate initial_step references a real step in the context
-    for my $cname (keys %{ $self->_contexts }) {
+    for my $cname ( keys %{ $self->_contexts } ) {
         my $ctx = $self->_contexts->{$cname};
-        if (defined $ctx->_initial_step) {
+        if ( defined $ctx->_initial_step ) {
             die "Context '$cname' has initial_step='${\$ctx->_initial_step}' "
                 . "but that step does not exist. Available steps: ["
-                . join(', ', map { "'$_'" } sort keys %{ $ctx->_steps })
-                . "]"
+                . join( ', ', map { "'$_'" } sort keys %{ $ctx->_steps } ) . "]"
                 unless exists $ctx->_steps->{ $ctx->_initial_step };
         }
     }
 
     # Validate step references in valid_steps
-    for my $cname (keys %{ $self->_contexts }) {
+    for my $cname ( keys %{ $self->_contexts } ) {
         my $ctx = $self->_contexts->{$cname};
-        for my $sname (keys %{ $ctx->_steps }) {
+        for my $sname ( keys %{ $ctx->_steps } ) {
             my $step = $ctx->_steps->{$sname};
-            if (defined $step->_valid_steps) {
-                for my $vs (@{ $step->_valid_steps }) {
+            if ( defined $step->_valid_steps ) {
+                for my $vs ( @{ $step->_valid_steps } ) {
                     next if $vs eq 'next';
                     die "Step '$sname' in context '$cname' references unknown step '$vs'"
                         unless exists $ctx->_steps->{$vs};
@@ -746,18 +746,18 @@ sub validate {
     }
 
     # Validate context references (context-level and step-level)
-    for my $cname (keys %{ $self->_contexts }) {
+    for my $cname ( keys %{ $self->_contexts } ) {
         my $ctx = $self->_contexts->{$cname};
-        if (defined $ctx->_valid_contexts) {
-            for my $vc (@{ $ctx->_valid_contexts }) {
+        if ( defined $ctx->_valid_contexts ) {
+            for my $vc ( @{ $ctx->_valid_contexts } ) {
                 die "Context '$cname' references unknown context '$vc'"
                     unless exists $self->_contexts->{$vc};
             }
         }
-        for my $sname (keys %{ $ctx->_steps }) {
+        for my $sname ( keys %{ $ctx->_steps } ) {
             my $step = $ctx->_steps->{$sname};
-            if (defined $step->_valid_contexts) {
-                for my $vc (@{ $step->_valid_contexts }) {
+            if ( defined $step->_valid_contexts ) {
+                for my $vc ( @{ $step->_valid_contexts } ) {
                     die "Step '$sname' in context '$cname' references unknown context '$vc'"
                         unless exists $self->_contexts->{$vc};
                 }
@@ -766,27 +766,28 @@ sub validate {
     }
 
     # Validate gather_info
-    for my $cname (keys %{ $self->_contexts }) {
+    for my $cname ( keys %{ $self->_contexts } ) {
         my $ctx = $self->_contexts->{$cname};
-        for my $sname (keys %{ $ctx->_steps }) {
+        for my $sname ( keys %{ $ctx->_steps } ) {
             my $step = $ctx->_steps->{$sname};
-            if (defined $step->_gather_info) {
+            if ( defined $step->_gather_info ) {
                 die "Step '$sname' in context '$cname' has gather_info with no questions"
                     unless @{ $step->_gather_info->_questions };
 
                 my %seen;
-                for my $q (@{ $step->_gather_info->_questions }) {
-                    die "Step '$sname' in context '$cname' has duplicate gather_info question key '${\$q->key}'"
+                for my $q ( @{ $step->_gather_info->_questions } ) {
+                    die
+"Step '$sname' in context '$cname' has duplicate gather_info question key '${\$q->key}'"
                         if $seen{ $q->key }++;
                 }
 
                 my $action = $step->_gather_info->_completion_action;
-                if (defined $action) {
-                    if ($action eq 'next_step') {
+                if ( defined $action ) {
+                    if ( $action eq 'next_step' ) {
                         my $idx;
                         my @order = @{ $ctx->_step_order };
-                        for my $i (0 .. $#order) {
-                            if ($order[$i] eq $sname) { $idx = $i; last }
+                        for my $i ( 0 .. $#order ) {
+                            if ( $order[$i] eq $sname ) { $idx = $i; last }
                         }
                         die "Step '$sname' in context '$cname' has gather_info "
                             . "completion_action='next_step' but it is the last "
@@ -797,14 +798,15 @@ sub validate {
                             . "(3) set completion_action=undef (default) to "
                             . "stay in '$sname' after gathering completes."
                             if defined $idx && $idx >= $#order;
-                    } elsif (!exists $ctx->_steps->{$action}) {
+                    } elsif ( !exists $ctx->_steps->{$action} ) {
                         my @available = sort keys %{ $ctx->_steps };
                         die "Step '$sname' in context '$cname' has gather_info "
                             . "completion_action='$action' but '$action' is not "
                             . "a step in this context. Valid options: "
                             . "'next_step' (advance to the next sequential "
                             . "step), undef (stay in the current step), or "
-                            . "one of [" . join(', ', map { "'$_'" } @available) . "].";
+                            . "one of ["
+                            . join( ', ', map { "'$_'" } @available ) . "].";
                     }
                 }
             }
@@ -815,7 +817,7 @@ sub validate {
     # native tool names. The runtime auto-injects next_step /
     # change_context / gather_submit when contexts/steps are present, so
     # user tools sharing those names would never be called.
-    if (defined $self->_agent && $self->_agent->can('list_tool_names')) {
+    if ( defined $self->_agent && $self->_agent->can('list_tool_names') ) {
         my @registered = $self->_agent->list_tool_names;
         my @colliding;
         for my $name (@registered) {
@@ -823,13 +825,13 @@ sub validate {
                 if exists $SignalWire::Contexts::RESERVED_NATIVE_TOOL_NAMES{$name};
         }
         if (@colliding) {
-            my @sorted = sort @colliding;
+            my @sorted   = sort @colliding;
             my @reserved = sort keys %SignalWire::Contexts::RESERVED_NATIVE_TOOL_NAMES;
             die "Tool name(s) ["
-                . join(', ', map { "'$_'" } @sorted)
+                . join( ', ', map { "'$_'" } @sorted )
                 . "] collide with reserved native tools auto-injected by "
                 . "contexts/steps. The names ["
-                . join(', ', map { "'$_'" } @reserved)
+                . join( ', ', map { "'$_'" } @reserved )
                 . "] are reserved and cannot be used for user-defined SWAIG "
                 . "tools when contexts/steps are in use. Rename your "
                 . "tool(s) to avoid the collision.";
@@ -842,7 +844,7 @@ sub to_hash {
     $self->validate;
 
     my %result;
-    for my $cname (@{ $self->_context_order }) {
+    for my $cname ( @{ $self->_context_order } ) {
         $result{$cname} = $self->_contexts->{$cname}->to_hash;
     }
     return \%result;
@@ -858,13 +860,14 @@ package SignalWire::Contexts;
 # Both forms collapse to a single optional ``$name`` argument.
 sub create_simple_context {
     my ($name) = @_;
-    if (defined $name && !ref($name) && $name eq __PACKAGE__) {
+    if ( defined $name && !ref($name) && $name eq __PACKAGE__ ) {
+
         # Class-method invocation form — drop the receiver, shift remaining.
         shift;
         $name = $_[0];
     }
     $name //= 'default';
-    return SignalWire::Contexts::Context->new(name => $name);
+    return SignalWire::Contexts::Context->new( name => $name );
 }
 
 1;

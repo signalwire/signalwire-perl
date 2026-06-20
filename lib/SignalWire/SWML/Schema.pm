@@ -2,7 +2,7 @@ package SignalWire::SWML::Schema;
 use strict;
 use warnings;
 use Moo;
-use JSON ();
+use JSON           ();
 use File::Basename ();
 
 # Singleton instance
@@ -24,8 +24,8 @@ sub BUILD {
 }
 
 sub _load_schema {
-    my ($self) = @_;
-    my $dir = File::Basename::dirname(__FILE__);
+    my ($self)      = @_;
+    my $dir         = File::Basename::dirname(__FILE__);
     my $schema_file = "$dir/schema.json";
 
     open my $fh, '<', $schema_file
@@ -37,17 +37,17 @@ sub _load_schema {
     my $data = JSON::decode_json($json_text);
     $self->{schema_data} = $data;
 
-    my $defs = $data->{'$defs'} || {};
-    my $swml_method = $defs->{SWMLMethod} || {};
-    my $any_of = $swml_method->{anyOf} || [];
+    my $defs        = $data->{'$defs'}      || {};
+    my $swml_method = $defs->{SWMLMethod}   || {};
+    my $any_of      = $swml_method->{anyOf} || [];
 
     my %verbs;
     for my $entry (@$any_of) {
         my $ref = $entry->{'$ref'} || next;
-        (my $def_name) = $ref =~ m{/([^/]+)$};
+        ( my $def_name ) = $ref =~ m{/([^/]+)$};
         next unless $def_name;
 
-        my $def = $defs->{$def_name} || next;
+        my $def   = $defs->{$def_name} || next;
         my $props = $def->{properties} || next;
 
         my @keys = keys %$props;
@@ -76,12 +76,12 @@ sub get_verb_names {
 }
 
 sub has_verb {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
     return exists $self->verbs->{$name};
 }
 
 sub get_verb {
-    my ($self, $name) = @_;
+    my ( $self, $name ) = @_;
     return $self->verbs->{$name};
 }
 

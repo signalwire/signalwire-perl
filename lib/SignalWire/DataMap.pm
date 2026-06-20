@@ -46,9 +46,9 @@ has '_error_keys' => (
 
 # Constructor shortcut: DataMap->new("name") or DataMap->new(function_name => "name")
 around BUILDARGS => sub {
-    my ($orig, $class, @args) = @_;
-    if (@args == 1 && !ref $args[0]) {
-        return $class->$orig(function_name => $args[0]);
+    my ( $orig, $class, @args ) = @_;
+    if ( @args == 1 && !ref $args[0] ) {
+        return $class->$orig( function_name => $args[0] );
     }
     return $class->$orig(@args);
 };
@@ -72,7 +72,7 @@ around BUILDARGS => sub {
 #                 . 'conditions in a named location.')
 #
 sub purpose {
-    my ($self, $desc) = @_;
+    my ( $self, $desc ) = @_;
     $self->_purpose($desc);
     return $self;
 }
@@ -83,7 +83,7 @@ sub purpose {
 # this tool. See purpose() for bad-vs-good examples.
 #
 sub description {
-    my ($self, $desc) = @_;
+    my ( $self, $desc ) = @_;
     return $self->purpose($desc);
 }
 
@@ -106,7 +106,7 @@ sub description {
 #           . 'ambiguous.')
 #
 sub parameter {
-    my ($self, $name, $type, $description, %opts) = @_;
+    my ( $self, $name, $type, $description, %opts ) = @_;
     my $required = $opts{required} // 0;
     my $enum     = $opts{enum};
 
@@ -127,12 +127,13 @@ sub parameter {
 }
 
 sub expression {
-    my ($self, $test_value, $pattern, $output, %opts) = @_;
+    my ( $self, $test_value, $pattern, $output, %opts ) = @_;
     my $nomatch_output = $opts{nomatch_output};
 
     # If pattern is a compiled regex, extract the string
-    if (ref $pattern eq 'Regexp') {
+    if ( ref $pattern eq 'Regexp' ) {
         $pattern = "$pattern";
+
         # Strip Perl regex delimiters: (?^:...) or (?^u:...)
         $pattern =~ s/^\(\?[\^a-z]*://;
         $pattern =~ s/\)$//;
@@ -150,27 +151,27 @@ sub expression {
 }
 
 sub webhook {
-    my ($self, $method, $url, %opts) = @_;
-    my $headers            = $opts{headers};
-    my $form_param         = $opts{form_param};
+    my ( $self, $method, $url, %opts ) = @_;
+    my $headers              = $opts{headers};
+    my $form_param           = $opts{form_param};
     my $input_args_as_params = $opts{input_args_as_params};
-    my $require_args       = $opts{require_args};
+    my $require_args         = $opts{require_args};
 
     my %wh = (
         url    => $url,
         method => uc($method),
     );
-    $wh{headers}            = $headers            if $headers;
-    $wh{form_param}         = $form_param         if $form_param;
-    $wh{input_args_as_params} = JSON::true        if $input_args_as_params;
-    $wh{require_args}       = $require_args       if $require_args;
+    $wh{headers}              = $headers      if $headers;
+    $wh{form_param}           = $form_param   if $form_param;
+    $wh{input_args_as_params} = JSON::true    if $input_args_as_params;
+    $wh{require_args}         = $require_args if $require_args;
 
     push @{ $self->_webhooks }, \%wh;
     return $self;
 }
 
 sub webhook_expressions {
-    my ($self, $expressions) = @_;
+    my ( $self, $expressions ) = @_;
     die "Must add webhook before setting webhook expressions"
         unless @{ $self->_webhooks };
     $self->_webhooks->[-1]{expressions} = $expressions;
@@ -178,7 +179,7 @@ sub webhook_expressions {
 }
 
 sub body {
-    my ($self, $data) = @_;
+    my ( $self, $data ) = @_;
     die "Must add webhook before setting body"
         unless @{ $self->_webhooks };
     $self->_webhooks->[-1]{body} = $data;
@@ -186,7 +187,7 @@ sub body {
 }
 
 sub params {
-    my ($self, $data) = @_;
+    my ( $self, $data ) = @_;
     die "Must add webhook before setting params"
         unless @{ $self->_webhooks };
     $self->_webhooks->[-1]{params} = $data;
@@ -194,7 +195,7 @@ sub params {
 }
 
 sub foreach {
-    my ($self, $config) = @_;
+    my ( $self, $config ) = @_;
     die "Must add webhook before setting foreach"
         unless @{ $self->_webhooks };
     die "foreach_config must be a hashref" unless ref $config eq 'HASH';
@@ -209,7 +210,7 @@ sub foreach {
 }
 
 sub output {
-    my ($self, $result) = @_;
+    my ( $self, $result ) = @_;
     die "Must add webhook before setting output"
         unless @{ $self->_webhooks };
     $self->_webhooks->[-1]{output} = $result->to_hash;
@@ -217,14 +218,14 @@ sub output {
 }
 
 sub fallback_output {
-    my ($self, $result) = @_;
-    $self->_output($result->to_hash);
+    my ( $self, $result ) = @_;
+    $self->_output( $result->to_hash );
     return $self;
 }
 
 sub error_keys {
-    my ($self, $keys) = @_;
-    if (@{ $self->_webhooks }) {
+    my ( $self, $keys ) = @_;
+    if ( @{ $self->_webhooks } ) {
         $self->_webhooks->[-1]{error_keys} = $keys;
     } else {
         $self->_error_keys($keys);
@@ -233,7 +234,7 @@ sub error_keys {
 }
 
 sub global_error_keys {
-    my ($self, $keys) = @_;
+    my ( $self, $keys ) = @_;
     $self->_error_keys($keys);
     return $self;
 }
@@ -243,28 +244,28 @@ sub to_swaig_function {
 
     # Build parameter schema
     my %param_schema;
-    if (keys %{ $self->_parameters }) {
+    if ( keys %{ $self->_parameters } ) {
         $param_schema{type}       = 'object';
         $param_schema{properties} = { %{ $self->_parameters } };
-        if (@{ $self->_required_params }) {
+        if ( @{ $self->_required_params } ) {
             $param_schema{required} = [ @{ $self->_required_params } ];
         }
     } else {
-        %param_schema = (type => 'object', properties => {});
+        %param_schema = ( type => 'object', properties => {} );
     }
 
     # Build data_map
     my %data_map;
-    if (@{ $self->_expressions }) {
+    if ( @{ $self->_expressions } ) {
         $data_map{expressions} = $self->_expressions;
     }
-    if (@{ $self->_webhooks }) {
+    if ( @{ $self->_webhooks } ) {
         $data_map{webhooks} = $self->_webhooks;
     }
-    if (defined $self->_output) {
+    if ( defined $self->_output ) {
         $data_map{output} = $self->_output;
     }
-    if (@{ $self->_error_keys }) {
+    if ( @{ $self->_error_keys } ) {
         $data_map{error_keys} = $self->_error_keys;
     }
 

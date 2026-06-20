@@ -1,4 +1,5 @@
 package SignalWire::Skills::Builtin::WikipediaSearch;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -12,16 +13,17 @@ use strict;
 use warnings;
 use Moo;
 use HTTP::Tiny;
-use JSON ();
+use JSON        ();
 use URI::Escape qw(uri_escape);
 extends 'SignalWire::Skills::SkillBase';
 
 use SignalWire::Skills::SkillRegistry;
-SignalWire::Skills::SkillRegistry->register_skill('wikipedia_search', __PACKAGE__);
+SignalWire::Skills::SkillRegistry->register_skill( 'wikipedia_search', __PACKAGE__ );
 
-has '+skill_name'        => (default => sub { 'wikipedia_search' });
-has '+skill_description' => (default => sub { 'Search Wikipedia for information about a topic and get article summaries' });
-has '+supports_multiple_instances' => (default => sub { 0 });
+has '+skill_name' => ( default => sub { 'wikipedia_search' } );
+has '+skill_description' => (
+    default => sub { 'Search Wikipedia for information about a topic and get article summaries' } );
+has '+supports_multiple_instances' => ( default => sub { 0 } );
 
 # Default Wikipedia API base. Honor WIKIPEDIA_BASE_URL env var so the
 # audit fixture (audit_skills_dispatch.py) can redirect us at a local
@@ -40,7 +42,7 @@ has 'base_url' => (
     },
 );
 
-has 'num_results' => (is => 'ro', lazy => 1, default => sub { 1 });
+has 'num_results' => ( is => 'ro', lazy => 1, default => sub { 1 } );
 has 'no_results_message' => (
     is      => 'ro',
     lazy    => 1,
@@ -63,12 +65,12 @@ has '_http' => (
 
 sub setup {
     my ($self) = @_;
-    if (defined $self->params->{num_results}) {
+    if ( defined $self->params->{num_results} ) {
         my $n = $self->params->{num_results};
         $n = 1 if $n < 1;
         $self->{num_results} = $n;
     }
-    if (defined $self->params->{no_results_message}) {
+    if ( defined $self->params->{no_results_message} ) {
         $self->{no_results_message} = $self->params->{no_results_message};
     }
     return 1;
@@ -94,36 +96,39 @@ sub register_tools {
             required => ['query'],
         },
         handler => sub {
-            my ($args, $raw) = @_;
+            my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
             my $query = $args->{query} // '';
             $query =~ s/^\s+|\s+$//g;
-            unless (length $query) {
+            unless ( length $query ) {
                 return SignalWire::SWAIG::FunctionResult->new(
-                    response => 'Please provide a search query for Wikipedia.',
-                );
+                    response => 'Please provide a search query for Wikipedia.', );
             }
             my $text = $weak_self->search_wiki($query);
-            return SignalWire::SWAIG::FunctionResult->new(response => $text);
+            return SignalWire::SWAIG::FunctionResult->new( response => $text );
         },
     );
 }
 
 sub search_wiki {
-    my ($self, $query) = @_;
+    my ( $self, $query ) = @_;
 
     my $base = $self->base_url;
+
     # Step 1: search.
-    my $search_url = $base
+    my $search_url =
+          $base
         . '?action=query&list=search&format=json'
-        . '&srsearch=' . uri_escape($query)
-        . '&srlimit=' . $self->num_results;
+        . '&srsearch='
+        . uri_escape($query)
+        . '&srlimit='
+        . $self->num_results;
 
     my $resp = $self->_http->get($search_url);
-    unless ($resp->{success}) {
+    unless ( $resp->{success} ) {
         return "Error accessing Wikipedia: $resp->{status} $resp->{reason}";
     }
-    my $data = eval { JSON::decode_json($resp->{content}) };
+    my $data = eval { JSON::decode_json( $resp->{content} ) };
     return "Error parsing Wikipedia response: $@" if $@;
 
     my $hits = $data->{query}{search} // [];
@@ -142,22 +147,25 @@ sub search_wiki {
     my $i = 0;
     for my $hit (@$hits) {
         last if $i++ >= $self->num_results;
-        my $title = $hit->{title} // 'Unknown';
+        my $title   = $hit->{title} // 'Unknown';
         my $snippet = $hit->{snippet};
         my $extract;
 
-        if (defined $snippet && length $snippet) {
+        if ( defined $snippet && length $snippet ) {
+
             # Strip HTML tags Wikipedia includes in the snippet.
             $extract = $snippet;
             $extract =~ s/<[^>]+>//g;
         } else {
-            my $extract_url = $base
+            my $extract_url =
+                  $base
                 . '?action=query&prop=extracts&exintro&explaintext&format=json'
-                . '&titles=' . uri_escape($title);
+                . '&titles='
+                . uri_escape($title);
             my $er = $self->_http->get($extract_url);
-            if ($er->{success}) {
-                my $ed = eval { JSON::decode_json($er->{content}) };
-                if (!$@ && $ed) {
+            if ( $er->{success} ) {
+                my $ed = eval { JSON::decode_json( $er->{content} ) };
+                if ( !$@ && $ed ) {
                     my $pages = $ed->{query}{pages} // {};
                     my ($first) = values %$pages;
                     $extract = $first->{extract} if $first;
@@ -165,25 +173,27 @@ sub search_wiki {
             }
         }
 
-        if (defined $extract && length $extract) {
+        if ( defined $extract && length $extract ) {
             push @articles, "**$title**\n\n$extract";
         } else {
             push @articles, "**$title**\n\nNo summary available for this article.";
         }
     }
 
-    return join("\n\n" . ('=' x 50) . "\n\n", @articles);
+    return join( "\n\n" . ( '=' x 50 ) . "\n\n", @articles );
 }
 
 sub _get_prompt_sections {
-    return [{
-        title   => 'Wikipedia Search',
-        body    => 'You can search Wikipedia for factual information.',
-        bullets => [
-            'Use search_wiki to find information about any topic',
-            'Results include article summaries from Wikipedia',
-        ],
-    }];
+    return [
+        {
+            title   => 'Wikipedia Search',
+            body    => 'You can search Wikipedia for factual information.',
+            bullets => [
+                'Use search_wiki to find information about any topic',
+                'Results include article summaries from Wikipedia',
+            ],
+        }
+    ];
 }
 
 sub get_parameter_schema {

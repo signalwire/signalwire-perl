@@ -5,11 +5,11 @@ use Moo;
 extends 'SignalWire::Skills::SkillBase';
 
 use SignalWire::Skills::SkillRegistry;
-SignalWire::Skills::SkillRegistry->register_skill('math', __PACKAGE__);
+SignalWire::Skills::SkillRegistry->register_skill( 'math', __PACKAGE__ );
 
-has '+skill_name'        => (default => sub { 'math' });
-has '+skill_description' => (default => sub { 'Perform basic mathematical calculations' });
-has '+supports_multiple_instances' => (default => sub { 0 });
+has '+skill_name'        => ( default => sub { 'math' } );
+has '+skill_description' => ( default => sub { 'Perform basic mathematical calculations' } );
+has '+supports_multiple_instances' => ( default => sub { 0 } );
 
 sub setup { 1 }
 
@@ -18,51 +18,51 @@ sub register_tools {
 
     $self->define_tool(
         name        => 'calculate',
-        description => 'Perform a mathematical calculation with basic operations (+, -, *, /, %, **)',
-        parameters  => {
+        description =>
+            'Perform a mathematical calculation with basic operations (+, -, *, /, %, **)',
+        parameters => {
             type       => 'object',
             properties => {
-                expression => { type => 'string', description => 'Mathematical expression to evaluate' },
+                expression =>
+                    { type => 'string', description => 'Mathematical expression to evaluate' },
             },
             required => ['expression'],
         },
         handler => sub {
-            my ($args, $raw) = @_;
+            my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
             my $expr = $args->{expression} // '';
 
             # Safe evaluation: only allow numbers and basic operators
-            if ($expr =~ /^[\d\s\+\-\*\/\%\.\(\)\^]+$/) {
-                $expr =~ s/\^/**/g;  # Convert ^ to **
+            if ( $expr =~ /^[\d\s\+\-\*\/\%\.\(\)\^]+$/ ) {
+                $expr =~ s/\^/**/g;    # Convert ^ to **
                 my $result = eval { no strict; no warnings; eval $expr };
-                if (defined $result && !$@) {
+                if ( defined $result && !$@ ) {
                     return SignalWire::SWAIG::FunctionResult->new(
-                        response => "The result of $args->{expression} is $result"
-                    );
+                        response => "The result of $args->{expression} is $result" );
                 }
             }
             return SignalWire::SWAIG::FunctionResult->new(
-                response => "Could not evaluate expression: $args->{expression}"
-            );
+                response => "Could not evaluate expression: $args->{expression}" );
         },
     );
 }
 
 sub _get_prompt_sections {
-    return [{
-        title   => 'Mathematical Calculations',
-        body    => '',
-        bullets => [
-            'Use the calculate tool for math operations',
-            'Supports +, -, *, /, %, and ** (exponentiation)',
-        ],
-    }];
+    return [
+        {
+            title   => 'Mathematical Calculations',
+            body    => '',
+            bullets => [
+                'Use the calculate tool for math operations',
+                'Supports +, -, *, /, %, and ** (exponentiation)',
+            ],
+        }
+    ];
 }
 
 sub get_parameter_schema {
-    return {
-        %{ SignalWire::Skills::SkillBase->get_parameter_schema },
-    };
+    return { %{ SignalWire::Skills::SkillBase->get_parameter_schema }, };
 }
 
 1;

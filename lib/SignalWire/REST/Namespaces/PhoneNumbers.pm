@@ -9,9 +9,9 @@ use SignalWire::REST::PhoneCallHandler;
 has '+_update_method' => ( default => sub { 'PUT' } );
 
 sub search {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get($self->_path('search'), params => $p);
+    return $self->_http->get( $self->_path('search'), params => $p );
 }
 
 # --- Typed binding helpers -------------------------------------------------
@@ -22,7 +22,7 @@ sub search {
 # (e.g. you can pass `name => "..."` on any of them).
 
 sub set_swml_webhook {
-    my ($self, $resource_id, %args) = @_;
+    my ( $self, $resource_id, %args ) = @_;
     my $url = delete $args{url}
         or die "set_swml_webhook: 'url' is required";
     return $self->update(
@@ -34,10 +34,10 @@ sub set_swml_webhook {
 }
 
 sub set_cxml_webhook {
-    my ($self, $resource_id, %args) = @_;
+    my ( $self, $resource_id, %args ) = @_;
     my $url = delete $args{url}
         or die "set_cxml_webhook: 'url' is required";
-    my $fallback_url = delete $args{fallback_url};
+    my $fallback_url        = delete $args{fallback_url};
     my $status_callback_url = delete $args{status_callback_url};
 
     my %body = (
@@ -47,11 +47,11 @@ sub set_cxml_webhook {
     $body{call_fallback_url}        = $fallback_url        if defined $fallback_url;
     $body{call_status_callback_url} = $status_callback_url if defined $status_callback_url;
 
-    return $self->update($resource_id, %body, %args);
+    return $self->update( $resource_id, %body, %args );
 }
 
 sub set_cxml_application {
-    my ($self, $resource_id, %args) = @_;
+    my ( $self, $resource_id, %args ) = @_;
     my $application_id = delete $args{application_id}
         or die "set_cxml_application: 'application_id' is required";
     return $self->update(
@@ -63,7 +63,7 @@ sub set_cxml_application {
 }
 
 sub set_ai_agent {
-    my ($self, $resource_id, %args) = @_;
+    my ( $self, $resource_id, %args ) = @_;
     my $agent_id = delete $args{agent_id}
         or die "set_ai_agent: 'agent_id' is required";
     return $self->update(
@@ -75,7 +75,7 @@ sub set_ai_agent {
 }
 
 sub set_call_flow {
-    my ($self, $resource_id, %args) = @_;
+    my ( $self, $resource_id, %args ) = @_;
     my $flow_id = delete $args{flow_id}
         or die "set_call_flow: 'flow_id' is required";
     my $version = delete $args{version};
@@ -86,11 +86,11 @@ sub set_call_flow {
     );
     $body{call_flow_version} = $version if defined $version;
 
-    return $self->update($resource_id, %body, %args);
+    return $self->update( $resource_id, %body, %args );
 }
 
 sub set_relay_application {
-    my ($self, $resource_id, %args) = @_;
+    my ( $self, $resource_id, %args ) = @_;
     my $name = delete $args{name}
         or die "set_relay_application: 'name' is required";
     return $self->update(
@@ -102,7 +102,7 @@ sub set_relay_application {
 }
 
 sub set_relay_topic {
-    my ($self, $resource_id, %args) = @_;
+    my ( $self, $resource_id, %args ) = @_;
     my $topic = delete $args{topic}
         or die "set_relay_topic: 'topic' is required";
     my $status_callback_url = delete $args{status_callback_url};
@@ -114,7 +114,7 @@ sub set_relay_topic {
     $body{call_relay_topic_status_callback_url} = $status_callback_url
         if defined $status_callback_url;
 
-    return $self->update($resource_id, %body, %args);
+    return $self->update( $resource_id, %body, %args );
 }
 
 1;

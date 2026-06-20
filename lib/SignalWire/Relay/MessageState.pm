@@ -1,4 +1,5 @@
 package SignalWire::Relay::MessageState;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -86,7 +87,7 @@ sub states {
 # MessageState->is_state($value) — true if $value is a known message state.
 # Returns false (never dies) on undef or an unknown/forward-compat value.
 sub is_state {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_STATE{$value} ? 1 : 0;
 }
@@ -96,7 +97,7 @@ sub is_state {
 # in-flight state (queued/initiated/sent) or 'received', or an
 # unknown/forward-compat value — it never dies.
 sub is_terminal {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return $IS_TERMINAL{$value} ? 1 : 0;
 }

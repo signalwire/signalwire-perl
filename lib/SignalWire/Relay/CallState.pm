@@ -1,4 +1,5 @@
 package SignalWire::Relay::CallState;
+
 # Copyright (c) 2025 SignalWire
 # Licensed under the MIT License.
 #
@@ -61,7 +62,7 @@ use constant {
     ENDED    => 'ended',
 };
 
-our @EXPORT_OK = qw( CREATED RINGING ANSWERED ENDING ENDED );
+our @EXPORT_OK   = qw( CREATED RINGING ANSWERED ENDING ENDED );
 our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
 
 # Canonical ordered set, single-sourced from Relay::Constants so this
@@ -82,7 +83,7 @@ sub states {
 # CallState->is_state($value) — true if $value is a known call state.
 # Returns false (never dies) on undef or an unknown/forward-compat value.
 sub is_state {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return exists $IS_STATE{$value} ? 1 : 0;
 }
@@ -91,7 +92,7 @@ sub is_state {
 # (the call has ended). Returns false on undef, a non-terminal state, or an
 # unknown/forward-compat value — it never dies.
 sub is_terminal {
-    my ($class, $value) = @_;
+    my ( $class, $value ) = @_;
     return 0 unless defined $value;
     return $IS_TERMINAL{$value} ? 1 : 0;
 }

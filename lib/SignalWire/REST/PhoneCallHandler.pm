@@ -68,17 +68,9 @@ our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 # values() - return all 11 wire values (authoritative list).
 sub values {
     return (
-        RELAY_SCRIPT,
-        LAML_WEBHOOKS,
-        LAML_APPLICATION,
-        AI_AGENT,
-        CALL_FLOW,
-        RELAY_APPLICATION,
-        RELAY_TOPIC,
-        RELAY_CONTEXT,
-        RELAY_CONNECTOR,
-        VIDEO_ROOM,
-        DIALOGFLOW,
+        RELAY_SCRIPT,    LAML_WEBHOOKS,     LAML_APPLICATION, AI_AGENT,
+        CALL_FLOW,       RELAY_APPLICATION, RELAY_TOPIC,      RELAY_CONTEXT,
+        RELAY_CONNECTOR, VIDEO_ROOM,        DIALOGFLOW,
     );
 }
 

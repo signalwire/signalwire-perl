@@ -28,7 +28,7 @@ my $lib_root = $ARGV[0] // 'lib';
 die "lib directory not found: $lib_root\n" unless -d $lib_root;
 
 my @files;
-find(sub { push @files, $File::Find::name if /\.pm$/ }, $lib_root);
+find( sub { push @files, $File::Find::name if /\.pm$/ }, $lib_root );
 @files = sort @files;
 
 my @types;
@@ -36,13 +36,13 @@ for my $file (@files) {
     open my $fh, '<', $file or next;
     my @lines = <$fh>;
     close $fh;
-    push @types, parse_file($file, \@lines);
+    push @types, parse_file( $file, \@lines );
 }
 
-print JSON::PP->new->pretty->canonical->encode({ types => \@types });
+print JSON::PP->new->pretty->canonical->encode( { types => \@types } );
 
 sub parse_file {
-    my ($file, $lines) = @_;
+    my ( $file, $lines ) = @_;
     my @entries;
     my $cur_pkg;
     my @methods;
@@ -50,30 +50,32 @@ sub parse_file {
     my @extends;
 
     my $i = 0;
-    while ($i < @$lines) {
+    while ( $i < @$lines ) {
         my $line = $lines->[$i];
 
-        if ($line =~ /^\s*package\s+([\w:]+)\s*;/) {
+        if ( $line =~ /^\s*package\s+([\w:]+)\s*;/ ) {
+
             # Flush previous package
-            if (defined $cur_pkg && (@methods || @attrs || @extends)) {
-                push @entries, {
-                    full_name => $cur_pkg,
-                    methods => [@methods],
+            if ( defined $cur_pkg && ( @methods || @attrs || @extends ) ) {
+                push @entries,
+                    {
+                    full_name  => $cur_pkg,
+                    methods    => [@methods],
                     attributes => [@attrs],
-                    extends => [@extends],
-                };
+                    extends    => [@extends],
+                    };
             }
             $cur_pkg = $1;
             @methods = ();
-            @attrs = ();
+            @attrs   = ();
             @extends = ();
             $i++;
             next;
         }
 
         # ``extends 'Parent';`` — single arg
-        if ($line =~ /^\s*extends\s+(?:'([^']+)'|"([^"]+)")/) {
-            push @extends, ($1 // $2);
+        if ( $line =~ /^\s*extends\s+(?:'([^']+)'|"([^"]+)")/ ) {
+            push @extends, ( $1 // $2 );
             $i++;
             next;
         }
@@ -87,51 +89,53 @@ sub parse_file {
         #   sub foo { my ($self, $alpha, $beta, %opts) = @_; ... }
         # form. Without this, a port-side switch to signatures would drop
         # every parameter and surface as spurious arity drift.
-        my ($name, $sig);
-        if ($line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*(\([^)]*\))?\s*\{/) {
-            ($name, $sig) = ($1, $2);
-        }
-        elsif ($line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*(\([^)]*\))?\s*$/) {
+        my ( $name, $sig );
+        if ( $line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*(\([^)]*\))?\s*\{/ ) {
+            ( $name, $sig ) = ( $1, $2 );
+        } elsif ( $line =~ /^\s*sub\s+([A-Za-z_][\w]*)\s*(\([^)]*\))?\s*$/ ) {
+
             # Declaration with no opening brace on this line (brace on the
             # next line). The signature, if any, is still on this line.
-            ($name, $sig) = ($1, $2);
+            ( $name, $sig ) = ( $1, $2 );
         }
-        if (defined $name) {
+        if ( defined $name ) {
+
             # Collect body lines. Always include the sub-declaration line
             # itself so single-line definitions like
             #   sub play_pause { my ($s, $id, %p) = @_; ... }
             # have their params parsed (depth becomes 0 immediately and
             # the j-loop below skips body collection).
-            my @body = ($line);
-            my $depth = ($line =~ tr/\{// ) - ($line =~ tr/\}//);
-            my $j = $i + 1;
-            while ($j < @$lines && $depth > 0 && $j - $i < 30) {
+            my @body  = ($line);
+            my $depth = ( $line =~ tr/\{// ) - ( $line =~ tr/\}// );
+            my $j     = $i + 1;
+            while ( $j < @$lines && $depth > 0 && $j - $i < 30 ) {
                 push @body, $lines->[$j];
-                $depth += ($lines->[$j] =~ tr/\{//) - ($lines->[$j] =~ tr/\}//);
+                $depth += ( $lines->[$j] =~ tr/\{// ) - ( $lines->[$j] =~ tr/\}// );
                 $j++;
             }
+
             # A non-empty signature parenthetical is authoritative: parse
             # the names straight from it. An empty signature ``()`` means a
             # genuinely zero-parameter sub (e.g. a classmethod-free helper).
             # When there's no signature at all, fall back to scanning the
             # body for ``my (...) = @_`` / ``my $x = shift``.
             my @params;
-            if (defined $sig) {
+            if ( defined $sig ) {
                 @params = parse_signature($sig);
+            } else {
+                @params = parse_params( \@body );
             }
-            else {
-                @params = parse_params(\@body);
-            }
-            push @methods, {
-                name => $name,
+            push @methods,
+                {
+                name       => $name,
                 parameters => \@params,
-            };
+                };
             $i++;
             next;
         }
 
         # Moo/Moose attribute: has 'name' => ( ... );
-        if ($line =~ /^\s*has\s+(?:'([^']+)'|"([^"]+)")\s*=>/) {
+        if ( $line =~ /^\s*has\s+(?:'([^']+)'|"([^"]+)")\s*=>/ ) {
             my $attr = $1 // $2;
             push @attrs, { name => $attr };
             $i++;
@@ -141,13 +145,14 @@ sub parse_file {
         $i++;
     }
 
-    if (defined $cur_pkg && (@methods || @attrs || @extends)) {
-        push @entries, {
-            full_name => $cur_pkg,
-            methods => [@methods],
+    if ( defined $cur_pkg && ( @methods || @attrs || @extends ) ) {
+        push @entries,
+            {
+            full_name  => $cur_pkg,
+            methods    => [@methods],
             attributes => [@attrs],
-            extends => [@extends],
-        };
+            extends    => [@extends],
+            };
     }
     return @entries;
 }
@@ -163,24 +168,28 @@ sub parse_file {
 # downstream from the Python reference, not from the Perl default here.
 sub parse_signature {
     my ($sig) = @_;
+
     # Strip the surrounding parens.
     $sig =~ s/^\s*\(//;
     $sig =~ s/\)\s*$//;
     my @params;
+
     # Split on top-level commas. Signature defaults in this SDK are simple
     # scalars/strings without nested commas, so a plain comma split is
     # sufficient (and the parser is best-effort by design).
-    for my $part (split /,/, $sig) {
+    for my $part ( split /,/, $sig ) {
+
         # Drop any default: ``$beta = 5`` / ``$x //= 'foo'`` -> ``$beta``.
         $part =~ s/(?:\/\/=|=).*$//s;
         $part =~ s/^\s+//;
         $part =~ s/\s+$//;
         next if $part eq '';
+
         # A bare sigil placeholder (``$``, ``@``, ``%`` with no name) is a
         # signature's way of accepting-and-ignoring an argument; skip it
         # since it has no name to record.
         my $sigil = '';
-        if ($part =~ /^([\@\%])/) {
+        if ( $part =~ /^([\@\%])/ ) {
             $sigil = $1;
         }
         $part =~ s/^[\$\@\%]//;
@@ -196,18 +205,31 @@ sub parse_params {
     my @params;
 
     for my $bline (@$body) {
+
         # ``my ($self, $a, $b, $c) = @_;`` — also handles ``my (@args) = @_;``
         # and ``my (%kwargs) = @_;`` (slurpy array / hash) which we tag with
         # a sigil prefix so the canonical translator can distinguish between
         # var_positional (@) and var_keyword (%).
         # The pattern may appear anywhere on the line (single-line subs put
         # it after `sub NAME {`).
-        if ($bline =~ /\bmy\s*\(\s*([^)]*)\s*\)\s*=\s*\@_\s*;/) {
+        if ( $bline =~ /\bmy\s*\(\s*([^)]*)\s*\)\s*=\s*\@_\s*;/ ) {
             my $vars = $1;
-            for my $v (split /\s*,\s*/, $vars) {
+            for my $v ( split /\s*,\s*/, $vars ) {
+
+                # Trim surrounding whitespace so a perltidy-spaced unpack
+                # ``my ( $self, $query ) = @_;`` yields the same parameter
+                # NAMES as the tight ``my ($self, $query) = @_;`` form. The
+                # split's ``\s*`` collapses inter-element spaces, but the
+                # first/last element can still carry a leading/trailing space
+                # (the capture's ``[^)]*`` swallows the inner padding); without
+                # this trim the trailing var becomes ``query `` (with a space)
+                # and shows up as spurious signature drift. FMT is source-style
+                # only — the parser must be whitespace-agnostic.
+                $v =~ s/^\s+//;
+                $v =~ s/\s+$//;
                 next if $v eq '';
                 my $sigil = '';
-                if ($v =~ /^([\@\%])/) {
+                if ( $v =~ /^([\@\%])/ ) {
                     $sigil = $1;
                 }
                 $v =~ s/^[\$\@\%]//;
@@ -216,17 +238,20 @@ sub parse_params {
             }
             return @params;
         }
+
         # ``my $x = shift;`` style — accumulate
-        if ($bline =~ /\bmy\s+\$(\w+)\s*=\s*shift\s*;/) {
+        if ( $bline =~ /\bmy\s+\$(\w+)\s*=\s*shift\s*;/ ) {
             push @params, { name => $1, sigil => '' };
             next;
         }
+
         # Skip the sub-declaration line itself - it's only included so that
         # single-line definitions get parsed.
         next if $bline =~ /^\s*sub\s+\w+/;
+
         # First non-blank non-comment line that doesn't match either pattern:
         # stop accumulating shift-style and return what we have.
-        if ($bline =~ /^\s*[^#\s]/ && !@params) {
+        if ( $bline =~ /^\s*[^#\s]/ && !@params ) {
             last;
         }
     }
