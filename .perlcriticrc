@@ -6,33 +6,72 @@
 #
 # SEVERITY FLOOR
 # ==============
-# severity = 5 ("gentle" — the most-severe policies only). This port had never
-# been linted; severity 5 is the honest floor we can hold at ZERO by FIXING the
-# code idiomatically rather than suppressing. (Severity 4 "stern" surfaces ~400
-# findings dominated by RequireFinalReturn / ProhibitMultiplePackages /
-# RequireArgUnpacking — policing legitimate Moo/accessor idioms — which cannot be
-# reconciled with the SDK's established style without churn that risks the wire;
-# tightening the floor is a future, separate pass.) The severity-5 burndown was
-# done by FIXING source, not by suppression:
-#   * Subroutines::ProhibitExplicitReturnUndef  — `return undef` -> `return` (24)
-#   * BuiltinFunctions::ProhibitSleepViaSelect   — select(...) -> Time::HiRes::sleep (3)
-#   * TestingAndDebugging::ProhibitNoStrict      — removed via a method call + a
-#                                                  non-stringy require (2)
-#   * BuiltinFunctions::ProhibitStringyEval      — Math safe-eval parser + path
-#                                                  require replace `eval "..."` (1)
-#   * Subroutines::ProhibitReturnSort            — `return sort ...` -> list+return (1)
+# severity = 4 ("stern"). The port was first linted at severity 5 ("gentle")
+# and burned to zero by FIXING source; this floor was then ratcheted to 4. The
+# severity-4 burndown was likewise done by FIXING source idiomatically, not by
+# blanket suppression:
+#   * Subroutines::RequireFinalReturn  — explicit `return` at each sub's end
+#     (behaviour-preserving: a value-returning sub gains `return $that`; a
+#     void/side-effecting sub gains a bare `return`). Catches accidental
+#     last-expression leaks.
+#   * Subroutines::RequireArgUnpacking — `@_` unpacked into named vars at the
+#     top instead of indexing `$_[0]` / passing `@_` through opaquely.
+#   * Variables::RequireLocalizedPunctuationVars — `_safe_eq`'s locals renamed
+#     off Perl's `$a`/`$b` sort globals.
+#   * Subroutines::ProhibitExplicitReturnUndef / BuiltinFunctions::ProhibitSleepViaSelect /
+#     TestingAndDebugging::ProhibitNoStrict / BuiltinFunctions::ProhibitStringyEval /
+#     Subroutines::ProhibitReturnSort — the original severity-5 fixes (see git history).
 #
-# severity is set on the command line by the gate (`perlcritic --severity 5`),
+# severity is set on the command line by the gate (`perlcritic --severity 4`),
 # but pinned here too so a bare `perlcritic lib/` reproduces the gate locally.
-severity = 5
+severity = 4
 
 # Show the policy name + PBP page on each violation so a regression is
 # actionable straight from the gate output.
 verbose = %f:%l:%c %p — %m\n
 
-# NOTE: no policies are disabled and there are NO `## no critic` annotations in
-# lib/. Every severity-5 finding was fixed in source. If a future finding can
-# ONLY be resolved by changing the SWAIG wire bytes / tokens, prefer a
-# site-scoped `## no critic (Policy)` with a one-line rationale over disabling a
-# whole policy here — and never suppress a finding merely because a type-shape or
-# naming idiom is inconvenient (RULES.md: idiom is free, parity is enforced).
+# JUSTIFIED POLICY EXEMPTIONS
+# ===========================
+# Per RULES.md, idiom is free and parity (wire + audited surface) is the
+# enforced floor; a lint policy is suppressed ONLY when obeying it would move
+# the wire/surface or fight faithful Python parity — never to hide a real
+# finding and never for a mere type/style/naming preference. Each exemption
+# below carries its one-line rationale, mirroring the justified-exemption
+# pattern the sibling ports use (e.g. ruby's disabled Style/OneClassPerFile).
+
+# Multiple packages per file: the SDK co-locates tightly-coupled classes
+# (REST namespace + its resource classes, Relay event subclasses, the
+# HttpClient + its Error) in one .pm — the audited Layer-B surface
+# (port_surface.json, enumerate_surface.pl) is keyed off these package names,
+# so SPLITTING files to satisfy this policy would MOVE the audited surface.
+# Same call ruby's port makes by disabling Style/OneClassPerFile.
+[-Modules::ProhibitMultiplePackages]
+
+# `use constant` for closed string sets: this port's DOCUMENTED idiom for a
+# knowable closed set (PORT_PHILOSOPHY_PERL.md — "use constant packages whose
+# values ARE the wire strings"). The constants ARE the canonical wire strings
+# (RecordCall/Tap/JoinConference/SkillName/LogLevel/Relay::*State); switching
+# to Readonly is pure style and the philosophy doc records the deliberate
+# choice of `constant` over `Readonly` for these sets.
+[-ValuesAndExpressions::ProhibitConstantPragma]
+
+# Subs named like Perl builtins (get/delete/connect/say/wait/reset/values/
+# warn): these are PUBLIC API method names that mirror the Python reference /
+# wire surface (REST `delete`, Relay `connect`/`wait`, `FunctionResult->say`,
+# logging `warn`). They are part of the audited surface (enumerate_surface.pl
+# even carries the delete-rename table because Perl reserves the `delete`
+# bareword); renaming them to dodge the homonym would MOVE the surface and
+# de-idiomatize the API. Always invoked as methods ($obj->delete), never as
+# the builtin, so there is no actual ambiguity.
+[-Subroutines::ProhibitBuiltinHomonyms]
+
+# NOTE: aside from the three justified, file-wide exemptions above (each tied
+# to wire/surface parity, not style), no policies are disabled. RequireBriefOpen
+# is handled with site-scoped `## no critic` + rationale where a filehandle is
+# deliberately handed off (PSGI psgi.input) and cannot be closed locally.
+# ProhibitNoWarnings likewise uses site-scoped annotations where a targeted
+# `no warnings` is load-bearing. If a future finding can ONLY be resolved by
+# changing the SWAIG wire bytes / tokens, prefer a site-scoped `## no critic
+# (Policy)` with a one-line rationale over disabling a whole policy here — and
+# never suppress a finding merely because a type-shape or naming idiom is
+# inconvenient (RULES.md: idiom is free, parity is enforced).

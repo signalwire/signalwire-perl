@@ -54,14 +54,14 @@ sub _b64_hmac_sha1 {
 # Length mismatch returns 0 immediately, which matches what
 # ``hmac.compare_digest`` does in Python (it also requires equal length).
 sub _safe_eq {
-    my ( $a, $b ) = @_;
-    return 0 unless defined $a && defined $b;
-    $a = "$a";
-    $b = "$b";
-    return 0 if length($a) != length($b);
+    my ( $lhs, $rhs ) = @_;
+    return 0 unless defined $lhs && defined $rhs;
+    $lhs = "$lhs";
+    $rhs = "$rhs";
+    return 0 if length($lhs) != length($rhs);
     my $diff = 0;
-    for my $i ( 0 .. length($a) - 1 ) {
-        $diff |= ord( substr( $a, $i, 1 ) ) ^ ord( substr( $b, $i, 1 ) );
+    for my $i ( 0 .. length($lhs) - 1 ) {
+        $diff |= ord( substr( $lhs, $i, 1 ) ) ^ ord( substr( $rhs, $i, 1 ) );
     }
     return $diff == 0 ? 1 : 0;
 }
