@@ -29,13 +29,17 @@ sub register_tools {
                 bias_lat => { type => 'number', description => 'Latitude bias' },
                 bias_lng => { type => 'number', description => 'Longitude bias' },
             },
-            required => ['address'],
+
+            # No `required`: the Python reference (skills/google_maps/skill.py)
+            # passes none on lookup_address. Adding it would over-constrain the
+            # SWAIG schema vs the reference contract.
         },
         handler => sub {
             my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
+            my $address = $args->{address} // '';
             return SignalWire::SWAIG::FunctionResult->new(
-                response => "Address lookup for: $args->{address}" );
+                response => "Address lookup for: $address" );
         },
     );
 
@@ -50,14 +54,19 @@ sub register_tools {
                 dest_lat   => { type => 'number', description => 'Destination latitude' },
                 dest_lng   => { type => 'number', description => 'Destination longitude' },
             },
-            required => [ 'origin_lat', 'origin_lng', 'dest_lat', 'dest_lng' ],
+
+            # No `required`: the Python reference (skills/google_maps/skill.py)
+            # passes none on compute_route (its handler validates the four coords
+            # itself). Adding it would over-constrain the SWAIG schema vs the
+            # reference contract.
         },
         handler => sub {
             my ( $args, $raw ) = @_;
             require SignalWire::SWAIG::FunctionResult;
-            return SignalWire::SWAIG::FunctionResult->new( response =>
-"Route computed from ($args->{origin_lat},$args->{origin_lng}) to ($args->{dest_lat},$args->{dest_lng})"
-            );
+            my ( $olat, $olng, $dlat, $dlng ) = map { $args->{$_} // '' }
+                qw(origin_lat origin_lng dest_lat dest_lng);
+            return SignalWire::SWAIG::FunctionResult->new(
+                response => "Route computed from ($olat,$olng) to ($dlat,$dlng)" );
         },
     );
 }
