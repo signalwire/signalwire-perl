@@ -93,7 +93,10 @@ sub register_tools {
                     description => 'The search term or topic to look up on Wikipedia',
                 },
             },
-            required => ['query'],
+
+            # No `required`: the Python reference (skills/wikipedia_search/skill.py)
+            # passes none and the handler guards an empty query. Adding it would
+            # over-constrain the SWAIG schema vs the reference contract.
         },
         handler => sub {
             my ( $args, $raw ) = @_;

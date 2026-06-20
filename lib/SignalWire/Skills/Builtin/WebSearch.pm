@@ -155,7 +155,10 @@ sub register_tools {
             properties => {
                 query => { type => 'string', description => 'The search query' },
             },
-            required => ['query'],
+
+            # No `required`: the Python reference (skills/web_search/skill.py)
+            # passes none and the handler guards an empty query. Adding it would
+            # over-constrain the SWAIG schema vs the reference contract.
         },
         handler => sub {
             my ( $args, $raw ) = @_;
