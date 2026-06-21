@@ -59,10 +59,16 @@ subtest 'TestCxmlApplicationsCreate' => sub {
         ok($err_str, 'create raises');
         like($err_str, qr/cXML applications cannot/,
             'error message mentions cXML applications cannot');
-        # Nothing should have hit the wire.
-        my $journal = MockTest::journal_all();
-        is(scalar(@$journal), 0,
-            'no journal entries after deliberate die');
+        # Nothing should have hit the wire: the create() must add ZERO new
+        # journal entries. Asserted as a delta (count after == count before)
+        # rather than an absolute empty journal, so the check is robust whether
+        # this process's auth-scoped view already holds entries from earlier
+        # subtests or a pre-spawned shared mock — same intent as python's
+        # per-test journal reset, just expressed without depending on a wipe.
+        my $before = scalar @{ MockTest::journal_all() };
+        eval { $client->fabric->cxml_applications->create(name => 'never_built') };
+        my $after = scalar @{ MockTest::journal_all() };
+        is($after, $before, 'create added no journal entries (nothing hit the wire)');
     };
 };
 
