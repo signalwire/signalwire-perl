@@ -99,6 +99,38 @@ if [ -d "$LOCAL_LIB_BIN" ]; then
     export PATH="$LOCAL_LIB_BIN:$PATH"
 fi
 
+# Bootstrap the FMT/LINT develop-deps if missing. CI installs them via
+# `cpanm --with-develop --installdeps .` (.github/workflows/test.yml), but a
+# fresh LOCAL checkout has neither perltidy nor perlcritic on PATH, so the FMT
+# and LINT gates would die with "command not found" rather than run. Rather than
+# require every dev to remember the cpanm incantation, self-heal: when either
+# binary is unresolvable, install the cpanfile's `on 'develop'` block into the
+# local::lib (~/perl5 by convention) and re-expose its bin/ on PATH. Skipped in
+# CI ($CI set — deps already on the system perl) and when cpanm is unavailable
+# (then the gates fail loudly with an actionable message, as before). Keyed off
+# $HOME, never a hard-coded path.
+ensure_dev_tools() {
+    [ -n "${CI:-}" ] && return 0                          # CI installs its own deps
+    if command -v perltidy >/dev/null 2>&1 && command -v perlcritic >/dev/null 2>&1; then
+        return 0                                          # already resolvable
+    fi
+    if ! command -v cpanm >/dev/null 2>&1; then
+        echo "==> WARN: perltidy/perlcritic missing and cpanm unavailable;" \
+             "FMT/LINT gates will fail. Install App::cpanminus + cpanfile develop deps." >&2
+        return 0
+    fi
+    local lib_root="${PERL_LOCAL_LIB_ROOT:-$HOME/perl5}"
+    echo "==> bootstrapping FMT/LINT dev-deps (Perl::Tidy, Perl::Critic) into $lib_root ..."
+    cpanm --local-lib="$lib_root" --notest --quiet --with-develop --installdeps "$PORT_ROOT" \
+        || echo "==> WARN: dev-dep bootstrap failed; FMT/LINT gates may fail." >&2
+    # (Re)expose the local::lib now that it's populated.
+    LOCAL_LIB_DIR="$lib_root/lib/perl5"
+    [ -d "$LOCAL_LIB_DIR" ] && export PERL5LIB="$LOCAL_LIB_DIR${PERL5LIB:+:$PERL5LIB}"
+    LOCAL_LIB_BIN="$lib_root/bin"
+    [ -d "$LOCAL_LIB_BIN" ] && export PATH="$LOCAL_LIB_BIN:$PATH"
+}
+ensure_dev_tools
+
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
 # Gate 1: prove
