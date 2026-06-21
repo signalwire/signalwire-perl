@@ -71,6 +71,8 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.core.security.webhook_validator', class => undef },
     'SignalWire::Security::WebhookMiddleware' =>
         { module => 'signalwire.core.security.webhook_middleware', class => undef },
+    'SignalWire::Security::SecurityUtils' =>
+        { module => 'signalwire.core.security.security_utils', class => undef },
     'SignalWire::Server::AgentServer' =>
         { module => 'signalwire.agent_server', class => 'AgentServer' },
     'SignalWire::Logging' => { module => 'signalwire.core.logging_config', class => undef },

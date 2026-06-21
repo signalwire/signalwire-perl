@@ -5217,6 +5217,41 @@
         }
       }
     },
+    "signalwire.core.security.security_utils": {
+      "classes": {},
+      "functions": {
+        "filter_sensitive_headers": {
+          "params": [
+            {
+              "name": "headers",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        },
+        "is_valid_hostname": {
+          "params": [
+            {
+              "name": "host",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        },
+        "redact_url": {
+          "params": [
+            {
+              "name": "url",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        }
+      }
+    },
     "signalwire.core.security.session_manager": {
       "classes": {
         "SessionManager": {

@@ -143,6 +143,7 @@ FREE_FN_PACKAGES = {
     "SignalWire::Utils::UrlValidator",
     "SignalWire::Security::WebhookValidator",  # validate_webhook_signature, validate_request
     "SignalWire::Security::WebhookMiddleware",  # make_webhook_validation_dependency
+    "SignalWire::Security::SecurityUtils",  # filter_sensitive_headers, redact_url, is_valid_hostname
 }
 
 # Free-function name overrides — for cases where the Python canonical
