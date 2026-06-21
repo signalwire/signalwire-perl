@@ -59,6 +59,9 @@ signalwire.relay.event.ReferEvent.__init__: Perl ReferEvent doesn't model `sip_r
 signalwire.relay.event.RelayEvent.__init__: Perl base RelayEvent omits `call_id` (subclasses add it where applicable); Python keeps it on the base class with `''` default
 signalwire.relay.event.StreamEvent.__init__: Perl StreamEvent doesn't model `url` / `name` as Moo attrs; the Perl SDK reads them from the underlying CallStream payload
 signalwire.relay.event.TranscribeEvent.__init__: Perl TranscribeEvent doesn't model `url`, `recording_id`, `duration`, `size` as Moo attrs; the Perl SDK reads them from the underlying CallTranscribe payload
+signalwire.skills.api_ninjas_trivia.skill.ApiNinjasTriviaSkill.__init__: Perl declares the skill's constructor explicitly (Moo `extends` SkillBase); Python's same skill now simply inherits `SkillBase.__init__` verbatim, so the reference no longer emits a per-skill ctor. Same construction contract (agent, params) — Perl just keeps it explicit.
+signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill.__init__: Perl declares the skill's constructor explicitly (Moo `extends` SkillBase); Python's same skill now inherits `SkillBase.__init__` verbatim, so the reference no longer emits a per-skill ctor. Same construction contract.
+signalwire.skills.weather_api.skill.WeatherApiSkill.__init__: Perl declares the skill's constructor explicitly (Moo `extends` SkillBase); Python's same skill now inherits `SkillBase.__init__` verbatim, so the reference no longer emits a per-skill ctor. Same construction contract.
 
 
 ## Idiom: Perl-side helpers replicated on AgentBase
