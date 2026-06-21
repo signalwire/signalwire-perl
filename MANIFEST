@@ -206,6 +206,7 @@ lib/SignalWire/REST/Namespaces/Video.pm
 lib/SignalWire/REST/Pagination.pm
 lib/SignalWire/REST/PhoneCallHandler.pm
 lib/SignalWire/REST/RestClient.pm
+lib/SignalWire/Security/SecurityUtils.pm
 lib/SignalWire/Security/SessionManager.pm
 lib/SignalWire/Security/WebhookMiddleware.pm
 lib/SignalWire/Security/WebhookValidator.pm
@@ -375,5 +376,6 @@ t/rest/14_logs_mock.t
 t/rest/15_registry_mock.t
 t/rest/16_pagination_mock.t
 t/security/agent_base_signing_key.t
+t/security/security_utils.t
 t/security/webhook_middleware.t
 t/security/webhook_validator.t

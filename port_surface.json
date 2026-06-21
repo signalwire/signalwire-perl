@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 0df0d52705e7080fd86bbc0011e2fb44e7eaecee",
+   "generated_from" : "signalwire-perl @ f026bf3f0686b5cf1bffc8291b2849811e21f16b",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -297,6 +297,14 @@
             ]
          },
          "functions" : []
+      },
+      "signalwire.core.security.security_utils" : {
+         "classes" : {},
+         "functions" : [
+            "filter_sensitive_headers",
+            "is_valid_hostname",
+            "redact_url"
+         ]
       },
       "signalwire.core.security.session_manager" : {
          "classes" : {
@@ -1381,6 +1389,6 @@
          ]
       }
    },
-   "perl_version" : "5.32.1",
+   "perl_version" : "5.34.1",
    "version" : "1"
 }
