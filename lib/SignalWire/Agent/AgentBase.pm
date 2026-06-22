@@ -202,6 +202,13 @@ sub prompt_add_section {
 
 sub prompt_add_subsection {
     my ( $self, $parent_title, $title, $body, %opts ) = @_;
+
+    # Auto-create the parent section when absent. TS parity:
+    # PomBuilder.addSubsection does `if (!sectionMap.has(parentTitle))
+    # this.addSection(parentTitle)` before attaching the subsection.
+    $self->prompt_add_section($parent_title)
+        unless $self->prompt_has_section($parent_title);
+
     for my $sec ( @{ $self->pom_sections } ) {
         if ( $sec->{title} eq $parent_title ) {
             $sec->{subsections} //= [];
@@ -216,6 +223,13 @@ sub prompt_add_subsection {
 
 sub prompt_add_to_section {
     my ( $self, $title, %opts ) = @_;
+
+    # Auto-create the section when absent. TS parity:
+    # PomBuilder.addToSection does `if (!sectionMap.has(title))
+    # this.addSection(title)` before appending body/bullets.
+    $self->prompt_add_section($title)
+        unless $self->prompt_has_section($title);
+
     for my $sec ( @{ $self->pom_sections } ) {
         if ( $sec->{title} eq $title ) {
             if ( $opts{body} ) {
@@ -529,7 +543,15 @@ sub set_params {
 
 sub set_global_data {
     my ( $self, $data ) = @_;
-    $self->global_data($data);
+
+    # MERGES $data into the existing global_data — despite the name, this
+    # does NOT replace. Existing keys are preserved; incoming keys overwrite
+    # only on collision. Identical to update_global_data. TS parity:
+    # AgentBase.setGlobalData calls safeAssign(this.globalData, data) (the
+    # same merge as updateGlobalData); Python's set_global_data is a dict
+    # .update(). A replacing set_global_data would silently clobber
+    # skill-contributed keys.
+    $self->global_data( { %{ $self->global_data }, %$data } );
     return $self;
 }
 
@@ -672,7 +694,36 @@ sub add_function_include {
 
 sub set_function_includes {
     my ( $self, $includes ) = @_;
-    $self->function_includes($includes);
+
+    # Drop-filter invalid entries, keeping only those that have a truthy
+    # `url` AND an arrayref `functions`. TS parity:
+    # AgentBase.setFunctionIncludes filters on `inc.url &&
+    # Array.isArray(inc.functions)`; Python's set_function_includes drops
+    # the same shape. The Perl port additionally warns once per dropped
+    # entry (codebase idiom — cf. set_internal_fillers carping on
+    # unrecognized names) so the typo surfaces at registration time.
+    if ( ref $includes eq 'ARRAY' ) {
+        my @valid;
+        my $index = 0;
+        for my $inc (@$includes) {
+            my $ok =
+                   ref $inc eq 'HASH'
+                && defined $inc->{url}
+                && $inc->{url} ne ''
+                && ref $inc->{functions} eq 'ARRAY';
+            if ($ok) {
+                push @valid, $inc;
+            } else {
+                carp "dropped_invalid_function_include: index=$index. "
+                    . "set_function_includes received an entry that is not a "
+                    . "valid include — each entry must be a hashref with a "
+                    . "non-empty 'url' and an arrayref 'functions'. This entry "
+                    . "is dropped and will not appear in the SWAIG includes.";
+            }
+            $index++;
+        }
+        $self->function_includes( \@valid );
+    }
     return $self;
 }
 
@@ -1195,7 +1246,17 @@ sub _build_ai_verb {
         # POM mode
         $ai{prompt} = { pom => $prompt };
     } else {
-        $ai{prompt} = { text => $prompt } if $prompt;
+
+        # Text mode. When no prompt text has been set, emit the default
+        # fallback rather than omitting the prompt key. TS parity:
+        # renderSwml uses `prompt || ` . "You are ${this.name}, a helpful "
+        # . "AI assistant." Python parity: prompt_mixin.get_prompt returns
+        # the identical "You are {name}, a helpful AI assistant." default.
+        my $text =
+            ( defined $prompt && $prompt ne '' )
+            ? $prompt
+            : 'You are ' . $self->name . ', a helpful AI assistant.';
+        $ai{prompt} = { text => $text };
     }
 
     # Merge prompt LLM params
