@@ -199,24 +199,40 @@ run_gate "NO-CHEAT" "audit_no_cheat_tests" \
 # The mock is pre-spawned here (rather than letting the suite self-spawn on first
 # probe) so the run is deterministic and all REST traffic shares one journal; the
 # suite reuses it via the MOCK_SIGNALWIRE_PORT env + the harness's probe-or-reuse.
+# Pick a free TCP port on 127.0.0.1 (bind :0, read the OS-assigned port,
+# release). Never reuse a hardcoded port — a leftover or concurrent mock
+# squatting a fixed port otherwise makes the gate hang on its health poll.
+pick_free_port() {
+    python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
+}
 rest_coverage_gate() {
-    local port=8770
+    local port
+    port="$(pick_free_port)" || { echo "could not allocate a free port" >&2; return 1; }
     local mock_pkg_parent="$PORTING_SDK_DIR/test_harness/mock_signalwire"
     export PYTHONPATH="$mock_pkg_parent${PYTHONPATH:+:$PYTHONPATH}"
-    # Clear any stale listener on the port (a crashed prior run), then spawn.
-    lsof -ti :"$port" 2>/dev/null | xargs kill 2>/dev/null || true
     python3 -m mock_signalwire --host 127.0.0.1 --port "$port" --log-level error \
         >/tmp/rest_cov_mock_perl.$$.log 2>&1 &
     local mock_pid=$!
     # shellcheck disable=SC2064
     trap "kill $mock_pid 2>/dev/null" RETURN
-    local i
+    # Fail LOUD if the mock dies mid-startup or never becomes healthy — never hang.
+    local i ready=0
     for i in $(seq 1 60); do
+        if ! kill -0 "$mock_pid" 2>/dev/null; then
+            echo "mock_signalwire died on port $port — log:" >&2
+            cat "/tmp/rest_cov_mock_perl.$$.log" >&2
+            return 1
+        fi
         if python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:$port/__mock__/health',timeout=1)" 2>/dev/null; then
+            ready=1
             break
         fi
         sleep 0.5
     done
+    if [ "$ready" -ne 1 ]; then
+        echo "mock_signalwire on port $port not healthy within 30s" >&2
+        return 1
+    fi
     python3 -c "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:$port/__mock__/journal/reset',method='POST'),timeout=5).read()"
     # Run the REST suite serially against this one mock (one shared journal). The
     # harness probes 127.0.0.1:$port (MOCK_SIGNALWIRE_PORT), finds it healthy, and

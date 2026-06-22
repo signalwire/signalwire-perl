@@ -35,8 +35,15 @@ use SignalWire::REST::RestClient;
 
 our $VERSION = '0.01';
 
-our $PORT = $ENV{MOCK_SIGNALWIRE_PORT} || 8770;
+use PortPicker ();
+
+# Port: MOCK_SIGNALWIRE_PORT (set by the CI gate, which pre-spawns the mock)
+# wins; otherwise pick a FREE port rather than a hardcoded default that would
+# collide with a stale/concurrent mock and hang the suite.
 our $HOST = '127.0.0.1';
+our $PORT = ( $ENV{MOCK_SIGNALWIRE_PORT} && $ENV{MOCK_SIGNALWIRE_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_SIGNALWIRE_PORT}
+    : PortPicker::pick_free_port($HOST);
 our $BASE_URL = "http://$HOST:$PORT";
 
 our $TOKEN   = 'test_tok';
