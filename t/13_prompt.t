@@ -75,11 +75,14 @@ subtest 'prompt_add_subsection with bullets' => sub {
     is_deeply($agent->pom_sections->[0]{subsections}[0]{bullets}, ['b1', 'b2'], 'subsection bullets');
 };
 
-subtest 'prompt_add_subsection nonexistent parent' => sub {
+subtest 'prompt_add_subsection nonexistent parent auto-creates it' => sub {
     my $agent = SignalWire::Agent::AgentBase->new(name => 'no_parent');
     $agent->prompt_add_subsection('NoParent', 'Child', 'Body');
-    # Should not crash, just silently skip
-    is(scalar @{$agent->pom_sections}, 0, 'no sections added');
+    # TS parity (#182): PomBuilder.addSubsection auto-creates the parent
+    # section when absent, then attaches the subsection under it.
+    is(scalar @{$agent->pom_sections}, 1, 'parent section auto-created');
+    is($agent->pom_sections->[0]{title}, 'NoParent', 'auto-created parent title');
+    is($agent->pom_sections->[0]{subsections}[0]{title}, 'Child', 'subsection attached');
 };
 
 # ============================================================
