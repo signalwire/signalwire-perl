@@ -34,9 +34,18 @@ use SignalWire::Relay::Client;
 
 our $VERSION = '0.01';
 
-our $WS_PORT   = $ENV{MOCK_RELAY_PORT}      || 8780;
-our $HTTP_PORT = $ENV{MOCK_RELAY_HTTP_PORT} || 9780;
+use PortPicker ();
+
+# Ports: env overrides win; otherwise pick FREE ports (WS and HTTP control
+# plane independently) rather than hardcoded defaults that collide with a
+# stale/concurrent mock and hang the suite.
 our $HOST      = '127.0.0.1';
+our $WS_PORT   = ( $ENV{MOCK_RELAY_PORT} && $ENV{MOCK_RELAY_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_RELAY_PORT}
+    : PortPicker::pick_free_port($HOST);
+our $HTTP_PORT = ( $ENV{MOCK_RELAY_HTTP_PORT} && $ENV{MOCK_RELAY_HTTP_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_RELAY_HTTP_PORT}
+    : PortPicker::pick_free_port($HOST);
 our $WS_URL    = "ws://$HOST:$WS_PORT";
 our $HTTP_URL  = "http://$HOST:$HTTP_PORT";
 our $RELAY_HOST = "$HOST:$WS_PORT";

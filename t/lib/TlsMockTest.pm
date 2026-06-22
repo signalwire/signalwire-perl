@@ -36,10 +36,18 @@ our $VERSION = '0.01';
 
 # Dedicated TLS ports — distinct from the plaintext mock ports so a TLS test
 # never collides with a concurrently-running plaintext mock.
+use PortPicker ();
+
+# TLS mocks are test-local (spawned + killed in this suite). Env overrides win;
+# otherwise pick FREE ports rather than hardcoded defaults that collide with a
+# stale/concurrent listener.
 our $HOST            = '127.0.0.1';
-our $HTTPS_PORT      = $ENV{MOCK_SIGNALWIRE_TLS_PORT} || 18766;
-our $WSS_PORT        = $ENV{MOCK_RELAY_TLS_WS_PORT}   || 18775;
-our $WSS_HTTP_PORT   = $ENV{MOCK_RELAY_TLS_HTTP_PORT} || 19775;
+our $HTTPS_PORT      = ( $ENV{MOCK_SIGNALWIRE_TLS_PORT} && $ENV{MOCK_SIGNALWIRE_TLS_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_SIGNALWIRE_TLS_PORT}   : PortPicker::pick_free_port($HOST);
+our $WSS_PORT        = ( $ENV{MOCK_RELAY_TLS_WS_PORT} && $ENV{MOCK_RELAY_TLS_WS_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_RELAY_TLS_WS_PORT}     : PortPicker::pick_free_port($HOST);
+our $WSS_HTTP_PORT   = ( $ENV{MOCK_RELAY_TLS_HTTP_PORT} && $ENV{MOCK_RELAY_TLS_HTTP_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_RELAY_TLS_HTTP_PORT}   : PortPicker::pick_free_port($HOST);
 
 our $PROJECT = 'test_proj';
 our $TOKEN   = 'test_tok';
