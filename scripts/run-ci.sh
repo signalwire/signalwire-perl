@@ -421,6 +421,20 @@ run_gate "SKILL-CONTRACT" "diff_skill_contracts vs python reference" \
         --dump-cmd "perl bin/emit-skills.pl" \
         --port-repo "$PORT_ROOT"
 
+# SWAIG-CLI — lightweight shared swaig-test mini-contract (NOT python parity;
+# python's in-process simulator surface is reference-only). Black-box: invokes
+# `perl bin/swaig-test --help` + golden invocations and asserts the shared verbs
+# are documented and no-action errors (the cross-port majority default). Perl
+# has no --simulate-serverless, so the no-serverless clause asserts the flag is
+# rejected as an unknown option (no half-accept).
+run_gate "SWAIG-CLI" "swaig-test shared mini-contract (verbs/serverless-reject/default-action)" \
+    python3 "$PORTING_SDK_DIR/scripts/audit_swaig_cli_contract.py" \
+        --port perl \
+        --cmd "perl -I$PORT_ROOT/lib $PORT_ROOT/bin/swaig-test" \
+        --require-url-model \
+        --default-action-argv='--url|http://user:pass@127.0.0.1:1/' \
+        --no-serverless-argv='--url|http://user:pass@127.0.0.1:1/|--simulate-serverless|lambda|--list-tools'
+
 if [ -z "$FAILED_GATES" ]; then
     echo "==> CI PASS"
     exit 0
