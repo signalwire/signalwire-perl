@@ -326,10 +326,13 @@ sub execute ( $self, $method, $params = undef ) {
 
     $self->_send($request);
 
-    # Poll for response (synchronous in this implementation)
+    # Poll for response (synchronous in this implementation). Stop as soon as
+    # the connection drops — _read_once rejects all pending requests on EOF, so
+    # $done flips via the reject callback and we exit at once instead of
+    # spinning on a dead socket until the timeout elapses.
     my $timeout = 30;
     my $start   = time();
-    while ( !$done && ( time() - $start ) < $timeout ) {
+    while ( !$done && $self->connected && ( time() - $start ) < $timeout ) {
         $self->_read_once();
     }
 
@@ -466,9 +469,11 @@ sub dial ( $self, %opts ) {
         die $@;
     }
 
-    # Wait for calling.call.dial event to resolve
+    # Wait for calling.call.dial event to resolve. Stop if the connection drops
+    # — _read_once rejects pending dials on EOF, flipping $done via the reject
+    # callback, so we exit at once instead of spinning on a dead socket.
     my $start = time();
-    while ( !$done && ( time() - $start ) < $timeout ) {
+    while ( !$done && $self->connected && ( time() - $start ) < $timeout ) {
         $self->_read_once();
     }
 
@@ -509,7 +514,15 @@ sub _send ( $self, $msg ) {
 
 sub _read_once ($self) {
     my $socket = $self->_socket;
-    return unless $socket;
+
+    # No socket, or the connection already dropped: do NOT select() on it. A
+    # closed/EOF socket reports "readable" forever, so re-selecting it would
+    # hot-spin at 100% CPU. Block briefly so a disconnected-but-still-polled
+    # client idles instead of spinning.
+    if ( !$socket || !$self->connected ) {
+        Time::HiRes::sleep(0.1);
+        return;
+    }
 
     my $buf   = '';
     my $ready = '';
@@ -520,9 +533,29 @@ sub _read_once ($self) {
             $self->_ws->read($buf);
         } elsif ( !defined $bytes || $bytes == 0 ) {
 
-            # Connection lost
+            # EOF / error: the peer closed the connection. Mark disconnected so
+            # the wait loops and run() stop at once instead of re-selecting a
+            # dead socket that is perpetually "readable", and reject every
+            # in-flight request so its waiter fails fast (mirrors the Python
+            # reference's disconnect(), which sets an exception on all pending
+            # futures) rather than blocking until the per-request timeout.
             $self->connected(0);
+            $self->_reject_all_pending('RELAY connection closed');
         }
+    }
+    return;
+}
+
+# Reject every in-flight request/dial with the given reason. Called when the
+# connection drops so synchronous waiters return immediately via their reject
+# callback (which sets the error + marks the request done), matching the Python
+# client's disconnect() behavior of failing all pending futures.
+sub _reject_all_pending ( $self, $reason ) {
+    for my $pending ( values %{ $self->_pending } ) {
+        $pending->{reject}->($reason) if $pending->{reject};
+    }
+    for my $dial ( values %{ $self->_pending_dials } ) {
+        $dial->{reject}->($reason) if $dial->{reject};
     }
     return;
 }
@@ -810,6 +843,11 @@ sub reconnect ($self) {
 
 sub disconnect_ws ($self) {
     $self->connected(0);
+
+    # Fail any in-flight requests so a synchronous waiter returns immediately
+    # rather than blocking until its timeout (mirrors Python disconnect()).
+    $self->_reject_all_pending('RELAY disconnected');
+
     if ( $self->_socket ) {
         close( $self->_socket );
         $self->_socket(undef);
