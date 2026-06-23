@@ -139,18 +139,40 @@ Function Call → Template Expansion → HTTP Request → Response Processing �
 | **Maintenance** | Server maintenance required | Zero maintenance overhead |
 | **Development Speed** | Slower (code + deploy) | Faster (configuration only) |
 
-**Traditional Webhook Example:**
-```python
-def search_knowledge(args, post_data):
-    # Custom HTTP request logic
-    response = requests.post("https://api.example.com/search", 
-                           json={"query": args["query"]})
-    # Custom error handling
-    if response.status_code != 200:
-        return {"error": "API request failed"}
-    # Custom response processing
-    data = response.json()
-    return {"response": f"Found: {data['results'][0]['text']}"}
+**Traditional Webhook Example (a regular SWAIG tool):**
+```perl
+$agent->define_tool(
+    name        => 'search_knowledge',
+    description => 'Search the knowledge base',
+    parameters  => {
+        type       => 'object',
+        properties => { query => { type => 'string', description => 'Search query' } },
+        required   => ['query'],
+    },
+    handler => sub {
+        my ($args, $raw_data) = @_;
+
+        # Custom HTTP request logic
+        require HTTP::Tiny;
+        require JSON;
+        my $res = HTTP::Tiny->new->post(
+            'https://api.example.com/search',
+            {
+                headers => { 'Content-Type' => 'application/json' },
+                content => JSON::encode_json({ query => $args->{query} }),
+            },
+        );
+
+        # Custom error handling
+        return SignalWire::SWAIG::FunctionResult->new('API request failed')
+            unless $res->{success};
+
+        # Custom response processing
+        my $data = JSON::decode_json( $res->{content} );
+        return SignalWire::SWAIG::FunctionResult->new(
+            "Found: $data->{results}[0]{text}" );
+    },
+);
 ```
 
 **DataMap Equivalent:**
@@ -2285,47 +2307,55 @@ DataMap functions can be debugged using various tools:
 
 ## 12. Advanced Patterns and Techniques
 
-### 12.0 Helper Functions
+### 12.0 The Fluent DataMap Builder
 
-For common patterns, convenience functions simplify DataMap creation:
+The `SignalWire::DataMap` class builds these configurations with a fluent,
+chainable API. Each method returns the builder, so calls chain. Register the
+finished tool with `$agent->register_swaig_function($tool->to_swaig_function)`.
 
 #### Simple API Tool
 
-```python
-from signalwire_agents.core.data_map import create_simple_api_tool
+```perl
+use SignalWire::DataMap;
+use SignalWire::SWAIG::FunctionResult;
 
-weather = create_simple_api_tool(
-    name='get_weather',
-    url='https://api.weather.com/v1/current?key=API_KEY&q=${location}',
-    response_template='Weather: ${response.current.condition.text}, ${response.current.temp_f}°F',
-    parameters={
-        'location': {
-            'type': 'string',
-            'description': 'City name',
-            'required': True
-        }
-    },
-    headers={'X-API-Key': 'your-api-key'},
-    error_keys=['error']
-)
+my $weather = SignalWire::DataMap->new('get_weather')
+    ->description('Get the current weather for a city')
+    ->parameter('location', 'string', 'City name', required => 1)
+    ->webhook(
+        'GET',
+        'https://api.weather.com/v1/current?key=API_KEY&q=${args.location}',
+        headers => { 'X-API-Key' => 'your-api-key' },
+    )
+    ->output(
+        SignalWire::SWAIG::FunctionResult->new(
+            'Weather: ${response.current.condition.text}, ${response.current.temp_f}F'
+        )
+    )
+    ->error_keys(['error']);
+
+$agent->register_swaig_function($weather->to_swaig_function);
 ```
 
 #### Expression Tool
 
-```python
-from signalwire_agents.core.data_map import create_expression_tool
+Expressions match a test value against a regex pattern entirely on
+SignalWire's servers — no HTTP request is made. Pass the match output and an
+optional `nomatch_output`:
 
-control = create_expression_tool(
-    name='media_control',
-    patterns={
-        r'start|play|begin': SwaigFunctionResult().add_action('start', True),
-        r'stop|end|pause': SwaigFunctionResult().add_action('stop', True),
-        r'next|skip': SwaigFunctionResult().add_action('next', True)
-    },
-    parameters={
-        'command': {'type': 'string', 'description': 'Control command'}
-    }
-)
+```perl
+my $control = SignalWire::DataMap->new('media_control')
+    ->description('Control media playback')
+    ->parameter('command', 'string', 'Control command', required => 1)
+    ->expression(
+        '${args.command}',
+        'start|play|begin',
+        SignalWire::SWAIG::FunctionResult->new->add_action('start', JSON::true),
+        nomatch_output =>
+            SignalWire::SWAIG::FunctionResult->new->add_action('stop', JSON::true),
+    );
+
+$agent->register_swaig_function($control->to_swaig_function);
 ```
 
 ### 12.1 Multiple Webhook Fallback Chains

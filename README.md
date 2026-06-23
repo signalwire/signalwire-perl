@@ -31,7 +31,7 @@ _Build AI voice agents, control live calls over WebSocket, and manage every Sign
 |-----------|-------------|------------|
 | **AI Agents** | Build voice agents that handle calls autonomously -- the platform runs the AI pipeline, your code defines the persona, tools, and call flow | [Agent Guide](#ai-agents) |
 | **RELAY Client** | Control live calls and SMS/MMS in real time over WebSocket -- answer, play, record, collect DTMF, conference, transfer, and more | [RELAY docs](relay/README.md) |
-| **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 18+ API namespaces | [REST docs](rest/README.md) |
+| **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 21 API namespaces | [REST docs](rest/README.md) |
 
 ```bash
 cpanm SignalWire
@@ -101,7 +101,7 @@ swaig-test my_agent.pl --exec get_time
 
 ### Agent Examples
 
-The [`examples/`](examples/) directory contains 39 working examples:
+The [`examples/`](examples/) directory contains 50+ working examples:
 
 | Example | What it demonstrates |
 |---------|---------------------|
@@ -109,8 +109,8 @@ The [`examples/`](examples/) directory contains 39 working examples:
 | [contexts_demo.pl](examples/contexts_demo.pl) | Multi-persona workflow with context switching and step navigation |
 | [datamap_demo.pl](examples/datamap_demo.pl) | Server-side API tools without webhooks |
 | [skills_demo.pl](examples/skills_demo.pl) | Loading built-in skills (datetime, math) |
-| [call_flow.pl](examples/call_flow.pl) | Call flow verbs, debug events, FunctionResult actions |
-| [session_state.pl](examples/session_state.pl) | on_summary, global data, post-prompt summaries |
+| [call_flow_and_actions_demo.pl](examples/call_flow_and_actions_demo.pl) | Call flow verbs, debug events, FunctionResult actions |
+| [session_and_state_demo.pl](examples/session_and_state_demo.pl) | on_summary, global data, post-prompt summaries |
 | [multi_agent_server.pl](examples/multi_agent_server.pl) | Multiple agents on one server |
 | [lambda_agent.pl](examples/lambda_agent.pl) | AWS Lambda deployment |
 | [comprehensive_dynamic.pl](examples/comprehensive_dynamic.pl) | Per-request dynamic configuration, multi-tenant routing |
@@ -145,6 +145,8 @@ $client->on_call(sub {
     $call->hangup;
 });
 
+$client->connect_ws or die "Connection failed\n";
+$client->authenticate;
 $client->run;
 ```
 
@@ -178,7 +180,7 @@ $client->phone_numbers->search(area_code => '512');
 $client->datasphere->documents->search(query_string => 'billing policy');
 ```
 
-- 21 namespaced API surfaces: Fabric (13 resource types), Calling (37 commands), Video, Datasphere, Compat (Twilio-compatible), Phone Numbers, SIP, Queues, Recordings, and more
+- 21 namespaced API surfaces: Fabric (16 resource types), Calling (40 commands), Video, Datasphere, Compat (Twilio-compatible), Phone Numbers, SIP, Queues, Recordings, and more
 - HTTP::Tiny for lightweight, dependency-free HTTP
 - Hash ref returns -- raw data, no wrapper objects
 
@@ -187,6 +189,8 @@ See the **[REST documentation](rest/README.md)** for the full guide, API referen
 ---
 
 ## Installation
+
+Requires **Perl 5.36+**.
 
 ```bash
 # From CPAN

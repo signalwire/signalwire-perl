@@ -1,32 +1,38 @@
-# SwaigFunctionResult Methods Reference
+# FunctionResult Methods Reference
 
-SWAIG (SignalWire AI Gateway) is the platform's AI tool-calling system -- it connects the AI's decisions to actions like call transfers, SMS, recordings, and API calls, with native access to the media stack. This document provides a complete reference for all methods available in the `SwaigFunctionResult` class. These methods provide convenient abstractions for SWAIG actions, eliminating the need to manually construct action JSON objects.
+SWAIG (SignalWire AI Gateway) is the platform's AI tool-calling system -- it connects the AI's decisions to actions like call transfers, SMS, recordings, and API calls, with native access to the media stack. This document provides a complete reference for all methods available in the `SignalWire::SWAIG::FunctionResult` class. These methods provide convenient abstractions for SWAIG actions, eliminating the need to manually construct action JSON objects.
+
+A SWAIG tool handler returns one of these objects. Most mutators return `$self`, so calls chain fluently. Throughout this reference, assume:
+
+```perl
+use SignalWire::SWAIG::FunctionResult;
+```
 
 ## Core Methods
 
 ### Basic Construction & Control
 
-#### `__init__(response=None, post_process=False)`
-Creates a new result object with optional response text and post-processing behavior.
+#### `new($response)` / `new($response, post_process => 1)`
+Creates a new result object with optional response text and post-processing behavior. The constructor is positional: a single string is the response. You may also pass named pairs.
 
-```python
-result = SwaigFunctionResult("Hello, I'll help you with that")
-result = SwaigFunctionResult("Processing request...", post_process=True)
+```perl
+my $result = SignalWire::SWAIG::FunctionResult->new("Hello, I'll help you with that");
+my $result = SignalWire::SWAIG::FunctionResult->new("Processing request...", post_process => 1);
 ```
 
-#### `set_response(response)`
+#### `set_response($response)`
 Sets or updates the response text that the AI will speak.
 
-```python
-result.set_response("I've updated your information")
+```perl
+$result->set_response("I've updated your information");
 ```
 
-#### `set_post_process(post_process)`
-Controls whether AI gets one more turn before executing actions.
+#### `set_post_process($post_process)`
+Controls whether the AI gets one more turn before executing actions.
 
-```python
-result.set_post_process(True)  # AI speaks response before executing actions
-result.set_post_process(False)  # Actions execute immediately
+```perl
+$result->set_post_process(1);   # AI speaks response before executing actions
+$result->set_post_process(0);   # actions execute immediately
 ```
 
 ---
@@ -35,125 +41,120 @@ result.set_post_process(False)  # Actions execute immediately
 
 ### Call Control Actions
 
-#### `execute_swml(swml_content, transfer=False)`
-Execute SWML content with flexible input support and optional transfer behavior.
+#### `execute_swml($swml_content, transfer => 0)`
+Execute SWML content with flexible input support and optional transfer behavior. Accepts a JSON string or a hashref.
 
-```python
+```perl
 # Raw SWML string
-result.execute_swml('{"version":"1.0.0","sections":{"main":[{"say":"Hello"}]}}')
+$result->execute_swml('{"version":"1.0.0","sections":{"main":[{"say":"Hello"}]}}');
 
-# SWML dictionary
-swml_dict = {"version": "1.0.0", "sections": {"main": [{"say": "Hello"}]}}
-result.execute_swml(swml_dict, transfer=True)
-
-# SWML SDK object
-from signalwire.swml import SWML
-swml_doc = SWML()
-swml_doc.add_application("main", "say", {"text": "Connecting now"})
-result.execute_swml(swml_doc)
+# SWML hashref
+my $swml = { version => '1.0.0', sections => { main => [ { say => 'Hello' } ] } };
+$result->execute_swml($swml, transfer => 1);
 ```
 
-#### **[IMPLEMENTED]** - Transfer/connect call to another destination using SWML.
+#### `connect($destination, final => 1, from => $addr)`
+Transfer/connect the call to another destination using SWML.
 
-```python
-result.connect("+15551234567", final=True)  # Permanent transfer
-result.connect("support@company.com", final=False, from_addr="+15559876543")  # Temporary transfer
+```perl
+$result->connect('+15551234567', final => 1);                                  # permanent transfer
+$result->connect('support@company.com', final => 0, from => '+15559876543');   # temporary transfer
 ```
 
-#### `send_sms(to_number, from_number, body=None, media=None, tags=None, region=None)`
-**[HELPER METHOD]** - Send SMS message to PSTN phone number using SWML.
+#### `send_sms(to_number =>, from_number =>, body =>, media =>, tags =>, region =>)`
+Send an SMS message to a PSTN phone number using SWML.
 
-```python
+```perl
 # Simple text message
-result.send_sms(
-    to_number="+15551234567",
-    from_number="+15559876543", 
-    body="Your order has been confirmed!"
-)
+$result->send_sms(
+    to_number   => '+15551234567',
+    from_number => '+15559876543',
+    body        => 'Your order has been confirmed!',
+);
 
 # Media message with images
-result.send_sms(
-    to_number="+15551234567",
-    from_number="+15559876543",
-    media=["https://example.com/receipt.jpg", "https://example.com/map.png"]
-)
+$result->send_sms(
+    to_number   => '+15551234567',
+    from_number => '+15559876543',
+    media       => ['https://example.com/receipt.jpg', 'https://example.com/map.png'],
+);
 
 # Full featured message with tags and region
-result.send_sms(
-    to_number="+15551234567",
-    from_number="+15559876543",
-    body="Order update with receipt attached",
-    media=["https://example.com/receipt.pdf"],
-    tags=["order", "confirmation", "customer"],
-    region="us"
-)
+$result->send_sms(
+    to_number   => '+15551234567',
+    from_number => '+15559876543',
+    body        => 'Order update with receipt attached',
+    media       => ['https://example.com/receipt.pdf'],
+    tags        => ['order', 'confirmation', 'customer'],
+    region      => 'us',
+);
 ```
 
 **Parameters:**
 - `to_number` (required): Phone number in E.164 format to send to
 - `from_number` (required): Phone number in E.164 format to send from
 - `body` (optional): Message text (required if no media)
-- `media` (optional): Array of URLs to send (required if no body)
-- `tags` (optional): Array of tags for UI searching
+- `media` (optional): Arrayref of URLs to send (required if no body)
+- `tags` (optional): Arrayref of tags for UI searching
 - `region` (optional): Region to originate message from
 
 **Variables Set:**
 - `send_sms_result`: "success" or "failed"
 
-#### `pay(payment_connector_url, **options)`
-**[HELPER METHOD]** - Process payments using SWML pay action with extensive customization.
+#### `pay(payment_connector_url =>, %options)`
+Process payments using the SWML pay action with extensive customization.
 
-```python
+```perl
 # Simple payment setup
-result.pay(
-    payment_connector_url="https://api.example.com/accept-payment",
-    charge_amount="10.99",
-    description="Monthly subscription"
-)
+$result->pay(
+    payment_connector_url => 'https://api.example.com/accept-payment',
+    charge_amount         => '10.99',
+    description           => 'Monthly subscription',
+);
 
-# Advanced payment with custom prompts
-from signalwire_agents.core.function_result import SwaigFunctionResult
+# Advanced payment with custom prompts (class-method helpers build the hashrefs)
+my @welcome_actions = (
+    SignalWire::SWAIG::FunctionResult->create_payment_action('Say', 'Welcome to our payment system'),
+    SignalWire::SWAIG::FunctionResult->create_payment_action('Say', 'Please enter your credit card number'),
+);
+my $card_prompt = SignalWire::SWAIG::FunctionResult->create_payment_prompt(
+    for_situation => 'payment-card-number',
+    actions       => \@welcome_actions,
+);
 
-# Create custom prompts
-welcome_actions = [
-    SwaigFunctionResult.create_payment_action("Say", "Welcome to our payment system"),
-    SwaigFunctionResult.create_payment_action("Say", "Please enter your credit card number")
-]
-card_prompt = SwaigFunctionResult.create_payment_prompt("payment-card-number", welcome_actions)
+my @error_actions = (
+    SignalWire::SWAIG::FunctionResult->create_payment_action('Say', 'Invalid card number, please try again'),
+);
+my $error_prompt = SignalWire::SWAIG::FunctionResult->create_payment_prompt(
+    for_situation => 'payment-card-number',
+    actions       => \@error_actions,
+    error_type    => 'invalid-card-number timeout',
+);
 
-error_actions = [
-    SwaigFunctionResult.create_payment_action("Say", "Invalid card number, please try again")
-]
-error_prompt = SwaigFunctionResult.create_payment_prompt(
-    "payment-card-number", 
-    error_actions, 
-    error_type="invalid-card-number timeout"
-)
-
-# Create payment parameters
-params = [
-    SwaigFunctionResult.create_payment_parameter("customer_id", "12345"),
-    SwaigFunctionResult.create_payment_parameter("order_id", "ORD-789")
-]
+# Payment parameters
+my @params = (
+    SignalWire::SWAIG::FunctionResult->create_payment_parameter('customer_id', '12345'),
+    SignalWire::SWAIG::FunctionResult->create_payment_parameter('order_id', 'ORD-789'),
+);
 
 # Full payment configuration
-result.pay(
-    payment_connector_url="https://api.example.com/accept-payment",
-    status_url="https://api.example.com/payment-status",
-    timeout=10,
-    max_attempts=3,
-    security_code=True,
-    postal_code=False,
-    token_type="one-time",
-    charge_amount="25.50",
-    currency="usd",
-    language="en-US",
-    voice="polly.Sally",
-    description="Premium service upgrade",
-    valid_card_types="visa mastercard amex",
-    parameters=params,
-    prompts=[card_prompt, error_prompt]
-)
+$result->pay(
+    payment_connector_url => 'https://api.example.com/accept-payment',
+    status_url            => 'https://api.example.com/payment-status',
+    timeout               => 10,
+    max_attempts          => 3,
+    security_code         => 1,
+    postal_code           => 0,
+    token_type            => 'one-time',
+    charge_amount         => '25.50',
+    currency              => 'usd',
+    language              => 'en-US',
+    voice                 => 'polly.Sally',
+    description           => 'Premium service upgrade',
+    valid_card_types      => 'visa mastercard amex',
+    parameters            => \@params,
+    prompts               => [$card_prompt, $error_prompt],
+);
 ```
 
 **Core Parameters:**
@@ -164,8 +165,8 @@ result.pay(
 - `max_attempts`: Number of retry attempts (default: 1)
 
 **Security & Validation:**
-- `security_code`: Prompt for CVV (default: True)
-- `postal_code`: Prompt for postal code or provide known code (default: True)
+- `security_code`: Prompt for CVV (default: true)
+- `postal_code`: Prompt for postal code or provide known code (default: true)
 - `min_postal_code_length`: Minimum postal code digits (default: 0)
 - `valid_card_types`: Space-separated card types (default: "visa mastercard amex")
 
@@ -182,72 +183,70 @@ result.pay(
 - `parameters`: Additional name/value pairs for connector
 - `prompts`: Custom prompt configurations
 
-**Helper Methods for Payment Setup:**
-```python
-# Create payment action
-action = SwaigFunctionResult.create_payment_action("Say", "Enter card number")
+**Helper Methods for Payment Setup (class methods):**
+```perl
+# Create a payment action
+my $action = SignalWire::SWAIG::FunctionResult->create_payment_action('Say', 'Enter card number');
 
-# Create payment prompt
-prompt = SwaigFunctionResult.create_payment_prompt(
-    "payment-card-number", 
-    [action], 
-    error_type="invalid-card-number"
-)
+# Create a payment prompt
+my $prompt = SignalWire::SWAIG::FunctionResult->create_payment_prompt(
+    for_situation => 'payment-card-number',
+    actions       => [$action],
+    error_type    => 'invalid-card-number',
+);
 
-# Create payment parameter
-param = SwaigFunctionResult.create_payment_parameter("customer_id", "12345")
+# Create a payment parameter
+my $param = SignalWire::SWAIG::FunctionResult->create_payment_parameter('customer_id', '12345');
 ```
 
 **Variables Set:**
 - `pay_result`: "success", "too-many-failed-attempts", "payment-connector-error", etc.
 - `pay_payment_results`: JSON with payment details including tokens and card info
 
-#### `record_call(control_id=None, stereo=False, format="wav", direction="both", **options)`
-**[HELPER METHOD]** - Start background call recording using SWML.
+#### `record_call(%options)`
+Start background call recording using SWML. Unlike foreground recording, the script continues executing while recording happens in the background.
 
-Unlike foreground recording, the script continues executing while recording happens in the background.
-
-```python
+```perl
 # Simple background recording
-result.record_call()
+$result->record_call;
 
 # Recording with custom settings
-result.record_call(
-    control_id="support_call_001",
-    stereo=True,
-    format="mp3",
-    direction="both",
-    max_length=300  # 5 minutes max
-)
+$result->record_call(
+    control_id => 'support_call_001',
+    stereo     => 1,
+    format     => 'mp3',
+    direction  => 'both',
+    max_length => 300,   # 5 minutes max
+);
 
 # Recording with terminator and status webhook
-result.record_call(
-    control_id="customer_voicemail", 
-    format="wav",
-    direction="speak",           # Only record customer voice
-    terminators="#",             # Stop on '#' press
-    beep=True,                   # Play beep before recording
-    initial_timeout=4.0,         # Wait 4 seconds for speech
-    end_silence_timeout=3.0,     # Stop after 3 seconds of silence
-    status_url="https://api.example.com/recording-status"
-)
+$result->record_call(
+    control_id          => 'customer_voicemail',
+    format              => 'wav',
+    direction           => 'speak',      # only record the customer's voice
+    terminators         => '#',          # stop on '#' press
+    beep                => 1,            # play a beep before recording
+    initial_timeout     => 4.0,          # wait 4 seconds for speech
+    end_silence_timeout => 3.0,          # stop after 3 seconds of silence
+    status_url          => 'https://api.example.com/recording-status',
+);
 ```
 
 **Core Parameters:**
-- `control_id` (optional): Identifier for this recording (for use with stop_record_call)
-- `stereo`: Record in stereo (default: False)
-- `format`: "wav" or "mp3" (default: "wav")
+- `control_id` (optional): Identifier for this recording (for use with `stop_record_call`)
+- `stereo`: Record in stereo (default: false)
+- `format`: "wav", "mp3", or "mp4" (default: "wav")
 - `direction`: "speak", "listen", or "both" (default: "both")
 
 **Control Options:**
 - `terminators`: Digits that stop recording when pressed
-- `beep`: Play beep before recording (default: False)
+- `beep`: Play a beep before recording (default: false)
 - `max_length`: Maximum recording length in seconds
 
 **Timing Options:**
 - `input_sensitivity`: Input sensitivity (default: 44.0)
-- `initial_timeout`: Time to wait for speech start (default: 0.0)
-- `end_silence_timeout`: Time to wait in silence before ending (default: 0.0)
+- `initial_timeout`: Time to wait for speech start
+- `end_silence_timeout`: Time to wait in silence before ending
 
 **Webhook Options:**
 - `status_url`: URL to send recording status events to
@@ -256,19 +255,19 @@ result.record_call(
 - `record_call_result`: "success" or "failed"
 - `record_call_url`: URL of recorded file (when recording completes)
 
-#### `stop_record_call(control_id=None)`
-**[HELPER METHOD]** - Stop an active background call recording using SWML.
+#### `stop_record_call(control_id => $id)`
+Stop an active background call recording using SWML.
 
-```python
+```perl
 # Stop the most recent recording
-result.stop_record_call()
+$result->stop_record_call;
 
-# Stop specific recording by ID
-result.stop_record_call("support_call_001")
+# Stop a specific recording by ID
+$result->stop_record_call(control_id => 'support_call_001');
 
 # Chain to stop recording and provide feedback
-result.stop_record_call("customer_voicemail") \
-      .say("Thank you, your message has been recorded")
+$result->stop_record_call(control_id => 'customer_voicemail')
+    ->say('Thank you, your message has been recorded');
 ```
 
 **Parameters:**
@@ -277,22 +276,20 @@ result.stop_record_call("customer_voicemail") \
 **Variables Set:**
 - `stop_record_call_result`: "success" or "failed"
 
-#### `join_room(name)`
-**[HELPER METHOD]** - Join a RELAY room using SWML.
+#### `join_room($name)`
+Join a RELAY room using SWML. RELAY rooms enable multi-party communication and collaboration features.
 
-RELAY rooms enable multi-party communication and collaboration features.
-
-```python
+```perl
 # Join a conference room
-result.join_room("support_team_room")
+$result->join_room('support_team_room');
 
-# Join customer meeting room
-result.join_room("customer_meeting_001") \
-      .say("Welcome to the customer meeting room")
+# Join a customer meeting room and announce
+$result->join_room('customer_meeting_001')
+    ->say('Welcome to the customer meeting room');
 
-# Join room and set metadata
-result.join_room("sales_conference") \
-      .set_metadata({"participant_role": "moderator", "join_time": "2024-01-01T12:00:00Z"})
+# Join a room and set metadata
+$result->join_room('sales_conference')
+    ->set_metadata({ participant_role => 'moderator', join_time => '2024-01-01T12:00:00Z' });
 ```
 
 **Parameters:**
@@ -301,21 +298,19 @@ result.join_room("sales_conference") \
 **Variables Set:**
 - `join_room_result`: "success" or "failed"
 
-#### `sip_refer(to_uri)`
-**[HELPER METHOD]** - Send SIP REFER for call transfer using SWML.
+#### `sip_refer($to_uri)`
+Send a SIP REFER for call transfer using SWML. SIP REFER is used for call transfer in SIP environments, allowing one endpoint to request another to initiate a new connection.
 
-SIP REFER is used for call transfer in SIP environments, allowing one endpoint to request another to initiate a new connection.
+```perl
+# Basic SIP refer to transfer the call
+$result->sip_refer('sip:support@company.com');
 
-```python
-# Basic SIP refer to transfer call
-result.sip_refer("sip:support@company.com")
+# Transfer to a specific SIP address with domain
+$result->sip_refer('sip:agent123@pbx.company.com:5060');
 
-# Transfer to specific SIP address with domain
-result.sip_refer("sip:agent123@pbx.company.com:5060")
-
-# Chain with announcement
-result.say("Transferring your call to our specialist") \
-      .sip_refer("sip:specialist@company.com")
+# Chain with an announcement
+$result->say('Transferring your call to our specialist')
+    ->sip_refer('sip:specialist@company.com');
 ```
 
 **Parameters:**
@@ -324,50 +319,46 @@ result.say("Transferring your call to our specialist") \
 **Variables Set:**
 - `sip_refer_result`: "success" or "failed"
 
-#### `join_conference(name, **options)`
-**[HELPER METHOD]** - Join an ad-hoc audio conference with RELAY and CXML calls using SWML.
+#### `join_conference($name, %options)`
+Join an ad-hoc audio conference (RELAY and CXML calls) using SWML. Provides extensive configuration options for conference call management and recording.
 
-Provides extensive configuration options for conference call management and recording.
-
-```python
+```perl
 # Simple conference join
-result.join_conference("my_conference")
+$result->join_conference('my_conference');
 
 # Basic conference with recording
-result.join_conference(
-    name="daily_standup",
-    record="record-from-start",
-    max_participants=10
-)
+$result->join_conference('daily_standup',
+    record           => 'record-from-start',
+    max_participants => 10,
+);
 
 # Advanced conference with callbacks and coaching
-result.join_conference(
-    name="customer_support_conf", 
-    muted=False,
-    beep="onEnter",
-    start_on_enter=True,
-    end_on_exit=False,
-    max_participants=50,
-    record="record-from-start",
-    region="us-east",
-    trim="trim-silence",
-    status_callback="https://api.company.com/conference-events",
-    status_callback_event="start end join leave",
-    recording_status_callback="https://api.company.com/recording-events"
-)
+$result->join_conference('customer_support_conf',
+    muted                     => 0,
+    beep                      => 'onEnter',
+    start_on_enter            => 1,
+    end_on_exit               => 0,
+    max_participants          => 50,
+    record                    => 'record-from-start',
+    region                    => 'us-east',
+    trim                      => 'trim-silence',
+    status_callback           => 'https://api.company.com/conference-events',
+    status_callback_event     => 'start end join leave',
+    recording_status_callback => 'https://api.company.com/recording-events',
+);
 
 # Chain with other actions
-result.say("Joining you to the team conference") \
-      .join_conference("team_meeting") \
-      .set_metadata({"meeting_type": "team_sync", "participant_role": "attendee"})
+$result->say('Joining you to the team conference')
+    ->join_conference('team_meeting')
+    ->set_metadata({ meeting_type => 'team_sync', participant_role => 'attendee' });
 ```
 
 **Core Parameters:**
 - `name` (required): Name of conference to join
-- `muted`: Join muted (default: False)
+- `muted`: Join muted (default: false)
 - `beep`: Beep configuration - "true", "false", "onEnter", "onExit" (default: "true")
-- `start_on_enter`: Conference starts when this participant enters (default: True)
-- `end_on_exit`: Conference ends when this participant exits (default: False)
+- `start_on_enter`: Conference starts when this participant enters (default: true)
+- `end_on_exit`: Conference ends when this participant exits (default: false)
 
 **Capacity & Region:**
 - `max_participants`: Maximum participants <= 250 (default: 250)
@@ -379,94 +370,76 @@ result.say("Joining you to the team conference") \
 - `trim`: "trim-silence" or "do-not-trim" (default: "trim-silence")
 - `recording_status_callback`: URL for recording status events
 - `recording_status_callback_method`: "GET" or "POST" (default: "POST")
-- `recording_status_callback_event`: "in-progress completed absent" (default: "completed")
+- `recording_status_callback_event`: (default: "completed")
 
 **Status & Coaching:**
 - `coach`: SWML Call ID or CXML CallSid for coaching features
 - `status_callback`: URL for conference status events
 - `status_callback_method`: "GET" or "POST" (default: "POST")
-- `status_callback_event`: Events to report - "start end join leave mute hold modify speaker announcement"
+- `status_callback_event`: Events to report
 
 **Control Flow:**
-- `result`: Switch on return_value (object {} or array [] for conditional logic)
+- `result`: Switch on return value (object or array for conditional logic)
 
 **Variables Set:**
 - `join_conference_result`: "completed", "answered", "no-answer", "failed", or "canceled"
-- `return_value`: Same as `join_conference_result`
 
-#### `tap(uri, **options)`
-**[HELPER METHOD]** - Start background call tap using SWML.
+#### `tap($uri, %options)`
+Start a background call tap using SWML. Media is streamed over WebSocket or RTP to a customer-controlled URI for real-time monitoring and analysis.
 
-Media is streamed over Websocket or RTP to customer controlled URI for real-time monitoring and analysis.
-
-```python
+```perl
 # Simple WebSocket tap
-result.tap("wss://example.com/tap")
+$result->tap('wss://example.com/tap');
 
 # RTP tap with custom settings
-result.tap(
-    uri="rtp://192.168.1.100:5004",
-    control_id="monitoring_tap_001",
-    direction="both",
-    codec="PCMA",
-    rtp_ptime=30
-)
+$result->tap('rtp://192.168.1.100:5004',
+    control_id => 'monitoring_tap_001',
+    direction  => 'both',
+    codec      => 'PCMA',
+    rtp_ptime  => 30,
+);
 
 # Advanced tap with status callbacks
-result.tap(
-    uri="wss://monitoring.company.com/audio-stream",
-    control_id="compliance_tap",
-    direction="speak",  # Only what the party says
-    status_url="https://api.company.com/tap-status"
-) \
-.set_metadata({"tap_purpose": "compliance", "session_id": "sess_123"})
+$result->tap('wss://monitoring.company.com/audio-stream',
+    control_id => 'compliance_tap',
+    direction  => 'speak',   # only what the party says
+    status_url => 'https://api.company.com/tap-status',
+)->set_metadata({ tap_purpose => 'compliance', session_id => 'sess_123' });
 ```
 
 **Core Parameters:**
-- `uri` (required): Destination of tap media stream
-  - WebSocket: `ws://example.com` or `wss://example.com`
-  - RTP: `rtp://IP:port`
-- `control_id`: Identifier for this tap to use with stop_tap (optional, auto-generated if not provided)
+- `uri` (required): Destination of the tap media stream (`ws://`, `wss://`, or `rtp://IP:port`)
+- `control_id`: Identifier for this tap to use with `stop_tap` (optional)
 
 **Audio Configuration:**
-- `direction`: Audio direction to tap (default: "both")
-  - `"speak"`: What party says
-  - `"hear"`: What party hears
-  - `"both"`: What party hears and says
-- `codec`: Codec for tap stream - "PCMU" or "PCMA" (default: "PCMU")
+- `direction`: "speak", "hear", or "both" (default: "both")
+- `codec`: "PCMU" or "PCMA" (default: "PCMU")
 - `rtp_ptime`: RTP packetization time in milliseconds (default: 20)
 
 **Status & Monitoring:**
 - `status_url`: URL for tap status change requests
 
 **Variables Set:**
-- `tap_uri`: Destination URI of the newly started tap
-- `tap_result`: "success" or "failed"
-- `tap_control_id`: Control ID of this tap
-- `tap_rtp_src_addr`: If RTP, source address of the tap stream
-- `tap_rtp_src_port`: If RTP, source port of the tap stream
-- `tap_ptime`: Packetization time of the tap stream
-- `tap_codec`: Codec in the tap stream
-- `tap_rate`: Sample rate in the tap stream
+- `tap_uri`, `tap_result`, `tap_control_id`, `tap_rtp_src_addr`, `tap_rtp_src_port`, `tap_ptime`, `tap_codec`, `tap_rate`
 
-#### `stop_tap(control_id=None)`
-**[HELPER METHOD]** - Stop an active tap stream using SWML.
+#### `stop_tap(control_id => $id)`
+Stop an active tap stream using SWML.
 
-```python
+```perl
 # Stop the most recent tap
-result.stop_tap()
+$result->stop_tap;
 
-# Stop specific tap by ID
-result.stop_tap("monitoring_tap_001")
+# Stop a specific tap by ID
+$result->stop_tap(control_id => 'monitoring_tap_001');
 
 # Chain to stop tap and provide feedback
-result.stop_tap("compliance_tap") \
-      .say("Audio monitoring has been stopped") \
-      .update_global_data({"tap_active": False})
+$result->stop_tap(control_id => 'compliance_tap')
+    ->say('Audio monitoring has been stopped')
+    ->update_global_data({ tap_active => JSON::false });
 ```
 
 **Parameters:**
-- `control_id` (optional): ID of the tap to stop. If not set, the last tap started will be stopped.
+- `control_id` (optional): ID of the tap to stop. If not set, the last tap started is stopped.
 
 **Variables Set:**
 - `stop_tap_result`: "success" or "failed"
@@ -474,168 +447,177 @@ result.stop_tap("compliance_tap") \
 #### `hangup()`
 Terminate the call immediately.
 
-```python
-result.hangup()
+```perl
+$result->hangup;
 ```
 
 ---
 
 ### Call Flow Control
 
-#### `hold(timeout=300)`
-Put call on hold with timeout (max 900 seconds).
+#### `hold($timeout)`
+Put the call on hold with a timeout (clamped to 0..900 seconds; default 300).
 
-```python
-result.hold(60)    # Hold for 1 minute
-result.hold(600)   # Hold for 10 minutes
+```perl
+$result->hold(60);    # hold for 1 minute
+$result->hold(600);   # hold for 10 minutes
 ```
 
-#### `wait_for_user(enabled=None, timeout=None, answer_first=False)`
-Control how agent waits for user input with flexible parameters.
+#### `wait_for_user(enabled =>, timeout =>, answer_first =>)`
+Control how the agent waits for user input with flexible named parameters.
 
-```python
-result.wait_for_user(True)                    # Wait indefinitely
-result.wait_for_user(timeout=30)              # Wait 30 seconds
-result.wait_for_user(answer_first=True)       # Special answer_first mode
-result.wait_for_user(False)                   # Disable waiting
+```perl
+$result->wait_for_user(enabled => 1);          # wait indefinitely
+$result->wait_for_user(timeout => 30);         # wait 30 seconds
+$result->wait_for_user(answer_first => 1);     # special answer_first mode
+$result->wait_for_user(enabled => 0);          # disable waiting
 ```
 
 #### `stop()`
 Stop agent execution completely.
 
-```python
-result.stop()
+```perl
+$result->stop;
 ```
 
 ---
 
 ### Speech & Audio Control
 
-#### `say(text)`
+#### `say($text)`
 Make the agent speak specific text immediately.
 
-```python
-result.say("Please hold while I look that up for you")
+```perl
+$result->say('Please hold while I look that up for you');
 ```
 
-#### `play_background_file(filename, wait=False)`
-Play audio file in background with attention control.
+#### `play_background_file($filename, wait => 0)`
+Play an audio file in the background with attention control.
 
-```python
-result.play_background_file("hold_music.wav")                    # AI tries to get attention
-result.play_background_file("announcement.mp3", wait=True)       # AI suppresses attention
+```perl
+$result->play_background_file('hold_music.wav');                 # AI tries to get attention
+$result->play_background_file('announcement.mp3', wait => 1);    # AI suppresses attention
 ```
 
 #### `stop_background_file()`
-Stop currently playing background audio.
+Stop the currently playing background audio.
 
-```python
-result.stop_background_file()
+```perl
+$result->stop_background_file;
 ```
 
 ---
 
 ### Speech Recognition Settings
 
-#### `set_end_of_speech_timeout(milliseconds)`
-Set silence timeout after speech detection for finalizing recognition.
+#### `set_end_of_speech_timeout($milliseconds)`
+Set the silence timeout after speech detection for finalizing recognition.
 
-```python
-result.set_end_of_speech_timeout(2000)  # 2 seconds of silence
+```perl
+$result->set_end_of_speech_timeout(2000);   # 2 seconds of silence
 ```
 
-#### `set_speech_event_timeout(milliseconds)`
-Set timeout since last speech event - better for noisy environments.
+#### `set_speech_event_timeout($milliseconds)`
+Set the timeout since the last speech event - better for noisy environments.
 
-```python
-result.set_speech_event_timeout(3000)  # 3 seconds since last speech event
+```perl
+$result->set_speech_event_timeout(3000);    # 3 seconds since last speech event
 ```
 
 ---
 
 ### Data Management
 
-#### `update_global_data(data)`
-**[IMPLEMENTED]** - Update global agent data variables.
+#### `update_global_data($data)`
+Update global agent data variables.
 
-```python
-result.update_global_data({"user_name": "John", "step": 2})
+```perl
+$result->update_global_data({ user_name => 'John', step => 2 });
 ```
 
-#### `remove_global_data(keys)`
+#### `remove_global_data($keys)`
 Remove global data variables by key(s).
 
-```python
-result.remove_global_data("temporary_data")           # Single key
-result.remove_global_data(["step", "temp_value"])     # Multiple keys
+```perl
+$result->remove_global_data('temporary_data');           # single key
+$result->remove_global_data(['step', 'temp_value']);     # multiple keys
 ```
 
-#### `set_metadata(data)`
-Set metadata scoped to current function's meta_data_token.
+#### `set_metadata($data)`
+Set metadata scoped to the current function's meta_data_token.
 
-```python
-result.set_metadata({"session_id": "abc123", "user_tier": "premium"})
+```perl
+$result->set_metadata({ session_id => 'abc123', user_tier => 'premium' });
 ```
 
-#### `remove_metadata(keys)`
-Remove metadata from current function's scope.
+#### `remove_metadata($keys)`
+Remove metadata from the current function's scope.
 
-```python
-result.remove_metadata("temp_session_data")           # Single key  
-result.remove_metadata(["cache_key", "temp_flag"])    # Multiple keys
+```perl
+$result->remove_metadata('temp_session_data');           # single key
+$result->remove_metadata(['cache_key', 'temp_flag']);    # multiple keys
 ```
 
 ---
 
 ### Function & Behavior Control
 
-#### `toggle_functions(function_toggles)`
+#### `toggle_functions($function_toggles)`
 Enable/disable specific SWAIG functions dynamically.
 
-```python
-result.toggle_functions([
-    {"function": "transfer_call", "active": False},
-    {"function": "lookup_info", "active": True}
-])
+```perl
+$result->toggle_functions([
+    { function => 'transfer_call', active => JSON::false },
+    { function => 'lookup_info',   active => JSON::true },
+]);
 ```
 
-#### `enable_functions_on_timeout(enabled=True)`
+#### `enable_functions_on_timeout($enabled)`
 Control whether functions can be called on speaker timeout.
 
-```python
-result.enable_functions_on_timeout(True)
-result.enable_functions_on_timeout(False)
+```perl
+$result->enable_functions_on_timeout(1);
+$result->enable_functions_on_timeout(0);
 ```
 
-#### `enable_extensive_data(enabled=True)`
-Send full data to LLM for this turn only, then use smaller replacement.
+#### `enable_extensive_data($enabled)`
+Send full data to the LLM for this turn only, then use a smaller replacement.
 
-```python
-result.enable_extensive_data(True)   # Send extensive data this turn
-result.enable_extensive_data(False)  # Use normal data
+```perl
+$result->enable_extensive_data(1);   # send extensive data this turn
+$result->enable_extensive_data(0);   # use normal data
 ```
 
-#### `replace_in_history(text=True)`
+#### `replace_in_history($text)`
 Remove or replace the tool_call + tool_result pair from the LLM's conversation history after the first send. This is useful when a function call is an implementation detail that would confuse the model if it remained visible in context.
 
-When called with a string, the tool_call/tool_result pair is replaced with an assistant message containing that text. When called with `True`, the pair is removed entirely — the LLM will never see that the function was called.
+When called with a string, the tool_call/tool_result pair is replaced with an assistant message containing that text. When called with no argument (or a true value), the pair is removed entirely — the LLM will never see that the function was called.
 
-```python
+```perl
 # Remove entirely — LLM won't see this function was called
-result = SwaigFunctionResult("Done.")
-result.replace_in_history()
+my $result = SignalWire::SWAIG::FunctionResult->new('Done.');
+$result->replace_in_history;
 
 # Replace with a friendly assistant message instead of tool artifacts
-result = SwaigFunctionResult("Profile saved.")
-result.replace_in_history("I've saved your profile information.")
+my $result = SignalWire::SWAIG::FunctionResult->new('Profile saved.');
+$result->replace_in_history("I've saved your profile information.");
 
-# Practical example: data collection function that shouldn't clutter history
-@agent.tool(name="save_answer", description="Save the user's answer")
-def save_answer(args, raw_data):
-    answer = args.get("answer")
-    result = SwaigFunctionResult(f"Answer recorded: {answer}")
-    result.replace_in_history()  # Keep history clean
-    return result
+# Practical example: a data-collection tool that shouldn't clutter history
+$agent->define_tool(
+    name        => 'save_answer',
+    description => 'Save the user\'s answer',
+    parameters  => {
+        type       => 'object',
+        properties => { answer => { type => 'string', description => 'The answer to save' } },
+    },
+    handler => sub {
+        my ($args, $raw_data) = @_;
+        my $answer = $args->{answer};
+        my $result = SignalWire::SWAIG::FunctionResult->new("Answer recorded: $answer");
+        $result->replace_in_history;   # keep history clean
+        return $result;
+    },
+);
 ```
 
 **When to use:**
@@ -649,53 +631,61 @@ def save_answer(args, raw_data):
 
 ### Agent Settings & Configuration
 
-#### `update_settings(settings)`
+#### `update_settings($settings)`
 Update agent runtime settings with validation.
 
-```python
+```perl
 # AI model settings
-result.update_settings({
-    "temperature": 0.7,
-    "max-tokens": 2048,
-    "frequency-penalty": -0.5
-})
+$result->update_settings({
+    temperature         => 0.7,
+    'max-tokens'        => 2048,
+    'frequency-penalty' => -0.5,
+});
 
-# Speech recognition settings  
-result.update_settings({
-    "confidence": 0.8,
-    "barge-confidence": 0.7
-})
+# Speech recognition settings
+$result->update_settings({
+    confidence         => 0.8,
+    'barge-confidence' => 0.7,
+});
 ```
 
 **Supported Settings:**
 - `frequency-penalty`: Float (-2.0 to 2.0)
-- `presence-penalty`: Float (-2.0 to 2.0) 
+- `presence-penalty`: Float (-2.0 to 2.0)
 - `max-tokens`: Integer (0 to 4096)
 - `top-p`: Float (0.0 to 1.0)
 - `confidence`: Float (0.0 to 1.0)
 - `barge-confidence`: Float (0.0 to 1.0)
 - `temperature`: Float (0.0 to 2.0, clamped to 1.5)
 
-#### `switch_context(system_prompt=None, user_prompt=None, consolidate=False, full_reset=False)`
-Change agent context/prompt during conversation.
+#### `switch_context(system_prompt =>, user_prompt =>, consolidate =>, full_reset =>)`
+Change the agent context/prompt during the conversation.
 
-```python
+```perl
 # Simple context switch
-result.switch_context("You are now a technical support agent")
+$result->switch_context(system_prompt => 'You are now a technical support agent');
 
 # Advanced context switch
-result.switch_context(
-    system_prompt="You are a billing specialist",
-    user_prompt="The user needs help with their invoice",
-    consolidate=True
-)
+$result->switch_context(
+    system_prompt => 'You are a billing specialist',
+    user_prompt   => 'The user needs help with their invoice',
+    consolidate   => 1,
+);
 ```
 
-#### `simulate_user_input(text)`
+#### `swml_change_context($context_name)` / `swml_change_step($step_name)`
+Navigate the contexts/steps flow by name (see the [Contexts Guide](contexts_guide.md)).
+
+```perl
+$result->swml_change_context('support');
+$result->swml_change_step('verify_identity');
+```
+
+#### `simulate_user_input($text)`
 Queue simulated user input for testing or flow control.
 
-```python
-result.simulate_user_input("Yes, I'd like to speak to billing")
+```perl
+$result->simulate_user_input("Yes, I'd like to speak to billing");
 ```
 
 ---
@@ -704,87 +694,77 @@ result.simulate_user_input("Yes, I'd like to speak to billing")
 
 ### Manual Action Construction
 
-#### `add_action(name, data)`
+#### `add_action($name, $data)`
 Add a single action manually (for custom actions not covered by helper methods).
 
-```python
-result.add_action("custom_action", {"param": "value"})
+```perl
+$result->add_action('custom_action', { param => 'value' });
 ```
 
-#### `add_actions(actions)`
+#### `add_actions($actions)`
 Add multiple actions at once.
 
-```python
-result.add_actions([
-    {"say": "Hello"},
-    {"hold": 300}
-])
+```perl
+$result->add_actions([
+    { say  => 'Hello' },
+    { hold => 300 },
+]);
 ```
 
 ### Output Generation
 
-#### `to_dict()`
-Convert result to dictionary format for JSON serialization.
+#### `to_hash()`
+Convert the result to a hashref for JSON serialization. (`to_json()` returns the encoded string.)
 
-```python
-result_dict = result.to_dict()
-# Returns: {"response": "...", "action": [...], "post_process": true/false}
+```perl
+my $result_hash = $result->to_hash;
+# Returns: { response => '...', action => [...], post_process => 1 }
 ```
 
 ---
 
 ## Method Chaining
 
-All methods return `self` to enable fluent method chaining:
+All mutators return `$self` to enable fluent method chaining:
 
-```python
-result = SwaigFunctionResult("Processing your request", post_process=True) \
-    .update_global_data({"status": "processing"}) \
-    .play_background_file("processing.wav", wait=True) \
-    .set_end_of_speech_timeout(2500)
+```perl
+my $result = SignalWire::SWAIG::FunctionResult->new('Processing your request', post_process => 1)
+    ->update_global_data({ status => 'processing' })
+    ->play_background_file('processing.wav', wait => 1)
+    ->set_end_of_speech_timeout(2500);
 
 # Complex chaining example
-result = SwaigFunctionResult("Let me transfer you to billing") \
-    .set_metadata({"transfer_reason": "billing_inquiry"}) \
-    .update_global_data({"last_action": "transfer_to_billing"}) \
-    .connect("+15551234567", final=True)
+my $result = SignalWire::SWAIG::FunctionResult->new('Let me transfer you to billing')
+    ->set_metadata({ transfer_reason => 'billing_inquiry' })
+    ->update_global_data({ last_action => 'transfer_to_billing' })
+    ->connect('+15551234567', final => 1);
 ```
 
 ---
 
-## Implementation Status
+## Method Summary
 
-- **[IMPLEMENTED]**: `connect()`, `update_global_data()`, and all methods listed above
-- **[HELPER METHODS]**: `send_sms()`, `pay()`, `record_call()`, `stop_record_call()`, `join_room()`, `sip_refer()`, `join_conference()`, `tap()`, `stop_tap()` - Additional convenience methods that generate SWML
-- **[UTILITY METHODS]**: `create_payment_prompt()`, `create_payment_action()`, `create_payment_parameter()`
-- **[EXTENSIBLE]**: Additional convenience methods for common SWML patterns
+- **Call control**: `connect()`, `swml_transfer()`, `hangup()`, `hold()`, `wait_for_user()`, `stop()`, `join_conference()`, `join_room()`, `sip_refer()`, `send_sms()`, `pay()`
+- **Media**: `say()`, `play_background_file()`, `stop_background_file()`, `record_call()`, `stop_record_call()`, `tap()`, `stop_tap()`
+- **State and data**: `update_global_data()`, `remove_global_data()`, `set_metadata()`, `remove_metadata()`, `switch_context()`, `swml_change_context()`, `swml_change_step()`, `swml_user_event()`, `replace_in_history()`
+- **Speech and AI**: `add_dynamic_hints()`, `clear_dynamic_hints()`, `set_end_of_speech_timeout()`, `set_speech_event_timeout()`, `toggle_functions()`, `enable_functions_on_timeout()`, `enable_extensive_data()`, `update_settings()`, `simulate_user_input()`
+- **Advanced / RPC**: `execute_swml()`, `execute_rpc()`, `rpc_dial()`, `rpc_ai_message()`, `rpc_ai_unhold()`
+- **Class-method helpers**: `create_payment_prompt()`, `create_payment_action()`, `create_payment_parameter()`
+- **Serialization**: `to_hash()`, `to_json()`
 
 ## Best Practices
 
-1. **Use post_process=True** when you want the AI to speak before executing actions
+1. **Use `post_process => 1`** when you want the AI to speak before executing actions
 2. **Chain methods** for cleaner, more readable code
 3. **Use specific methods** instead of manual action construction when available
-4. **Handle errors gracefully** - methods may raise TypeError for invalid inputs
-5. **Validate settings** - update_settings() relies on server-side validation 
-
-### Final State
-The framework now includes **10 virtual helpers total**:
-1. connect() - Call transfer/connect
-2. send_sms() - SMS messaging
-3. pay() - Payment processing
-4. record_call() - Start background recording
-5. stop_record_call() - Stop background recording
-6. join_room() - Join RELAY room
-7. sip_refer() - SIP REFER transfer
-8. join_conference() - Join audio conference with extensive options
-9. tap() - Start background call tap for monitoring
-10. stop_tap() - Stop background call tap
+4. **Handle errors gracefully** - methods may `die` for invalid inputs
+5. **Validate settings** - `update_settings()` relies on server-side validation
 
 ---
 
 ## Post Data Reference
 
-The `post_data` object is the JSON payload sent to SWAIG function handlers. Its structure differs between webhook functions and DataMap functions.
+The raw data passed to a SWAIG handler is its second argument (`my ($args, $raw_data) = @_;`). Its structure differs between webhook functions and DataMap functions.
 
 ### Base Keys (All Functions)
 
@@ -832,7 +812,7 @@ These keys are only present for traditional webhook SWAIG functions:
 |-----|------|-------------|
 | `prompt_vars` | object | Template variables built from call context, SWML vars, and global_data |
 | `args` | object | First parsed argument object for easy template access |
-| `input` | object | Copy of entire post_data for variable expansion |
+| `input` | object | Copy of entire post data for variable expansion |
 
 ### prompt_vars Contents
 
@@ -849,15 +829,15 @@ These keys are only present for traditional webhook SWAIG functions:
 
 All keys from `global_data` are also merged into `prompt_vars`, with global_data taking precedence.
 
-### SWML Parameters Controlling post_data
+### SWML Parameters Controlling Post Data
 
 | Parameter | Type | Default | Purpose |
 |-----------|------|---------|---------|
 | `swaig_allow_swml` | boolean | true | Allow functions to execute SWML actions |
 | `swaig_allow_settings` | boolean | true | Allow functions to modify AI settings |
-| `swaig_post_conversation` | boolean | false | Include conversation history in post_data |
+| `swaig_post_conversation` | boolean | false | Include conversation history in post data |
 | `swaig_set_global_data` | boolean | true | Allow functions to modify global_data |
-| `swaig_post_swml_vars` | boolean/array | false | Include SWML variables in post_data |
+| `swaig_post_swml_vars` | boolean/array | false | Include SWML variables in post data |
 
 ### Variable Expansion in DataMap
 
@@ -872,14 +852,12 @@ DataMap processing supports template expansion with access to:
 
 ## Related Documentation
 
-- **[API Reference](api_reference.md)** - Complete AgentBase and SwaigFunctionResult API reference
+- **[API Reference](api_reference.md)** - Complete AgentBase and FunctionResult API reference
 - **[Contexts Guide](contexts_guide.md)** - Using `swml_change_context()` and `swml_change_step()`
-- **[DataMap Guide](datamap_guide.md)** - Using SwaigFunctionResult with DataMap outputs
+- **[DataMap Guide](datamap_guide.md)** - Using FunctionResult with DataMap outputs
 - **[Agent Guide](agent_guide.md)** - General agent development guide
 
 ### Example Files
 
-- `examples/simple_agent.py` - Basic SWAIG function usage
-- `examples/swaig_features_agent.py` - Advanced SWAIG features with fillers
-- `examples/record_call_example.py` - Recording and tapping calls
-- `examples/room_and_sip_example.py` - Room joining and SIP transfer
+- [`examples/simple_agent.pl`](../examples/simple_agent.pl) - Basic SWAIG function usage
+- [`examples/datamap_demo.pl`](../examples/datamap_demo.pl) - DataMap tools alongside a regular SWAIG function

@@ -1,27 +1,32 @@
 # SignalWire Agents Skills System
 
-The SignalWire Agents SDK now includes a modular skills system that lets you add capabilities to your agents with simple one-liner calls and configurable parameters.
+The SignalWire Agents SDK includes a modular skills system that lets you add capabilities to your agents with simple one-liner calls and configurable parameters.
 
 ## What's New
 
-Instead of manually implementing every agent capability, you can now:
+Instead of manually implementing every agent capability, you can add a skill in one line:
 
-```python
-from signalwire_agents import AgentBase
+```perl
+use lib 'lib';
+use SignalWire::Agent::AgentBase;
 
 # Create an agent
-agent = AgentBase("My Assistant")
+my $agent = SignalWire::Agent::AgentBase->new(name => 'My Assistant');
 
-# Add skills with one-liners!
-agent.add_skill("web_search")   # Web search capability with default settings
-agent.add_skill("datetime")     # Current date/time info  
-agent.add_skill("math")         # Mathematical calculations
+# Add skills with one-liners
+$agent->add_skill('web_search', {
+    api_key          => $ENV{GOOGLE_SEARCH_API_KEY},
+    search_engine_id => $ENV{GOOGLE_SEARCH_ENGINE_ID},
+});                              # Web search capability
+$agent->add_skill('datetime');  # Current date/time info
+$agent->add_skill('math');      # Mathematical calculations
 
-# Add skills with custom parameters!
-agent.add_skill("web_search", {
-    "num_results": 3,  # Get 3 search results instead of default 1
-    "delay": 0.5       # Add 0.5s delay between requests instead of default 0
-})
+# Add a skill with custom parameters
+$agent->add_skill('web_search', {
+    api_key          => $ENV{GOOGLE_SEARCH_API_KEY},
+    search_engine_id => $ENV{GOOGLE_SEARCH_ENGINE_ID},
+    num_results      => 3,   # Get 3 search results instead of default
+});
 
 # Your agent now has all these capabilities automatically
 ```
@@ -31,427 +36,354 @@ agent.add_skill("web_search", {
 The skills system consists of:
 
 ### Core Infrastructure
-- **`SkillBase`** - Abstract base class for all skills with parameter support
-- **`SkillManager`** - Handles loading/unloading and lifecycle management with parameters
-- **`AgentBase.add_skill()`** - Simple method to add skills to agents with optional parameters
+- **`SignalWire::Skills::SkillBase`** - Base class for all skills (Moo-based) with parameter support
+- **`SignalWire::Skills::SkillManager`** - Handles loading/unloading and lifecycle management with parameters
+- **`AgentBase->add_skill()`** - Simple method to add skills to agents with optional parameters
 
-### Discovery & Registry  
-- **`SkillRegistry`** - Auto-discovers skills from the `skills/` directory
-- **Auto-discovery** - Skills are found automatically on import
-- **Validation** - Checks dependencies and environment variables
+### Discovery & Registry
+- **`SignalWire::Skills::SkillRegistry`** - Registers and looks up skills by name
+- **Validation** - Checks required Perl packages and environment variables
 
 ### Built-in Skills
-- **`web_search`** - Google Custom Search API integration with web scraping
-- **`datetime`** - Current date/time information with timezone support
-- **`math`** - Basic mathematical calculations
+The SDK ships 18 built-in skills under `lib/SignalWire/Skills/Builtin/`:
+
+`datetime`, `math`, `web_search`, `weather_api`, `wikipedia_search`, `joke`,
+`google_maps`, `spider`, `native_vector_search`, `datasphere`,
+`datasphere_serverless`, `mcp_gateway`, `play_background_file`, `swml_transfer`,
+`api_ninjas_trivia`, `claude_skills`, `custom_skills`, `info_gatherer`.
 
 ## Available Skills
 
 ### Web Search (`web_search`)
-Search the internet and extract content from web pages.
+Search the web using the Google Custom Search API and return formatted snippets.
 
 **Requirements:**
-- Environment variables: `GOOGLE_SEARCH_API_KEY`, `GOOGLE_SEARCH_ENGINE_ID`
-- Packages: `beautifulsoup4`, `requests`
+- A Google Custom Search API key and search engine ID (passed as parameters, or
+  available via the `GOOGLE_API_KEY` environment variable as a fallback for `api_key`)
 
 **Parameters:**
-- `num_results` (default: 1) - Number of search results to retrieve (1-10)
-- `delay` (default: 0) - Delay in seconds between web requests
+- `api_key` (required) - Google Custom Search API key
+- `search_engine_id` (required) - Google Custom Search engine ID (alias: `cx`)
+- `num_results` (default: 3, range 1-10) - Number of search results to retrieve
+- `response_prefix` (default: "") - Text to prepend to responses
+- `response_postfix` (default: "") - Text to append to responses
+- `per_page_timeout` (default: 2.0) - Maximum seconds to wait on the HTTP fetch
+- `overall_deadline` (default: 10.0) - Wall-clock budget in seconds for the whole tool call
+- `tool_name` (default: "web_search") - Override the default tool name
+
+This skill supports multiple instances (give each a distinct `tool_name`).
 
 **Tools provided:**
-- `web_search(query, num_results)` - Search and scrape web content
+- `web_search(query)` - Search and return formatted result snippets
 
 **Usage examples:**
-```python
-# Default: fast single result
-agent.add_skill("web_search")
+```perl
+# Basic usage
+$agent->add_skill('web_search', {
+    api_key          => $ENV{GOOGLE_SEARCH_API_KEY},
+    search_engine_id => $ENV{GOOGLE_SEARCH_ENGINE_ID},
+});
 
-# Custom: multiple results with delay
-agent.add_skill("web_search", {
-    "num_results": 3,
-    "delay": 0.5
-})
-
-# Speed optimized: single result, no delay
-agent.add_skill("web_search", {
-    "num_results": 1,
-    "delay": 0
-})
+# More comprehensive results
+$agent->add_skill('web_search', {
+    api_key          => $ENV{GOOGLE_SEARCH_API_KEY},
+    search_engine_id => $ENV{GOOGLE_SEARCH_ENGINE_ID},
+    num_results      => 5,
+});
 ```
 
-### Date/Time (`datetime`)  
+### Date/Time (`datetime`)
 Get current date and time information.
-
-**Requirements:**
-- Packages: `pytz`
-
-**Parameters:** None (no configurable parameters)
-
-**Tools provided:**
-- `get_current_time(timezone)` - Current time in any timezone
-- `get_current_date(timezone)` - Current date in any timezone
-
-### Math (`math`)
-Perform mathematical calculations.
 
 **Requirements:** None
 
-**Parameters:** None (no configurable parameters)
+**Parameters:** None (no configurable parameters beyond the base)
 
-**Tools provided:**
-- `calculate(expression)` - Evaluate mathematical expressions safely
+**Usage example:**
+```perl
+$agent->add_skill('datetime');
+```
+
+### Math (`math`)
+Perform basic mathematical calculations.
+
+**Requirements:** None
+
+**Parameters:** None (no configurable parameters beyond the base)
+
+**Usage example:**
+```perl
+$agent->add_skill('math');
+```
 
 ### Native Vector Search (`native_vector_search`)
-Search local document collections using vector similarity and keyword search.
+Search a document index using vector similarity and keyword search, either
+against a local knowledge base or a remote search server.
 
-**Requirements:**
-- Packages: `sentence-transformers`, `scikit-learn`, `numpy`
-- Install with: `pip install signalwire-agents[search]`
+**Requirements:** None beyond the core SDK.
 
 **Parameters:**
 - `tool_name` (default: "search_knowledge") - Custom name for the search tool
-- `index_file` (optional) - Path to local `.swsearch` index file
-- `remote_url` (optional) - URL of remote search server
-- `index_name` (default: "default") - Index name on remote server
-- `build_index` (default: False) - Auto-build index if missing
-- `source_dir` (optional) - Source directory for auto-building
+- `description` - Override the tool description
+- `remote_url` - URL of a remote search server
+- `index_name` - Index name on the remote server
 - `count` (default: 3) - Number of search results to return
-- `distance_threshold` (default: 0.0) - Minimum similarity score
-- `response_prefix` (optional) - Text to prepend to responses
-- `response_postfix` (optional) - Text to append to responses
+- `hints` - Extra speech-recognition hints (arrayref)
+
+This skill supports multiple instances (give each a distinct `tool_name`).
 
 **Tools provided:**
-- `search_knowledge(query, count)` - Search documents with hybrid vector/keyword search
+- `search_knowledge(query, count)` - Search documents (tool name configurable)
 
 **Usage examples:**
-```python
-# Local mode with auto-build from concepts guide
-agent.add_skill("native_vector_search", {
-    "tool_name": "search_docs",
-    "build_index": True,
-    "source_dir": "./docs",  # Will build from directory
-    "index_file": "concepts.swsearch"
-})
+```perl
+# Default local search
+$agent->add_skill('native_vector_search', {
+    tool_name => 'search_docs',
+});
 
-# Or build from specific concepts guide file
-agent.add_skill("native_vector_search", {
-    "tool_name": "search_concepts",
-    "index_file": "concepts.swsearch"  # Pre-built from concepts guide
-})
+# Remote search server
+$agent->add_skill('native_vector_search', {
+    remote_url => 'http://localhost:8001',
+    index_name => 'knowledge',
+});
 
-# Remote mode
-agent.add_skill("native_vector_search", {
-    "remote_url": "http://localhost:8001",
-    "index_name": "knowledge"
-})
-
-# Multiple instances for different document collections
-agent.add_skill("native_vector_search", {
-    "tool_name": "search_examples",
-    "index_file": "examples.swsearch"
-})
+# Multiple instances for different collections
+$agent->add_skill('native_vector_search', {
+    tool_name => 'search_examples',
+});
 ```
 
-For complete documentation, see [Search Overview](search_overview.md).
-
 ### SWML Transfer (`swml_transfer`)
-Transfer calls between agents using pattern matching.
+Transfer calls between agents or destinations using regex pattern matching.
 
-**Requirements:** None (no additional packages or environment variables required)
+**Requirements:** None
 
 **Parameters:**
 - `tool_name` (default: "transfer_call") - Custom name for the transfer function
 - `description` (default: "Transfer call based on pattern matching") - Tool description
 - `parameter_name` (default: "transfer_type") - Name of the parameter for the transfer function
-- `parameter_description` (default: "The type of transfer to perform") - Parameter description
-- `transfers` (required) - Dictionary mapping regex patterns to transfer configurations:
-  - Pattern (key): Regex pattern to match (e.g., "/sales/i")
-  - Configuration (value): Dictionary with:
-    - `url` (required): Transfer destination URL
-    - `message` (optional): Pre-transfer message
-    - `return_message` (optional): Post-transfer message
-    - `post_process` (optional, default: True): Enable post-processing
-- `default_message` (default: "Please specify a valid transfer type.") - Message when no pattern matches
-- `default_post_process` (default: False) - Post-processing flag for default case
-- `required_fields` (default: {}) - Object mapping field names to descriptions for data collection before transfer
+- `parameter_description` - Parameter description
+- `transfers` (required) - Hashref mapping regex patterns to transfer configurations:
+  - Pattern (key): regex pattern to match (e.g. `'/sales/i'`)
+  - Configuration (value): a hashref with `url` (required), `message`,
+    `return_message`, and `post_process`
+- `default_message` - Message when no pattern matches
+
+This skill supports multiple instances (give each a distinct `tool_name`).
 
 **Tools provided:**
-- `transfer_call(transfer_type, ...required_fields)` (or custom tool_name) - Transfer based on pattern matching with optional required fields
+- `transfer_call(transfer_type)` (or custom `tool_name`) - Transfer based on pattern matching
 
 **Usage examples:**
-```python
+```perl
 # Simple transfer between departments
-agent.add_skill("swml_transfer", {
-    "tool_name": "transfer_to_department",
-    "transfers": {
-        "/sales/i": {
-            "url": "https://example.com/sales",
-            "message": "Transferring to sales...",
-            "return_message": "Sales transfer complete."
+$agent->add_skill('swml_transfer', {
+    tool_name => 'transfer_to_department',
+    transfers => {
+        '/sales/i' => {
+            url            => 'https://example.com/sales',
+            message        => 'Transferring to sales...',
+            return_message => 'Sales transfer complete.',
         },
-        "/support/i": {
-            "url": "https://example.com/support",
-            "message": "Transferring to support...",
-            "return_message": "Support transfer complete."
-        }
-    }
-})
+        '/support/i' => {
+            url            => 'https://example.com/support',
+            message        => 'Transferring to support...',
+            return_message => 'Support transfer complete.',
+        },
+    },
+});
 
 # Multiple instances for different transfer types
-agent.add_skill("swml_transfer", {
-    "tool_name": "route_call",
-    "parameter_name": "department",
-    "transfers": {
-        "/sales|billing/i": {
-            "url": "https://api.company.com/sales",
-            "message": "Connecting to sales team...",
-            "post_process": True
+$agent->add_skill('swml_transfer', {
+    tool_name      => 'route_call',
+    parameter_name => 'department',
+    transfers      => {
+        '/sales|billing/i' => {
+            url          => 'https://api.company.com/sales',
+            message      => 'Connecting to sales team...',
+            post_process => 1,
         },
-        "/technical|support/i": {
-            "url": "https://api.company.com/support",
-            "message": "Connecting to support team...",
-            "post_process": True
-        }
+        '/technical|support/i' => {
+            url          => 'https://api.company.com/support',
+            message      => 'Connecting to support team...',
+            post_process => 1,
+        },
     },
-    "default_message": "Would you like sales or support?"
-})
+    default_message => 'Would you like sales or support?',
+});
 ```
 
 ## Usage Examples
 
 ### Basic Usage
-```python
-from signalwire_agents import AgentBase
+```perl
+use lib 'lib';
+use SignalWire::Agent::AgentBase;
 
 # Create agent and add skills
-agent = AgentBase("Assistant", route="/assistant")
-agent.add_skill("datetime")
-agent.add_skill("math") 
-agent.add_skill("web_search")  # Uses defaults: 1 result, no delay
+my $agent = SignalWire::Agent::AgentBase->new(
+    name  => 'Assistant',
+    route => '/assistant',
+);
+$agent->add_skill('datetime');
+$agent->add_skill('math');
+$agent->add_skill('web_search', {
+    api_key          => $ENV{GOOGLE_SEARCH_API_KEY},
+    search_engine_id => $ENV{GOOGLE_SEARCH_ENGINE_ID},
+});
 
 # Start the agent
-agent.run()
+$agent->run;
 ```
 
 ### Skills with Custom Parameters
-```python
-from signalwire_agents import AgentBase
+```perl
+use lib 'lib';
+use SignalWire::Agent::AgentBase;
 
 # Create agent
-agent = AgentBase("Research Assistant", route="/research")
+my $agent = SignalWire::Agent::AgentBase->new(
+    name  => 'Research Assistant',
+    route => '/research',
+);
 
 # Add web search optimized for research (more results)
-agent.add_skill("web_search", {
-    "num_results": 5,   # Get more comprehensive results
-    "delay": 1.0        # Be respectful to websites
-})
+$agent->add_skill('web_search', {
+    api_key          => $ENV{GOOGLE_SEARCH_API_KEY},
+    search_engine_id => $ENV{GOOGLE_SEARCH_ENGINE_ID},
+    num_results      => 5,
+});
 
 # Add other skills without parameters
-agent.add_skill("datetime")
-agent.add_skill("math")
+$agent->add_skill('datetime');
+$agent->add_skill('math');
 
 # Start the agent
-agent.run()
-```
-
-### Different Parameter Configurations
-```python
-# Speed-optimized for quick responses
-agent.add_skill("web_search", {
-    "num_results": 1,
-    "delay": 0
-})
-
-# Comprehensive research mode
-agent.add_skill("web_search", {
-    "num_results": 5,
-    "delay": 1.0
-})
-
-# Balanced approach
-agent.add_skill("web_search", {
-    "num_results": 3,
-    "delay": 0.5
-})
-```
-
-### Check Available Skills
-```python
-from signalwire_agents.skills.registry import skill_registry
-
-# List all discovered skills
-for skill in skill_registry.list_skills():
-    print(f"- {skill['name']}: {skill['description']}")
-    if skill['required_env_vars']:
-        print(f"  Requires: {', '.join(skill['required_env_vars'])}")
+$agent->run;
 ```
 
 ### Runtime Skill Management
-```python
-agent = AgentBase("Dynamic Agent")
+```perl
+my $agent = SignalWire::Agent::AgentBase->new(name => 'Dynamic Agent');
 
 # Add skills with different configurations
-agent.add_skill("math")
-agent.add_skill("datetime")
-agent.add_skill("web_search", {"num_results": 2, "delay": 0.3})
+$agent->add_skill('math');
+$agent->add_skill('datetime');
 
 # Check what's loaded
-print("Loaded skills:", agent.list_skills())
+my $skills = $agent->list_skills;
 
 # Remove a skill
-agent.remove_skill("math")
+$agent->remove_skill('math');
 
-# Check if specific skill is loaded
-if agent.has_skill("datetime"):
-    print("Date/time capabilities available")
+# Check if a specific skill is loaded
+if ($agent->has_skill('datetime')) {
+    print "Date/time capabilities available\n";
+}
 ```
 
 ## Creating Custom Skills
 
-Create a new skill by extending `SkillBase` with parameter support:
+Create a new skill by extending `SignalWire::Skills::SkillBase` and registering
+it with the skill registry:
 
-```python
-# signalwire_agents/skills/my_skill/skill.py
-from signalwire_agents.core.skill_base import SkillBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
+```perl
+package SignalWire::Skills::Builtin::MySkill;
+use strict;
+use warnings;
+use Moo;
+extends 'SignalWire::Skills::SkillBase';
 
-class MyCustomSkill(SkillBase):
-    SKILL_NAME = "my_skill"
-    SKILL_DESCRIPTION = "Does something awesome with configurable parameters"
-    SKILL_VERSION = "1.0.0"
-    REQUIRED_PACKAGES = ["requests"]  # Optional
-    REQUIRED_ENV_VARS = ["API_KEY"]   # Optional
-    
-    def setup(self) -> bool:
-        """Initialize the skill with parameters"""
-        if not self.validate_env_vars() or not self.validate_packages():
-            return False
-            
-        # Use parameters with defaults
-        self.max_items = self.params.get('max_items', 10)
-        self.timeout = self.params.get('timeout', 30)
-        self.retry_count = self.params.get('retry_count', 3)
-        
-        return True
-        
-    def register_tools(self) -> None:
-        """Register SWAIG tools with the agent"""
-        self.define_tool(
-            name="my_function",
-            description=f"Does something cool (max {self.max_items} items)",
-            parameters={
-                "input": {
-                    "type": "string",
-                    "description": "Input parameter"
-                }
+use SignalWire::Skills::SkillRegistry;
+SignalWire::Skills::SkillRegistry->register_skill('my_skill', __PACKAGE__);
+
+has '+skill_name'        => ( default => sub { 'my_skill' } );
+has '+skill_description' => ( default => sub { 'Does something with configurable parameters' } );
+has '+skill_version'     => ( default => sub { '1.0.0' } );
+has '+required_env_vars' => ( default => sub { ['API_KEY'] } );
+
+sub setup {
+    my ($self) = @_;
+    return 0 unless $self->validate_env_vars;
+    return 1;
+}
+
+sub register_tools {
+    my ($self) = @_;
+    my $max_items = $self->params->{max_items} // 10;
+
+    $self->define_tool(
+        name        => 'my_function',
+        description => "Does something cool (max $max_items items)",
+        parameters  => {
+            type       => 'object',
+            properties => {
+                input => { type => 'string', description => 'Input parameter' },
             },
-            handler=self._my_handler
-        )
-    
-    def _my_handler(self, args, raw_data):
-        """Handle the tool call using configured parameters"""
-        # Use self.max_items, self.timeout, self.retry_count in your logic
-        return SwaigFunctionResult(f"Processed with max_items={self.max_items}")
-        
-    def get_hints(self):
-        """Speech recognition hints"""
-        return ["custom", "skill", "awesome"]
-        
-    def get_prompt_sections(self):
-        """Prompt sections to add to agent"""
-        return [{
-            "title": "Custom Capability",
-            "body": f"You can do custom things with my_skill (configured for {self.max_items} items)."
-        }]
+            required => ['input'],
+        },
+        handler => sub {
+            my ($args, $raw_data) = @_;
+            require SignalWire::SWAIG::FunctionResult;
+            return SignalWire::SWAIG::FunctionResult->new(
+                "Processed: $args->{input} (max_items=$max_items)");
+        },
+    );
+}
+
+sub get_hints { return ['custom', 'skill', 'awesome'] }
+
+sub _get_prompt_sections {
+    return [
+        {
+            title => 'Custom Capability',
+            body  => 'You can do custom things with my_skill.',
+        }
+    ];
+}
+
+sub get_parameter_schema {
+    return {
+        %{ SignalWire::Skills::SkillBase->get_parameter_schema },
+        max_items => { type => 'integer', default => 10 },
+    };
+}
+
+1;
 ```
 
-The skill will be automatically discovered and available as:
-```python
+Once registered, the skill is available via `add_skill`:
+```perl
 # Use defaults
-agent.add_skill("my_skill")
+$agent->add_skill('my_skill');
 
 # Use custom parameters
-agent.add_skill("my_skill", {
-    "max_items": 20,
-    "timeout": 60,
-    "retry_count": 5
-})
+$agent->add_skill('my_skill', {
+    max_items => 20,
+});
 ```
 
 ## Quick Start
 
-1. **Install dependencies:**
+1. **Run the demo:**
    ```bash
-   pip install pytz beautifulsoup4 requests
+   PERL5LIB="lib" perl examples/skills_demo.pl
    ```
 
-2. **Run the demo:**
-   ```bash
-   python examples/skills_demo.py
-   ```
-
-3. **For web search, set environment variables:**
+2. **For web search, set environment variables:**
    ```bash
    export GOOGLE_SEARCH_API_KEY="your_api_key"
    export GOOGLE_SEARCH_ENGINE_ID="your_engine_id"
    ```
 
-## Testing
-
-Test the skills system with parameters:
-
-```bash
-python3 -c "
-from signalwire_agents import AgentBase
-from signalwire_agents.skills.registry import skill_registry
-
-# Show discovered skills
-print('Available skills:', [s['name'] for s in skill_registry.list_skills()])
-
-# Create agent and load skills with parameters
-agent = AgentBase('Test', route='/test')
-agent.add_skill('datetime')
-agent.add_skill('math')
-agent.add_skill('web_search', {'num_results': 2, 'delay': 0.5})
-
-print('Loaded skills:', agent.list_skills())
-print('Skills system with parameters working!')
-"
-```
-
 ## Benefits
 
-- **One-liner integration** - `agent.add_skill("skill_name")`
-- **Configurable parameters** - `agent.add_skill("skill_name", {"param": "value"})`
-- **Automatic discovery** - Drop skills in the directory and they're available
+- **One-liner integration** - `$agent->add_skill('skill_name')`
+- **Configurable parameters** - `$agent->add_skill('skill_name', { param => 'value' })`
 - **Dependency validation** - Checks packages and environment variables
 - **Modular architecture** - Skills are self-contained and reusable
 - **Extensible** - Easy to create custom skills with parameters
-- **Clean separation** - Skills don't interfere with each other
-- **Performance tuning** - Configure skills for speed vs. comprehensiveness
+- **Multiple instances** - Skills that support it can be added more than once with distinct tool names
 
-## Migration Guide
-
-**Before (manual implementation):**
-```python
-# Had to manually implement every capability
-class WebSearchAgent(AgentBase):
-    def __init__(self):
-        super().__init__("WebSearchAgent")
-        self.setup_google_search()
-        self.define_tool("web_search", ...)
-        # Lots of manual code...
-```
-
-**After (skills system with parameters):**
-```python
-# Simple one-liner with custom configuration
-agent = AgentBase("WebSearchAgent")
-agent.add_skill("web_search", {
-    "num_results": 3,  # Get more results
-    "delay": 0.5       # Be respectful to servers
-})
-# Done! Full web search capability with custom settings.
-```
-
-The skills system makes SignalWire agents more modular, maintainable, and configurable. 
+The skills system makes SignalWire agents more modular, maintainable, and configurable.
