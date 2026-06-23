@@ -1,343 +1,161 @@
 # Configuration Guide
 
-This guide explains the unified configuration system available in SignalWire AI Agents SDK.
+This guide explains how SignalWire AI Agents (SWML-based services) are configured
+in the Perl SDK. Configuration comes from two sources: constructor parameters and
+environment variables. An agent works with zero configuration, using sensible
+defaults.
 
 ## Overview
 
-All SignalWire services (SWML-based agents, Search, MCP Gateway) now support optional JSON configuration files with environment variable substitution. SWML (SignalWire Markup Language) is the JSON document format that defines agent behavior during calls. Services continue to work without any configuration file, maintaining full backward compatibility.
+SWML (SignalWire Markup Language) is the JSON document format that defines agent
+behavior during calls. Agents are configured through their Moo constructor
+parameters and a small set of environment variables. There is no separate JSON
+configuration-file loader in the Perl SDK; everything is set either in code or via
+the environment.
 
 ## Quick Start
 
 ### Zero Configuration (Default)
-```python
-# Works exactly as before - no config needed
-agent = MyAgent()
-agent.run()
+
+```perl
+use lib 'lib';
+use SignalWire::Agent::AgentBase;
+
+# Works with defaults: name 'agent', port 3000, auto-generated basic auth
+my $agent = SignalWire::Agent::AgentBase->new;
+$agent->run;
 ```
 
-### With Configuration File
-```python
-# Automatically detects config.json if present
-agent = MyAgent()
+### With Explicit Settings
 
-# Or specify a config file
-agent = MyAgent(config_file="production_config.json")
+```perl
+my $agent = SignalWire::Agent::AgentBase->new(
+    name  => 'my-agent',
+    route => '/agent',
+    host  => '0.0.0.0',
+    port  => 8080,
+);
+$agent->run;
 ```
 
-## Configuration Files
+You can also override host and port at serve time:
 
-### File Locations
-
-Services look for configuration files in this order:
-1. Service-specific: `{service_name}_config.json` (e.g., `search_config.json`)
-2. Generic: `config.json`
-3. Hidden: `.swml/config.json`
-4. User home: `~/.swml/config.json`
-5. System: `/etc/swml/config.json`
-
-### Configuration Structure
-
-```json
-{
-  "service": {
-    "name": "my-service",
-    "host": "${HOST|0.0.0.0}",
-    "port": "${PORT|3000}"
-  },
-  "security": {
-    "ssl_enabled": "${SSL_ENABLED|false}",
-    "ssl_cert_path": "${SSL_CERT|/etc/ssl/cert.pem}",
-    "ssl_key_path": "${SSL_KEY|/etc/ssl/key.pem}",
-    "auth": {
-      "basic": {
-        "enabled": true,
-        "user": "${AUTH_USER|signalwire}",
-        "password": "${AUTH_PASSWORD}"
-      },
-      "bearer": {
-        "enabled": "${BEARER_ENABLED|false}",
-        "token": "${BEARER_TOKEN}"
-      }
-    },
-    "allowed_hosts": ["${PRIMARY_HOST}", "${SECONDARY_HOST|localhost}"],
-    "cors_origins": "${CORS_ORIGINS|*}",
-    "rate_limit": "${RATE_LIMIT|60}"
-  }
-}
+```perl
+$agent->run(host => '127.0.0.1', port => 3001);
 ```
 
-## Environment Variable Substitution
+## Constructor Parameters
 
-The configuration system supports `${VAR|default}` syntax:
+Common parameters accepted by `SignalWire::Agent::AgentBase->new`:
 
-- `${VAR}` - Use environment variable VAR (error if not set)
-- `${VAR|default}` - Use VAR or "default" if not set
-- `${VAR|}` - Use VAR or empty string if not set
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `name` | `'agent'` | Agent name |
+| `route` | `/` | HTTP route the agent is served on |
+| `host` | `0.0.0.0` | Bind host |
+| `port` | `$PORT` env or `3000` | Bind port |
+| `basic_auth_user` | auto-generated | HTTP basic auth username |
+| `basic_auth_password` | auto-generated | HTTP basic auth password |
 
-### Examples
+Most behavior (prompt, languages, skills, params, contexts) is configured by
+calling methods on the agent after construction, not by constructor arguments.
 
-```json
-{
-  "database": {
-    "host": "${DB_HOST|localhost}",
-    "port": "${DB_PORT|5432}",
-    "password": "${DB_PASSWORD}"
-  }
-}
+## Environment Variables
+
+The Perl SDK reads the following environment variables (the same `SWML_*` names
+used across the SDK family):
+
+### Authentication
+
+- `SWML_BASIC_AUTH_USER` - HTTP basic auth username (otherwise auto-generated)
+- `SWML_BASIC_AUTH_PASSWORD` - HTTP basic auth password (otherwise auto-generated)
+
+### Networking
+
+- `SWML_HOST` - Default bind host for SWML services
+- `SWML_PORT` - Default bind port for SWML services
+- `PORT` - Fallback port for `AgentBase` when not otherwise set
+- `SWML_PROXY_URL_BASE` - Public base URL when the agent is behind a reverse proxy
+  (used to build webhook URLs)
+
+### TLS / SSL
+
+- `SWML_SSL_ENABLED` - Enable HTTPS when truthy (`true`, `1`, or `yes`)
+- `SWML_SSL_CERT_PATH` - Path to the TLS certificate
+- `SWML_SSL_KEY_PATH` - Path to the TLS private key
+
+When `SWML_SSL_ENABLED` is truthy and both cert and key paths resolve, the agent
+serves HTTPS directly.
+
+### Request Signing
+
+- `SIGNALWIRE_SIGNING_KEY` - Key used to validate signed SWAIG tool-token requests
+
+## TLS / HTTPS
+
+There are two ways to serve HTTPS:
+
+### 1. Explicit serve options
+
+Passing both `ssl_cert` and `ssl_key` to `run`/`serve` always enables TLS:
+
+```perl
+$agent->run(
+    host     => '0.0.0.0',
+    port     => 443,
+    ssl_cert => '/etc/ssl/cert.pem',
+    ssl_key  => '/etc/ssl/key.pem',
+);
 ```
 
-## Priority Order
+### 2. Environment variables
 
-Configuration values are applied in this order (highest to lowest):
+Otherwise the `SWML_SSL_*` environment variables are consulted. TLS is enabled only
+when `SWML_SSL_ENABLED` is truthy AND both `SWML_SSL_CERT_PATH` and
+`SWML_SSL_KEY_PATH` resolve:
 
-1. **Constructor parameters** - Explicitly passed to service
-2. **Config file values** - From JSON configuration
-3. **Environment variables** - Direct env vars (backward compatibility)
-4. **Defaults** - Hard-coded defaults
-
-## Service-Specific Configuration
-
-### SWML/Agent Configuration
-
-```json
-{
-  "service": {
-    "name": "my-agent",
-    "route": "/agent",
-    "port": "${AGENT_PORT|3000}"
-  },
-  "security": {
-    "ssl_enabled": "${SSL_ENABLED|false}",
-    "auth": {
-      "basic": {
-        "user": "${AGENT_USER|agent}",
-        "password": "${AGENT_PASSWORD}"
-      }
-    }
-  }
-}
-```
-
-### Search Service Configuration
-
-```json
-{
-  "service": {
-    "port": "${SEARCH_PORT|8001}",
-    "indexes": {
-      "docs": "${DOCS_INDEX|./docs.swsearch}",
-      "api": "${API_INDEX|./api.swsearch}"
-    }
-  },
-  "security": {
-    "ssl_enabled": "${SEARCH_SSL|false}",
-    "auth": {
-      "basic": {
-        "enabled": true,
-        "user": "${SEARCH_USER|search}",
-        "password": "${SEARCH_PASSWORD}"
-      }
-    }
-  }
-}
-```
-
-### MCP Gateway Configuration
-
-```json
-{
-  "server": {
-    "host": "${MCP_HOST|0.0.0.0}",
-    "port": "${MCP_PORT|8080}",
-    "auth_user": "${MCP_USER|admin}",
-    "auth_password": "${MCP_PASSWORD}",
-    "auth_token": "${MCP_TOKEN}"
-  },
-  "services": {
-    "example": {
-      "command": ["python", "${SERVICE_PATH|./service.py}"],
-      "enabled": "${SERVICE_ENABLED|true}"
-    }
-  },
-  "session": {
-    "default_timeout": "${SESSION_TIMEOUT|300}",
-    "max_sessions_per_service": "${MAX_SESSIONS|100}"
-  }
-}
-```
-
-## Security Configuration
-
-All services share the same security configuration options:
-
-```json
-{
-  "security": {
-    "ssl_enabled": true,
-    "ssl_cert_path": "/etc/ssl/cert.pem",
-    "ssl_key_path": "/etc/ssl/key.pem",
-    "domain": "api.example.com",
-    
-    "allowed_hosts": ["api.example.com", "app.example.com"],
-    "cors_origins": ["https://app.example.com"],
-    
-    "max_request_size": 5242880,
-    "rate_limit": 30,
-    "request_timeout": 60,
-    
-    "use_hsts": true,
-    "hsts_max_age": 31536000
-  }
-}
-```
-
-## Migration Guide
-
-### From Environment Variables Only
-
-Before:
 ```bash
 export SWML_SSL_ENABLED=true
 export SWML_SSL_CERT_PATH=/etc/ssl/cert.pem
-python my_agent.py
+export SWML_SSL_KEY_PATH=/etc/ssl/key.pem
+PERL5LIB="lib" perl my_agent.pl
 ```
 
-After (Option 1 - Keep using env vars):
+## Reverse Proxy
+
+When the agent runs behind a reverse proxy (the proxy terminates TLS and forwards
+to the agent over plain HTTP), set `SWML_PROXY_URL_BASE` to the public base URL so
+generated webhook URLs point at the proxy:
+
 ```bash
-# Still works exactly the same
-export SWML_SSL_ENABLED=true
-export SWML_SSL_CERT_PATH=/etc/ssl/cert.pem
-python my_agent.py
-```
-
-After (Option 2 - Use config file):
-```json
-// config.json
-{
-  "security": {
-    "ssl_enabled": true,
-    "ssl_cert_path": "/etc/ssl/cert.pem"
-  }
-}
-```
-
-After (Option 3 - Mix config and env vars):
-```json
-// config.json
-{
-  "security": {
-    "ssl_enabled": true,
-    "ssl_cert_path": "${SSL_CERT|/etc/ssl/cert.pem}"
-  }
-}
+export SWML_PROXY_URL_BASE=https://agent.example.com
 ```
 
 ## Best Practices
 
-1. **Keep secrets in environment variables**
-   ```json
-   {
-     "security": {
-       "auth": {
-         "basic": {
-           "user": "admin",
-           "password": "${ADMIN_PASSWORD}"
-         }
-       }
-     }
-   }
-   ```
+1. **Keep secrets in environment variables** - Set `SWML_BASIC_AUTH_PASSWORD` and
+   `SIGNALWIRE_SIGNING_KEY` from the environment rather than hard-coding them.
 
-2. **Use defaults for development**
-   ```json
-   {
-     "service": {
-       "port": "${PORT|3000}",
-       "host": "${HOST|localhost}"
-     }
-   }
-   ```
+2. **Use defaults for development** - An agent runs with no configuration on port
+   3000 with auto-generated basic auth credentials (printed when the agent starts).
 
-3. **Environment-specific configs**
-   - `dev_config.json` - Development settings
-   - `prod_config.json` - Production settings
-   - Use `${ENV}` to switch between them
-
-4. **Version control**
-   - Commit config files WITHOUT secrets
-   - Use `.gitignore` for local overrides
-   - Document required environment variables
-
-## Programmatic Usage
-
-### Loading Configuration
-
-```python
-from signalwire_agents.core.config_loader import ConfigLoader
-
-# Load config
-loader = ConfigLoader(["my_config.json"])
-if loader.has_config():
-    config = loader.get_config()
-    
-    # Get specific value with substitution
-    port = loader.get("service.port", default=3000)
-    
-    # Get entire section
-    security = loader.get_section("security")
-```
-
-### Using with Services
-
-```python
-# SWML Service
-from signalwire_agents import AgentBase
-
-class MyAgent(AgentBase):
-    def __init__(self):
-        # Auto-detects config.json if present
-        super().__init__(name="my-agent", config_file="agent_config.json")
-
-# Search Service
-from signalwire_agents.search import SearchService
-
-service = SearchService(config_file="search_config.json")
-
-# MCP Gateway
-from mcp_gateway.gateway_service import MCPGateway
-
-gateway = MCPGateway(config_path="mcp_config.json")
-```
+3. **Terminate TLS at a proxy in production** - Run the agent over HTTP behind a
+   proxy and set `SWML_PROXY_URL_BASE`, or serve HTTPS directly via `SWML_SSL_*`.
 
 ## Troubleshooting
 
-### Config Not Loading
-
-1. Check file exists and is valid JSON:
-   ```bash
-   python -m json.tool config.json
-   ```
-
-2. Enable debug logging:
-   ```python
-   import logging
-   logging.basicConfig(level=logging.DEBUG)
-   ```
-
-3. Check for syntax errors in variable substitution
-
-### Environment Variables Not Substituting
-
-1. Ensure correct syntax: `${VAR}` or `${VAR|default}`
-2. Check environment variable is exported:
-   ```bash
-   echo $MY_VAR
-   ```
-
-3. Remember config file values override env vars
-
 ### Authentication Issues
 
-1. Config file auth settings override env vars
-2. Check which auth method is enabled
-3. Verify credentials match
+1. If you did not set `SWML_BASIC_AUTH_USER`/`SWML_BASIC_AUTH_PASSWORD` (or the
+   constructor parameters), credentials are auto-generated and printed at startup.
+2. Confirm the credentials the client sends match what the agent expects.
+
+### TLS Not Engaging
+
+1. Confirm `SWML_SSL_ENABLED` is set to `true`, `1`, or `yes`.
+2. Confirm both `SWML_SSL_CERT_PATH` and `SWML_SSL_KEY_PATH` point at readable
+   files.
+3. Remember that explicit `ssl_cert`/`ssl_key` serve options override the
+   environment and always enable TLS.
+
+For more on authentication and signing, see the [Security Guide](security.md).

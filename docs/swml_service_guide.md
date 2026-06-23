@@ -4,7 +4,7 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
-- [Centralized Logging System](#centralized-logging-system)
+- [Logging](#logging)
 - [SWML Document Creation](#swml-document-creation)
 - [Verb Handling](#verb-handling)
 - [Web Service Features](#web-service-features)
@@ -15,123 +15,91 @@
 
 ## Introduction
 
-The `SWMLService` class provides a foundation for creating and serving SignalWire Markup Language (SWML) documents. It serves as the base class for all SignalWire services, including AI Agents, and handles common tasks such as:
+The `SignalWire::SWML::Service` class provides a foundation for creating and serving SignalWire Markup Language (SWML) documents. It serves as the base class for all SignalWire services, including AI Agents (`SignalWire::Agent::AgentBase` extends it), and handles common tasks such as:
 
 - SWML document creation and manipulation
-- Schema validation
-- Web service functionality
+- Schema-driven verb construction
+- Web service functionality (PSGI/Plack)
 - Authentication
-- Centralized logging
+- SWAIG function hosting
 
-The class is designed to be extended for specific use cases, while providing a full set of capabilities out of the box.
+The class is designed to be extended for specific use cases, while providing a full set of capabilities out of the box. It is built with Moo, so subclasses use `extends` and configure themselves in a `BUILD` method.
 
 ## Installation
 
-The `SWMLService` class is part of the SignalWire AI Agent SDK. Install it using pip:
+The `SignalWire::SWML::Service` class is part of the SignalWire AI Agent SDK. Install the SDK's dependencies with cpanm:
 
 ```bash
-pip install signalwire-agents
+cpanm --installdeps .
 ```
+
+The SDK requires Perl 5.36 or newer.
 
 ## Basic Usage
 
-Here's a simple example of creating an SWML service:
+Here's a simple example of creating an SWML service. Verbs are added to the
+document through schema-driven accessor methods (`answer`, `play`, `hangup`,
+etc.) provided via `AUTOLOAD` — each takes a section name (default `'main'`)
+and a configuration hashref, and returns the service so calls chain:
 
-```python
-from signalwire_agents.core.swml_service import SWMLService
+```perl
+use strict;
+use warnings;
+use lib 'lib';
+use SignalWire::SWML::Service;
 
-class SimpleVoiceService(SWMLService):
-    def __init__(self, host="0.0.0.0", port=3000):
-        super().__init__(
-            name="voice-service",
-            route="/voice",
-            host=host,
-            port=port
-        )
-        
-        # Build the SWML document
-        self.build_document()
-    
-    def build_document(self):
-        # Reset the document to start fresh
-        self.reset_document()
-        
-        # Add answer verb
-        self.add_verb("answer", {})
-        
-        # Add play verb for greeting
-        self.add_verb("play", {
-            "url": "say:Hello, thank you for calling our service."
-        })
-        
-        # Add hangup verb
-        self.add_verb("hangup", {})
+package SimpleVoiceService;
+use Moo;
+extends 'SignalWire::SWML::Service';
 
-# Create and start the service
-service = SimpleVoiceService()
-service.run()
+sub BUILD {
+    my ($self) = @_;
+    $self->build_document;
+}
+
+sub build_document {
+    my ($self) = @_;
+
+    # Add the answer verb to the main section
+    $self->answer('main', {});
+
+    # Add a play verb for the greeting
+    $self->play('main', { url => 'say:Hello, thank you for calling our service.' });
+
+    # Add a hangup verb
+    $self->hangup('main', {});
+}
+
+package main;
+my $service = SimpleVoiceService->new(
+    name  => 'voice-service',
+    route => '/voice',
+    host  => '0.0.0.0',
+    port  => 3000,
+);
+
+# Mount the PSGI app under any Plack server, e.g. plackup:
+my $app = $service->to_psgi_app;
 ```
 
-## Centralized Logging System
+## Logging
 
-The `SWMLService` class includes a centralized logging system based on `structlog` that provides structured, JSON-formatted logs. This logging system is automatically set up when you import the module, so you don't need to configure it in each service or example.
+`SignalWire::SWML::Service` uses `SignalWire::Logging`. Each service instance
+holds a logger bound to a service-scoped channel. The logger is available
+internally to the SDK; services and subclasses can obtain one via
+`SignalWire::Logging->get_logger($name)`:
 
-### How It Works
-
-1. When `swml_service.py` is imported, it configures `structlog` (if not already configured)
-2. Each `SWMLService` instance gets a logger bound to its service name
-3. All logs include contextual information like service name, timestamp, and log level
-4. Logs are formatted as JSON for easy parsing and analysis
-
-### Using the Logger
-
-Every `SWMLService` instance has a `log` attribute that can be used for logging:
-
-```python
-# Basic logging
-self.log.info("service_started")
-
-# Logging with context
-self.log.debug("document_created", size=len(document))
-
-# Error logging
-try:
-    # Some operation
-    pass
-except Exception as e:
-    self.log.error("operation_failed", error=str(e))
-```
-
-### Log Levels
-
-The following log levels are available (in increasing order of severity):
-- `debug`: Detailed information for debugging
-- `info`: General information about operation
-- `warning`: Warning about potential issues
-- `error`: Error information when operations fail
-- `critical`: Critical error that might cause the application to terminate
-
-### Suppressing Logs
-
-To suppress logs when running a service, you can set the log level:
-
-```python
-import logging
-logging.getLogger().setLevel(logging.WARNING)  # Only show warnings and above
-```
-
-You can also pass `suppress_logs=True` when initializing an agent or service:
-
-```python
-service = SWMLService(
-    name="my-service",
-    suppress_logs=True
-)
+```perl
+use SignalWire::Logging;
+my $log = SignalWire::Logging->get_logger('signalwire.my_service');
+$log->info('service_started');
+$log->debug('document_created');
 ```
 
 ## SWML Document Creation
 
-The `SWMLService` class provides methods for creating and manipulating SWML documents.
+The `SignalWire::SWML::Service` class manipulates an underlying
+`SignalWire::SWML::Document` (the `document` attribute).
 
 ### Document Structure
 
@@ -142,11 +110,11 @@ SWML documents have the following basic structure:
   "version": "1.0.0",
   "sections": {
     "main": [
-      { "verb1": { /* configuration */ } },
-      { "verb2": { /* configuration */ } }
+      { "verb1": { } },
+      { "verb2": { } }
     ],
     "section1": [
-      { "verb3": { /* configuration */ } }
+      { "verb3": { } }
     ]
   }
 }
@@ -154,277 +122,260 @@ SWML documents have the following basic structure:
 
 ### Document Methods
 
-- `reset_document()`: Reset the document to an empty state
-- `add_verb(verb_name, config)`: Add a verb to the main section
-- `add_section(section_name)`: Add a new section
-- `add_verb_to_section(section_name, verb_name, config)`: Add a verb to a specific section
-- `get_document()`: Get the current document as a dictionary
-- `render_document()`: Get the current document as a JSON string
+The `document` object provides:
 
-### Common Verb Shortcuts
+- `add_section($name)`: Add (or ensure) a section
+- `add_verb($section_name, $verb_name, $config)`: Add a verb to a section
+- `add_raw_verb($section_name, $verb_hash)`: Push a pre-built verb hashref
+- `get_section($name)`: Return a section's verb list
+- `has_section($name)`: Whether a section exists
+- `clear_section($name)`: Empty a section
+- `to_hash()`: The document as a hashref
+- `to_json()` / `to_pretty_json()`: The document as a JSON string
 
-- `add_verb(verb_name, config)`: Add any SWML verb with configuration
+```perl
+$self->document->add_section('greeting');
+$self->document->add_verb('greeting', 'play', { url => 'say:Hi!' });
+my $doc = $self->document->to_hash;
+```
+
+### Verb Accessors (schema-driven)
+
+The service object also exposes every SWML verb as a method via `AUTOLOAD`.
+`$self->VERB($section, $config)` validates the verb name against the SWML
+schema and appends it to the named section (default `'main'`):
+
+```perl
+$self->answer('main', {});
+$self->play('main', { url => 'say:Hello, world!', volume => 5 });
+$self->hangup('main', {});
+```
+
+`$self->can('play')` returns true for any verb the schema recognizes.
 
 ## Verb Handling
 
-The `SWMLService` class provides validation for SWML verbs using the SignalWire schema.
-
 ### Verb Validation
 
-When adding a verb, the service validates it against the schema to ensure it has the correct structure and parameters.
+When you call a verb accessor, the service checks the verb name against the
+SignalWire SWML schema (`SignalWire::SWML::Schema`). An unrecognized verb name
+raises an error rather than producing an invalid document:
 
-```python
-# This will validate the configuration against the schema
-self.add_verb("play", {
-    "url": "say:Hello, world!",
-    "volume": 5
-})
+```perl
+# Valid verb — appended to the document
+$self->play('main', { url => 'say:Hello, world!', volume => 5 });
 
-# This would fail validation (invalid parameter)
-self.add_verb("play", {
-    "invalid_param": "value"
-})
+# Unknown verb name — dies "Can't locate method ..."
+$self->not_a_real_verb('main', {});
 ```
 
-### Custom Verb Handlers
-
-You can register custom verb handlers for specialized verb processing:
-
-```python
-from signalwire_agents.core.swml_handler import SWMLVerbHandler
-
-class CustomPlayHandler(SWMLVerbHandler):
-    def __init__(self):
-        super().__init__("play")
-    
-    def validate_config(self, config):
-        # Custom validation logic
-        return True, []
-    
-    def build_config(self, **kwargs):
-        # Custom configuration building
-        return kwargs
-
-service.register_verb_handler(CustomPlayHandler())
-```
+The schema instance is available via `$self->schema_utils` (and the verb
+registry view via `$self->verb_registry`).
 
 ## Web Service Features
 
-The `SWMLService` class includes built-in web service capabilities for serving SWML documents.
+The `SignalWire::SWML::Service` class includes built-in web service
+capabilities for serving SWML documents over PSGI/Plack.
 
 ### Endpoints
 
-By default, a service provides the following endpoints:
+By default, a service provides the following endpoints under its `route`:
 
 - `GET /route`: Return the SWML document
 - `POST /route`: Process request data and return the SWML document
-- `GET /route/`: Same as above but with trailing slash
-- `POST /route/`: Same as above but with trailing slash
+- `POST /route/swaig`: SWAIG function dispatch
+- `POST /route/post_prompt`: Post-prompt handling
+- `GET /health` and `GET /ready`: Unauthenticated health probes
 
-Where `route` is the route path specified when creating the service.
+Where `route` is the route path specified when creating the service. Build the
+PSGI application with `$service->to_psgi_app`.
 
 ### Authentication
 
-Basic authentication is automatically set up for all endpoints. Credentials are generated if not provided, or can be specified:
+Basic authentication is automatically enforced on the protected routes.
+Credentials are generated if not provided, or can be specified at construction:
 
-```python
-service = SWMLService(
-    name="my-service",
-    basic_auth=("username", "password")
-)
+```perl
+my $service = SignalWire::SWML::Service->new(
+    name                => 'my-service',
+    basic_auth_user     => 'username',
+    basic_auth_password => 'password',
+);
 ```
 
 You can also set credentials using environment variables:
 - `SWML_BASIC_AUTH_USER`
 - `SWML_BASIC_AUTH_PASSWORD`
 
+Validate or read credentials at runtime:
+
+```perl
+my $ok = $service->validate_basic_auth($user, $pass);
+my ($user, $pass)         = $service->get_basic_auth_credentials;
+my ($u, $p, $source)      = $service->get_basic_auth_credentials(1);  # source: provided/environment/generated
+```
+
 ### Dynamic SWML Generation
 
-You can override the `on_swml_request` method to customize SWML documents based on request data:
+Override `on_swml_request` to customize SWML documents based on request data.
+Return `undef` to serve the document as built, or a hashref of modifications to
+merge into the rendered document:
 
-```python
-def on_swml_request(self, request_data=None):
-    if not request_data:
-        return None
-        
-    # Customize document based on request_data
-    self.reset_document()
-    self.add_answer_verb()
-    
-    # Add custom verbs based on request_data
-    if request_data.get("caller_type") == "vip":
-        self.add_verb("play", {
-            "url": "say:Welcome VIP caller!"
-        })
-    else:
-        self.add_verb("play", {
-            "url": "say:Welcome caller!"
-        })
-    
-    # Return modifications to the document
-    # or None to use the document we've built without modifications
-    return None
+```perl
+package DynamicService;
+use Moo;
+extends 'SignalWire::SWML::Service';
+
+sub on_swml_request {
+    my ($self, $request_data, $callback_path, $request) = @_;
+    return unless $request_data;
+
+    # Customize the document based on request_data
+    $self->document->clear_section('main');
+    $self->answer('main', {});
+
+    if (($request_data->{caller_type} // '') eq 'vip') {
+        $self->play('main', { url => 'say:Welcome VIP caller!' });
+    } else {
+        $self->play('main', { url => 'say:Welcome caller!' });
+    }
+
+    # Return undef to use the document we've built without modifications
+    return;
+}
 ```
 
 ## Custom Routing Callbacks
 
-The `SWMLService` class allows you to register custom routing callbacks that can examine incoming requests and determine where they should be routed.
+The `SignalWire::SWML::Service` class lets you register custom routing
+callbacks keyed by sub-path.
 
 ### Registering a Routing Callback
 
-You can use the `register_routing_callback` method to register a function that will be called to process requests to a specific path:
+Use `register_routing_callback($path, $callback)`. Note the Perl signature is
+positional: the path comes first, then the callback coderef:
 
-```python
-def my_routing_callback(request, body):
-    """
-    Process incoming requests and determine routing
-    
-    Args:
-        request: FastAPI Request object
-        body: Parsed JSON body as a dictionary
-        
-    Returns:
-        Optional[str]: If a string is returned, the request will be redirected to that URL.
-                      If None is returned, the request will be processed normally.
-    """
-    # Example: Route based on a field in the request body
-    if "customer_id" in body:
-        customer_id = body["customer_id"]
-        return f"/customer/{customer_id}"
-    
-    # Process request normally
-    return None
+```perl
+my $customer_cb = sub {
+    my ($request, $body) = @_;
 
-# Register the callback for a specific path
-service.register_routing_callback(my_routing_callback, path="/customer")
+    # Example: route based on a field in the request body
+    if (exists $body->{customer_id}) {
+        return "/customer/$body->{customer_id}";
+    }
+
+    # Process the request normally
+    return;   # undef
+};
+
+# Register the callback for a specific sub-path
+$service->register_routing_callback('/customer', $customer_cb);
 ```
 
-### How Routing Works
-
-1. When a request is received at the registered path, the routing callback is executed
-2. The callback inspects the request and can decide whether to redirect it
-3. If the callback returns a URL string, the request is redirected with HTTP 307 (temporary redirect)
-4. If the callback returns `None`, the request is processed normally by the `on_request` method
+The callback receives the request and the parsed JSON body. Returning a string
+redirects; returning `undef` continues normal processing.
 
 ### Serving Different Content for Different Paths
 
-You can use the `callback_path` parameter passed to `on_request` to serve different content for different paths:
+Use the `callback_path` argument passed to `on_request`/`on_swml_request` to
+serve different content for different paths:
 
-```python
-def on_request(self, request_data=None, callback_path=None):
-    """
-    Called when SWML is requested
-    
-    Args:
-        request_data: Optional dictionary containing the parsed POST body
-        callback_path: Optional callback path from the request
-        
-    Returns:
-        Optional dict to modify/augment the SWML document
-    """
-    # Serve different content based on the callback path
-    if callback_path == "/customer":
+```perl
+sub on_request {
+    my ($self, $request_data, $callback_path) = @_;
+
+    if (($callback_path // '') eq '/customer') {
         return {
-            "sections": {
-                "main": [
-                    {"answer": {}},
-                    {"play": {"url": "say:Welcome to customer service!"}}
-                ]
-            }
-        }
-    elif callback_path == "/product":
+            sections => {
+                main => [
+                    { answer => {} },
+                    { play => { url => 'say:Welcome to customer service!' } },
+                ],
+            },
+        };
+    }
+    elsif (($callback_path // '') eq '/product') {
         return {
-            "sections": {
-                "main": [
-                    {"answer": {}},
-                    {"play": {"url": "say:Welcome to product support!"}}
-                ]
-            }
-        }
-    
+            sections => {
+                main => [
+                    { answer => {} },
+                    { play => { url => 'say:Welcome to product support!' } },
+                ],
+            },
+        };
+    }
+
     # Default content
-    return None
+    return;
+}
 ```
 
 ### Example: Multi-Section Service
 
-Here's an example of a service that uses routing callbacks to handle different types of requests:
+```perl
+package MultiSectionService;
+use Moo;
+extends 'SignalWire::SWML::Service';
 
-```python
-from signalwire_agents.core.swml_service import SWMLService
-from fastapi import Request
-from typing import Dict, Any, Optional
+sub BUILD {
+    my ($self) = @_;
 
-class MultiSectionService(SWMLService):
-    def __init__(self):
-        super().__init__(
-            name="multi-section",
-            route="/main"
-        )
-        
-        # Create the main document
-        self.reset_document()
-        self.add_verb("answer", {})
-        self.add_verb("play", {"url": "say:Hello from the main service!"})
-        self.add_verb("hangup", {})
-        
-        # Register customer and product routes
-        self.register_customer_route()
-        self.register_product_route()
-    
-    def register_customer_route(self):
-        def customer_callback(request: Request, body: Dict[str, Any]) -> Optional[str]:
-            # Check if we need to route to a specific customer ID
-            if "customer_id" in body:
-                customer_id = body["customer_id"]
-                # In a real implementation, you might redirect to another service
-                # Here we just log it and process normally
-                print(f"Processing request for customer ID: {customer_id}")
-            return None
-            
-        # Register the callback at the /customer path
-        self.register_routing_callback(customer_callback, path="/customer")
-        
-        # Create the customer SWML section
-        self.add_section("customer_section")
-        self.add_verb_to_section("customer_section", "answer", {})
-        self.add_verb_to_section("customer_section", "play", 
-                                {"url": "say:Welcome to customer service!"})
-        self.add_verb_to_section("customer_section", "hangup", {})
-    
-    def register_product_route(self):
-        def product_callback(request: Request, body: Dict[str, Any]) -> Optional[str]:
-            # Check if we need to route to a specific product ID
-            if "product_id" in body:
-                product_id = body["product_id"]
-                print(f"Processing request for product ID: {product_id}")
-            return None
-            
-        # Register the callback at the /product path
-        self.register_routing_callback(product_callback, path="/product")
-        
-        # Create the product SWML section
-        self.add_section("product_section")
-        self.add_verb_to_section("product_section", "answer", {})
-        self.add_verb_to_section("product_section", "play", 
-                               {"url": "say:Welcome to product support!"})
-        self.add_verb_to_section("product_section", "hangup", {})
-    
-    def on_request(self, request_data=None, callback_path=None):
-        # Serve different content based on the callback path
-        if callback_path == "/customer":
-            return {
-                "sections": {
-                    "main": self.get_document()["sections"]["customer_section"]
-                }
-            }
-        elif callback_path == "/product":
-            return {
-                "sections": {
-                    "main": self.get_document()["sections"]["product_section"]
-                }
-            }
-        return None
+    # Create the main document
+    $self->answer('main', {});
+    $self->play('main', { url => 'say:Hello from the main service!' });
+    $self->hangup('main', {});
+
+    # Register customer and product routes
+    $self->register_customer_route;
+    $self->register_product_route;
+}
+
+sub register_customer_route {
+    my ($self) = @_;
+
+    my $customer_callback = sub {
+        my ($request, $body) = @_;
+        if (exists $body->{customer_id}) {
+            # In a real implementation, you might redirect to another service.
+            # Here we process normally.
+        }
+        return;
+    };
+    $self->register_routing_callback('/customer', $customer_callback);
+
+    # Create the customer SWML section
+    $self->document->add_section('customer_section');
+    $self->document->add_verb('customer_section', 'answer', {});
+    $self->document->add_verb('customer_section', 'play', { url => 'say:Welcome to customer service!' });
+    $self->document->add_verb('customer_section', 'hangup', {});
+}
+
+sub register_product_route {
+    my ($self) = @_;
+
+    my $product_callback = sub {
+        my ($request, $body) = @_;
+        return;
+    };
+    $self->register_routing_callback('/product', $product_callback);
+
+    # Create the product SWML section
+    $self->document->add_section('product_section');
+    $self->document->add_verb('product_section', 'answer', {});
+    $self->document->add_verb('product_section', 'play', { url => 'say:Welcome to product support!' });
+    $self->document->add_verb('product_section', 'hangup', {});
+}
+
+sub on_request {
+    my ($self, $request_data, $callback_path) = @_;
+    if (($callback_path // '') eq '/customer') {
+        return { sections => { main => $self->document->get_section('customer_section') } };
+    }
+    elsif (($callback_path // '') eq '/product') {
+        return { sections => { main => $self->document->get_section('product_section') } };
+    }
+    return;
+}
 ```
 
 In this example:
@@ -435,166 +386,176 @@ In this example:
 
 ## Advanced Usage
 
-### Creating a FastAPI Router
+### Mounting the PSGI App
 
-You can get a FastAPI router for the service to include in a larger application:
+`to_psgi_app` returns a PSGI coderef you can mount under any Plack handler,
+including alongside other apps with `Plack::Builder`:
 
-```python
-from fastapi import FastAPI
+```perl
+use Plack::Builder;
 
-app = FastAPI()
-service = SWMLService(name="my-service")
-router = service.as_router()
-app.include_router(router, prefix="/voice")
+my $service = SignalWire::SWML::Service->new(name => 'my-service', route => '/voice');
+
+my $app = builder {
+    mount '/voice' => $service->to_psgi_app;
+};
 ```
 
-### Schema Path Customization
+### Static SIP Username Extraction
 
-You can specify a custom path to the schema file:
+`extract_sip_username($request_body)` is a helper (callable as a class or
+instance method) that pulls the caller's SIP username out of a request body's
+`call.to`/`call.from` field:
 
-```python
-service = SWMLService(
-    name="my-service",
-    schema_path="/path/to/schema.json"
-)
+```perl
+my $user = SignalWire::SWML::Service->extract_sip_username($request_body);
 ```
 
 ## API Reference
 
 ### Constructor Parameters
 
-- `name`: Service name/identifier (required)
-- `route`: HTTP route path (default: "/")
-- `host`: Host to bind to (default: "0.0.0.0")
-- `port`: Port to bind to (default: 3000)
-- `basic_auth`: Optional tuple of (username, password)
-- `schema_path`: Optional path to schema.json
-- `suppress_logs`: Whether to suppress structured logs (default: False)
+- `name`: Service name/identifier (default: `'service'`)
+- `route`: HTTP route path (default: `'/'`)
+- `host`: Host to bind to (default: `'0.0.0.0'`, or `$SWML_HOST`)
+- `port`: Port to bind to (default: `3000`, or `$SWML_PORT`)
+- `basic_auth_user`: Basic-auth username (default: `$SWML_BASIC_AUTH_USER` or random)
+- `basic_auth_password`: Basic-auth password (default: `$SWML_BASIC_AUTH_PASSWORD` or random)
 
-### Document Methods
+### Document Methods (on `$service->document`)
 
-- `reset_document()`
-- `add_verb(verb_name, config)`
-- `add_section(section_name)`
-- `add_verb_to_section(section_name, verb_name, config)`
-- `get_document()`
-- `render_document()`
+- `add_section($name)`
+- `add_verb($section_name, $verb_name, $config)`
+- `add_raw_verb($section_name, $verb_hash)`
+- `get_section($name)` / `has_section($name)` / `clear_section($name)`
+- `to_hash()` / `to_json()` / `to_pretty_json()`
 
 ### Service Methods
 
-- `as_router()`: Get a FastAPI router for the service
-- `run()`: Start the service
-- `stop()`: Stop the service
-- `get_basic_auth_credentials(include_source=False)`: Get the basic auth credentials
-- `on_swml_request(request_data=None)`: Called when SWML is requested
-- `register_routing_callback(callback_fn, path="/sip")`: Register a callback for request routing
+- `to_psgi_app()`: Return the PSGI application coderef
+- `render_main_swml($env)` / `render_swml($env)`: Render the document hashref
+- `on_request($request_data, $callback_path)`: Override point for SWML generation
+- `on_swml_request($request_data, $callback_path, $request)`: Lower-level override point
+- `register_routing_callback($path, $callback)`: Register a callback for request routing
+- `validate_basic_auth($user, $pass)`: Constant-time credential check
+- `get_basic_auth_credentials($include_source)`: Read the basic-auth credentials
+- `extract_sip_username($request_body)`: Pull the SIP username from a request body
+- `schema_utils()` / `verb_registry()` / `security()`: Introspection accessors
 
-### Verb Helper Methods
+### SWAIG Tool Methods (a service can host SWAIG functions too)
 
-- `add_verb(verb_name, config)`: Add any SWML verb with configuration
+- `define_tool(name =>, description =>, parameters =>, handler =>)`
+- `register_swaig_function($func_def)`
+- `define_tools(@tool_defs)`
+- `has_function($name)` / `get_function($name)` / `get_all_functions()` / `remove_function($name)`
+- `on_function_call($name, $args, $raw_data)`
+- `list_tool_names()`
+
+### Verb Accessors
+
+- `$service->VERB($section, $config)`: Any schema-recognized SWML verb
 
 ## Examples
 
 ### Basic Voicemail Service
 
-```python
-from signalwire_agents.core.swml_service import SWMLService
+```perl
+package VoicemailService;
+use Moo;
+extends 'SignalWire::SWML::Service';
 
-class VoicemailService(SWMLService):
-    def __init__(self, host="0.0.0.0", port=3000):
-        super().__init__(
-            name="voicemail",
-            route="/voicemail",
-            host=host,
-            port=port
-        )
-        
-        # Build the SWML document
-        self.build_voicemail_document()
-    
-    def build_voicemail_document(self):
-        """Build the voicemail SWML document"""
-        # Reset the document
-        self.reset_document()
-        
-        # Add answer verb
-        self.add_verb("answer", {})
-        
-        # Add play verb for greeting
-        self.add_verb("play", {
-            "url": "say:Hello, you've reached the voicemail service. Please leave a message after the beep."
-        })
-        
-        # Play a beep
-        self.add_verb("play", {
-            "url": "https://example.com/beep.wav"
-        })
-        
-        # Record the message
-        self.add_verb("record", {
-            "format": "mp3",
-            "stereo": False,
-            "max_length": 120,  # 2 minutes max
-            "terminators": "#"
-        })
-        
-        # Thank the caller
-        self.add_verb("play", {
-            "url": "say:Thank you for your message. Goodbye!"
-        })
-        
-        # Hang up
-        self.add_verb("hangup", {})
-        
-        self.log.debug("voicemail_document_built")
+sub BUILD {
+    my ($self) = @_;
+    $self->build_voicemail_document;
+}
+
+sub build_voicemail_document {
+    my ($self) = @_;
+
+    # Answer the call
+    $self->answer('main', {});
+
+    # Greeting
+    $self->play('main', {
+        url => 'say:Hello, you\'ve reached the voicemail service. Please leave a message after the beep.',
+    });
+
+    # Play a beep
+    $self->play('main', { url => 'https://example.com/beep.wav' });
+
+    # Record the message
+    $self->record('main', {
+        format      => 'mp3',
+        stereo      => JSON::false,
+        max_length  => 120,        # 2 minutes max
+        terminators => '#',
+    });
+
+    # Thank the caller
+    $self->play('main', { url => 'say:Thank you for your message. Goodbye!' });
+
+    # Hang up
+    $self->hangup('main', {});
+}
+
+package main;
+my $service = VoicemailService->new(
+    name  => 'voicemail',
+    route => '/voicemail',
+    host  => '0.0.0.0',
+    port  => 3000,
+);
+my $app = $service->to_psgi_app;
 ```
 
 ### Dynamic Call Routing Service
 
-```python
-class CallRouterService(SWMLService):
-    def on_swml_request(self, request_data=None):
-        # If there's no request data, use default routing
-        if not request_data:
-            self.log.debug("no_request_data_using_default")
-            return None
-        
-        # Create a new document
-        self.reset_document()
-        self.add_verb("answer", {})
-        
-        # Get routing parameters
-        department = request_data.get("department", "").lower()
-        
-        # Add play verb for greeting
-        self.add_verb("play", {
-            "url": f"say:Thank you for calling our {department} department. Please hold."
-        })
-        
-        # Route based on department
-        phone_numbers = {
-            "sales": "+15551112222",
-            "support": "+15553334444",
-            "billing": "+15555556666"
-        }
-        
-        # Get the appropriate number or use default
-        to_number = phone_numbers.get(department, "+15559990000")
-        
-        # Connect to the department
-        self.add_verb("connect", {
-            "to": to_number,
-            "timeout": 30,
-            "answer_on_bridge": True
-        })
-        
-        # Add fallback message and hangup
-        self.add_verb("play", {
-            "url": "say:We're sorry, but all of our agents are currently busy. Please try again later."
-        })
-        self.add_verb("hangup", {})
-        
-        return None  # Use the document we've built
+```perl
+package CallRouterService;
+use Moo;
+extends 'SignalWire::SWML::Service';
+
+sub on_swml_request {
+    my ($self, $request_data, $callback_path, $request) = @_;
+
+    # If there's no request data, use the default document
+    return unless $request_data;
+
+    # Rebuild the main section
+    $self->document->clear_section('main');
+    $self->answer('main', {});
+
+    # Get routing parameters
+    my $department = lc($request_data->{department} // '');
+
+    # Greeting
+    $self->play('main', {
+        url => "say:Thank you for calling our $department department. Please hold.",
+    });
+
+    # Route based on department
+    my %phone_numbers = (
+        sales   => '+15551112222',
+        support => '+15553334444',
+        billing => '+15555556666',
+    );
+    my $to_number = $phone_numbers{$department} // '+15559990000';
+
+    # Connect to the department
+    $self->connect('main', {
+        to               => $to_number,
+        timeout          => 30,
+        answer_on_bridge => JSON::true,
+    });
+
+    # Fallback message and hangup
+    $self->play('main', {
+        url => 'say:We\'re sorry, but all of our agents are currently busy. Please try again later.',
+    });
+    $self->hangup('main', {});
+
+    return;   # use the document we've built
+}
 ```
 
-For more examples, see the `examples` directory in the SignalWire AI Agent SDK repository. 
+For more examples, see the `examples/` directory in the SignalWire AI Agent SDK repository.

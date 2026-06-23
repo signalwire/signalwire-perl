@@ -1,107 +1,110 @@
 # Events
 
-RELAY events are server-pushed notifications about call state changes and operation results. Events arrive over the WebSocket as `signalwire.event` JSON-RPC messages and are automatically routed to the correct `Call` object.
+RELAY events are server-pushed notifications about call state changes and
+operation results. They arrive over the WebSocket as `signalwire.event`
+JSON-RPC messages, are parsed into typed `SignalWire::Relay::Event`
+objects, and are routed to the correct `Call` or `Message`.
 
 ## Listening for Events
 
 ### On a Call
 
-```python
-@client.on_call
-async def handle(call):
-    # Register a listener
-    call.on("calling.call.play", lambda event: print(f"Play: {event.params}"))
+Register a listener with `on`. The callback receives the call and the
+event; filter by `event_type`:
 
-    # Or wait for a specific event
-    event = await call.wait_for("calling.call.state",
-        predicate=lambda e: e.params.get("call_state") == "ended",
-        timeout=60.0,
-    )
+```perl
+$client->on_call(sub {
+    my ($call) = @_;
+
+    $call->on(sub {
+        my ($c, $event) = @_;
+        if ($event->event_type eq 'calling.call.play') {
+            print "Play state: ", $event->state, "\n";
+        }
+        elsif ($event->event_type eq 'calling.call.state'
+            && $event->call_state eq 'ended') {
+            print "Call ended: ", $event->end_reason, "\n";
+        }
+    });
+});
+```
+
+### Globally on the Client
+
+Register `on_event` to see every event the client receives:
+
+```perl
+$client->on_event(sub {
+    my ($event) = @_;
+    print $event->event_type, "\n";
+});
 ```
 
 ### Via Actions
 
-Actions returned by `play()`, `record()`, etc. have a `wait()` method that resolves when the operation completes:
+Actions returned by `play`, `record`, etc. have a `wait` method that blocks
+until the operation completes and returns the terminal event:
 
-```python
-action = await call.play([{"type": "tts", "params": {"text": "Hello"}}])
-event = await action.wait(timeout=30.0)
-# event is a RelayEvent with the terminal state
+```perl
+my $action = $call->play(
+    media => [ { type => 'tts', params => { text => 'Hello' } } ],
+);
+my $event = $action->wait(timeout => 30);
+# $event is the terminal SignalWire::Relay::Event
 ```
 
-## Event Types
+## Event Types and Their Classes
 
-All event type constants are importable from `signalwire_agents.relay`:
+Each `event_type` string maps to a typed `SignalWire::Relay::Event`
+subclass with the fields relevant to it. All subclasses inherit
+`event_type`, `timestamp`, and the raw `params` hashref from the base
+class.
 
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `EVENT_CALL_STATE` | `calling.call.state` | Call state changes (created, ringing, answered, ending, ended) |
-| `EVENT_CALL_RECEIVE` | `calling.call.receive` | Inbound call notification |
-| `EVENT_CALL_PLAY` | `calling.call.play` | Play operation state changes |
-| `EVENT_CALL_RECORD` | `calling.call.record` | Record operation state changes |
-| `EVENT_CALL_COLLECT` | `calling.call.collect` | Input collection results |
-| `EVENT_CALL_CONNECT` | `calling.call.connect` | Bridge/connect state changes |
-| `EVENT_CALL_DETECT` | `calling.call.detect` | Detection results |
-| `EVENT_CALL_FAX` | `calling.call.fax` | Fax operation state changes |
-| `EVENT_CALL_TAP` | `calling.call.tap` | Tap operation state changes |
-| `EVENT_CALL_STREAM` | `calling.call.stream` | Stream operation state changes |
-| `EVENT_CALL_SEND_DIGITS` | `calling.call.send_digits` | DTMF send completion |
-| `EVENT_CALL_DIAL` | `calling.call.dial` | Outbound dial progress |
-| `EVENT_CALL_REFER` | `calling.call.refer` | SIP REFER results |
-| `EVENT_CALL_DENOISE` | `calling.call.denoise` | Denoise state changes |
-| `EVENT_CALL_PAY` | `calling.call.pay` | Payment state changes |
-| `EVENT_CALL_QUEUE` | `calling.call.queue` | Queue state changes |
-| `EVENT_CALL_ECHO` | `calling.call.echo` | Echo state changes |
-| `EVENT_CALL_TRANSCRIBE` | `calling.call.transcribe` | Transcription state changes |
-| `EVENT_CONFERENCE` | `calling.conference` | Conference state changes |
-| `EVENT_CALLING_ERROR` | `calling.error` | Error events |
-| `EVENT_MESSAGING_RECEIVE` | `messaging.receive` | Inbound message received |
-| `EVENT_MESSAGING_STATE` | `messaging.state` | Outbound message state change |
+| `event_type` | Class | Key fields |
+|--------------|-------|-----------|
+| `calling.call.state` | `Event::CallState` | `call_id`, `call_state`, `end_reason`, `device`, `peer`, `tag` |
+| `calling.call.receive` | `Event::CallReceive` | `call_id`, `call_state`, `device`, `node_id`, `context`, `tag` |
+| `calling.call.dial` | `Event::CallDial` | `tag`, `dial_state`, `call` |
+| `calling.call.connect` | `Event::CallConnect` | `call_id`, `connect_state`, `peer` |
+| `calling.call.disconnect` | `Event::CallDisconnect` | `call_id`, `node_id` |
+| `calling.call.play` | `Event::CallPlay` | `control_id`, `state` |
+| `calling.call.record` | `Event::CallRecord` | `control_id`, `state`, `url`, `duration`, `size`, `record` |
+| `calling.call.collect` | `Event::CallCollect` | `control_id`, `result` |
+| `calling.call.detect` | `Event::CallDetect` | `control_id`, `detect` |
+| `calling.call.fax` | `Event::CallFax` | `control_id`, `fax` |
+| `calling.call.tap` | `Event::CallTap` | `control_id`, `state`, `tap` |
+| `calling.call.stream` | `Event::CallStream` | `control_id`, `state` |
+| `calling.call.transcribe` | `Event::CallTranscribe` | `control_id`, `state` |
+| `calling.call.pay` | `Event::CallPay` | `control_id`, `state`, `result` |
+| `calling.call.send_digits` | `Event::CallSendDigits` | `control_id`, `state` |
+| `calling.call.refer` | `Event::CallRefer` | `call_id`, `refer_state` |
+| `calling.call.ai` | `Event::CallAI` | `call_id`, `control_id` |
+| `calling.conference` | `Event::Conference` | `call_id`, `conference_id` |
+| `messaging.receive` | `Event::MessageReceive` | `message_id`, `from_number`, `to_number`, `body`, `media`, `tags`, `message_state` |
+| `messaging.state` | `Event::MessageState` | `message_id`, `from_number`, `to_number`, `body`, `message_state`, `reason`, `tags` |
+| `signalwire.authorization.state` | `Event::AuthorizationState` | `authorization_state` |
+| `signalwire.disconnect` | `Event::Disconnect` | `restart` |
 
-## Typed Event Classes
+## Parsing Events
 
-Raw events are always `RelayEvent` with a `params` dict. For convenience, typed event classes provide named properties:
+`SignalWire::Relay::Event` exposes a class-method factory, `parse_event`,
+that the client uses to demultiplex the WebSocket stream. You can use it
+directly:
 
-```python
-from signalwire_agents.relay import CallStateEvent, PlayEvent, RecordEvent, parse_event
+```perl
+use SignalWire::Relay::Event;
 
-# Automatic parsing
-event = parse_event(raw_payload)
+my $event = SignalWire::Relay::Event->parse_event(
+    'calling.call.state',
+    { call_id => $id, call_state => 'answered' },
+);
 
-# Or construct directly
-if event.event_type == "calling.call.state":
-    state_event = CallStateEvent.from_payload(raw_payload)
-    print(state_event.call_state)   # "answered"
-    print(state_event.end_reason)   # "hangup" (only on ended)
+$event->event_type;   # 'calling.call.state'
+$event->call_state;   # 'answered'
 ```
 
-### Available Typed Events
-
-| Class | Key Properties |
-|-------|---------------|
-| `CallStateEvent` | `call_state`, `end_reason`, `direction`, `device` |
-| `CallReceiveEvent` | `call_state`, `direction`, `device`, `node_id`, `context`, `tag` |
-| `PlayEvent` | `control_id`, `state` |
-| `RecordEvent` | `control_id`, `state`, `url`, `duration`, `size` |
-| `CollectEvent` | `control_id`, `state`, `result`, `final` |
-| `ConnectEvent` | `connect_state`, `peer` |
-| `DetectEvent` | `control_id`, `detect` |
-| `FaxEvent` | `control_id`, `fax` |
-| `TapEvent` | `control_id`, `state`, `tap`, `device` |
-| `StreamEvent` | `control_id`, `state`, `url`, `name` |
-| `SendDigitsEvent` | `control_id`, `state` |
-| `DialEvent` | `tag`, `dial_state`, `call` |
-| `ReferEvent` | `state`, `sip_refer_to`, `sip_refer_response_code` |
-| `DenoiseEvent` | `denoised` |
-| `PayEvent` | `control_id`, `state` |
-| `QueueEvent` | `control_id`, `status`, `queue_id`, `queue_name`, `position`, `size` |
-| `EchoEvent` | `state` |
-| `TranscribeEvent` | `control_id`, `state`, `url`, `duration`, `size` |
-| `HoldEvent` | `state` |
-| `ConferenceEvent` | `conference_id`, `name`, `status` |
-| `CallingErrorEvent` | `code`, `message` |
-| `MessageReceiveEvent` | `message_id`, `context`, `direction`, `from_number`, `to_number`, `body`, `media`, `segments`, `message_state`, `tags` |
-| `MessageStateEvent` | `message_id`, `context`, `direction`, `from_number`, `to_number`, `body`, `media`, `segments`, `message_state`, `reason`, `tags` |
+Unknown event types fall back to a base `SignalWire::Relay::Event`
+carrying the raw type and `params`.
 
 ## Call States
 
@@ -109,11 +112,14 @@ if event.event_type == "calling.call.state":
 created -> ringing -> answered -> ending -> ended
 ```
 
-Constants: `CALL_STATE_CREATED`, `CALL_STATE_RINGING`, `CALL_STATE_ANSWERED`, `CALL_STATE_ENDING`, `CALL_STATE_ENDED`
+The terminal state is `ended`. Use `$call->is_terminal` to test whether a
+call has reached it, or read `$call->state` / `$call->current_state` for
+the current value.
 
 ## End Reasons
 
-When a call reaches the `ended` state, the `end_reason` field indicates why:
+When a call reaches the `ended` state, the `end_reason` field on a
+`calling.call.state` event indicates why:
 
 | Reason | Description |
 |--------|-------------|
@@ -123,12 +129,10 @@ When a call reaches the `ended` state, the `end_reason` field indicates why:
 | `noAnswer` | No answer |
 | `decline` | Call declined |
 | `error` | Error occurred |
-| `abandoned` | Call abandoned |
-| `max_duration` | Max duration reached |
-| `not_found` | Destination not found |
 
 ## Message States
 
-Outbound messages progress through: `queued` → `initiated` → `sent` → `delivered` (or `undelivered`/`failed`).
-
-Constants: `MESSAGE_STATE_QUEUED`, `MESSAGE_STATE_INITIATED`, `MESSAGE_STATE_SENT`, `MESSAGE_STATE_DELIVERED`, `MESSAGE_STATE_UNDELIVERED`, `MESSAGE_STATE_FAILED`, `MESSAGE_STATE_RECEIVED`
+Outbound messages progress through `queued` → `initiated` → `sent` →
+`delivered` (or `undelivered` / `failed`). The terminal states are
+`delivered`, `undelivered`, and `failed`. Inbound messages arrive with
+state `received`. See [Messaging](messaging.md) for details.

@@ -1,142 +1,199 @@
-# RelayClient Reference
+# Client Reference
+
+`SignalWire::Relay::Client` owns the RELAY WebSocket transport, performs
+the `signalwire.connect` handshake, runs a synchronous JSON-RPC request/
+response loop, and routes server-pushed events to the right `Call` or
+`Message`.
 
 ## Constructor
 
-```python
-RelayClient(
-    project: str = None,          # SIGNALWIRE_PROJECT_ID
-    token: str = None,            # SIGNALWIRE_API_TOKEN
-    jwt_token: str = None,        # SIGNALWIRE_JWT_TOKEN
-    host: str = None,             # SIGNALWIRE_SPACE (default: relay.signalwire.com)
-    contexts: list[str] = None,   # Topics to subscribe to
-    max_active_calls: int = None, # RELAY_MAX_ACTIVE_CALLS (default: 1000)
-)
+```perl
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project   => $ENV{SIGNALWIRE_PROJECT_ID},   # legacy auth
+    token     => $ENV{SIGNALWIRE_API_TOKEN},    # legacy auth
+    jwt_token => $ENV{SIGNALWIRE_JWT_TOKEN},    # alternative auth
+    host      => $ENV{SIGNALWIRE_SPACE},        # REQUIRED
+    contexts  => ['default'],                   # topics to subscribe to
+);
 ```
 
-Authentication requires either `project` + `token` (legacy) or `jwt_token` (faster, no server roundtrip). All parameters fall back to their corresponding environment variables.
+Authentication requires either `project` + `token` or `jwt_token`. The
+`host` parameter is **required** — construction dies immediately if it is
+missing or empty. `contexts` must be an arrayref.
 
 ## Methods
 
-### `run()`
+### `connect`
 
-Blocking entry point. Connects, authenticates, and runs the event loop with auto-reconnect until interrupted.
+Opens the WebSocket and runs the `signalwire.connect` handshake in one
+call. Returns the authenticate result on success and dies on failure.
 
-```python
-client.run()
+```perl
+$client->connect;
 ```
 
-### `connect()` / `disconnect()`
+### `connect_ws` / `authenticate`
 
-Manual lifecycle control for use in async code.
+Lower-level lifecycle control. `connect_ws` opens the WebSocket (returns a
+true value on success) and `authenticate` performs the handshake. This is
+the form used in the bundled examples:
 
-```python
-await client.connect()
-# ... use client ...
-await client.disconnect()
+```perl
+$client->connect_ws or die "WebSocket connect failed\n";
+$client->authenticate;
 ```
 
-Also supports async context manager:
+### `run`
 
-```python
-async with RelayClient(contexts=["default"]) as client:
-    ...
+Blocking entry point. Drives the event loop, reading frames and dispatching
+events until the connection closes. Call it after connecting.
+
+```perl
+$client->run;
 ```
 
-### `on_call(handler)`
+### `disconnect`
 
-Decorator to register the inbound call handler. The handler receives a `Call` object.
+Tears down the WebSocket transport.
 
-```python
-@client.on_call
-async def handle(call):
-    await call.answer()
+```perl
+$client->disconnect;
 ```
 
-### `dial(devices, *, tag=None, max_duration=None, dial_timeout=None) -> Call`
+### `reconnect`
 
-Place an outbound call. Returns a `Call` once the remote party answers.
+Rejects any pending requests, waits with exponential backoff, then
+re-opens the WebSocket and re-authenticates.
 
-- `devices` -- nested list of device objects (serial/parallel dial)
-- `tag` -- optional correlation tag (auto-generated if omitted)
-- `max_duration` -- max call duration in minutes
-- `dial_timeout` -- seconds to wait before raising `TimeoutError` (default: 120)
+### `on_call($cb)`
 
-```python
-call = await client.dial([
-    [{"type": "phone", "params": {"to_number": "+15551234567", "from_number": "+15559876543"}}]
-])
+Register the inbound call handler. The callback receives a
+`SignalWire::Relay::Call` object. Returns `$self` for chaining.
+
+```perl
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer;
+});
 ```
 
-### `on_message(handler)`
+### `on_message($cb)`
 
-Decorator to register the inbound message handler. The handler receives a `Message` object.
+Register the inbound message handler. The callback receives a
+`SignalWire::Relay::Event` (a `MessageReceive` event).
 
-```python
-@client.on_message
-async def handle(message):
-    print(f"SMS from {message.from_number}: {message.body}")
+```perl
+$client->on_message(sub {
+    my ($event) = @_;
+    printf "SMS from %s: %s\n", $event->from_number, $event->body;
+});
 ```
 
-### `send_message(*, to_number, from_number, body=None, media=None, ...) -> Message`
+### `on_event($cb)`
 
-Send an outbound SMS/MMS. Returns a `Message` that tracks delivery state.
+Register a global listener invoked for every event the client receives.
 
-```python
-message = await client.send_message(
-    to_number="+15552222222",
-    from_number="+15551111111",
-    body="Hello!",
-)
-event = await message.wait()  # block until delivered/failed
+```perl
+$client->on_event(sub {
+    my ($event) = @_;
+    print $event->event_type, "\n";
+});
 ```
 
-See [Messaging](messaging.md) for full details.
+### `dial(%opts)`
 
-### `execute(method, params) -> dict`
+Place an outbound call. Returns a `SignalWire::Relay::Call` once the remote
+party answers (or dies if the dial fails).
 
-Send a raw JSON-RPC request. Used internally by Call methods, but available for custom commands.
+- `devices` — nested list of device objects (serial/parallel dial)
+- `tag` — optional correlation tag (auto-generated if omitted)
+- `timeout` — seconds to wait before giving up (default 120)
+- `region`, `max_price_per_minute`, `on_completed` — optional
 
-### `receive(contexts) / unreceive(contexts)`
+```perl
+my $call = $client->dial(
+    devices => [
+        [ { type => 'phone', params => {
+            to_number   => '+15551234567',
+            from_number => '+15559876543',
+        } } ],
+    ],
+);
+```
+
+### `send_message(%opts)`
+
+Send an outbound SMS/MMS. Returns a `SignalWire::Relay::Message` that
+tracks delivery state. See [Messaging](messaging.md) for full details.
+
+```perl
+my $message = $client->send_message(
+    to_number   => '+15552222222',
+    from_number => '+15551111111',
+    body        => 'Hello!',
+);
+my $event = $message->wait;   # block until delivered/failed
+```
+
+### `execute($method, $params)`
+
+Send a raw JSON-RPC request and block for the result. Used internally by
+Call methods, but available for custom commands.
+
+```perl
+my $result = $client->execute('calling.answer', { node_id => $n, call_id => $c });
+```
+
+### `receive($contexts)` / `unreceive($contexts)`
 
 Dynamically subscribe to or unsubscribe from contexts after connecting.
+Accepts an arrayref (canonical) or a bare list.
 
-```python
-await client.receive(["new-context"])
-await client.unreceive(["old-context"])
+```perl
+$client->receive(['new-context']);
+$client->unreceive(['old-context']);
 ```
 
 ## Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `relay_protocol` | `str` | Server-assigned protocol string from connect response |
-| `project` | `str` | Project ID |
-| `host` | `str` | Relay host |
-| `contexts` | `list[str]` | Initial contexts |
+| Property | Description |
+|----------|-------------|
+| `relay_protocol` | Server-assigned protocol string from the connect response |
+| `protocol` | Same value as `relay_protocol` |
+| `project` | Project ID |
+| `host` | Relay host |
+| `contexts` | Initial contexts (arrayref) |
+| `session_id` | Server-assigned session id from the connect handshake |
+| `connected` | True while the WebSocket is open |
 
 ## Connection Behavior
 
-- **Auto-reconnect**: On connection loss, the client reconnects with exponential backoff (1s to 30s).
-- **Ping/pong**: Client sends periodic pings and monitors server pings. After 3 consecutive failures, the connection is force-closed and reconnected.
-- **Request queueing**: Requests made while disconnected are queued and sent after re-authentication.
-- **Authorization state**: The server sends encrypted auth state via events. On reconnect, this is sent back for fast re-authentication without a full auth roundtrip.
-- **Server disconnect**: The server can request a graceful disconnect (e.g. during deployment). The client auto-reconnects afterward.
-
-## Concurrency
-
-Each inbound call handler runs as an independent `asyncio.Task`, so multiple calls are handled concurrently. The `max_active_calls` parameter (default: 1000) caps concurrent calls to prevent unbounded memory growth.
-
-For multiple WebSocket connections in one process, set `RELAY_MAX_CONNECTIONS` (default: 1).
+- **Reconnect**: `reconnect` re-opens the WebSocket with exponential
+  backoff (1s doubling up to a 30s cap) and re-authenticates. Pending
+  requests and dials are rejected before reconnecting.
+- **Event ACKs**: Server-initiated events are acknowledged immediately;
+  the client also ACKs server pings.
+- **Authorization state**: The server sends auth state via a
+  `signalwire.authorization.state` event. On reconnect it is sent back for
+  fast re-authentication without a full auth roundtrip.
+- **Server disconnect**: The server can request a graceful disconnect (for
+  example during deployment). The client clears session state when the
+  disconnect requests a restart.
 
 ## Error Handling
 
-```python
-from signalwire_agents.relay import RelayError
+`execute` (and therefore the Call/Message methods built on it) dies with a
+`RELAY error: ...` message when the server returns an error. Wrap calls in
+`eval` to handle failures:
 
-try:
-    await call.play([...])
-except RelayError as e:
-    print(f"Error {e.code}: {e.message}")
+```perl
+my $result = eval { $call->play(media => [ ... ]) };
+if (my $err = $@) {
+    warn "play failed: $err";
+}
 ```
 
-`RelayError` is raised when the server returns a non-2xx response code. Errors 404 and 410 (call gone) are silently swallowed by Call methods since the call no longer exists.
+Errors 404 and 410 (call gone) are handled by Call methods, which resolve
+the returned action immediately rather than dying.

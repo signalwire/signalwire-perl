@@ -167,3 +167,4 @@ sleep: Perl built-in (and the SWML `sleep` verb the auto-vivified example illust
 delete_resource: Python REST namespace helper described in fabric.md prose; Perl REST resources expose `delete()` directly per CRUD pattern
 new: Perl/Moo constructor — appears in 148+ ClassName->new(...) call sites in docs and examples; not a port symbol to resolve
 set_question_callback: example placeholder representing a user-supplied per-question handler in the dynamic InfoGatherer demo (not a port API)
+not_a_real_verb: intentional placeholder in swml_service_guide.md demonstrating that an unknown verb name dies ("Can't locate method ...") — not a port API
