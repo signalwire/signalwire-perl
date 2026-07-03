@@ -16,7 +16,7 @@ subtest 'all namespaces' => sub {
     my @ns = qw(fabric calling phone_numbers addresses queues recordings
                 number_groups verified_callers sip_profile lookup short_codes
                 imported_numbers mfa registry datasphere video logs
-                project_ns pubsub chat compat);
+                project pubsub chat);
     for my $ns (@ns) {
         ok($client->can($ns), "client has $ns accessor");
         my $obj = $client->$ns;
@@ -30,7 +30,7 @@ subtest 'all namespaces' => sub {
 subtest 'datasphere documents' => sub {
     my $ds = $client->datasphere;
     my $docs = $ds->documents;
-    isa_ok($docs, 'SignalWire::REST::Namespaces::Datasphere::Documents');
+    isa_ok($docs, 'SignalWire::REST::Namespaces::Generated::DatasphereDocuments');
     for my $m (qw(search list_chunks get_chunk delete_chunk)) {
         ok($docs->can($m), "documents has $m");
     }
@@ -41,41 +41,15 @@ subtest 'datasphere documents' => sub {
 # ============================================================
 subtest 'video sub-resources' => sub {
     my $v = $client->video;
-    isa_ok($v->rooms, 'SignalWire::REST::Namespaces::Video::Rooms');
-    isa_ok($v->room_tokens, 'SignalWire::REST::Namespaces::Video::RoomTokens');
-    isa_ok($v->room_sessions, 'SignalWire::REST::Namespaces::Video::RoomSessions');
-    isa_ok($v->room_recordings, 'SignalWire::REST::Namespaces::Video::RoomRecordings');
-    isa_ok($v->conferences, 'SignalWire::REST::Namespaces::Video::Conferences');
-    isa_ok($v->conference_tokens, 'SignalWire::REST::Namespaces::Video::ConferenceTokens');
-    isa_ok($v->streams, 'SignalWire::REST::Namespaces::Video::Streams');
+    isa_ok($v->rooms, 'SignalWire::REST::Namespaces::Generated::VideoRooms');
+    isa_ok($v->room_tokens, 'SignalWire::REST::Namespaces::Generated::VideoRoomTokens');
+    isa_ok($v->room_sessions, 'SignalWire::REST::Namespaces::Generated::VideoRoomSessions');
+    isa_ok($v->room_recordings, 'SignalWire::REST::Namespaces::Generated::VideoRoomRecordings');
+    isa_ok($v->conferences, 'SignalWire::REST::Namespaces::Generated::VideoConferences');
+    isa_ok($v->conference_tokens, 'SignalWire::REST::Namespaces::Generated::VideoConferenceTokens');
+    isa_ok($v->streams, 'SignalWire::REST::Namespaces::Generated::VideoStreams');
     ok($v->rooms->can('list_streams'), 'rooms has list_streams');
     ok($v->room_sessions->can('list_events'), 'sessions has list_events');
-};
-
-# ============================================================
-# 4. Compat namespace
-# ============================================================
-subtest 'compat namespace' => sub {
-    my $c = $client->compat;
-    is($c->account_sid, 'p', 'account_sid matches project');
-    for my $r (qw(accounts calls messages faxes conferences phone_numbers
-                  applications laml_bins queues recordings transcriptions tokens)) {
-        ok($c->can($r), "compat has $r");
-    }
-};
-
-# ============================================================
-# 5. Compat sub-resource methods
-# ============================================================
-subtest 'compat sub-resource methods' => sub {
-    my $c = $client->compat;
-    ok($c->calls->can('start_recording'), 'calls start_recording');
-    ok($c->calls->can('start_stream'), 'calls start_stream');
-    ok($c->messages->can('list_media'), 'messages list_media');
-    ok($c->conferences->can('list_participants'), 'conferences list_participants');
-    ok($c->phone_numbers->can('search_local'), 'phone_numbers search_local');
-    ok($c->phone_numbers->can('search_toll_free'), 'phone_numbers search_toll_free');
-    ok($c->queues->can('list_members'), 'queues list_members');
 };
 
 # ============================================================
@@ -105,9 +79,9 @@ subtest 'logs namespace' => sub {
 # 8. Project namespace
 # ============================================================
 subtest 'project namespace' => sub {
-    my $p = $client->project_ns;
+    my $p = $client->project;
     my $tokens = $p->tokens;
-    for my $m (qw(create update delete_token)) {
+    for my $m (qw(create update delete)) {
         ok($tokens->can($m), "project tokens has $m");
     }
 };

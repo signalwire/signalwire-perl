@@ -24,7 +24,7 @@ subtest 'brands_test_list' => sub {
 
 subtest 'brands_test_create' => sub {
     my $client = MockTest::client();
-    my $body = $client->registry->brands->create(entity_type => 'PRIVATE_PROFIT');
+    my $body = $client->registry->brands->create({ entity_type => 'PRIVATE_PROFIT' });
     is(ref $body, 'HASH', 'response is a hashref');
     my $last = MockTest::journal_last();
     is($last->{method}, 'POST', 'POST');
@@ -55,7 +55,7 @@ subtest 'brands_test_list_campaigns' => sub {
 
 subtest 'brands_test_create_campaign' => sub {
     my $client = MockTest::client();
-    my $body = $client->registry->brands->create_campaign('brand-1', usecase => 'LOW_VOLUME');
+    my $body = $client->registry->brands->create_campaign('brand-1', { usecase => 'LOW_VOLUME' });
     is(ref $body, 'HASH', 'response is a hashref');
     my $last = MockTest::journal_last();
     is($last->{method}, 'POST', 'POST');
@@ -82,7 +82,7 @@ subtest 'brands_test_list_server_error' => sub {
 subtest 'brands_test_create_unprocessable' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('relay-rest.create_brand', 422, { error => 'bad' });
-    my $ok = eval { $client->registry->brands->create(); 1 };
+    my $ok = eval { $client->registry->brands->create({}); 1 };
     my $e = $@;
     ok(!$ok, 'raised');
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -121,7 +121,7 @@ subtest 'brands_test_list_campaigns_not_found' => sub {
 subtest 'brands_test_create_campaign_unprocessable' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('relay-rest.create_campaign', 422, { error => 'bad' });
-    my $ok = eval { $client->registry->brands->create_campaign('brand-1'); 1 };
+    my $ok = eval { $client->registry->brands->create_campaign('brand-1', {}); 1 };
     my $e = $@;
     ok(!$ok, 'raised');
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');

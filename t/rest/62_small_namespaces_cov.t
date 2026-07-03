@@ -299,7 +299,7 @@ subtest 'TestNumberGroups' => sub {
 subtest 'TestProjectTokens' => sub {
     subtest 'update' => sub {
         my $client = MockTest::client();
-        my $body = $client->project_ns->tokens->update('tok-1', name => 'renamed-token');
+        my $body = $client->project->tokens->update('tok-1', name => 'renamed-token');
         is(ref $body, 'HASH', 'hashref');
         my $j = MockTest::journal_last();
         is($j->{method}, 'PATCH', 'PATCH');
@@ -310,12 +310,12 @@ subtest 'TestProjectTokens' => sub {
     subtest 'update_error' => sub {
         my $client = MockTest::client();
         _err('project.update_token', 404,
-            sub { $client->project_ns->tokens->update('missing', name => 'x') });
+            sub { $client->project->tokens->update('missing', name => 'x') });
     };
 
     subtest 'delete' => sub {
         my $client = MockTest::client();
-        $client->project_ns->tokens->delete('tok-1');
+        $client->project->tokens->delete('tok-1');
         my $j = MockTest::journal_last();
         is($j->{method}, 'DELETE', 'DELETE');
         is($j->{path}, '/api/project/tokens/tok-1', 'path');
@@ -324,7 +324,7 @@ subtest 'TestProjectTokens' => sub {
     subtest 'delete_error' => sub {
         my $client = MockTest::client();
         _err('project.delete_token', 404,
-            sub { $client->project_ns->tokens->delete('missing') });
+            sub { $client->project->tokens->delete('missing') });
     };
 };
 

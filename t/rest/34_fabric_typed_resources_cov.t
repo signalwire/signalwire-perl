@@ -190,18 +190,20 @@ subtest 'TestFabricPatchResourceFamilies' => sub {
 };
 
 subtest 'TestFabricSipGateways' => sub {
-    # PATCH CRUD, NO addresses route reachable (accepted GAP per python note).
+    # PATCH CRUD + the FabricResource addresses route (list_sip_gateway_addresses).
+    # The generated SipGateways extends FabricResource, so list_addresses is
+    # available and the spec defines /resources/sip_gateways/{id}/addresses.
     subtest 'test_crud' => sub {
         crud_success(
             rget => sub { MockTest::client()->fabric->sip_gateways },
             base => "$BASE/sip_gateways", update_method => 'PATCH',
-            prefix => 'sip_gateway', addresses => 0,
+            prefix => 'sip_gateway', addresses => 1,
         );
     };
     subtest 'test_crud_errors' => sub {
         crud_errors(
             rget => sub { MockTest::client()->fabric->sip_gateways },
-            prefix => 'sip_gateway', addresses => 0,
+            prefix => 'sip_gateway', addresses => 1,
         );
     };
 };
@@ -229,7 +231,9 @@ subtest 'TestFabricCxmlApplications' => sub {
         is($last->{method}, 'PUT', 'update PUT');
         is($last->{matched_route}, 'fabric.update_cxml_application', 'update route');
 
-        $r->delete_resource($ID);
+        # CxmlApplications is a BaseResource — its delete method is emitted
+        # directly as `delete` (not the CrudResource-base `delete_resource`).
+        $r->delete($ID);
         $last = MockTest::journal_last();
         is($last->{method}, 'DELETE', 'delete DELETE');
         is($last->{matched_route}, 'fabric.delete_cxml_application', 'delete route');
@@ -241,11 +245,11 @@ subtest 'TestFabricCxmlApplications' => sub {
     };
 
     subtest 'test_create_not_implemented' => sub {
+        # cXML applications cannot be created via the API — the generated
+        # CxmlApplications class does not provide a create method at all.
         my $client = MockTest::client();
-        my $ok = eval { $client->fabric->cxml_applications->create(name => 'x'); 1 };
-        my $e = $@;
-        ok(!$ok, 'create dies');
-        like($e, qr/cXML applications cannot/, 'error mentions cXML applications cannot');
+        ok(!$client->fabric->cxml_applications->can('create'),
+            'cxml_applications has no create method');
     };
 
     subtest 'test_errors' => sub {
@@ -253,7 +257,7 @@ subtest 'TestFabricCxmlApplications' => sub {
         _err($rget, 'fabric.list_cxml_applications', 500, sub { $_[0]->list() });
         _err($rget, 'fabric.get_cxml_application', 404, sub { $_[0]->get('missing') });
         _err($rget, 'fabric.update_cxml_application', 404, sub { $_[0]->update('missing', name => 'x') });
-        _err($rget, 'fabric.delete_cxml_application', 404, sub { $_[0]->delete_resource('missing') });
+        _err($rget, 'fabric.delete_cxml_application', 404, sub { $_[0]->delete('missing') });
         _err($rget, 'fabric.list_cxml_application_addresses', 404, sub { $_[0]->list_addresses('missing') });
     };
 };

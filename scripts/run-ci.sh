@@ -138,6 +138,15 @@ ensure_dev_tools
 
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
+# Gate 0: GEN-FRESH — the REST resource + client-tree layer under
+# lib/SignalWire/REST/Namespaces/Generated/ is GENERATED from the canonical specs
+# (porting-sdk/rest-apis/ + x-sdk-* markup) by scripts/generate_rest.py. This gate
+# fails if the committed generated files are stale vs a fresh run (a spec/markup
+# change not regenerated, or a hand-edit to a generated file). Regenerate with
+# `python3 scripts/generate_rest.py`.
+run_gate "GEN-FRESH" "generate_rest.py --check (generated REST layer matches specs)" \
+    python3 scripts/generate_rest.py --check
+
 # Gate 1: prove
 run_gate "TEST" "prove -Ilib -It/lib t/" \
     prove -Ilib -It/lib t/

@@ -38,11 +38,10 @@ my $SENTINEL = '__ID__';
 # Every entry needs a reason; a method that fails to invoke or issues no HTTP
 # request is an ERROR, not an implicit skip.
 my %REGISTRY_SKIP = (
-
-    # cXML applications expose the CRUD surface but create is unsupported (dies
-    # by design) — no POST /cxml_applications canonical route. Mirrors python.
-    'fabric.cxml_applications.create' =>
-        'no create route — dies by design (cXML apps cannot be created via API)',
+    # cXML applications expose list/get/update/delete/list_addresses but NOT create
+    # — the generated CxmlApplications resource extends BaseResource with no create
+    # method (cXML apps cannot be created via the API), so there is no route to
+    # skip. (Left empty; entries added here need a reason.)
 );
 
 # Moo / Moo::Object sugar + base plumbing that are NOT route methods. (This
@@ -104,11 +103,15 @@ my %SUGAR = map { $_ => 1 } qw(
     }
 }
 
-# Top-level namespace accessors exposed on RestClient (the `has ... lazy` names).
+# Top-level namespace accessors exposed on RestClient. The flat resources +
+# namespace containers are provided by the generated ResourceTree role the client
+# composes (accessor names verbatim from the specs). `project` is the
+# ProjectNamespace container (the raw project-id credential lives on the private
+# `_project_id` slot).
 my @NAMESPACES = qw(
     fabric calling phone_numbers addresses queues recordings number_groups
     verified_callers sip_profile lookup short_codes imported_numbers mfa
-    registry datasphere video logs project_ns pubsub chat compat
+    registry datasphere video logs project pubsub chat
 );
 
 my @routes;       # { method, path_template, via }

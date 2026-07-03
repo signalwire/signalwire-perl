@@ -18,7 +18,7 @@ use MockTest;
 subtest 'TestProjectTokensSuccess' => sub {
     subtest 'create' => sub {
         my $client = MockTest::client();
-        my $body = $client->project_ns->tokens->create(name => 'ci-token');
+        my $body = $client->project->tokens->create(name => 'ci-token');
         is(ref $body, 'HASH', 'hashref');
         my $j = MockTest::journal_last();
         is($j->{method}, 'POST', 'POST');
@@ -29,7 +29,7 @@ subtest 'TestProjectTokensSuccess' => sub {
 
     subtest 'update' => sub {
         my $client = MockTest::client();
-        my $body = $client->project_ns->tokens->update('tok-1', name => 'renamed');
+        my $body = $client->project->tokens->update('tok-1', name => 'renamed');
         is(ref $body, 'HASH', 'hashref');
         my $j = MockTest::journal_last();
         is($j->{method}, 'PATCH', 'PATCH');
@@ -40,7 +40,7 @@ subtest 'TestProjectTokensSuccess' => sub {
 
     subtest 'delete' => sub {
         my $client = MockTest::client();
-        $client->project_ns->tokens->delete('tok-1');
+        $client->project->tokens->delete('tok-1');
         my $j = MockTest::journal_last();
         is($j->{method}, 'DELETE', 'DELETE');
         is($j->{path}, '/api/project/tokens/tok-1', 'path');
@@ -52,7 +52,7 @@ subtest 'TestProjectTokensErrors' => sub {
     subtest 'create_unprocessable' => sub {
         my $client = MockTest::client();
         MockTest::scenario_set('project.create_token', 422, { error => 'name required' });
-        my $ok = eval { $client->project_ns->tokens->create(); 1 };
+        my $ok = eval { $client->project->tokens->create(); 1 };
         my $e = $@;
         ok(!$ok, 'raised');
         isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -65,7 +65,7 @@ subtest 'TestProjectTokensErrors' => sub {
     subtest 'update_not_found' => sub {
         my $client = MockTest::client();
         MockTest::scenario_set('project.update_token', 404, { error => 'not found' });
-        my $ok = eval { $client->project_ns->tokens->update('missing', name => 'x'); 1 };
+        my $ok = eval { $client->project->tokens->update('missing', name => 'x'); 1 };
         my $e = $@;
         ok(!$ok, 'raised');
         isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -78,7 +78,7 @@ subtest 'TestProjectTokensErrors' => sub {
     subtest 'delete_not_found' => sub {
         my $client = MockTest::client();
         MockTest::scenario_set('project.delete_token', 404, { error => 'not found' });
-        my $ok = eval { $client->project_ns->tokens->delete('missing'); 1 };
+        my $ok = eval { $client->project->tokens->delete('missing'); 1 };
         my $e = $@;
         ok(!$ok, 'raised');
         isa_ok($e, 'SignalWire::REST::HttpClient::Error');

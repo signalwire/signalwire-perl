@@ -49,22 +49,14 @@ subtest 'TestFabricAddresses' => sub {
 # ---- CxmlApplicationsResource.create — deliberate die ------------------
 
 subtest 'TestCxmlApplicationsCreate' => sub {
-    subtest 'test_create_raises_not_implemented' => sub {
+    subtest 'test_create_not_implemented' => sub {
+        # cXML applications cannot be created via the API. The generated
+        # CxmlApplications class is a BaseResource with NO create method, so
+        # there is no create route and nothing can hit the wire.
         my $client = MockTest::client();
-        my $err = eval {
-            $client->fabric->cxml_applications->create(name => 'never_built');
-            0;
-        };
-        my $err_str = $@;
-        ok($err_str, 'create raises');
-        like($err_str, qr/cXML applications cannot/,
-            'error message mentions cXML applications cannot');
-        # Nothing should have hit the wire: the create() must add ZERO new
-        # journal entries. Asserted as a delta (count after == count before)
-        # rather than an absolute empty journal, so the check is robust whether
-        # this process's auth-scoped view already holds entries from earlier
-        # subtests or a pre-spawned shared mock — same intent as python's
-        # per-test journal reset, just expressed without depending on a wipe.
+        ok(!$client->fabric->cxml_applications->can('create'),
+            'cxml_applications has no create method');
+
         my $before = scalar @{ MockTest::journal_all() };
         eval { $client->fabric->cxml_applications->create(name => 'never_built') };
         my $after = scalar @{ MockTest::journal_all() };

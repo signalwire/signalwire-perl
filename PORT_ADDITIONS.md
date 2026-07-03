@@ -125,7 +125,7 @@ signalwire.relay.message_state.MessageState.is_state: tier3-typed-state port-onl
 signalwire.relay.message_state.MessageState.is_terminal: tier3-typed-state port-only: MessageState->is_terminal($v) — terminal set {delivered,undelivered,failed}; false (never dies) on undef/in-flight/received/unknown (see MessageState).
 signalwire.relay.message_state.MessageState.states: tier3-typed-state port-only: MessageState->states is the ordered arrayref of message-delivery states (see MessageState).
 signalwire.rest._pagination.PaginatedIterator.all: port-only: drains the iterator into a list (Perl idiom for `list(iter)`); Python uses `list(it)` directly
-signalwire.rest.call_handler.PhoneCallHandler.values: port-only: authoritative list accessor for the enum; Python uses the enum class directly
+signalwire.rest.namespaces.relay_rest_types_generated.PhoneCallHandler.values: port-only: authoritative list accessor for the call_handler enum; Python uses the type/enum class directly (the REST-generated oracle houses PhoneCallHandler as a relay-rest generated type)
 signalwire.rest.namespaces.calling.CallingNamespace.update_call: port-only helper for updating an in-flight call; Python clients use client.calls(sid).update()
 signalwire.rest.namespaces.fabric.AddressesResource: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
 signalwire.rest.namespaces.fabric.AddressesResource.get: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource

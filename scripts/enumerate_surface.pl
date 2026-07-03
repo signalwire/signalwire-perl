@@ -244,8 +244,13 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.rest._base', class => 'BaseResource' },
     'SignalWire::REST::Namespaces::CrudResource' =>
         { module => 'signalwire.rest._base', class => 'CrudResource' },
-    'SignalWire::REST::PhoneCallHandler' =>
-        { module => 'signalwire.rest.call_handler', class => 'PhoneCallHandler' },
+    # PhoneCallHandler is the `call_handler` value enum used by
+    # phone_numbers->update / the set_* helpers. In the REST-generated oracle
+    # layout it lives as a TYPE under the relay-rest generated types module.
+    'SignalWire::REST::PhoneCallHandler' => {
+        module => 'signalwire.rest.namespaces.relay_rest_types_generated',
+        class  => 'PhoneCallHandler'
+    },
     'SignalWire::REST::Pagination' => { module => 'signalwire.rest._pagination', class => undef },
     'SignalWire::REST::Pagination::PaginatedIterator' =>
         { module => 'signalwire.rest._pagination', class => 'PaginatedIterator' },
@@ -409,6 +414,98 @@ my %PACKAGE_TO_PY = (
     'SignalWire::POM::PromptObjectModel' =>
         { module => 'signalwire.pom.pom', class => 'PromptObjectModel' },
     'SignalWire::POM::Section' => { module => 'signalwire.pom.pom', class => 'Section' },
+);
+
+# -------------------------------------------------------------------------
+# Generated REST resource-tree projection (item B).
+#
+# The REST resource + client-tree surface is GENERATED (scripts/generate_rest.py
+# emits lib/SignalWire/REST/Namespaces/Generated/*.pm — one package per resource
+# class, one container per namespace group, plus the ReadResource/FabricResource
+# bases and the ResourceTree role). Each generated package
+# `SignalWire::REST::Namespaces::Generated::<Name>` projects VERBATIM onto the
+# Python oracle module `signalwire.rest.namespaces.<ns>_resources_generated.<Name>`
+# (the 6 containers onto `signalwire.rest.namespaces._client_tree_generated`).
+#
+# Perl's generated classes inherit CRUD from the hand base
+# (Namespaces::CrudResource) + the generated ReadResource/FabricResource bases; the
+# oracle records each class's SURFACE as its own declared methods PLUS a fixed base
+# contribution. So we project each generated class's own subs and add the
+# base-provided methods the oracle SURFACE lists on the subclass:
+#
+#   base=Base            -> (nothing; every method is spelled out inline)
+#   base=CrudResource    -> create, update  (delete inherited but omitted on the
+#                                             surface — the "delete-recording
+#                                             asymmetry"; present in the signature
+#                                             oracle, projected there, not here)
+#   base=FabricResource  -> create, update  (delete NOT projected — same asymmetry)
+#   base=ReadResource    -> (nothing on surface; get/list inherited but omitted)
+#
+# Mirrors php's/go's generated projection. GEN-FRESH keeps the emitted classes in
+# sync with the specs; diff_port_surface keeps THIS table in sync with the oracle
+# (a missing/renamed class fails the surface diff loudly).
+my %GENERATED_PROJECTION = (
+    'Addresses' => { ns => 'relay_rest', base => 'Base' },
+    'AiAgents' => { ns => 'fabric', base => 'FabricResource' },
+    'CallFlows' => { ns => 'fabric', base => 'FabricResource' },
+    'Calling' => { ns => 'calling', base => 'Base' },
+    'Chat' => { ns => 'chat', base => 'Base' },
+    'ConferenceLogs' => { ns => 'logs', base => 'Base' },
+    'ConferenceRooms' => { ns => 'fabric', base => 'FabricResource' },
+    'CxmlApplications' => { ns => 'fabric', base => 'Base' },
+    'CxmlScripts' => { ns => 'fabric', base => 'FabricResource' },
+    'CxmlWebhooks' => { ns => 'fabric', base => 'FabricResource' },
+    'DatasphereDocuments' => { ns => 'datasphere', base => 'CrudResource' },
+    'DatasphereNamespace' => { ns => '_client_tree', base => 'Base' },
+    'FabricAddresses' => { ns => 'fabric', base => 'ReadResource' },
+    'FabricNamespace' => { ns => '_client_tree', base => 'Base' },
+    'FabricTokens' => { ns => 'fabric', base => 'Base' },
+    'FaxLogs' => { ns => 'fax', base => 'ReadResource' },
+    'FreeswitchConnectors' => { ns => 'fabric', base => 'FabricResource' },
+    'GenericResources' => { ns => 'fabric', base => 'Base' },
+    'ImportedNumbers' => { ns => 'relay_rest', base => 'Base' },
+    'LogsNamespace' => { ns => '_client_tree', base => 'Base' },
+    'Lookup' => { ns => 'relay_rest', base => 'Base' },
+    'MessageLogs' => { ns => 'message', base => 'ReadResource' },
+    'Mfa' => { ns => 'relay_rest', base => 'Base' },
+    'NumberGroups' => { ns => 'relay_rest', base => 'CrudResource' },
+    'PhoneNumbers' => { ns => 'relay_rest', base => 'CrudResource' },
+    'ProjectNamespace' => { ns => '_client_tree', base => 'Base' },
+    'ProjectTokens' => { ns => 'project', base => 'Base' },
+    'PubSub' => { ns => 'pubsub', base => 'Base' },
+    'Queues' => { ns => 'relay_rest', base => 'CrudResource' },
+    'Recordings' => { ns => 'relay_rest', base => 'Base' },
+    'RegistryBrands' => { ns => 'relay_rest', base => 'Base' },
+    'RegistryCampaigns' => { ns => 'relay_rest', base => 'Base' },
+    'RegistryNamespace' => { ns => '_client_tree', base => 'Base' },
+    'RegistryNumbers' => { ns => 'relay_rest', base => 'Base' },
+    'RegistryOrders' => { ns => 'relay_rest', base => 'Base' },
+    'RelayApplications' => { ns => 'fabric', base => 'FabricResource' },
+    'ShortCodes' => { ns => 'relay_rest', base => 'Base' },
+    'SipEndpoints' => { ns => 'fabric', base => 'FabricResource' },
+    'SipGateways' => { ns => 'fabric', base => 'FabricResource' },
+    'SipProfile' => { ns => 'relay_rest', base => 'Base' },
+    'Subscribers' => { ns => 'fabric', base => 'FabricResource' },
+    'SwmlScripts' => { ns => 'fabric', base => 'FabricResource' },
+    'SwmlWebhooks' => { ns => 'fabric', base => 'FabricResource' },
+    'VerifiedCallers' => { ns => 'relay_rest', base => 'CrudResource' },
+    'VideoConferenceTokens' => { ns => 'video', base => 'Base' },
+    'VideoConferences' => { ns => 'video', base => 'CrudResource' },
+    'VideoNamespace' => { ns => '_client_tree', base => 'Base' },
+    'VideoRoomRecordings' => { ns => 'video', base => 'Base' },
+    'VideoRoomSessions' => { ns => 'video', base => 'ReadResource' },
+    'VideoRoomTokens' => { ns => 'video', base => 'Base' },
+    'VideoRooms' => { ns => 'video', base => 'CrudResource' },
+    'VideoStreams' => { ns => 'video', base => 'Base' },
+    'VoiceLogs' => { ns => 'voice', base => 'ReadResource' },
+);
+
+# Base-provided methods the oracle SURFACE lists on a generated subclass.
+my %GENERATED_BASE_SURFACE = (
+    'Base'           => [],
+    'CrudResource'   => [ 'create', 'update' ],
+    'FabricResource' => [ 'create', 'update' ],
+    'ReadResource'   => [],
 );
 
 # -------------------------------------------------------------------------
@@ -851,10 +948,16 @@ my %METHOD_OVERRIDES = (
         },
     },
 
-    # CrudResource base class's delete_resource maps to the Python `delete`.
+    # CrudResource base class's delete_resource maps to the Python `delete`. In the
+    # oracle's base decomposition list/get live on ReadResource (the parent), and
+    # CrudResource itself only adds create/update/delete. The Perl hand CrudResource
+    # carries list+get inline (it does not extend a separate ReadResource base), so
+    # reproject those two onto ReadResource to match the oracle's per-class surface.
     'SignalWire::REST::Namespaces::CrudResource' => {
         'delete_resource' =>
             { module => 'signalwire.rest._base', class => 'CrudResource', method => 'delete' },
+        'list' => { module => 'signalwire.rest._base', class => 'ReadResource', method => 'list' },
+        'get'  => { module => 'signalwire.rest._base', class => 'ReadResource', method => 'get' },
     },
     'SignalWire::REST::HttpClient' => {
         'delete_request' =>
@@ -1154,7 +1257,62 @@ sub collect_surface {
         my $packages = parse_file($file);
         for my $pkg (@$packages) {
             my $pkg_name = $pkg->{name};
-            my $info     = $PACKAGE_TO_PY{$pkg_name};
+
+            # --- Generated REST resource-tree projection (item B) ---
+            # Packages under SignalWire::REST::Namespaces::Generated::<Name> project
+            # onto the oracle's <ns>_resources_generated / _client_tree_generated /
+            # _base modules. Handle them here (they are deliberately NOT in
+            # %PACKAGE_TO_PY — the projection is table-driven per generated class).
+            if ( $pkg_name =~ /^SignalWire::REST::Namespaces::Generated::(\w+)$/ ) {
+                my $gname = $1;
+
+                # ResourceTree is a Moo::Role the RestClient composes — it exposes
+                # no oracle surface of its own (its accessors ARE the resource
+                # classes, projected below); skip it.
+                next if $gname eq 'ResourceTree';
+
+                # The two generated bases map onto signalwire.rest._base. The Perl
+                # Generated::ReadResource (list/get) == oracle _base.ReadResource;
+                # the Perl Generated::FabricResource carries list_addresses, which
+                # the oracle houses on _base.CrudWithAddresses (FabricResource itself
+                # is an empty marker subclass).
+                if ( $gname eq 'ReadResource' ) {
+                    $record_class_only->( 'signalwire.rest._base', 'ReadResource' );
+                    for my $s ( @{ $pkg->{subs} } ) {
+                        $record_class_method->( 'signalwire.rest._base', 'ReadResource', $s );
+                    }
+                    next;
+                }
+                if ( $gname eq 'FabricResource' ) {
+                    $record_class_only->( 'signalwire.rest._base', 'FabricResource' );
+                    for my $s ( @{ $pkg->{subs} } ) {
+                        $record_class_method->( 'signalwire.rest._base', 'CrudWithAddresses', $s );
+                    }
+                    next;
+                }
+
+                my $proj = $GENERATED_PROJECTION{$gname};
+                if ( !$proj ) {
+                    warn "enumerate_surface: generated package $pkg_name has no projection entry\n";
+                    next;
+                }
+                my $gmod =
+                    $proj->{ns} eq '_client_tree'
+                    ? 'signalwire.rest.namespaces._client_tree_generated'
+                    : "signalwire.rest.namespaces.$proj->{ns}_resources_generated";
+
+                $record_class_only->( $gmod, $gname );
+                $record_class_method->( $gmod, $gname, '__init__' );
+                for my $s ( @{ $pkg->{subs} } ) {
+                    $record_class_method->( $gmod, $gname, $s );
+                }
+                for my $bm ( @{ $GENERATED_BASE_SURFACE{ $proj->{base} } // [] } ) {
+                    $record_class_method->( $gmod, $gname, $bm );
+                }
+                next;
+            }
+
+            my $info = $PACKAGE_TO_PY{$pkg_name};
             if ( !$info ) {
                 warn "enumerate_surface: package $pkg_name not in translation map (file: $file)\n";
                 next;

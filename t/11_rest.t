@@ -107,7 +107,7 @@ use_ok('SignalWire::REST::RestClient');
         token   => 'tok-test',
         host    => 'test.signalwire.com',
     );
-    is($client->project, 'proj-test', 'client project');
+    is($client->_project_id, 'proj-test', 'client project credential');
     is($client->token, 'tok-test', 'client token');
     is($client->host, 'test.signalwire.com', 'client host');
 }
@@ -128,89 +128,28 @@ use_ok('SignalWire::REST::RestClient');
         project => 'p', token => 't', host => 'h',
     );
 
-    # Fabric
-    my $fabric = $client->fabric;
-    isa_ok($fabric, 'SignalWire::REST::Namespaces::Fabric');
-
-    # Calling
-    my $calling = $client->calling;
-    isa_ok($calling, 'SignalWire::REST::Namespaces::Calling');
-
-    # Phone numbers
-    my $pn = $client->phone_numbers;
-    isa_ok($pn, 'SignalWire::REST::Namespaces::PhoneNumbers');
-
-    # Addresses
-    my $addr = $client->addresses;
-    isa_ok($addr, 'SignalWire::REST::Namespaces::Addresses');
-
-    # Queues
-    my $q = $client->queues;
-    isa_ok($q, 'SignalWire::REST::Namespaces::Queues');
-
-    # Recordings
-    my $rec = $client->recordings;
-    isa_ok($rec, 'SignalWire::REST::Namespaces::Recordings');
-
-    # Number groups
-    my $ng = $client->number_groups;
-    isa_ok($ng, 'SignalWire::REST::Namespaces::NumberGroups');
-
-    # Verified callers
-    my $vc = $client->verified_callers;
-    isa_ok($vc, 'SignalWire::REST::Namespaces::VerifiedCallers');
-
-    # SIP profile
-    my $sip = $client->sip_profile;
-    isa_ok($sip, 'SignalWire::REST::Namespaces::SipProfile');
-
-    # Lookup
-    my $lu = $client->lookup;
-    isa_ok($lu, 'SignalWire::REST::Namespaces::Lookup');
-
-    # Short codes
-    my $sc = $client->short_codes;
-    isa_ok($sc, 'SignalWire::REST::Namespaces::ShortCodes');
-
-    # Imported numbers
-    my $in = $client->imported_numbers;
-    isa_ok($in, 'SignalWire::REST::Namespaces::ImportedNumbers');
-
-    # MFA
-    my $mfa = $client->mfa;
-    isa_ok($mfa, 'SignalWire::REST::Namespaces::MFA');
-
-    # Registry
-    my $reg = $client->registry;
-    isa_ok($reg, 'SignalWire::REST::Namespaces::Registry');
-
-    # Datasphere
-    my $ds = $client->datasphere;
-    isa_ok($ds, 'SignalWire::REST::Namespaces::Datasphere');
-
-    # Video
-    my $vid = $client->video;
-    isa_ok($vid, 'SignalWire::REST::Namespaces::Video');
-
-    # Logs
-    my $logs = $client->logs;
-    isa_ok($logs, 'SignalWire::REST::Namespaces::Logs');
-
-    # Project
-    my $proj = $client->project_ns;
-    isa_ok($proj, 'SignalWire::REST::Namespaces::Project');
-
-    # PubSub
-    my $ps = $client->pubsub;
-    isa_ok($ps, 'SignalWire::REST::Namespaces::PubSub');
-
-    # Chat
-    my $chat = $client->chat;
-    isa_ok($chat, 'SignalWire::REST::Namespaces::Chat');
-
-    # Compat
-    my $compat = $client->compat;
-    isa_ok($compat, 'SignalWire::REST::Namespaces::Compat');
+    # The flat resources + namespace containers come from the GENERATED
+    # ResourceTree role the client composes.
+    isa_ok($client->fabric, 'SignalWire::REST::Namespaces::Generated::FabricNamespace');
+    isa_ok($client->calling, 'SignalWire::REST::Namespaces::Generated::Calling');
+    isa_ok($client->phone_numbers, 'SignalWire::REST::Namespaces::Generated::PhoneNumbers');
+    isa_ok($client->addresses, 'SignalWire::REST::Namespaces::Generated::Addresses');
+    isa_ok($client->queues, 'SignalWire::REST::Namespaces::Generated::Queues');
+    isa_ok($client->recordings, 'SignalWire::REST::Namespaces::Generated::Recordings');
+    isa_ok($client->number_groups, 'SignalWire::REST::Namespaces::Generated::NumberGroups');
+    isa_ok($client->verified_callers, 'SignalWire::REST::Namespaces::Generated::VerifiedCallers');
+    isa_ok($client->sip_profile, 'SignalWire::REST::Namespaces::Generated::SipProfile');
+    isa_ok($client->lookup, 'SignalWire::REST::Namespaces::Generated::Lookup');
+    isa_ok($client->short_codes, 'SignalWire::REST::Namespaces::Generated::ShortCodes');
+    isa_ok($client->imported_numbers, 'SignalWire::REST::Namespaces::Generated::ImportedNumbers');
+    isa_ok($client->mfa, 'SignalWire::REST::Namespaces::Generated::Mfa');
+    isa_ok($client->registry, 'SignalWire::REST::Namespaces::Generated::RegistryNamespace');
+    isa_ok($client->datasphere, 'SignalWire::REST::Namespaces::Generated::DatasphereNamespace');
+    isa_ok($client->video, 'SignalWire::REST::Namespaces::Generated::VideoNamespace');
+    isa_ok($client->logs, 'SignalWire::REST::Namespaces::Generated::LogsNamespace');
+    isa_ok($client->project, 'SignalWire::REST::Namespaces::Generated::ProjectNamespace');
+    isa_ok($client->pubsub, 'SignalWire::REST::Namespaces::Generated::PubSub');
+    isa_ok($client->chat, 'SignalWire::REST::Namespaces::Generated::Chat');
 }
 
 # ===== Fabric Namespace sub-objects =====
@@ -220,23 +159,23 @@ use_ok('SignalWire::REST::RestClient');
     );
     my $f = $client->fabric;
 
-    # All fabric sub-resources
-    isa_ok($f->swml_scripts, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
-    isa_ok($f->relay_applications, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
-    isa_ok($f->call_flows, 'SignalWire::REST::Namespaces::Fabric::CallFlows');
-    isa_ok($f->conference_rooms, 'SignalWire::REST::Namespaces::Fabric::ConferenceRooms');
-    isa_ok($f->freeswitch_connectors, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
-    isa_ok($f->subscribers, 'SignalWire::REST::Namespaces::Fabric::Subscribers');
-    isa_ok($f->sip_endpoints, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
-    isa_ok($f->cxml_scripts, 'SignalWire::REST::Namespaces::Fabric::ResourcePUT');
-    isa_ok($f->cxml_applications, 'SignalWire::REST::Namespaces::Fabric::CxmlApplications');
-    isa_ok($f->swml_webhooks, 'SignalWire::REST::Namespaces::Fabric::Resource');
-    isa_ok($f->ai_agents, 'SignalWire::REST::Namespaces::Fabric::Resource');
-    isa_ok($f->sip_gateways, 'SignalWire::REST::Namespaces::Fabric::Resource');
-    isa_ok($f->cxml_webhooks, 'SignalWire::REST::Namespaces::Fabric::Resource');
-    isa_ok($f->resources, 'SignalWire::REST::Namespaces::Fabric::GenericResources');
-    isa_ok($f->addresses, 'SignalWire::REST::Namespaces::Fabric::Addresses');
-    isa_ok($f->tokens, 'SignalWire::REST::Namespaces::Fabric::Tokens');
+    # All fabric sub-resources (generated classes, verbatim spec names)
+    isa_ok($f->swml_scripts, 'SignalWire::REST::Namespaces::Generated::SwmlScripts');
+    isa_ok($f->relay_applications, 'SignalWire::REST::Namespaces::Generated::RelayApplications');
+    isa_ok($f->call_flows, 'SignalWire::REST::Namespaces::Generated::CallFlows');
+    isa_ok($f->conference_rooms, 'SignalWire::REST::Namespaces::Generated::ConferenceRooms');
+    isa_ok($f->freeswitch_connectors, 'SignalWire::REST::Namespaces::Generated::FreeswitchConnectors');
+    isa_ok($f->subscribers, 'SignalWire::REST::Namespaces::Generated::Subscribers');
+    isa_ok($f->sip_endpoints, 'SignalWire::REST::Namespaces::Generated::SipEndpoints');
+    isa_ok($f->cxml_scripts, 'SignalWire::REST::Namespaces::Generated::CxmlScripts');
+    isa_ok($f->cxml_applications, 'SignalWire::REST::Namespaces::Generated::CxmlApplications');
+    isa_ok($f->swml_webhooks, 'SignalWire::REST::Namespaces::Generated::SwmlWebhooks');
+    isa_ok($f->ai_agents, 'SignalWire::REST::Namespaces::Generated::AiAgents');
+    isa_ok($f->sip_gateways, 'SignalWire::REST::Namespaces::Generated::SipGateways');
+    isa_ok($f->cxml_webhooks, 'SignalWire::REST::Namespaces::Generated::CxmlWebhooks');
+    isa_ok($f->resources, 'SignalWire::REST::Namespaces::Generated::GenericResources');
+    isa_ok($f->addresses, 'SignalWire::REST::Namespaces::Generated::FabricAddresses');
+    isa_ok($f->tokens, 'SignalWire::REST::Namespaces::Generated::FabricTokens');
 
     # CallFlows has version methods
     ok($f->call_flows->can('list_versions'), 'call_flows has list_versions');
@@ -246,9 +185,10 @@ use_ok('SignalWire::REST::RestClient');
     ok($f->subscribers->can('list_sip_endpoints'), 'subscribers has list_sip_endpoints');
     ok($f->subscribers->can('create_sip_endpoint'), 'subscribers has create_sip_endpoint');
 
-    # CxmlApplications create dies
-    eval { $f->cxml_applications->create(name => 'test') };
-    like($@, qr/cannot be created/, 'cxml_applications create dies');
+    # CxmlApplications is a BaseResource with NO create (cXML apps can't be created
+    # via the API) — the generated class simply doesn't provide the method.
+    ok(!$f->cxml_applications->can('create'), 'cxml_applications has no create');
+    ok($f->cxml_applications->can('update'), 'cxml_applications has update');
 
     # Tokens has methods
     ok($f->tokens->can('create_subscriber_token'), 'tokens has create_subscriber_token');
@@ -265,7 +205,7 @@ use_ok('SignalWire::REST::RestClient');
 
     # Has all command methods
     my @methods = qw(
-        dial update_call end transfer disconnect
+        dial update end transfer disconnect
         play play_pause play_resume play_stop play_volume
         record record_pause record_resume record_stop
         collect collect_stop collect_start_input_timers
@@ -290,7 +230,7 @@ use_ok('SignalWire::REST::RestClient');
         project => 'p', token => 't', host => 'h',
     );
     my $ds = $client->datasphere;
-    isa_ok($ds->documents, 'SignalWire::REST::Namespaces::Datasphere::Documents');
+    isa_ok($ds->documents, 'SignalWire::REST::Namespaces::Generated::DatasphereDocuments');
     ok($ds->documents->can('search'), 'documents has search');
     ok($ds->documents->can('list_chunks'), 'documents has list_chunks');
     ok($ds->documents->can('get_chunk'), 'documents has get_chunk');
@@ -304,60 +244,18 @@ use_ok('SignalWire::REST::RestClient');
     );
     my $v = $client->video;
 
-    isa_ok($v->rooms, 'SignalWire::REST::Namespaces::Video::Rooms');
-    isa_ok($v->room_tokens, 'SignalWire::REST::Namespaces::Video::RoomTokens');
-    isa_ok($v->room_sessions, 'SignalWire::REST::Namespaces::Video::RoomSessions');
-    isa_ok($v->room_recordings, 'SignalWire::REST::Namespaces::Video::RoomRecordings');
-    isa_ok($v->conferences, 'SignalWire::REST::Namespaces::Video::Conferences');
-    isa_ok($v->conference_tokens, 'SignalWire::REST::Namespaces::Video::ConferenceTokens');
-    isa_ok($v->streams, 'SignalWire::REST::Namespaces::Video::Streams');
+    isa_ok($v->rooms, 'SignalWire::REST::Namespaces::Generated::VideoRooms');
+    isa_ok($v->room_tokens, 'SignalWire::REST::Namespaces::Generated::VideoRoomTokens');
+    isa_ok($v->room_sessions, 'SignalWire::REST::Namespaces::Generated::VideoRoomSessions');
+    isa_ok($v->room_recordings, 'SignalWire::REST::Namespaces::Generated::VideoRoomRecordings');
+    isa_ok($v->conferences, 'SignalWire::REST::Namespaces::Generated::VideoConferences');
+    isa_ok($v->conference_tokens, 'SignalWire::REST::Namespaces::Generated::VideoConferenceTokens');
+    isa_ok($v->streams, 'SignalWire::REST::Namespaces::Generated::VideoStreams');
 
     ok($v->rooms->can('list_streams'), 'rooms has list_streams');
     ok($v->rooms->can('create_stream'), 'rooms has create_stream');
     ok($v->room_sessions->can('list_events'), 'room_sessions has list_events');
     ok($v->room_sessions->can('list_members'), 'room_sessions has list_members');
-}
-
-# ===== Compat Namespace =====
-{
-    my $client = SignalWire::REST::RestClient->new(
-        project => 'p', token => 't', host => 'h',
-    );
-    my $c = $client->compat;
-    is($c->account_sid, 'p', 'compat uses project as account_sid');
-
-    isa_ok($c->accounts, 'SignalWire::REST::Namespaces::Compat::Accounts');
-    isa_ok($c->calls, 'SignalWire::REST::Namespaces::Compat::Calls');
-    isa_ok($c->messages, 'SignalWire::REST::Namespaces::Compat::Messages');
-    isa_ok($c->faxes, 'SignalWire::REST::Namespaces::Compat::Faxes');
-    isa_ok($c->conferences, 'SignalWire::REST::Namespaces::Compat::Conferences');
-    isa_ok($c->phone_numbers, 'SignalWire::REST::Namespaces::Compat::PhoneNumbers');
-    isa_ok($c->applications, 'SignalWire::REST::Namespaces::Compat::Applications');
-    isa_ok($c->laml_bins, 'SignalWire::REST::Namespaces::Compat::LamlBins');
-    isa_ok($c->queues, 'SignalWire::REST::Namespaces::Compat::Queues');
-    isa_ok($c->recordings, 'SignalWire::REST::Namespaces::Compat::Recordings');
-    isa_ok($c->transcriptions, 'SignalWire::REST::Namespaces::Compat::Transcriptions');
-    isa_ok($c->tokens, 'SignalWire::REST::Namespaces::Compat::Tokens');
-
-    # Call sub-resources
-    ok($c->calls->can('start_recording'), 'compat calls has start_recording');
-    ok($c->calls->can('start_stream'), 'compat calls has start_stream');
-
-    # Message sub-resources
-    ok($c->messages->can('list_media'), 'compat messages has list_media');
-
-    # Conference sub-resources
-    ok($c->conferences->can('list_participants'), 'compat conferences has list_participants');
-    ok($c->conferences->can('list_recordings'), 'compat conferences has list_recordings');
-
-    # Phone numbers
-    ok($c->phone_numbers->can('search_local'), 'compat phone_numbers has search_local');
-    ok($c->phone_numbers->can('search_toll_free'), 'compat phone_numbers has search_toll_free');
-    ok($c->phone_numbers->can('import_number'), 'compat phone_numbers has import_number');
-
-    # Queues
-    ok($c->queues->can('list_members'), 'compat queues has list_members');
-    ok($c->queues->can('dequeue_member'), 'compat queues has dequeue_member');
 }
 
 # ===== Registry Namespace =====
@@ -367,10 +265,10 @@ use_ok('SignalWire::REST::RestClient');
     );
     my $r = $client->registry;
 
-    isa_ok($r->brands, 'SignalWire::REST::Namespaces::Registry::Brands');
-    isa_ok($r->campaigns, 'SignalWire::REST::Namespaces::Registry::Campaigns');
-    isa_ok($r->orders, 'SignalWire::REST::Namespaces::Registry::Orders');
-    isa_ok($r->numbers, 'SignalWire::REST::Namespaces::Registry::Numbers');
+    isa_ok($r->brands, 'SignalWire::REST::Namespaces::Generated::RegistryBrands');
+    isa_ok($r->campaigns, 'SignalWire::REST::Namespaces::Generated::RegistryCampaigns');
+    isa_ok($r->orders, 'SignalWire::REST::Namespaces::Generated::RegistryOrders');
+    isa_ok($r->numbers, 'SignalWire::REST::Namespaces::Generated::RegistryNumbers');
 
     ok($r->brands->can('list_campaigns'), 'brands has list_campaigns');
     ok($r->brands->can('create_campaign'), 'brands has create_campaign');
@@ -385,10 +283,10 @@ use_ok('SignalWire::REST::RestClient');
     );
     my $l = $client->logs;
 
-    isa_ok($l->messages, 'SignalWire::REST::Namespaces::Logs::Messages');
-    isa_ok($l->voice, 'SignalWire::REST::Namespaces::Logs::Voice');
-    isa_ok($l->fax, 'SignalWire::REST::Namespaces::Logs::Fax');
-    isa_ok($l->conferences, 'SignalWire::REST::Namespaces::Logs::Conferences');
+    isa_ok($l->messages, 'SignalWire::REST::Namespaces::Generated::MessageLogs');
+    isa_ok($l->voice, 'SignalWire::REST::Namespaces::Generated::VoiceLogs');
+    isa_ok($l->fax, 'SignalWire::REST::Namespaces::Generated::FaxLogs');
+    isa_ok($l->conferences, 'SignalWire::REST::Namespaces::Generated::ConferenceLogs');
 
     ok($l->voice->can('list_events'), 'voice logs has list_events');
 }
@@ -398,11 +296,11 @@ use_ok('SignalWire::REST::RestClient');
     my $client = SignalWire::REST::RestClient->new(
         project => 'p', token => 't', host => 'h',
     );
-    my $p = $client->project_ns;
-    isa_ok($p->tokens, 'SignalWire::REST::Namespaces::Project::Tokens');
+    my $p = $client->project;
+    isa_ok($p->tokens, 'SignalWire::REST::Namespaces::Generated::ProjectTokens');
     ok($p->tokens->can('create'), 'project tokens has create');
     ok($p->tokens->can('update'), 'project tokens has update');
-    ok($p->tokens->can('delete_token'), 'project tokens has delete_token');
+    ok($p->tokens->can('delete'), 'project tokens has delete');
 }
 
 # ===== PubSub and Chat =====

@@ -59,6 +59,98 @@ def _load_python_reference() -> dict:
 PYTHON_REFERENCE = _load_python_reference()
 
 
+# ---------------------------------------------------------------------------
+# Generated REST resource-tree signature projection (item B).
+#
+# The REST resource + client-tree surface is GENERATED (scripts/generate_rest.py).
+# Each generated package SignalWire::REST::Namespaces::Generated::<Name> projects
+# onto the oracle signature module signalwire.rest.namespaces.<ns>_resources_generated
+# (the 6 containers onto _client_tree_generated). Perl has no runtime-introspectable
+# signature, so the generator emits a `rest_signatures.json` SIDECAR carrying the
+# canonical typed-param records for every method it emits inline; we unfold those
+# onto the regex-parsed subs (the sidecar IS the source of truth — mirrors php/go).
+#
+# The generated resource classes INHERIT their CRUD (list/create/get/update/delete)
+# from the hand/generated bases; those methods are NOT emitted inline, so they carry
+# no sidecar record and we do NOT project them here. The cross-port DRIFT gate
+# resolves them structurally: the reference publishes a `crud_base` per resource
+# class, and `crud_satisfied()` treats a port that has the class (but no crud_base)
+# as satisfying the inherited CRUD methods (the binding lives in the reference; the
+# resolved per-method form is idiom). So projecting each class's OWN methods + a
+# constructor is sufficient for the method-set join this turn (typed create/update
+# bodies + the crud_base binding are the follow-up typed-inputs pass).
+GENERATED_SIG_PROJECTION = {
+    "Addresses": ("relay_rest", "Base"),
+    "AiAgents": ("fabric", "FabricResource"),
+    "CallFlows": ("fabric", "FabricResource"),
+    "Calling": ("calling", "Base"),
+    "Chat": ("chat", "Base"),
+    "ConferenceLogs": ("logs", "Base"),
+    "ConferenceRooms": ("fabric", "FabricResource"),
+    "CxmlApplications": ("fabric", "Base"),
+    "CxmlScripts": ("fabric", "FabricResource"),
+    "CxmlWebhooks": ("fabric", "FabricResource"),
+    "DatasphereDocuments": ("datasphere", "CrudResource"),
+    "DatasphereNamespace": ("_client_tree", "Base"),
+    "FabricAddresses": ("fabric", "ReadResource"),
+    "FabricNamespace": ("_client_tree", "Base"),
+    "FabricTokens": ("fabric", "Base"),
+    "FaxLogs": ("fax", "ReadResource"),
+    "FreeswitchConnectors": ("fabric", "FabricResource"),
+    "GenericResources": ("fabric", "Base"),
+    "ImportedNumbers": ("relay_rest", "Base"),
+    "LogsNamespace": ("_client_tree", "Base"),
+    "Lookup": ("relay_rest", "Base"),
+    "MessageLogs": ("message", "ReadResource"),
+    "Mfa": ("relay_rest", "Base"),
+    "NumberGroups": ("relay_rest", "CrudResource"),
+    "PhoneNumbers": ("relay_rest", "CrudResource"),
+    "ProjectNamespace": ("_client_tree", "Base"),
+    "ProjectTokens": ("project", "Base"),
+    "PubSub": ("pubsub", "Base"),
+    "Queues": ("relay_rest", "CrudResource"),
+    "Recordings": ("relay_rest", "Base"),
+    "RegistryBrands": ("relay_rest", "Base"),
+    "RegistryCampaigns": ("relay_rest", "Base"),
+    "RegistryNamespace": ("_client_tree", "Base"),
+    "RegistryNumbers": ("relay_rest", "Base"),
+    "RegistryOrders": ("relay_rest", "Base"),
+    "RelayApplications": ("fabric", "FabricResource"),
+    "ShortCodes": ("relay_rest", "Base"),
+    "SipEndpoints": ("fabric", "FabricResource"),
+    "SipGateways": ("fabric", "FabricResource"),
+    "SipProfile": ("relay_rest", "Base"),
+    "Subscribers": ("fabric", "FabricResource"),
+    "SwmlScripts": ("fabric", "FabricResource"),
+    "SwmlWebhooks": ("fabric", "FabricResource"),
+    "VerifiedCallers": ("relay_rest", "CrudResource"),
+    "VideoConferenceTokens": ("video", "Base"),
+    "VideoConferences": ("video", "CrudResource"),
+    "VideoNamespace": ("_client_tree", "Base"),
+    "VideoRoomRecordings": ("video", "Base"),
+    "VideoRoomSessions": ("video", "ReadResource"),
+    "VideoRoomTokens": ("video", "Base"),
+    "VideoRooms": ("video", "CrudResource"),
+    "VideoStreams": ("video", "Base"),
+    "VoiceLogs": ("voice", "ReadResource"),
+}
+
+# The two generated bases + client-tree containers project onto these oracle
+# signature classes under signalwire.rest._base (the Perl ReadResource == oracle
+# ReadResource; the Perl FabricResource carries list_addresses == CrudWithAddresses).
+GENERATED_BASE_MODULE = "signalwire.rest._base"
+
+
+def _load_rest_sidecar() -> dict:
+    p = PORT_ROOT / "lib" / "SignalWire" / "REST" / "Namespaces" / "Generated" / "rest_signatures.json"
+    if p.is_file():
+        return json.loads(p.read_text(encoding="utf-8")).get("methods", {})
+    return {}
+
+
+REST_SIDECAR = _load_rest_sidecar()
+
+
 def python_signature(module: str, cls: str | None, method: str) -> dict | None:
     """Return the Python reference signature for the given canonical
     (module, class, method). Returns None if not found."""
@@ -333,6 +425,106 @@ def _project_kwargs_from_python(
     return out
 
 
+def _generated_module(ns: str) -> str:
+    if ns == "_client_tree":
+        return "signalwire.rest.namespaces._client_tree_generated"
+    return f"signalwire.rest.namespaces.{ns}_resources_generated"
+
+
+def _sig_from_parsed_method(m: dict) -> dict:
+    """Best-effort signature for a generated method the sidecar doesn't cover
+    (should be rare — only methods emitted without a body record). Mirrors the
+    generic per-param handling in collect(): first positional is the receiver."""
+    params_out: list[dict] = []
+    for i, p in enumerate(m.get("parameters", [])):
+        pname = (p.get("name") or "").lstrip("+")
+        sigil = p.get("sigil", "")
+        if i == 0 and pname in ("self", "class", "s") and not sigil:
+            params_out.append({"name": "self", "kind": "cls" if pname == "class" else "self"})
+            continue
+        if not pname or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pname):
+            continue
+        param: dict = {"name": pname, "type": "any", "required": True}
+        if sigil == "@":
+            param["kind"] = "var_positional"; param["type"] = "list<any>"
+        elif sigil == "%":
+            param["kind"] = "var_keyword"; param["type"] = "dict<string,any>"
+        params_out.append(param)
+    if not params_out or params_out[0].get("kind") not in ("self", "cls"):
+        params_out.insert(0, {"name": "self", "kind": "self"})
+    return {"params": params_out, "returns": "any"}
+
+
+def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
+    """Project a generated resource/container/base class onto its oracle signature
+    module, unfolding the generator's typed-param SIDECAR onto each own method."""
+    # The two generated bases map onto signalwire.rest._base.
+    if gname in ("ReadResource", "FabricResource"):
+        cls = "ReadResource" if gname == "ReadResource" else "FabricResource"
+        methods: dict = {}
+        for meth in type_entry.get("methods", []):
+            name = meth.get("name", "")
+            if name in SKIP_METHODS or name.startswith("_"):
+                continue
+            # Perl Generated::FabricResource carries list_addresses -> the oracle
+            # houses it on CrudWithAddresses; keep the same base-module class map as
+            # the surface enumerator.
+            sidecar = REST_SIDECAR.get(f"{gname}::{name}")
+            sig = ({"params": [{"name": "self", "kind": "self"}] + [dict(r) for r in sidecar],
+                    "returns": "any"} if sidecar else _sig_from_parsed_method(meth))
+            methods[name] = sig
+        target_cls = "CrudWithAddresses" if gname == "FabricResource" else "ReadResource"
+        if methods:
+            out_modules.setdefault(GENERATED_BASE_MODULE, {"classes": {}})
+            out_modules[GENERATED_BASE_MODULE]["classes"].setdefault(target_cls, {"methods": {}})
+            out_modules[GENERATED_BASE_MODULE]["classes"][target_cls]["methods"].update(methods)
+        return
+
+    if gname == "ResourceTree":
+        return
+    proj = GENERATED_SIG_PROJECTION.get(gname)
+    if not proj:
+        return
+    ns, _base = proj
+    mod = _generated_module(ns)
+
+    methods = {
+        "__init__": {"params": [{"name": "self", "kind": "self"},
+                                {"name": "http", "type": "any", "required": True}],
+                     "returns": "void"},
+    }
+    for meth in type_entry.get("methods", []):
+        name = meth.get("name", "")
+        if name in SKIP_METHODS or (name.startswith("_") and not name.startswith("__")):
+            continue
+        # delete_resource -> delete (the CrudResource-base hand name), though the
+        # generated Base classes already emit `delete` directly.
+        canon = "delete" if name == "delete_resource" else name
+        sidecar = REST_SIDECAR.get(f"{gname}::{name}")
+        if sidecar is not None:
+            methods[canon] = {
+                "params": [{"name": "self", "kind": "self"}] + [dict(r) for r in sidecar],
+                "returns": "any",
+            }
+        else:
+            methods[canon] = _sig_from_parsed_method(meth)
+
+    # Container classes expose their sub-resource accessors as Moo `has ... lazy`
+    # attributes (init_arg => undef). The oracle records these as zero-arg getter
+    # methods (self -> class:<Resource>); emit them so the client-tree join matches.
+    for a in type_entry.get("attributes", []):
+        attr = (a.get("name") or "").lstrip("+")
+        if not attr or attr.startswith("_") or attr in methods:
+            continue
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
+            continue
+        methods[attr] = {"params": [{"name": "self", "kind": "self"}], "returns": "any"}
+
+    out_modules.setdefault(mod, {"classes": {}})
+    out_modules[mod]["classes"].setdefault(gname, {"methods": {}})
+    out_modules[mod]["classes"][gname]["methods"].update(methods)
+
+
 def collect(raw: dict) -> dict:
     out_modules: dict = {}
 
@@ -395,6 +587,13 @@ def collect(raw: dict) -> dict:
 
     for type_entry in raw.get("types", []):
         full = type_entry.get("full_name", "")
+
+        # --- Generated REST resource-tree projection (item B) ---
+        m = re.match(r"^SignalWire::REST::Namespaces::Generated::(\w+)$", full)
+        if m:
+            project_generated(m.group(1), type_entry, out_modules)
+            continue
+
         target = PACKAGE_TO_PY.get(full)
         if not target:
             # Port-only / not in mapping; skip (surface audit handles via PORT_ADDITIONS)

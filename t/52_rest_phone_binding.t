@@ -11,8 +11,8 @@ use Test::More;
 
 use SignalWire::REST::RestClient;
 use SignalWire::REST::PhoneCallHandler;
-use SignalWire::REST::Namespaces::PhoneNumbers;
-use SignalWire::REST::Namespaces::Fabric;
+use SignalWire::REST::Namespaces::Generated::PhoneNumbers;
+use SignalWire::REST::Namespaces::Generated::GenericResources;
 
 # ---------------------------------------------------------------------------
 # Mock HTTP client: records every call, returns a canned response.
@@ -49,10 +49,9 @@ package main;
 
 sub make_pn {
     my $http = MockHttp->new;
-    my $pn   = SignalWire::REST::Namespaces::PhoneNumbers->new(
-        _http      => $http,
-        _base_path => '/api/relay/rest/phone_numbers',
-    );
+    # The generated PhoneNumbers resource bakes its base path + PUT update verb
+    # into the constructor, so it builds from just _http.
+    my $pn = SignalWire::REST::Namespaces::Generated::PhoneNumbers->new( _http => $http );
     return ($pn, $http);
 }
 
@@ -122,7 +121,7 @@ subtest 'search -> /search' => sub {
 # ============================================================
 subtest 'set_swml_webhook' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_swml_webhook('pn-1', url => 'https://example.com/swml');
+    $pn->set_swml_webhook('pn-1', 'https://example.com/swml');
     my @calls = @{ $http->calls };
     is(scalar @calls, 1, 'exactly one HTTP call');
     is($calls[0]{method}, 'PUT', 'PUT');
@@ -139,17 +138,22 @@ subtest 'set_swml_webhook' => sub {
 
 subtest 'set_swml_webhook passes extra args through' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_swml_webhook('pn-1', url => 'https://example.com/swml', name => 'Support');
+    $pn->set_swml_webhook('pn-1', 'https://example.com/swml', name => 'Support');
     my $body = $http->calls->[0]{body};
     is($body->{call_handler}, 'relay_script', 'call_handler set');
     is($body->{call_relay_script_url}, 'https://example.com/swml', 'url set');
     is($body->{name}, 'Support', 'extra name arg passed through');
 };
 
-subtest 'set_swml_webhook requires url' => sub {
-    my ($pn) = make_pn();
-    eval { $pn->set_swml_webhook('pn-1') };
-    like($@, qr/'url' is required/, 'missing url dies');
+subtest 'set_swml_webhook url is a positional arg' => sub {
+    # The generated helper takes url as a POSITIONAL arg (matching the oracle
+    # signature set_swml_webhook(resource_id, url, **extra)); omitting it does not
+    # die — the body simply carries an undef url (the caller must supply it).
+    my ($pn, $http) = make_pn();
+    $pn->set_swml_webhook('pn-1');
+    my $body = $http->calls->[0]{body};
+    is($body->{call_handler}, 'relay_script', 'call_handler still set');
+    ok(exists $body->{call_relay_script_url}, 'url key present (undef when omitted)');
 };
 
 # ============================================================
@@ -157,7 +161,7 @@ subtest 'set_swml_webhook requires url' => sub {
 # ============================================================
 subtest 'set_cxml_webhook minimal' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_cxml_webhook('pn-1', url => 'https://example.com/voice.xml');
+    $pn->set_cxml_webhook('pn-1', 'https://example.com/voice.xml');
     is_deeply(
         $http->calls->[0]{body},
         {
@@ -172,9 +176,9 @@ subtest 'set_cxml_webhook with fallback and status' => sub {
     my ($pn, $http) = make_pn();
     $pn->set_cxml_webhook(
         'pn-1',
-        url                 => 'https://example.com/voice.xml',
-        fallback_url        => 'https://example.com/fallback.xml',
-        status_callback_url => 'https://example.com/status',
+        'https://example.com/voice.xml',
+        'https://example.com/fallback.xml',
+        'https://example.com/status',
     );
     is_deeply(
         $http->calls->[0]{body},
@@ -193,7 +197,7 @@ subtest 'set_cxml_webhook with fallback and status' => sub {
 # ============================================================
 subtest 'set_cxml_application' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_cxml_application('pn-1', application_id => 'app-1');
+    $pn->set_cxml_application('pn-1', 'app-1');
     is_deeply(
         $http->calls->[0]{body},
         {
@@ -209,7 +213,7 @@ subtest 'set_cxml_application' => sub {
 # ============================================================
 subtest 'set_ai_agent' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_ai_agent('pn-1', agent_id => 'agent-1');
+    $pn->set_ai_agent('pn-1', 'agent-1');
     is_deeply(
         $http->calls->[0]{body},
         {
@@ -225,7 +229,7 @@ subtest 'set_ai_agent' => sub {
 # ============================================================
 subtest 'set_call_flow minimal' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_call_flow('pn-1', flow_id => 'cf-1');
+    $pn->set_call_flow('pn-1', 'cf-1');
     is_deeply(
         $http->calls->[0]{body},
         {
@@ -238,7 +242,7 @@ subtest 'set_call_flow minimal' => sub {
 
 subtest 'set_call_flow with version' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_call_flow('pn-1', flow_id => 'cf-1', version => 'current_deployed');
+    $pn->set_call_flow('pn-1', 'cf-1', 'current_deployed');
     is_deeply(
         $http->calls->[0]{body},
         {
@@ -255,7 +259,7 @@ subtest 'set_call_flow with version' => sub {
 # ============================================================
 subtest 'set_relay_application' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_relay_application('pn-1', name => 'my-app');
+    $pn->set_relay_application('pn-1', 'my-app');
     is_deeply(
         $http->calls->[0]{body},
         {
@@ -271,7 +275,7 @@ subtest 'set_relay_application' => sub {
 # ============================================================
 subtest 'set_relay_topic minimal' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_relay_topic('pn-1', topic => 'office');
+    $pn->set_relay_topic('pn-1', 'office');
     is_deeply(
         $http->calls->[0]{body},
         {
@@ -286,8 +290,8 @@ subtest 'set_relay_topic with status callback' => sub {
     my ($pn, $http) = make_pn();
     $pn->set_relay_topic(
         'pn-1',
-        topic               => 'office',
-        status_callback_url => 'https://example.com/status',
+        'office',
+        'https://example.com/status',
     );
     is_deeply(
         $http->calls->[0]{body},
@@ -305,7 +309,7 @@ subtest 'set_relay_topic with status callback' => sub {
 # ============================================================
 subtest 'regression: set_swml_webhook does not pre-create fabric webhook' => sub {
     my ($pn, $http) = make_pn();
-    $pn->set_swml_webhook('pn-1', url => 'https://example.com/swml');
+    $pn->set_swml_webhook('pn-1', 'https://example.com/swml');
     my @calls = @{ $http->calls };
     # Exactly one HTTP call (no pre-create of swml_webhooks Fabric resource,
     # no separate assign_phone_route POST).
@@ -357,7 +361,12 @@ subtest 'all seven helpers present on phone_numbers namespace' => sub {
 };
 
 # ============================================================
-# 12. Deprecation warnings on the legacy paths
+# 12. Generated fabric resources: the phone-binding is done via
+#     phone_numbers->set_* (above); the generated GenericResources.assign_phone_route
+#     is a plain POST with no deprecation carp (the L5 deprecation scaffolding —
+#     AutoMaterializedWebhook create-wrappers, the assign_phone_route carp, and the
+#     deprecated-create SwmlWebhooks/CxmlWebhooks subclasses — was dropped when the
+#     REST resource layer became spec-generated).
 # ============================================================
 sub _capture_warnings {
     my $fn = shift;
@@ -368,24 +377,15 @@ sub _capture_warnings {
     return { warnings => \@warnings, result => $ret, error => $err };
 }
 
-subtest 'assign_phone_route emits deprecation warning but still POSTs' => sub {
-    my $client = SignalWire::REST::RestClient->new(
-        project => 'p', token => 't', host => 'h',
-    );
+subtest 'assign_phone_route is a plain POST (no deprecation carp)' => sub {
     my $http = MockHttp->new;
-    my $resources = SignalWire::REST::Namespaces::Fabric::GenericResources->new(
-        _http      => $http,
-        _base_path => '/api/fabric/resources',
-    );
+    my $resources =
+        SignalWire::REST::Namespaces::Generated::GenericResources->new( _http => $http );
     my $captured = _capture_warnings(sub {
         $resources->assign_phone_route('res-1', phone_route_id => 'pr-1');
     });
-    my @warnings = @{ $captured->{warnings} };
-    ok(scalar @warnings >= 1, 'at least one warning emitted');
-    like($warnings[0], qr/DEPRECATED/, 'warning says DEPRECATED');
-    like($warnings[0], qr/phone_numbers->set_/, 'warning points at helpers');
+    is(scalar @{ $captured->{warnings} }, 0, 'no deprecation warning');
 
-    # But the call still POSTed for backcompat.
     my @calls = @{ $http->calls };
     is(scalar @calls, 1, 'one POST was made');
     is($calls[0]{method}, 'POST', 'POST method');
@@ -393,87 +393,17 @@ subtest 'assign_phone_route emits deprecation warning but still POSTs' => sub {
     is_deeply($calls[0]{body}, { phone_route_id => 'pr-1' }, 'body passed through');
 };
 
-subtest 'swml_webhooks->create emits deprecation warning pointing at helper' => sub {
-    my $client = SignalWire::REST::RestClient->new(
-        project => 'p', token => 't', host => 'h',
-    );
-    my $http = MockHttp->new(response => { id => 'sw-1' });
-    my $swh = SignalWire::REST::Namespaces::Fabric::SwmlWebhooks->new(
-        _http      => $http,
-        _base_path => '/api/fabric/resources/swml_webhooks',
-    );
-    my $captured = _capture_warnings(sub {
-        $swh->create(
-            name                => 'Orphan',
-            primary_request_url => 'https://example.com/swml',
-        );
-    });
-    my @warnings = @{ $captured->{warnings} };
-    ok(scalar @warnings >= 1, 'deprecation warning emitted');
-    like($warnings[0], qr/DEPRECATED/, 'says DEPRECATED');
-    like($warnings[0], qr/set_swml_webhook/, 'points at set_swml_webhook');
-
-    # create still works (backcompat).
-    my @calls = @{ $http->calls };
-    is(scalar @calls, 1, 'POST was made');
-    is($calls[0]{method}, 'POST', 'POST');
-    is($calls[0]{path}, '/api/fabric/resources/swml_webhooks', 'path');
-};
-
-subtest 'cxml_webhooks->create emits deprecation warning pointing at helper' => sub {
-    my $http = MockHttp->new(response => { id => 'cw-1' });
-    my $cwh = SignalWire::REST::Namespaces::Fabric::CxmlWebhooks->new(
-        _http      => $http,
-        _base_path => '/api/fabric/resources/cxml_webhooks',
-    );
-    my $captured = _capture_warnings(sub {
-        $cwh->create(
-            name                => 'Orphan',
-            primary_request_url => 'https://example.com/voice.xml',
-        );
-    });
-    my @warnings = @{ $captured->{warnings} };
-    ok(scalar @warnings >= 1, 'deprecation warning emitted');
-    like($warnings[0], qr/set_cxml_webhook/, 'points at set_cxml_webhook');
-};
-
-subtest 'swml/cxml_webhooks list/get/update/delete DO NOT warn' => sub {
-    my $http = MockHttp->new(response => { data => [] });
-    my $swh = SignalWire::REST::Namespaces::Fabric::SwmlWebhooks->new(
-        _http      => $http,
-        _base_path => '/api/fabric/resources/swml_webhooks',
-    );
-    for my $op (
-        sub { $swh->list },
-        sub { $swh->get('sw-1') },
-        sub { $swh->update('sw-1', name => 'Updated') },
-        sub { $swh->delete_resource('sw-1') },
-    ) {
-        my $captured = _capture_warnings($op);
-        is(scalar @{ $captured->{warnings} }, 0,
-            'no deprecation warning on non-create op');
-    }
-};
-
-subtest 'wired class types survive the deprecation refactor' => sub {
-    # swml_webhooks is now a SwmlWebhooks (subclass of Resource), cxml_webhooks
-    # is a CxmlWebhooks (subclass of Resource). Legacy isa_ok against the base
-    # class should still succeed via inheritance.
+subtest 'swml_webhooks / cxml_webhooks are plain FabricResource classes' => sub {
     my $client = SignalWire::REST::RestClient->new(
         project => 'p', token => 't', host => 'h',
     );
     isa_ok($client->fabric->swml_webhooks,
-        'SignalWire::REST::Namespaces::Fabric::Resource',
-        'swml_webhooks still isa Resource');
+        'SignalWire::REST::Namespaces::Generated::SwmlWebhooks');
     isa_ok($client->fabric->cxml_webhooks,
-        'SignalWire::REST::Namespaces::Fabric::Resource',
-        'cxml_webhooks still isa Resource');
-    isa_ok($client->fabric->swml_webhooks,
-        'SignalWire::REST::Namespaces::Fabric::SwmlWebhooks',
-        'swml_webhooks is specifically SwmlWebhooks');
-    isa_ok($client->fabric->cxml_webhooks,
-        'SignalWire::REST::Namespaces::Fabric::CxmlWebhooks',
-        'cxml_webhooks is specifically CxmlWebhooks');
+        'SignalWire::REST::Namespaces::Generated::CxmlWebhooks');
+    # They expose create (a plain FabricResource create — no deprecation carp).
+    ok($client->fabric->swml_webhooks->can('create'), 'swml_webhooks has create');
+    ok($client->fabric->cxml_webhooks->can('create'), 'cxml_webhooks has create');
 };
 
 done_testing;

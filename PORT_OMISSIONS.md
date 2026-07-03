@@ -592,8 +592,7 @@ signalwire.relay.event.TranscribeEvent.from_payload: not_yet_implemented: relay 
 signalwire.relay.event.parse_event: not_yet_implemented: relay feature pending — relay client is functional but incomplete
 signalwire.relay.message.Message.__repr__: not_yet_implemented: relay feature pending — relay client is functional but incomplete
 signalwire.relay.message.Message.result: not_yet_implemented: relay feature pending — relay client is functional but incomplete
-signalwire.rest._base.CrudWithAddresses: not_yet_implemented: REST coverage pending for this resource method
-signalwire.rest._base.CrudWithAddresses.list_addresses: not_yet_implemented: REST coverage pending for this resource method
+signalwire.rest._base.FabricResourcePUT: perl_base_collapse: the Perl generated FabricResource base collapses the reference's CrudWithAddresses -> FabricResource(PATCH) / FabricResourcePUT(PUT) marker split into a single base carrying list_addresses; the PUT vs PATCH verb is baked per-resource via _update_method in each generated class's BUILDARGS, so there is no separate PUT marker class.
 signalwire.rest.namespaces.addresses.AddressesResource.delete: not_yet_implemented: REST coverage pending for this resource method
 signalwire.rest.namespaces.calling.CallingNamespace.update: not_yet_implemented: REST coverage pending for this resource method
 signalwire.rest.namespaces.datasphere.DatasphereNamespace: not_yet_implemented: REST coverage pending for this resource method
