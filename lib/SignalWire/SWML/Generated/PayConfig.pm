@@ -11,23 +11,23 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'payment_connector_url' => ( is => 'ro' );
-has 'charge_amount' => ( is => 'ro' );
-has 'currency' => ( is => 'ro' );
-has 'description' => ( is => 'ro' );
-has 'input' => ( is => 'ro' );
-has 'language' => ( is => 'ro' );
-has 'max_attempts' => ( is => 'ro' );
+has 'payment_connector_url'  => ( is => 'ro' );
+has 'charge_amount'          => ( is => 'ro' );
+has 'currency'               => ( is => 'ro' );
+has 'description'            => ( is => 'ro' );
+has 'input'                  => ( is => 'ro' );
+has 'language'               => ( is => 'ro' );
+has 'max_attempts'           => ( is => 'ro' );
 has 'min_postal_code_length' => ( is => 'ro' );
-has 'parameters' => ( is => 'ro' );
-has 'payment_method' => ( is => 'ro' );
-has 'postal_code' => ( is => 'ro' );
-has 'prompts' => ( is => 'ro' );
-has 'security_code' => ( is => 'ro' );
-has 'status_url' => ( is => 'ro' );
-has 'timeout' => ( is => 'ro' );
-has 'token_type' => ( is => 'ro' );
-has 'valid_card_types' => ( is => 'ro' );
-has 'voice' => ( is => 'ro' );
+has 'parameters'             => ( is => 'ro' );
+has 'payment_method'         => ( is => 'ro' );
+has 'postal_code'            => ( is => 'ro' );
+has 'prompts'                => ( is => 'ro' );
+has 'security_code'          => ( is => 'ro' );
+has 'status_url'             => ( is => 'ro' );
+has 'timeout'                => ( is => 'ro' );
+has 'token_type'             => ( is => 'ro' );
+has 'valid_card_types'       => ( is => 'ro' );
+has 'voice'                  => ( is => 'ro' );
 
 1;

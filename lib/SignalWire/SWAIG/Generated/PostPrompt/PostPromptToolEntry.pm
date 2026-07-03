@@ -11,20 +11,20 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'role' => ( is => 'ro' );
-has 'tool_call_id' => ( is => 'ro' );
-has 'content' => ( is => 'ro' );
-has 'timestamp' => ( is => 'ro' );
-has 'function_name' => ( is => 'ro' );
-has 'latency' => ( is => 'ro' );
-has 'utterance_latency' => ( is => 'ro' );
-has 'function_latency' => ( is => 'ro' );
-has 'audio_latency' => ( is => 'ro' );
-has 'execution_latency' => ( is => 'ro' );
+has 'role'                => ( is => 'ro' );
+has 'tool_call_id'        => ( is => 'ro' );
+has 'content'             => ( is => 'ro' );
+has 'timestamp'           => ( is => 'ro' );
+has 'function_name'       => ( is => 'ro' );
+has 'latency'             => ( is => 'ro' );
+has 'utterance_latency'   => ( is => 'ro' );
+has 'function_latency'    => ( is => 'ro' );
+has 'audio_latency'       => ( is => 'ro' );
+has 'execution_latency'   => ( is => 'ro' );
 has 'deprecation_warning' => ( is => 'ro' );
-has 'start_timestamp' => ( is => 'ro' );
-has 'end_timestamp' => ( is => 'ro' );
-has 'distilled' => ( is => 'ro' );
-has 'original_result' => ( is => 'ro' );
+has 'start_timestamp'     => ( is => 'ro' );
+has 'end_timestamp'       => ( is => 'ro' );
+has 'distilled'           => ( is => 'ro' );
+has 'original_result'     => ( is => 'ro' );
 
 1;

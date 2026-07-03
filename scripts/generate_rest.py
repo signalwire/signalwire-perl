@@ -52,6 +52,9 @@ import json
 import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _perltidy_gen import perltidy_outputs  # noqa: E402
 from pathlib import Path
 
 try:
@@ -445,8 +448,11 @@ def method_call_path(spec: Spec, anchor: str, markup: dict, op_path: str):
         expr = abs_perl_path(full, id_args)
     elif not pieces:
         expr = "$self->_base_path"
+    elif len(pieces) == 1:
+        expr = "$self->_path(" + pieces[0] + ")"
     else:
-        expr = "$self->_path(" + ", ".join(pieces) + ")"
+        # perltidy pads the inside of multi-arg parens: `( a, b )`.
+        expr = "$self->_path( " + ", ".join(pieces) + " )"
     return id_args, expr
 
 
@@ -498,7 +504,7 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
             _register_sidecar(cls, name, body_field_records(spec, fields, id_records))
             lines.append(f"sub {name} {{")
             lines.append(f"    my ( $self{id_unpack}, %args ) = @_;")
-            lines.append("    my $body = { %args };")
+            lines.append("    my $body = {%args};")
             verb_fn = {"post": "post", "put": "put", "patch": "patch"}[verb]
             lines.append(f"    return $self->_http->{verb_fn}( {path_expr}, body => $body );")
             lines.append("}")
@@ -1297,6 +1303,21 @@ def build_outputs(psdk: Path) -> dict[str, str]:
         },
         indent=2, sort_keys=False,
     ) + "\n"
+
+    # -------------------------------------------------------------------
+    # perltidy backstop (AGENT_RULES §5). The emit templates target
+    # perltidy's style directly (e.g. `{%args}` not `{ %args }`, padded
+    # multi-arg parens), but perltidy also applies context-dependent
+    # ALIGNMENT (has-declaration `=>` columns, trailing `()` on use-lines,
+    # long method-call wrapping) that a straight-line emitter cannot
+    # reproduce by hand. Run perltidy over every generated `.pm` as a final
+    # pass so a fresh regen is byte-identical to `perltidy --assert-tidy`
+    # output — GEN-FRESH (compares these outs to disk) and the FMT gate
+    # (asserts tidy on disk) then BOTH pass simultaneously. This is the
+    # verify-only backstop; the template-level fixes above keep its work
+    # minimal (a no-op would mean zero template drift).
+    perltidy_outputs(outs, repo_root())
+
     return outs
 
 

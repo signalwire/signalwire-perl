@@ -78,7 +78,6 @@ PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c examples/simple_agent.pl
 | [datasphere_multi_instance.pl](datasphere_multi_instance.pl) | DataSphere multi-instance with custom tool names |
 | [datasphere_serverless_env.pl](datasphere_serverless_env.pl) | DataSphere serverless from environment variables |
 | [datasphere_webhook_env.pl](datasphere_webhook_env.pl) | Webhook-based DataSphere from environment variables |
-| [mcp_gateway.pl](mcp_gateway.pl) | MCP Gateway skill for bridging Model Context Protocol tools |
 
 ### SWAIG Features
 
@@ -172,10 +171,3 @@ For joke agent:
 export API_NINJAS_KEY=your-api-key
 ```
 
-For MCP Gateway:
-
-```bash
-export MCP_GATEWAY_URL=http://localhost:8080
-export MCP_GATEWAY_AUTH_USER=admin
-export MCP_GATEWAY_AUTH_PASSWORD=changeme
-```

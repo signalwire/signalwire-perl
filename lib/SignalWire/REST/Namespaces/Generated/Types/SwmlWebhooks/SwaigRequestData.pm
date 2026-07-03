@@ -11,17 +11,17 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'call_id' => ( is => 'ro' );
-has 'ai_session_id' => ( is => 'ro' );
-has 'app_name' => ( is => 'ro' );
-has 'project_id' => ( is => 'ro' );
-has 'space_id' => ( is => 'ro' );
-has 'action' => ( is => 'ro' );
-has 'function' => ( is => 'ro' );
-has 'argument' => ( is => 'ro' );
-has 'meta_data' => ( is => 'ro' );
+has 'call_id'         => ( is => 'ro' );
+has 'ai_session_id'   => ( is => 'ro' );
+has 'app_name'        => ( is => 'ro' );
+has 'project_id'      => ( is => 'ro' );
+has 'space_id'        => ( is => 'ro' );
+has 'action'          => ( is => 'ro' );
+has 'function'        => ( is => 'ro' );
+has 'argument'        => ( is => 'ro' );
+has 'meta_data'       => ( is => 'ro' );
 has 'conversation_id' => ( is => 'ro' );
-has 'content_type' => ( is => 'ro' );
-has 'version' => ( is => 'ro' );
+has 'content_type'    => ( is => 'ro' );
+has 'version'         => ( is => 'ro' );
 
 1;

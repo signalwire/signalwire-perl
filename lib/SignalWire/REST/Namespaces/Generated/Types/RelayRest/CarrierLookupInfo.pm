@@ -11,14 +11,14 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'lrn' => ( is => 'ro' );
-has 'spid' => ( is => 'ro' );
-has 'ocn' => ( is => 'ro' );
-has 'lata' => ( is => 'ro' );
-has 'city' => ( is => 'ro' );
-has 'state' => ( is => 'ro' );
+has 'lrn'          => ( is => 'ro' );
+has 'spid'         => ( is => 'ro' );
+has 'ocn'          => ( is => 'ro' );
+has 'lata'         => ( is => 'ro' );
+has 'city'         => ( is => 'ro' );
+has 'state'        => ( is => 'ro' );
 has 'jurisdiction' => ( is => 'ro' );
-has 'lec' => ( is => 'ro' );
-has 'linetype' => ( is => 'ro' );
+has 'lec'          => ( is => 'ro' );
+has 'linetype'     => ( is => 'ro' );
 
 1;

@@ -11,23 +11,23 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'id' => ( is => 'ro' );
-has 'name' => ( is => 'ro' );
-has 'number' => ( is => 'ro' );
-has 'capabilities' => ( is => 'ro' );
-has 'number_type' => ( is => 'ro' );
-has 'code_type' => ( is => 'ro' );
-has 'country_code' => ( is => 'ro' );
-has 'created_at' => ( is => 'ro' );
-has 'updated_at' => ( is => 'ro' );
-has 'next_billed_at' => ( is => 'ro' );
-has 'lease_duration' => ( is => 'ro' );
-has 'message_handler' => ( is => 'ro' );
-has 'message_request_url' => ( is => 'ro' );
-has 'message_request_method' => ( is => 'ro' );
-has 'message_fallback_url' => ( is => 'ro' );
-has 'message_fallback_method' => ( is => 'ro' );
+has 'id'                          => ( is => 'ro' );
+has 'name'                        => ( is => 'ro' );
+has 'number'                      => ( is => 'ro' );
+has 'capabilities'                => ( is => 'ro' );
+has 'number_type'                 => ( is => 'ro' );
+has 'code_type'                   => ( is => 'ro' );
+has 'country_code'                => ( is => 'ro' );
+has 'created_at'                  => ( is => 'ro' );
+has 'updated_at'                  => ( is => 'ro' );
+has 'next_billed_at'              => ( is => 'ro' );
+has 'lease_duration'              => ( is => 'ro' );
+has 'message_handler'             => ( is => 'ro' );
+has 'message_request_url'         => ( is => 'ro' );
+has 'message_request_method'      => ( is => 'ro' );
+has 'message_fallback_url'        => ( is => 'ro' );
+has 'message_fallback_method'     => ( is => 'ro' );
 has 'message_laml_application_id' => ( is => 'ro' );
-has 'message_relay_context' => ( is => 'ro' );
+has 'message_relay_context'       => ( is => 'ro' );
 
 1;

@@ -9,40 +9,40 @@ package SignalWire::REST::Namespaces::Generated::FabricNamespace;
 use strict;
 use warnings;
 use Moo;
-use SignalWire::REST::Namespaces::Generated::FabricAddresses ();
-use SignalWire::REST::Namespaces::Generated::GenericResources ();
-use SignalWire::REST::Namespaces::Generated::AiAgents ();
-use SignalWire::REST::Namespaces::Generated::CallFlows ();
-use SignalWire::REST::Namespaces::Generated::ConferenceRooms ();
-use SignalWire::REST::Namespaces::Generated::CxmlApplications ();
-use SignalWire::REST::Namespaces::Generated::CxmlScripts ();
-use SignalWire::REST::Namespaces::Generated::CxmlWebhooks ();
+use SignalWire::REST::Namespaces::Generated::FabricAddresses      ();
+use SignalWire::REST::Namespaces::Generated::GenericResources     ();
+use SignalWire::REST::Namespaces::Generated::AiAgents             ();
+use SignalWire::REST::Namespaces::Generated::CallFlows            ();
+use SignalWire::REST::Namespaces::Generated::ConferenceRooms      ();
+use SignalWire::REST::Namespaces::Generated::CxmlApplications     ();
+use SignalWire::REST::Namespaces::Generated::CxmlScripts          ();
+use SignalWire::REST::Namespaces::Generated::CxmlWebhooks         ();
 use SignalWire::REST::Namespaces::Generated::FreeswitchConnectors ();
-use SignalWire::REST::Namespaces::Generated::RelayApplications ();
-use SignalWire::REST::Namespaces::Generated::SipEndpoints ();
-use SignalWire::REST::Namespaces::Generated::SipGateways ();
-use SignalWire::REST::Namespaces::Generated::Subscribers ();
-use SignalWire::REST::Namespaces::Generated::SwmlScripts ();
-use SignalWire::REST::Namespaces::Generated::SwmlWebhooks ();
-use SignalWire::REST::Namespaces::Generated::FabricTokens ();
+use SignalWire::REST::Namespaces::Generated::RelayApplications    ();
+use SignalWire::REST::Namespaces::Generated::SipEndpoints         ();
+use SignalWire::REST::Namespaces::Generated::SipGateways          ();
+use SignalWire::REST::Namespaces::Generated::Subscribers          ();
+use SignalWire::REST::Namespaces::Generated::SwmlScripts          ();
+use SignalWire::REST::Namespaces::Generated::SwmlWebhooks         ();
+use SignalWire::REST::Namespaces::Generated::FabricTokens         ();
 
-has '_http' => ( is => 'ro', required => 1 );
-has 'addresses' => ( is => 'lazy', init_arg => undef );
-has 'resources' => ( is => 'lazy', init_arg => undef );
-has 'ai_agents' => ( is => 'lazy', init_arg => undef );
-has 'call_flows' => ( is => 'lazy', init_arg => undef );
-has 'conference_rooms' => ( is => 'lazy', init_arg => undef );
-has 'cxml_applications' => ( is => 'lazy', init_arg => undef );
-has 'cxml_scripts' => ( is => 'lazy', init_arg => undef );
-has 'cxml_webhooks' => ( is => 'lazy', init_arg => undef );
+has '_http'                 => ( is => 'ro',   required => 1 );
+has 'addresses'             => ( is => 'lazy', init_arg => undef );
+has 'resources'             => ( is => 'lazy', init_arg => undef );
+has 'ai_agents'             => ( is => 'lazy', init_arg => undef );
+has 'call_flows'            => ( is => 'lazy', init_arg => undef );
+has 'conference_rooms'      => ( is => 'lazy', init_arg => undef );
+has 'cxml_applications'     => ( is => 'lazy', init_arg => undef );
+has 'cxml_scripts'          => ( is => 'lazy', init_arg => undef );
+has 'cxml_webhooks'         => ( is => 'lazy', init_arg => undef );
 has 'freeswitch_connectors' => ( is => 'lazy', init_arg => undef );
-has 'relay_applications' => ( is => 'lazy', init_arg => undef );
-has 'sip_endpoints' => ( is => 'lazy', init_arg => undef );
-has 'sip_gateways' => ( is => 'lazy', init_arg => undef );
-has 'subscribers' => ( is => 'lazy', init_arg => undef );
-has 'swml_scripts' => ( is => 'lazy', init_arg => undef );
-has 'swml_webhooks' => ( is => 'lazy', init_arg => undef );
-has 'tokens' => ( is => 'lazy', init_arg => undef );
+has 'relay_applications'    => ( is => 'lazy', init_arg => undef );
+has 'sip_endpoints'         => ( is => 'lazy', init_arg => undef );
+has 'sip_gateways'          => ( is => 'lazy', init_arg => undef );
+has 'subscribers'           => ( is => 'lazy', init_arg => undef );
+has 'swml_scripts'          => ( is => 'lazy', init_arg => undef );
+has 'swml_webhooks'         => ( is => 'lazy', init_arg => undef );
+has 'tokens'                => ( is => 'lazy', init_arg => undef );
 
 sub _build_addresses {
     my ($self) = @_;
@@ -86,7 +86,8 @@ sub _build_cxml_webhooks {
 
 sub _build_freeswitch_connectors {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Generated::FreeswitchConnectors->new( _http => $self->_http );
+    return SignalWire::REST::Namespaces::Generated::FreeswitchConnectors->new(
+        _http => $self->_http );
 }
 
 sub _build_relay_applications {

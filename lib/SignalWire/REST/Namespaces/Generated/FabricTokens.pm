@@ -19,31 +19,31 @@ around BUILDARGS => sub {
 
 sub create_subscriber_token {
     my ( $self, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->post( '/api/fabric/subscribers/tokens', body => $body );
 }
 
 sub refresh_subscriber_token {
     my ( $self, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->post( '/api/fabric/subscribers/tokens/refresh', body => $body );
 }
 
 sub create_invite_token {
     my ( $self, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->post( '/api/fabric/subscriber/invites', body => $body );
 }
 
 sub create_guest_token {
     my ( $self, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->post( '/api/fabric/guests/tokens', body => $body );
 }
 
 sub create_embed_token {
     my ( $self, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->post( '/api/fabric/embeds/tokens', body => $body );
 }
 

@@ -46,7 +46,10 @@ sub _trivia_url {
 
 sub setup { return 1 }
 
-sub register_tools {
+# Python parity: get_tools returns the raw SWAIG tool DEFINITION hash(es)
+# (the DataMap tool the skill provides). register_tools builds on top of
+# this by registering each returned tool with the agent.
+sub get_tools {
     my ($self)     = @_;
     my $tool_name  = $self->params->{tool_name}  // 'get_trivia';
     my $api_key    = $self->params->{api_key}    // '';
@@ -64,7 +67,7 @@ sub register_tools {
 
     my $url = _trivia_url();
 
-    return $self->agent->register_swaig_function(
+    return [
         {
             function    => $tool_name,
             description => "Get trivia questions for " . ( $tool_name =~ s/_/ /gr ),
@@ -93,7 +96,16 @@ sub register_tools {
                 output     => $no_results,
             },
         }
-    );
+    ];
+}
+
+sub register_tools {
+    my ($self) = @_;
+    my $result;
+    for my $tool ( @{ $self->get_tools } ) {
+        $result = $self->agent->register_swaig_function($tool);
+    }
+    return $result;
 }
 
 sub get_parameter_schema {

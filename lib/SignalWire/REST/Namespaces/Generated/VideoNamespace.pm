@@ -10,25 +10,26 @@ use strict;
 use warnings;
 use Moo;
 use SignalWire::REST::Namespaces::Generated::VideoConferenceTokens ();
-use SignalWire::REST::Namespaces::Generated::VideoConferences ();
-use SignalWire::REST::Namespaces::Generated::VideoRoomRecordings ();
-use SignalWire::REST::Namespaces::Generated::VideoRoomSessions ();
-use SignalWire::REST::Namespaces::Generated::VideoRoomTokens ();
-use SignalWire::REST::Namespaces::Generated::VideoRooms ();
-use SignalWire::REST::Namespaces::Generated::VideoStreams ();
+use SignalWire::REST::Namespaces::Generated::VideoConferences      ();
+use SignalWire::REST::Namespaces::Generated::VideoRoomRecordings   ();
+use SignalWire::REST::Namespaces::Generated::VideoRoomSessions     ();
+use SignalWire::REST::Namespaces::Generated::VideoRoomTokens       ();
+use SignalWire::REST::Namespaces::Generated::VideoRooms            ();
+use SignalWire::REST::Namespaces::Generated::VideoStreams          ();
 
-has '_http' => ( is => 'ro', required => 1 );
+has '_http'             => ( is => 'ro',   required => 1 );
 has 'conference_tokens' => ( is => 'lazy', init_arg => undef );
-has 'conferences' => ( is => 'lazy', init_arg => undef );
-has 'room_recordings' => ( is => 'lazy', init_arg => undef );
-has 'room_sessions' => ( is => 'lazy', init_arg => undef );
-has 'room_tokens' => ( is => 'lazy', init_arg => undef );
-has 'rooms' => ( is => 'lazy', init_arg => undef );
-has 'streams' => ( is => 'lazy', init_arg => undef );
+has 'conferences'       => ( is => 'lazy', init_arg => undef );
+has 'room_recordings'   => ( is => 'lazy', init_arg => undef );
+has 'room_sessions'     => ( is => 'lazy', init_arg => undef );
+has 'room_tokens'       => ( is => 'lazy', init_arg => undef );
+has 'rooms'             => ( is => 'lazy', init_arg => undef );
+has 'streams'           => ( is => 'lazy', init_arg => undef );
 
 sub _build_conference_tokens {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Generated::VideoConferenceTokens->new( _http => $self->_http );
+    return SignalWire::REST::Namespaces::Generated::VideoConferenceTokens->new(
+        _http => $self->_http );
 }
 
 sub _build_conferences {
@@ -38,7 +39,8 @@ sub _build_conferences {
 
 sub _build_room_recordings {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Generated::VideoRoomRecordings->new( _http => $self->_http );
+    return SignalWire::REST::Namespaces::Generated::VideoRoomRecordings->new(
+        _http => $self->_http );
 }
 
 sub _build_room_sessions {

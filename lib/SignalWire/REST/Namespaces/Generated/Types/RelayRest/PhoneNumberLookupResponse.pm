@@ -11,18 +11,18 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'country_code_number' => ( is => 'ro' );
-has 'national_number' => ( is => 'ro' );
-has 'possible_number' => ( is => 'ro' );
-has 'valid_number' => ( is => 'ro' );
-has 'national_number_formatted' => ( is => 'ro' );
+has 'country_code_number'            => ( is => 'ro' );
+has 'national_number'                => ( is => 'ro' );
+has 'possible_number'                => ( is => 'ro' );
+has 'valid_number'                   => ( is => 'ro' );
+has 'national_number_formatted'      => ( is => 'ro' );
 has 'international_number_formatted' => ( is => 'ro' );
-has 'e164' => ( is => 'ro' );
-has 'location' => ( is => 'ro' );
-has 'country_code' => ( is => 'ro' );
-has 'timezones' => ( is => 'ro' );
-has 'number_type' => ( is => 'ro' );
-has 'carrier' => ( is => 'ro' );
-has 'cnam' => ( is => 'ro' );
+has 'e164'                           => ( is => 'ro' );
+has 'location'                       => ( is => 'ro' );
+has 'country_code'                   => ( is => 'ro' );
+has 'timezones'                      => ( is => 'ro' );
+has 'number_type'                    => ( is => 'ro' );
+has 'carrier'                        => ( is => 'ro' );
+has 'cnam'                           => ( is => 'ro' );
 
 1;

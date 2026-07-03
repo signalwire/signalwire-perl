@@ -11,25 +11,25 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'role' => ( is => 'ro' );
-has 'content' => ( is => 'ro' );
-has 'timestamp' => ( is => 'ro' );
-has 'tool_calls' => ( is => 'ro' );
-has 'latency' => ( is => 'ro' );
-has 'utterance_latency' => ( is => 'ro' );
-has 'audio_latency' => ( is => 'ro' );
-has 'acoustic_latency' => ( is => 'ro' );
-has 'eos_to_push_latency' => ( is => 'ro' );
-has 'dg_decision_latency' => ( is => 'ro' );
-has 'poll' => ( is => 'ro' );
-has 'speech_start_wall_us' => ( is => 'ro' );
+has 'role'                  => ( is => 'ro' );
+has 'content'               => ( is => 'ro' );
+has 'timestamp'             => ( is => 'ro' );
+has 'tool_calls'            => ( is => 'ro' );
+has 'latency'               => ( is => 'ro' );
+has 'utterance_latency'     => ( is => 'ro' );
+has 'audio_latency'         => ( is => 'ro' );
+has 'acoustic_latency'      => ( is => 'ro' );
+has 'eos_to_push_latency'   => ( is => 'ro' );
+has 'dg_decision_latency'   => ( is => 'ro' );
+has 'poll'                  => ( is => 'ro' );
+has 'speech_start_wall_us'  => ( is => 'ro' );
 has 'last_word_end_wall_us' => ( is => 'ro' );
-has 'turn_decided_wall_us' => ( is => 'ro' );
+has 'turn_decided_wall_us'  => ( is => 'ro' );
 has 'status_pushed_wall_us' => ( is => 'ro' );
-has 'stamps_us' => ( is => 'ro' );
-has 'barged' => ( is => 'ro' );
-has 'barge_elapsed_ms' => ( is => 'ro' );
-has 'text_heard_approx' => ( is => 'ro' );
-has 'text_spoken_total' => ( is => 'ro' );
+has 'stamps_us'             => ( is => 'ro' );
+has 'barged'                => ( is => 'ro' );
+has 'barge_elapsed_ms'      => ( is => 'ro' );
+has 'text_heard_approx'     => ( is => 'ro' );
+has 'text_spoken_total'     => ( is => 'ro' );
 
 1;

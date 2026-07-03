@@ -11,18 +11,18 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'command_name' => ( is => 'ro' );
-has 'command_arg' => ( is => 'ro' );
-has 'epoch_time' => ( is => 'ro' );
-has 'native' => ( is => 'ro' );
-has 'active_count' => ( is => 'ro' );
-has 'url' => ( is => 'ro' );
-has 'post_data' => ( is => 'ro' );
-has 'post_response' => ( is => 'ro' );
+has 'command_name'          => ( is => 'ro' );
+has 'command_arg'           => ( is => 'ro' );
+has 'epoch_time'            => ( is => 'ro' );
+has 'native'                => ( is => 'ro' );
+has 'active_count'          => ( is => 'ro' );
+has 'url'                   => ( is => 'ro' );
+has 'post_data'             => ( is => 'ro' );
+has 'post_response'         => ( is => 'ro' );
 has 'delayed_post_response' => ( is => 'ro' );
-has 'mcp_url' => ( is => 'ro' );
-has 'mcp_tool' => ( is => 'ro' );
-has 'mcp_response' => ( is => 'ro' );
-has 'mcp_error' => ( is => 'ro' );
+has 'mcp_url'               => ( is => 'ro' );
+has 'mcp_tool'              => ( is => 'ro' );
+has 'mcp_response'          => ( is => 'ro' );
+has 'mcp_error'             => ( is => 'ro' );
 
 1;

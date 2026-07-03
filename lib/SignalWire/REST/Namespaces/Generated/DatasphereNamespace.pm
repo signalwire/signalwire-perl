@@ -11,12 +11,13 @@ use warnings;
 use Moo;
 use SignalWire::REST::Namespaces::Generated::DatasphereDocuments ();
 
-has '_http' => ( is => 'ro', required => 1 );
+has '_http'     => ( is => 'ro',   required => 1 );
 has 'documents' => ( is => 'lazy', init_arg => undef );
 
 sub _build_documents {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Generated::DatasphereDocuments->new( _http => $self->_http );
+    return SignalWire::REST::Namespaces::Generated::DatasphereDocuments->new(
+        _http => $self->_http );
 }
 
 1;

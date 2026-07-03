@@ -13,7 +13,7 @@ use Moo;
 # wire key; no methods (the reference records this as a method-less type).
 has 'detail' => ( is => 'ro' );
 has 'status' => ( is => 'ro' );
-has 'title' => ( is => 'ro' );
-has 'code' => ( is => 'ro' );
+has 'title'  => ( is => 'ro' );
+has 'code'   => ( is => 'ro' );
 
 1;

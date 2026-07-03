@@ -11,20 +11,20 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'accesses' => ( is => 'ro' );
-has 'authorization' => ( is => 'ro' );
-has 'authorizations' => ( is => 'ro' );
-has 'host' => ( is => 'ro' );
-has 'ice_servers' => ( is => 'ro' );
-has 'identity' => ( is => 'ro' );
-has 'master_nodeid' => ( is => 'ro' );
-has 'nodeid' => ( is => 'ro' );
-has 'protocol' => ( is => 'ro' );
-has 'protocols' => ( is => 'ro' );
+has 'accesses'              => ( is => 'ro' );
+has 'authorization'         => ( is => 'ro' );
+has 'authorizations'        => ( is => 'ro' );
+has 'host'                  => ( is => 'ro' );
+has 'ice_servers'           => ( is => 'ro' );
+has 'identity'              => ( is => 'ro' );
+has 'master_nodeid'         => ( is => 'ro' );
+has 'nodeid'                => ( is => 'ro' );
+has 'protocol'              => ( is => 'ro' );
+has 'protocols'             => ( is => 'ro' );
 has 'protocols_uncertified' => ( is => 'ro' );
-has 'result' => ( is => 'ro' );
-has 'session_restored' => ( is => 'ro' );
-has 'sessionid' => ( is => 'ro' );
-has 'subscriptions' => ( is => 'ro' );
+has 'result'                => ( is => 'ro' );
+has 'session_restored'      => ( is => 'ro' );
+has 'sessionid'             => ( is => 'ro' );
+has 'subscriptions'         => ( is => 'ro' );
 
 1;

@@ -42,6 +42,22 @@ subtest 'celsius unit' => sub {
     like($output, qr/temp_c/, 'uses celsius field');
 };
 
+subtest 'get_tools returns raw tool definitions' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'w_gt');
+    my $skill = $factory->new(agent => $agent, params => { api_key => 'k' });
+    my $tools = $skill->get_tools;
+    is(ref $tools, 'ARRAY', 'returns arrayref');
+    is(scalar @$tools, 1, 'one tool definition');
+    is($tools->[0]{function}, 'get_weather', 'function name');
+    ok(exists $tools->[0]{data_map}{webhooks}, 'has data_map webhooks');
+    like($tools->[0]{data_map}{webhooks}[0]{output}{response}, qr/temp_f/, 'fahrenheit field');
+    # register_tools consumes get_tools -> same wire shape reaches the agent
+    $skill->register_tools;
+    is_deeply($agent->tools->{get_weather}{data_map},
+        $tools->[0]{data_map},
+        'register_tools registers the get_tools data_map');
+};
+
 subtest 'parameter schema' => sub {
     my $schema = $factory->get_parameter_schema;
     ok(exists $schema->{api_key}, 'has api_key');

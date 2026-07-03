@@ -11,16 +11,16 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'call_id' => ( is => 'ro' );
-has 'continue' => ( is => 'ro' );
-has 'continuous' => ( is => 'ro' );
-has 'control_id' => ( is => 'ro' );
-has 'digits' => ( is => 'ro' );
-has 'initial_timeout' => ( is => 'ro' );
-has 'node_id' => ( is => 'ro' );
-has 'partial_results' => ( is => 'ro' );
+has 'call_id'             => ( is => 'ro' );
+has 'continue'            => ( is => 'ro' );
+has 'continuous'          => ( is => 'ro' );
+has 'control_id'          => ( is => 'ro' );
+has 'digits'              => ( is => 'ro' );
+has 'initial_timeout'     => ( is => 'ro' );
+has 'node_id'             => ( is => 'ro' );
+has 'partial_results'     => ( is => 'ro' );
 has 'send_start_of_input' => ( is => 'ro' );
-has 'speech' => ( is => 'ro' );
-has 'start_input_timers' => ( is => 'ro' );
+has 'speech'              => ( is => 'ro' );
+has 'start_input_timers'  => ( is => 'ro' );
 
 1;

@@ -13,7 +13,7 @@ extends 'SignalWire::REST::Namespaces::Generated::FabricResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/fabric/resources/subscribers';
+    $args{_base_path}     //= '/api/fabric/resources/subscribers';
     $args{_update_method} //= 'PUT';
     return $class->$orig(%args);
 };
@@ -21,30 +21,35 @@ around BUILDARGS => sub {
 sub list_sip_endpoints {
     my ( $self, $fabric_subscriber_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($fabric_subscriber_id, 'sip_endpoints'), params => $p );
+    return $self->_http->get( $self->_path( $fabric_subscriber_id, 'sip_endpoints' ),
+        params => $p );
 }
 
 sub create_sip_endpoint {
     my ( $self, $fabric_subscriber_id, %args ) = @_;
-    my $body = { %args };
-    return $self->_http->post( $self->_path($fabric_subscriber_id, 'sip_endpoints'), body => $body );
+    my $body = {%args};
+    return $self->_http->post( $self->_path( $fabric_subscriber_id, 'sip_endpoints' ),
+        body => $body );
 }
 
 sub get_sip_endpoint {
     my ( $self, $fabric_subscriber_id, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($fabric_subscriber_id, 'sip_endpoints', $id), params => $p );
+    return $self->_http->get( $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ),
+        params => $p );
 }
 
 sub update_sip_endpoint {
     my ( $self, $fabric_subscriber_id, $id, %args ) = @_;
-    my $body = { %args };
-    return $self->_http->patch( $self->_path($fabric_subscriber_id, 'sip_endpoints', $id), body => $body );
+    my $body = {%args};
+    return $self->_http->patch( $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ),
+        body => $body );
 }
 
 sub delete_sip_endpoint {
     my ( $self, $fabric_subscriber_id, $id ) = @_;
-    return $self->_http->delete_request( $self->_path($fabric_subscriber_id, 'sip_endpoints', $id) );
+    return $self->_http->delete_request(
+        $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ) );
 }
 
 1;

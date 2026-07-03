@@ -20,7 +20,7 @@ around BUILDARGS => sub {
 sub list_events {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'events'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'events' ), params => $p );
 }
 
 1;

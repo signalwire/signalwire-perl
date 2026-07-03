@@ -11,11 +11,11 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'call_id' => ( is => 'ro' );
-has 'collect' => ( is => 'ro' );
+has 'call_id'    => ( is => 'ro' );
+has 'collect'    => ( is => 'ro' );
 has 'control_id' => ( is => 'ro' );
-has 'node_id' => ( is => 'ro' );
-has 'play' => ( is => 'ro' );
-has 'volume' => ( is => 'ro' );
+has 'node_id'    => ( is => 'ro' );
+has 'play'       => ( is => 'ro' );
+has 'volume'     => ( is => 'ro' );
 
 1;

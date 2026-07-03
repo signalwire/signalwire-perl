@@ -277,4 +277,63 @@ sub to_swaig_function {
     };
 }
 
+# ------------------------------------------------------------------
+# Module-level factory functions (Python parity: signalwire.core.data_map
+# module functions create_simple_api_tool / create_expression_tool; ruby
+# DataMap.create_* class methods). These build and return a configured
+# DataMap in one shot. Callable as
+#   SignalWire::DataMap::create_simple_api_tool( name => ..., ... )
+# ------------------------------------------------------------------
+
+# Build a simple API-calling DataMap tool with minimal configuration.
+#
+# Options: name, url, response_template (required); parameters, method
+# (default GET), headers, body, error_keys (optional).
+sub create_simple_api_tool {
+    my (%opts) = @_;
+    require SignalWire::SWAIG::FunctionResult;
+
+    my $dm = SignalWire::DataMap->new( $opts{name} );
+    _apply_parameters( $dm, $opts{parameters} );
+    $dm->webhook( $opts{method} // 'GET', $opts{url}, headers => $opts{headers} );
+    $dm->body( $opts{body} )             if $opts{body};
+    $dm->error_keys( $opts{error_keys} ) if $opts{error_keys};
+    $dm->output( SignalWire::SWAIG::FunctionResult->new( $opts{response_template} ) );
+    return $dm;
+}
+
+# Build an expression-only DataMap tool (no HTTP calls).
+#
+# Options: name, patterns (required); parameters (optional). patterns is
+# a hashref mapping test_value => [ pattern, FunctionResult ].
+sub create_expression_tool {
+    my (%opts) = @_;
+
+    my $dm       = SignalWire::DataMap->new( $opts{name} );
+    my $patterns = $opts{patterns} // {};
+    _apply_parameters( $dm, $opts{parameters} );
+    for my $test_value ( keys %$patterns ) {
+        my ( $pattern, $result ) = @{ $patterns->{$test_value} };
+        $dm->expression( $test_value, $pattern, $result );
+    }
+    return $dm;
+}
+
+# Apply a parameters hashref (name => { type, description, required }) to
+# a DataMap builder. Shared by both factory functions.
+sub _apply_parameters {
+    my ( $builder, $parameters ) = @_;
+    return unless $parameters;
+    for my $pname ( keys %$parameters ) {
+        my $pdef = $parameters->{$pname};
+        $builder->parameter(
+            $pname,
+            $pdef->{type}        // 'string',
+            $pdef->{description} // "$pname parameter",
+            required => $pdef->{required} // 0,
+        );
+    }
+    return;
+}
+
 1;

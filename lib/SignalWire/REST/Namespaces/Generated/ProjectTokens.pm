@@ -19,13 +19,13 @@ around BUILDARGS => sub {
 
 sub create {
     my ( $self, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->post( $self->_base_path, body => $body );
 }
 
 sub update {
     my ( $self, $token_id, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->patch( $self->_path($token_id), body => $body );
 }
 

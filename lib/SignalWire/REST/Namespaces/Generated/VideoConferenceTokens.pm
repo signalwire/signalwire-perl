@@ -25,7 +25,7 @@ sub get {
 
 sub reset {
     my ( $self, $id ) = @_;
-    return $self->_http->post( $self->_path($id, 'reset'), body => {} );
+    return $self->_http->post( $self->_path( $id, 'reset' ), body => {} );
 }
 
 1;

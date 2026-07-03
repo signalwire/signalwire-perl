@@ -9,12 +9,12 @@ use SignalWire::Skills::SkillRegistry;
 use SignalWire::Agent::AgentBase;
 
 # ============================================================
-# 1. list_skills returns all 18
+# 1. list_skills returns all 16
 # ============================================================
 subtest 'list all skills' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 18, '18 skills');
+    is(scalar @$skills, 16, '16 skills');
 };
 
 # ============================================================
@@ -24,7 +24,7 @@ subtest 'get_factory all skills' => sub {
     my @expected = qw(
         api_ninjas_trivia claude_skills custom_skills datasphere
         datasphere_serverless datetime google_maps info_gatherer
-        joke math mcp_gateway native_vector_search
+        joke math
         play_background_file spider swml_transfer weather_api
         web_search wikipedia_search
     );
@@ -49,7 +49,7 @@ subtest 'clear_registry' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     # After clearing, list_skills will re-load all builtins
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 18, 're-loaded after clear');
+    is(scalar @$skills, 16, 're-loaded after clear');
 };
 
 # ============================================================

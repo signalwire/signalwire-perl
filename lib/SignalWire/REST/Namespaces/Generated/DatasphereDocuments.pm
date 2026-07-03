@@ -13,32 +13,32 @@ extends 'SignalWire::REST::Namespaces::CrudResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/datasphere/documents';
+    $args{_base_path}     //= '/api/datasphere/documents';
     $args{_update_method} //= 'PATCH';
     return $class->$orig(%args);
 };
 
 sub search {
     my ( $self, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->post( $self->_path('search'), body => $body );
 }
 
 sub list_chunks {
     my ( $self, $documentId, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($documentId, 'chunks'), params => $p );
+    return $self->_http->get( $self->_path( $documentId, 'chunks' ), params => $p );
 }
 
 sub get_chunk {
     my ( $self, $documentId, $chunkId, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($documentId, 'chunks', $chunkId), params => $p );
+    return $self->_http->get( $self->_path( $documentId, 'chunks', $chunkId ), params => $p );
 }
 
 sub delete_chunk {
     my ( $self, $documentId, $chunkId ) = @_;
-    return $self->_http->delete_request( $self->_path($documentId, 'chunks', $chunkId) );
+    return $self->_http->delete_request( $self->_path( $documentId, 'chunks', $chunkId ) );
 }
 
 1;

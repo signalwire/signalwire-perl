@@ -62,7 +62,10 @@ subtest 'lookup_faq - not found' => sub {
     );
     my $result = $a->on_function_call('lookup_faq', { query => 'xyznonexistent' }, {});
     ok(defined $result, 'returns result');
-    like($result->response, qr/No FAQ found/i, 'not found message');
+    # Parity with ruby/python search_faqs: on no match, apologize and list
+    # the topics the bot can help with (was the old "No FAQ found" wording).
+    like($result->response, qr/don't have a specific answer/, 'not found message');
+    like($result->response, qr/What is SignalWire\?/,          'lists known topics');
 };
 
 subtest 'custom name/route' => sub {

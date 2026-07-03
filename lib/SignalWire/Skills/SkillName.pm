@@ -54,8 +54,6 @@ use constant {
     INFO_GATHERER         => 'info_gatherer',
     JOKE                  => 'joke',
     MATH                  => 'math',
-    MCP_GATEWAY           => 'mcp_gateway',
-    NATIVE_VECTOR_SEARCH  => 'native_vector_search',
     PLAY_BACKGROUND_FILE  => 'play_background_file',
     SPIDER                => 'spider',
     SWML_TRANSFER         => 'swml_transfer',
@@ -68,7 +66,7 @@ use constant {
 our @EXPORT_OK = qw(
     API_NINJAS_TRIVIA CLAUDE_SKILLS CUSTOM_SKILLS DATASPHERE
     DATASPHERE_SERVERLESS DATETIME GOOGLE_MAPS INFO_GATHERER JOKE MATH
-    MCP_GATEWAY NATIVE_VECTOR_SEARCH PLAY_BACKGROUND_FILE SPIDER
+    PLAY_BACKGROUND_FILE SPIDER
     SWML_TRANSFER WEATHER_API WEB_SEARCH WIKIPEDIA_SEARCH
 );
 our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
@@ -86,8 +84,6 @@ my @ALL = sort qw(
     info_gatherer
     joke
     math
-    mcp_gateway
-    native_vector_search
     play_background_file
     spider
     swml_transfer
@@ -157,8 +153,8 @@ plus editor autocomplete and the membership/iteration helpers below.
 Exported on request via L<Exporter>; C<:all> pulls every name. The full
 set: C<API_NINJAS_TRIVIA>, C<CLAUDE_SKILLS>, C<CUSTOM_SKILLS>,
 C<DATASPHERE>, C<DATASPHERE_SERVERLESS>, C<DATETIME>, C<GOOGLE_MAPS>,
-C<INFO_GATHERER>, C<JOKE>, C<MATH>, C<MCP_GATEWAY>,
-C<NATIVE_VECTOR_SEARCH>, C<PLAY_BACKGROUND_FILE>, C<SPIDER>,
+C<INFO_GATHERER>, C<JOKE>, C<MATH>,
+C<PLAY_BACKGROUND_FILE>, C<SPIDER>,
 C<SWML_TRANSFER>, C<WEATHER_API>, C<WEB_SEARCH>, C<WIKIPEDIA_SEARCH>.
 
 =head1 METHODS

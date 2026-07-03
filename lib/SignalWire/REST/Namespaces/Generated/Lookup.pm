@@ -20,7 +20,7 @@ around BUILDARGS => sub {
 sub phone_number {
     my ( $self, $e164_number, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path('phone_number', $e164_number), params => $p );
+    return $self->_http->get( $self->_path( 'phone_number', $e164_number ), params => $p );
 }
 
 1;

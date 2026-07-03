@@ -46,6 +46,28 @@ subtest 'custom tool_name' => sub {
     ok(exists $agent->tools->{bg_player}, 'custom name');
 };
 
+subtest 'get_tools returns raw tool definitions' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'pbg_gt');
+    my $skill = $factory->new(agent => $agent, params => {
+        files => [
+            { key => 'music', description => 'Music', url => 'http://x.com/music.mp3' },
+        ],
+    });
+    my $tools = $skill->get_tools;
+    is(ref $tools, 'ARRAY', 'returns arrayref');
+    is(scalar @$tools, 1, 'one tool definition');
+    is($tools->[0]{function}, 'play_background_file', 'function name');
+    my $enum = $tools->[0]{parameters}{properties}{action}{enum};
+    ok(grep({ $_ eq 'stop' } @$enum), 'has stop action');
+    ok(grep({ $_ eq 'start_music' } @$enum), 'has start_music action');
+    ok(exists $tools->[0]{data_map}{expressions}, 'has data_map expressions');
+    # register_tools consumes get_tools -> same wire shape reaches the agent
+    $skill->register_tools;
+    is_deeply($agent->tools->{play_background_file}{data_map},
+        $tools->[0]{data_map},
+        'register_tools registers the get_tools data_map');
+};
+
 subtest 'parameter schema' => sub {
     my $schema = $factory->get_parameter_schema;
     ok(exists $schema->{files}, 'has files');

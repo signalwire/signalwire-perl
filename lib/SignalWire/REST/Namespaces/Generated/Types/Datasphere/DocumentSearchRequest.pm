@@ -11,13 +11,13 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'tags' => ( is => 'ro' );
-has 'document_id' => ( is => 'ro' );
-has 'query_string' => ( is => 'ro' );
-has 'distance' => ( is => 'ro' );
-has 'count' => ( is => 'ro' );
-has 'language' => ( is => 'ro' );
+has 'tags'          => ( is => 'ro' );
+has 'document_id'   => ( is => 'ro' );
+has 'query_string'  => ( is => 'ro' );
+has 'distance'      => ( is => 'ro' );
+has 'count'         => ( is => 'ro' );
+has 'language'      => ( is => 'ro' );
 has 'pos_to_expand' => ( is => 'ro' );
-has 'max_synonyms' => ( is => 'ro' );
+has 'max_synonyms'  => ( is => 'ro' );
 
 1;

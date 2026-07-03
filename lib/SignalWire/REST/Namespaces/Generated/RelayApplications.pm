@@ -13,7 +13,7 @@ extends 'SignalWire::REST::Namespaces::Generated::FabricResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/fabric/resources/relay_applications';
+    $args{_base_path}     //= '/api/fabric/resources/relay_applications';
     $args{_update_method} //= 'PUT';
     return $class->$orig(%args);
 };

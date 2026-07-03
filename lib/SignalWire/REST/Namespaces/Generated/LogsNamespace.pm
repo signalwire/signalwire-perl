@@ -10,15 +10,15 @@ use strict;
 use warnings;
 use Moo;
 use SignalWire::REST::Namespaces::Generated::ConferenceLogs ();
-use SignalWire::REST::Namespaces::Generated::MessageLogs ();
-use SignalWire::REST::Namespaces::Generated::VoiceLogs ();
-use SignalWire::REST::Namespaces::Generated::FaxLogs ();
+use SignalWire::REST::Namespaces::Generated::MessageLogs    ();
+use SignalWire::REST::Namespaces::Generated::VoiceLogs      ();
+use SignalWire::REST::Namespaces::Generated::FaxLogs        ();
 
-has '_http' => ( is => 'ro', required => 1 );
+has '_http'       => ( is => 'ro',   required => 1 );
 has 'conferences' => ( is => 'lazy', init_arg => undef );
-has 'messages' => ( is => 'lazy', init_arg => undef );
-has 'voice' => ( is => 'lazy', init_arg => undef );
-has 'fax' => ( is => 'lazy', init_arg => undef );
+has 'messages'    => ( is => 'lazy', init_arg => undef );
+has 'voice'       => ( is => 'lazy', init_arg => undef );
+has 'fax'         => ( is => 'lazy', init_arg => undef );
 
 sub _build_conferences {
     my ($self) = @_;

@@ -11,13 +11,13 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'id' => ( is => 'ro' );
-has 'url' => ( is => 'ro' );
+has 'id'          => ( is => 'ro' );
+has 'url'         => ( is => 'ro' );
 has 'stream_type' => ( is => 'ro' );
-has 'width' => ( is => 'ro' );
-has 'height' => ( is => 'ro' );
-has 'fps' => ( is => 'ro' );
-has 'created_at' => ( is => 'ro' );
-has 'updated_at' => ( is => 'ro' );
+has 'width'       => ( is => 'ro' );
+has 'height'      => ( is => 'ro' );
+has 'fps'         => ( is => 'ro' );
+has 'created_at'  => ( is => 'ro' );
+has 'updated_at'  => ( is => 'ro' );
 
 1;

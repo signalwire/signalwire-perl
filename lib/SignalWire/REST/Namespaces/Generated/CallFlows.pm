@@ -13,7 +13,7 @@ extends 'SignalWire::REST::Namespaces::Generated::FabricResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/fabric/resources/call_flows';
+    $args{_base_path}     //= '/api/fabric/resources/call_flows';
     $args{_update_method} //= 'PUT';
     return $class->$orig(%args);
 };
@@ -21,18 +21,21 @@ around BUILDARGS => sub {
 sub list_addresses {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( '/api/fabric/resources/call_flow/' . $id . '/addresses', params => $p );
+    return $self->_http->get( '/api/fabric/resources/call_flow/' . $id . '/addresses',
+        params => $p );
 }
 
 sub list_versions {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( '/api/fabric/resources/call_flow/' . $id . '/versions', params => $p );
+    return $self->_http->get( '/api/fabric/resources/call_flow/' . $id . '/versions',
+        params => $p );
 }
 
 sub deploy_version {
     my ( $self, $id, $body ) = @_;
-    return $self->_http->post( '/api/fabric/resources/call_flow/' . $id . '/versions', body => $body );
+    return $self->_http->post( '/api/fabric/resources/call_flow/' . $id . '/versions',
+        body => $body );
 }
 
 1;

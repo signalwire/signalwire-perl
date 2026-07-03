@@ -11,25 +11,25 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'id' => ( is => 'ro' );
-has 'room_id' => ( is => 'ro' );
-has 'name' => ( is => 'ro' );
-has 'display_name' => ( is => 'ro' );
-has 'join_from' => ( is => 'ro' );
-has 'join_until' => ( is => 'ro' );
-has 'remove_at' => ( is => 'ro' );
+has 'id'                           => ( is => 'ro' );
+has 'room_id'                      => ( is => 'ro' );
+has 'name'                         => ( is => 'ro' );
+has 'display_name'                 => ( is => 'ro' );
+has 'join_from'                    => ( is => 'ro' );
+has 'join_until'                   => ( is => 'ro' );
+has 'remove_at'                    => ( is => 'ro' );
 has 'remove_after_seconds_elapsed' => ( is => 'ro' );
-has 'layout' => ( is => 'ro' );
-has 'max_members' => ( is => 'ro' );
-has 'fps' => ( is => 'ro' );
-has 'quality' => ( is => 'ro' );
-has 'start_time' => ( is => 'ro' );
-has 'end_time' => ( is => 'ro' );
-has 'duration' => ( is => 'ro' );
-has 'status' => ( is => 'ro' );
-has 'record_on_start' => ( is => 'ro' );
-has 'enable_room_previews' => ( is => 'ro' );
-has 'preview_url' => ( is => 'ro' );
-has 'audio_video_sync' => ( is => 'ro' );
+has 'layout'                       => ( is => 'ro' );
+has 'max_members'                  => ( is => 'ro' );
+has 'fps'                          => ( is => 'ro' );
+has 'quality'                      => ( is => 'ro' );
+has 'start_time'                   => ( is => 'ro' );
+has 'end_time'                     => ( is => 'ro' );
+has 'duration'                     => ( is => 'ro' );
+has 'status'                       => ( is => 'ro' );
+has 'record_on_start'              => ( is => 'ro' );
+has 'enable_room_previews'         => ( is => 'ro' );
+has 'preview_url'                  => ( is => 'ro' );
+has 'audio_video_sync'             => ( is => 'ro' );
 
 1;

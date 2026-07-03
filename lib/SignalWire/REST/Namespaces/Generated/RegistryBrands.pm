@@ -37,12 +37,12 @@ sub get {
 sub list_campaigns {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'campaigns'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'campaigns' ), params => $p );
 }
 
 sub create_campaign {
     my ( $self, $id, $body ) = @_;
-    return $self->_http->post( $self->_path($id, 'campaigns'), body => $body );
+    return $self->_http->post( $self->_path( $id, 'campaigns' ), body => $body );
 }
 
 1;

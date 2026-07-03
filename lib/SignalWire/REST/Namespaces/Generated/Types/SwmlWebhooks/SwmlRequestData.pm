@@ -11,9 +11,9 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'call' => ( is => 'ro' );
-has 'vars' => ( is => 'ro' );
-has 'envs' => ( is => 'ro' );
+has 'call'   => ( is => 'ro' );
+has 'vars'   => ( is => 'ro' );
+has 'envs'   => ( is => 'ro' );
 has 'params' => ( is => 'ro' );
 
 1;

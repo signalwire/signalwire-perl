@@ -11,18 +11,18 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'id' => ( is => 'ro' );
-has 'filename' => ( is => 'ro' );
-has 'status' => ( is => 'ro' );
-has 'tags' => ( is => 'ro' );
-has 'chunking_strategy' => ( is => 'ro' );
+has 'id'                      => ( is => 'ro' );
+has 'filename'                => ( is => 'ro' );
+has 'status'                  => ( is => 'ro' );
+has 'tags'                    => ( is => 'ro' );
+has 'chunking_strategy'       => ( is => 'ro' );
 has 'max_sentences_per_chunk' => ( is => 'ro' );
-has 'split_newlines' => ( is => 'ro' );
-has 'overlap_size' => ( is => 'ro' );
-has 'chunk_size' => ( is => 'ro' );
-has 'number_of_chunks' => ( is => 'ro' );
-has 'chunks_uri' => ( is => 'ro' );
-has 'created_at' => ( is => 'ro' );
-has 'updated_at' => ( is => 'ro' );
+has 'split_newlines'          => ( is => 'ro' );
+has 'overlap_size'            => ( is => 'ro' );
+has 'chunk_size'              => ( is => 'ro' );
+has 'number_of_chunks'        => ( is => 'ro' );
+has 'chunks_uri'              => ( is => 'ro' );
+has 'created_at'              => ( is => 'ro' );
+has 'updated_at'              => ( is => 'ro' );
 
 1;

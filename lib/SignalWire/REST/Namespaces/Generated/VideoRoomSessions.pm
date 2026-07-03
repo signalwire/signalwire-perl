@@ -20,19 +20,19 @@ around BUILDARGS => sub {
 sub list_events {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'events'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'events' ), params => $p );
 }
 
 sub list_members {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'members'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'members' ), params => $p );
 }
 
 sub list_recordings {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'recordings'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'recordings' ), params => $p );
 }
 
 1;

@@ -11,23 +11,23 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'room_name' => ( is => 'ro' );
-has 'user_name' => ( is => 'ro' );
-has 'permissions' => ( is => 'ro' );
-has 'join_from' => ( is => 'ro' );
-has 'join_until' => ( is => 'ro' );
-has 'remove_at' => ( is => 'ro' );
+has 'room_name'                    => ( is => 'ro' );
+has 'user_name'                    => ( is => 'ro' );
+has 'permissions'                  => ( is => 'ro' );
+has 'join_from'                    => ( is => 'ro' );
+has 'join_until'                   => ( is => 'ro' );
+has 'remove_at'                    => ( is => 'ro' );
 has 'remove_after_seconds_elapsed' => ( is => 'ro' );
-has 'join_audio_muted' => ( is => 'ro' );
-has 'join_video_muted' => ( is => 'ro' );
-has 'auto_create_room' => ( is => 'ro' );
-has 'enable_room_previews' => ( is => 'ro' );
-has 'room_display_name' => ( is => 'ro' );
-has 'end_room_session_on_leave' => ( is => 'ro' );
-has 'join_as' => ( is => 'ro' );
-has 'media_allowed' => ( is => 'ro' );
-has 'room_meta' => ( is => 'ro' );
-has 'meta' => ( is => 'ro' );
-has 'sync_audio_video' => ( is => 'ro' );
+has 'join_audio_muted'             => ( is => 'ro' );
+has 'join_video_muted'             => ( is => 'ro' );
+has 'auto_create_room'             => ( is => 'ro' );
+has 'enable_room_previews'         => ( is => 'ro' );
+has 'room_display_name'            => ( is => 'ro' );
+has 'end_room_session_on_leave'    => ( is => 'ro' );
+has 'join_as'                      => ( is => 'ro' );
+has 'media_allowed'                => ( is => 'ro' );
+has 'room_meta'                    => ( is => 'ro' );
+has 'meta'                         => ( is => 'ro' );
+has 'sync_audio_video'             => ( is => 'ro' );
 
 1;

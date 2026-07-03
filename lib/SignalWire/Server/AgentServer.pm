@@ -18,6 +18,7 @@ has agents    => ( is => 'rw', default => sub { {} } );
 # SIP routing
 has _sip_routing_enabled  => ( is => 'rw', default => sub { 0 } );
 has _sip_username_mapping => ( is => 'rw', default => sub { {} } );
+has _sip_route            => ( is => 'rw', default => sub { '/sip' } );
 
 # Static file routes: { route => directory }
 has _static_routes => ( is => 'rw', default => sub { {} } );
@@ -54,6 +55,61 @@ sub list_agents {
 sub get_agent {
     my ( $self, $route ) = @_;
     return $self->agents->{$route};
+}
+
+# get_agents — the full route => agent map (Python parity:
+# AgentServer.get_agents). A shallow copy so callers can't mutate the
+# server's registry.
+sub get_agents {
+    my ($self) = @_;
+    return { %{ $self->agents } };
+}
+
+# setup_sip_routing(route => '/sip', auto_map => 1) — enable SIP-based
+# routing across the server; when auto_map is on, derive a SIP username for
+# every registered agent from its route (Python parity:
+# AgentServer.setup_sip_routing).
+sub setup_sip_routing {
+    my ( $self, %opts ) = @_;
+    my $route    = $opts{route} // '/sip';
+    my $auto_map = exists $opts{auto_map} ? $opts{auto_map} : 1;
+    $self->_sip_routing_enabled(1);
+    $self->_sip_route($route);
+    if ($auto_map) {
+        for my $r ( keys %{ $self->agents } ) {
+            ( my $username = $r ) =~ s{^/}{};
+            $username =~ s{/}{_}g;
+            $self->_sip_username_mapping->{$username} = $r if length $username;
+        }
+    }
+    return $self;
+}
+
+# register_sip_username(username, route) — map a SIP username to a route
+# (Python parity: AgentServer.register_sip_username).
+sub register_sip_username {
+    my ( $self, $username, $route ) = @_;
+    $route = "/$route" unless $route =~ m{^/};
+    $self->_sip_username_mapping->{$username} = $route;
+    return $self;
+}
+
+# register_global_routing_callback(callback => sub, path => '/x') — register
+# a routing callback at the same path on every agent that supports it
+# (Python parity: AgentServer.register_global_routing_callback).
+sub register_global_routing_callback {
+    my ( $self, %opts ) = @_;
+    my $callback = $opts{callback};
+    croak("register_global_routing_callback requires a callback coderef")
+        unless ref $callback eq 'CODE';
+    my $path = $opts{path} // croak("register_global_routing_callback requires a path");
+    $path = "/$path" unless $path =~ m{^/};
+    $path =~ s{/+$}{} unless $path eq '/';
+    for my $agent ( values %{ $self->agents } ) {
+        $agent->register_routing_callback( $path, $callback )
+            if $agent->can('register_routing_callback');
+    }
+    return $self;
 }
 
 sub serve_static_files {

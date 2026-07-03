@@ -11,22 +11,22 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'role' => ( is => 'ro' );
-has 'content' => ( is => 'ro' );
-has 'timestamp' => ( is => 'ro' );
-has 'confidence' => ( is => 'ro' );
-has 'content_type' => ( is => 'ro' );
-has 'speaker' => ( is => 'ro' );
-has 'start_timestamp' => ( is => 'ro' );
-has 'end_timestamp' => ( is => 'ro' );
-has 'speaking_to_final_event' => ( is => 'ro' );
-has 'speaking_to_turn_detection' => ( is => 'ro' );
+has 'role'                          => ( is => 'ro' );
+has 'content'                       => ( is => 'ro' );
+has 'timestamp'                     => ( is => 'ro' );
+has 'confidence'                    => ( is => 'ro' );
+has 'content_type'                  => ( is => 'ro' );
+has 'speaker'                       => ( is => 'ro' );
+has 'start_timestamp'               => ( is => 'ro' );
+has 'end_timestamp'                 => ( is => 'ro' );
+has 'speaking_to_final_event'       => ( is => 'ro' );
+has 'speaking_to_turn_detection'    => ( is => 'ro' );
 has 'turn_detection_to_final_event' => ( is => 'ro' );
-has 'barge_count' => ( is => 'ro' );
-has 'merged' => ( is => 'ro' );
-has 'merge_count' => ( is => 'ro' );
-has 'entity' => ( is => 'ro' );
-has 'eot' => ( is => 'ro' );
-has 'timing' => ( is => 'ro' );
+has 'barge_count'                   => ( is => 'ro' );
+has 'merged'                        => ( is => 'ro' );
+has 'merge_count'                   => ( is => 'ro' );
+has 'entity'                        => ( is => 'ro' );
+has 'eot'                           => ( is => 'ro' );
+has 'timing'                        => ( is => 'ro' );
 
 1;

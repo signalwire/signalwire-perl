@@ -9,50 +9,50 @@ package SignalWire::REST::Namespaces::Generated::ResourceTree;
 use strict;
 use warnings;
 use Moo::Role;
-use SignalWire::REST::Namespaces::Generated::Addresses ();
-use SignalWire::REST::Namespaces::Generated::ImportedNumbers ();
-use SignalWire::REST::Namespaces::Generated::Lookup ();
-use SignalWire::REST::Namespaces::Generated::Mfa ();
-use SignalWire::REST::Namespaces::Generated::NumberGroups ();
-use SignalWire::REST::Namespaces::Generated::PhoneNumbers ();
-use SignalWire::REST::Namespaces::Generated::Queues ();
-use SignalWire::REST::Namespaces::Generated::Recordings ();
-use SignalWire::REST::Namespaces::Generated::ShortCodes ();
-use SignalWire::REST::Namespaces::Generated::SipProfile ();
-use SignalWire::REST::Namespaces::Generated::VerifiedCallers ();
-use SignalWire::REST::Namespaces::Generated::Calling ();
-use SignalWire::REST::Namespaces::Generated::Chat ();
-use SignalWire::REST::Namespaces::Generated::PubSub ();
-use SignalWire::REST::Namespaces::Generated::RegistryNamespace ();
-use SignalWire::REST::Namespaces::Generated::FabricNamespace ();
-use SignalWire::REST::Namespaces::Generated::VideoNamespace ();
+use SignalWire::REST::Namespaces::Generated::Addresses           ();
+use SignalWire::REST::Namespaces::Generated::ImportedNumbers     ();
+use SignalWire::REST::Namespaces::Generated::Lookup              ();
+use SignalWire::REST::Namespaces::Generated::Mfa                 ();
+use SignalWire::REST::Namespaces::Generated::NumberGroups        ();
+use SignalWire::REST::Namespaces::Generated::PhoneNumbers        ();
+use SignalWire::REST::Namespaces::Generated::Queues              ();
+use SignalWire::REST::Namespaces::Generated::Recordings          ();
+use SignalWire::REST::Namespaces::Generated::ShortCodes          ();
+use SignalWire::REST::Namespaces::Generated::SipProfile          ();
+use SignalWire::REST::Namespaces::Generated::VerifiedCallers     ();
+use SignalWire::REST::Namespaces::Generated::Calling             ();
+use SignalWire::REST::Namespaces::Generated::Chat                ();
+use SignalWire::REST::Namespaces::Generated::PubSub              ();
+use SignalWire::REST::Namespaces::Generated::RegistryNamespace   ();
+use SignalWire::REST::Namespaces::Generated::FabricNamespace     ();
+use SignalWire::REST::Namespaces::Generated::VideoNamespace      ();
 use SignalWire::REST::Namespaces::Generated::DatasphereNamespace ();
-use SignalWire::REST::Namespaces::Generated::LogsNamespace ();
-use SignalWire::REST::Namespaces::Generated::ProjectNamespace ();
+use SignalWire::REST::Namespaces::Generated::LogsNamespace       ();
+use SignalWire::REST::Namespaces::Generated::ProjectNamespace    ();
 
 # The consumer (the hand RestClient) must provide `_http`.
 requires '_http';
 
-has 'addresses' => ( is => 'lazy', init_arg => undef );
+has 'addresses'        => ( is => 'lazy', init_arg => undef );
 has 'imported_numbers' => ( is => 'lazy', init_arg => undef );
-has 'lookup' => ( is => 'lazy', init_arg => undef );
-has 'mfa' => ( is => 'lazy', init_arg => undef );
-has 'number_groups' => ( is => 'lazy', init_arg => undef );
-has 'phone_numbers' => ( is => 'lazy', init_arg => undef );
-has 'queues' => ( is => 'lazy', init_arg => undef );
-has 'recordings' => ( is => 'lazy', init_arg => undef );
-has 'short_codes' => ( is => 'lazy', init_arg => undef );
-has 'sip_profile' => ( is => 'lazy', init_arg => undef );
+has 'lookup'           => ( is => 'lazy', init_arg => undef );
+has 'mfa'              => ( is => 'lazy', init_arg => undef );
+has 'number_groups'    => ( is => 'lazy', init_arg => undef );
+has 'phone_numbers'    => ( is => 'lazy', init_arg => undef );
+has 'queues'           => ( is => 'lazy', init_arg => undef );
+has 'recordings'       => ( is => 'lazy', init_arg => undef );
+has 'short_codes'      => ( is => 'lazy', init_arg => undef );
+has 'sip_profile'      => ( is => 'lazy', init_arg => undef );
 has 'verified_callers' => ( is => 'lazy', init_arg => undef );
-has 'calling' => ( is => 'lazy', init_arg => undef );
-has 'chat' => ( is => 'lazy', init_arg => undef );
-has 'pubsub' => ( is => 'lazy', init_arg => undef );
-has 'registry' => ( is => 'lazy', init_arg => undef );
-has 'fabric' => ( is => 'lazy', init_arg => undef );
-has 'video' => ( is => 'lazy', init_arg => undef );
-has 'datasphere' => ( is => 'lazy', init_arg => undef );
-has 'logs' => ( is => 'lazy', init_arg => undef );
-has 'project' => ( is => 'lazy', init_arg => undef );
+has 'calling'          => ( is => 'lazy', init_arg => undef );
+has 'chat'             => ( is => 'lazy', init_arg => undef );
+has 'pubsub'           => ( is => 'lazy', init_arg => undef );
+has 'registry'         => ( is => 'lazy', init_arg => undef );
+has 'fabric'           => ( is => 'lazy', init_arg => undef );
+has 'video'            => ( is => 'lazy', init_arg => undef );
+has 'datasphere'       => ( is => 'lazy', init_arg => undef );
+has 'logs'             => ( is => 'lazy', init_arg => undef );
+has 'project'          => ( is => 'lazy', init_arg => undef );
 
 sub _build_addresses {
     my ($self) = @_;
@@ -141,7 +141,8 @@ sub _build_video {
 
 sub _build_datasphere {
     my ($self) = @_;
-    return SignalWire::REST::Namespaces::Generated::DatasphereNamespace->new( _http => $self->_http );
+    return SignalWire::REST::Namespaces::Generated::DatasphereNamespace->new(
+        _http => $self->_http );
 }
 
 sub _build_logs {

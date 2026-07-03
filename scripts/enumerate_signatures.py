@@ -265,6 +265,22 @@ PERL_METHOD_ALIASES = {
     "delete_request": ["delete"],
 }
 
+# Per-(package, native-sub) method RENAMES: the Perl idiomatic sub name is
+# projected to the canonical Python name and the native name is NOT also
+# emitted (unlike PERL_METHOD_ALIASES which keeps both). Mirrors the surface
+# enumerator's %METHOD_OVERRIDES for the reserved-word / dunder cases:
+#   * Relay::Call `pass` -> reference's reserved-word-escaped `pass_`
+#     (Python renamed the `pass` keyword collision to `pass_`).
+#   * SWAIG::SWAIGFunction `call` -> the callable-protocol dunder `__call__`
+#     (the non-__init__ dunder filter then drops it, matching the signature
+#     oracle which does not record __call__ — same as the surface handling
+#     where __call__ is a python_surface-only symbol).
+PERL_METHOD_RENAMES = {
+    ("SignalWire::Relay::Call", "pass"): "pass_",
+    ("SignalWire::SWAIG::SWAIGFunction", "call"): "__call__",
+}
+
+
 # Moo attribute renames: Perl's leading-underscore private attrs that
 # map to Python's public attribute name. Same pattern as
 # PERL_METHOD_ALIASES — emit the synthesized getter under both names.
@@ -289,7 +305,8 @@ MIXIN_PROJECTIONS = {
         "get_language_params",
         "set_function_includes", "set_global_data", "set_internal_fillers",
         "set_language_params",
-        "set_languages", "set_native_functions", "set_param", "set_params",
+        "set_languages", "set_multilingual", "set_native_functions",
+        "set_param", "set_params",
         "set_post_prompt_llm_params", "set_prompt_llm_params",
         "set_pronunciations", "update_global_data",
     ],
@@ -299,7 +316,13 @@ MIXIN_PROJECTIONS = {
         "prompt_add_section",
         "prompt_add_subsection", "prompt_add_to_section",
         "prompt_has_section", "reset_contexts", "set_post_prompt",
+        "set_prompt_pom",
         "set_prompt_text",
+    ],
+    # ServerlessMixin: serverless request dispatch is folded onto AgentBase in
+    # Perl (Moo composition); the reference houses it on ServerlessMixin.
+    ("signalwire.core.mixins.serverless_mixin", "ServerlessMixin"): [
+        "handle_serverless_request",
     ],
     # Python additionally extracted a ``PromptManager`` class that
     # PromptMixin delegates to. The user-facing surface is identical
@@ -317,7 +340,8 @@ MIXIN_PROJECTIONS = {
         "add_skill", "has_skill", "list_skills", "remove_skill",
     ],
     ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
-        "define_tool", "on_function_call", "register_swaig_function",
+        "define_tool", "define_tools", "on_function_call",
+        "register_swaig_function",
     ],
     ("signalwire.core.agent.tools.registry", "ToolRegistry"): [
         "define_tool", "register_swaig_function",
@@ -328,8 +352,10 @@ MIXIN_PROJECTIONS = {
         "validate_basic_auth", "get_basic_auth_credentials",
     ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
-        "enable_debug_routes", "manual_set_proxy_url", "run", "serve",
-        "set_dynamic_config_callback", "on_request", "on_swml_request",
+        "as_router", "enable_debug_routes", "get_app",
+        "manual_set_proxy_url", "register_routing_callback", "run", "serve",
+        "set_dynamic_config_callback", "setup_graceful_shutdown",
+        "on_request", "on_swml_request",
     ],
     ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
         "add_mcp_server",
@@ -717,6 +743,13 @@ def collect(raw: dict) -> dict:
 
         for m in type_entry.get("methods", []):
             native = m.get("name", "")
+            # Per-package method rename (reserved-word / dunder). Apply before
+            # the SKIP / dunder filters so a rename onto a non-__init__ dunder
+            # (e.g. call -> __call__) is dropped by the dunder filter below,
+            # and a rename onto a normal name (pass -> pass_) is recorded.
+            renamed = PERL_METHOD_RENAMES.get((full, native))
+            if renamed is not None:
+                native = renamed
             if native in SKIP_METHODS:
                 continue
             if native in skipped_due_to_parent:
@@ -1048,6 +1081,118 @@ def collect(raw: dict) -> dict:
         out_modules.setdefault(mod, {"classes": {}})
         out_modules[mod]["classes"].setdefault(canonical_class, {"methods": {}})
         out_modules[mod]["classes"][canonical_class]["methods"].update(methods_out)
+
+    # -----------------------------------------------------------------
+    # Reconcile: RELAY event surface (mirror enumerate_surface.pl).
+    #   (a) `from_payload` is a class-method constructor DECLARED ONCE on the
+    #       base SignalWire::Relay::Event and INHERITED by every typed event
+    #       subclass. The reference records from_payload on every event class
+    #       (RelayEvent + all *Event subclasses) as a classmethod (cls, payload).
+    #       The regex parser only sees the literal `sub from_payload` on the
+    #       base package, so project it onto every recorded event class with
+    #       the reference-canonical (cls, payload:dict) shape. Real inherited
+    #       capability (RULES §2 idiom-via-enumerator), not invented surface.
+    #   (b) `parse_event` is declared as a `sub` in the base Event package, so
+    #       the parser attributed it to the RelayEvent class; the reference
+    #       exposes it as a MODULE-level function. Move it onto functions[].
+    ev = out_modules.get("signalwire.relay.event")
+    if ev:
+        ev_classes = ev.get("classes", {})
+        # (b) parse_event: class-method -> module function.
+        for cls_name, cls_entry in ev_classes.items():
+            if "parse_event" in cls_entry.get("methods", {}):
+                cls_entry["methods"].pop("parse_event")
+                ev.setdefault("functions", {})
+                # The reference exposes parse_event(payload) as a module
+                # free function. Project its canonical single-param shape
+                # (the class-method attribution's params are the RelayEvent
+                # constructor attrs, not this factory's args).
+                py_fn = python_signature("signalwire.relay.event", None, "parse_event")
+                if py_fn:
+                    fn_sig = {
+                        "params": [{"name": p.get("name", ""), "type": "any",
+                                    "required": p.get("required", True)}
+                                   for p in py_fn.get("params", [])
+                                   if p.get("kind") not in ("self", "cls")],
+                        "returns": "any",
+                    }
+                else:
+                    fn_sig = {"params": [{"name": "payload", "type": "any",
+                                          "required": True}], "returns": "any"}
+                ev["functions"].setdefault("parse_event", fn_sig)
+        # (a) from_payload: project onto every event class (classmethod shape).
+        from_payload_sig = {
+            "params": [
+                {"name": "cls", "kind": "cls"},
+                {"name": "payload", "type": "dict<string,any>", "required": True},
+            ],
+            "returns": "any",
+        }
+        for cls_name, cls_entry in ev_classes.items():
+            if not (cls_name.endswith("Event") or cls_name == "RelayEvent"):
+                continue
+            cls_entry.setdefault("methods", {})
+            cls_entry["methods"].setdefault("from_payload", dict(from_payload_sig))
+
+    # -----------------------------------------------------------------
+    # Reconcile: RELAY call surface — StandaloneCollectAction inherits
+    # start_input_timers from its parent CollectAction (Perl
+    # `SignalWire::Relay::Action::StandaloneCollect extends ...::Collect`);
+    # the reference records it on StandaloneCollectAction too. The static
+    # parser sees the `sub start_input_timers` only on CollectAction, so
+    # project the inherited method (mirror enumerate_surface.pl). Real
+    # inherited capability, not invented surface.
+    rc = out_modules.get("signalwire.relay.call", {}).get("classes", {})
+    collect_a = rc.get("CollectAction", {}).get("methods", {})
+    standalone_a = rc.get("StandaloneCollectAction", {}).get("methods")
+    if standalone_a is not None and "start_input_timers" in collect_a \
+            and "start_input_timers" not in standalone_a:
+        standalone_a["start_input_timers"] = dict(collect_a["start_input_timers"])
+
+    # -----------------------------------------------------------------
+    # Reconcile: DataMap factory helpers are MODULE-level free functions in the
+    # reference (signalwire.core.data_map.create_expression_tool /
+    # create_simple_api_tool), but Perl declares them as `sub`s in the
+    # SignalWire::DataMap package so the parser attributes them to the DataMap
+    # class. Move them off the class onto the module functions[] (mirror
+    # enumerate_surface.pl's data_map free-function block).
+    dm = out_modules.get("signalwire.core.data_map")
+    if dm:
+        dm_cls = dm.get("classes", {}).get("DataMap", {}).get("methods", {})
+        for fn_name in ("create_expression_tool", "create_simple_api_tool"):
+            if fn_name in dm_cls:
+                sig = dm_cls.pop(fn_name)
+                dm.setdefault("functions", {})
+                fn_sig = {
+                    "params": [p for p in sig.get("params", [])
+                               if p.get("kind") not in ("self", "cls")],
+                    "returns": sig.get("returns", "any"),
+                }
+                dm["functions"].setdefault(fn_name, fn_sig)
+
+    # -----------------------------------------------------------------
+    # Reconcile: RelayError.__init__. Perl's SignalWire::Relay::Client::RelayError
+    # is a plain die-based error class with a hand-written `new` (in SKIP_METHODS)
+    # and `code`/`message` accessors — it declares no Moo `has` attrs, so the
+    # __init__ synthesis path doesn't fire. The reference records
+    # RelayError.__init__(self, code, message). Project the constructor with the
+    # Perl-loose (any-typed) params matching the reference arity.
+    rce = out_modules.get("signalwire.relay.client", {}).get("classes", {}).get("RelayError")
+    if rce is not None and "__init__" not in rce.get("methods", {}):
+        py_init = python_signature("signalwire.relay.client", "RelayError", "__init__")
+        if py_init:
+            init_params = [{"name": "self", "kind": "self"}]
+            for p in py_init.get("params", []):
+                if p.get("kind") in ("self", "cls"):
+                    continue
+                init_params.append({
+                    "name": p.get("name", ""),
+                    "type": "any",
+                    "required": p.get("required", True),
+                })
+            rce.setdefault("methods", {})["__init__"] = {
+                "params": init_params, "returns": "void",
+            }
 
     # Mixin projection: Perl flattens all mixin methods onto AgentBase via
     # Moo composition; some helpers also live on SWMLService (parent).

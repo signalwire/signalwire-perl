@@ -11,12 +11,12 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'call_id' => ( is => 'ro' );
+has 'call_id'             => ( is => 'ro' );
 has 'hagrid_json_api_url' => ( is => 'ro' );
-has 'hagrid_node_id' => ( is => 'ro' );
-has 'name' => ( is => 'ro' );
-has 'node_id' => ( is => 'ro' );
-has 'status_url' => ( is => 'ro' );
-has 'swml' => ( is => 'ro' );
+has 'hagrid_node_id'      => ( is => 'ro' );
+has 'name'                => ( is => 'ro' );
+has 'node_id'             => ( is => 'ro' );
+has 'status_url'          => ( is => 'ro' );
+has 'swml'                => ( is => 'ro' );
 
 1;

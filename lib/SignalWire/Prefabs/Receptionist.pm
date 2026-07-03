@@ -76,4 +76,15 @@ sub BUILD {
     return;
 }
 
+# Lifecycle hook: on_summary — Python parity
+# (signalwire.prefabs.receptionist.ReceptionistAgent.on_summary).
+#
+# No-op extension point: the base receptionist does not process the
+# transfer summary. Subclasses override this to handle the summary
+# (mirrors Python's ``def on_summary(...): pass``).
+sub on_summary {
+    my ( $self, $summary, $raw_data ) = @_;
+    return;
+}
+
 1;

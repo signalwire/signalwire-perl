@@ -9,16 +9,16 @@ package SignalWire::REST::Namespaces::Generated::RegistryNamespace;
 use strict;
 use warnings;
 use Moo;
-use SignalWire::REST::Namespaces::Generated::RegistryBrands ();
+use SignalWire::REST::Namespaces::Generated::RegistryBrands    ();
 use SignalWire::REST::Namespaces::Generated::RegistryCampaigns ();
-use SignalWire::REST::Namespaces::Generated::RegistryNumbers ();
-use SignalWire::REST::Namespaces::Generated::RegistryOrders ();
+use SignalWire::REST::Namespaces::Generated::RegistryNumbers   ();
+use SignalWire::REST::Namespaces::Generated::RegistryOrders    ();
 
-has '_http' => ( is => 'ro', required => 1 );
-has 'brands' => ( is => 'lazy', init_arg => undef );
+has '_http'     => ( is => 'ro',   required => 1 );
+has 'brands'    => ( is => 'lazy', init_arg => undef );
 has 'campaigns' => ( is => 'lazy', init_arg => undef );
-has 'numbers' => ( is => 'lazy', init_arg => undef );
-has 'orders' => ( is => 'lazy', init_arg => undef );
+has 'numbers'   => ( is => 'lazy', init_arg => undef );
+has 'orders'    => ( is => 'lazy', init_arg => undef );
 
 sub _build_brands {
     my ($self) = @_;

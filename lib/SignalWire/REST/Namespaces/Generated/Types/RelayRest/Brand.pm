@@ -11,22 +11,22 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'id' => ( is => 'ro' );
-has 'state' => ( is => 'ro' );
-has 'name' => ( is => 'ro' );
-has 'company_name' => ( is => 'ro' );
-has 'contact_email' => ( is => 'ro' );
-has 'contact_phone' => ( is => 'ro' );
+has 'id'                  => ( is => 'ro' );
+has 'state'               => ( is => 'ro' );
+has 'name'                => ( is => 'ro' );
+has 'company_name'        => ( is => 'ro' );
+has 'contact_email'       => ( is => 'ro' );
+has 'contact_phone'       => ( is => 'ro' );
 has 'ein_issuing_country' => ( is => 'ro' );
-has 'legal_entity_type' => ( is => 'ro' );
-has 'ein' => ( is => 'ro' );
-has 'company_address' => ( is => 'ro' );
-has 'company_vertical' => ( is => 'ro' );
-has 'company_website' => ( is => 'ro' );
+has 'legal_entity_type'   => ( is => 'ro' );
+has 'ein'                 => ( is => 'ro' );
+has 'company_address'     => ( is => 'ro' );
+has 'company_vertical'    => ( is => 'ro' );
+has 'company_website'     => ( is => 'ro' );
 has 'csp_brand_reference' => ( is => 'ro' );
 has 'csp_self_registered' => ( is => 'ro' );
 has 'status_callback_url' => ( is => 'ro' );
-has 'created_at' => ( is => 'ro' );
-has 'updated_at' => ( is => 'ro' );
+has 'created_at'          => ( is => 'ro' );
+has 'updated_at'          => ( is => 'ro' );
 
 1;

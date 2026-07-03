@@ -11,13 +11,13 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'name' => ( is => 'ro' );
-has 'message_handler' => ( is => 'ro' );
-has 'message_request_url' => ( is => 'ro' );
-has 'message_request_method' => ( is => 'ro' );
-has 'message_fallback_url' => ( is => 'ro' );
-has 'message_fallback_method' => ( is => 'ro' );
+has 'name'                        => ( is => 'ro' );
+has 'message_handler'             => ( is => 'ro' );
+has 'message_request_url'         => ( is => 'ro' );
+has 'message_request_method'      => ( is => 'ro' );
+has 'message_fallback_url'        => ( is => 'ro' );
+has 'message_fallback_method'     => ( is => 'ro' );
 has 'message_laml_application_id' => ( is => 'ro' );
-has 'message_relay_context' => ( is => 'ro' );
+has 'message_relay_context'       => ( is => 'ro' );
 
 1;

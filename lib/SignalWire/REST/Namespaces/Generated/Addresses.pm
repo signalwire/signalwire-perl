@@ -25,7 +25,7 @@ sub list {
 
 sub create {
     my ( $self, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->post( $self->_base_path, body => $body );
 }
 

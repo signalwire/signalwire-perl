@@ -51,6 +51,7 @@ has pom_sections => ( is => 'rw', default => sub { [] } );
 has hints            => ( is => 'rw', default => sub { [] } );
 has pattern_hints    => ( is => 'rw', default => sub { [] } );
 has languages        => ( is => 'rw', default => sub { [] } );
+has multilingual     => ( is => 'rw', default => sub { undef } );
 has pronunciations   => ( is => 'rw', default => sub { [] } );
 has params           => ( is => 'rw', default => sub { {} } );
 has global_data      => ( is => 'rw', default => sub { {} } );
@@ -70,6 +71,12 @@ has pre_answer_verbs  => ( is => 'rw', default => sub { [] } );
 has post_answer_verbs => ( is => 'rw', default => sub { [] } );
 has post_ai_verbs     => ( is => 'rw', default => sub { [] } );
 has answer_config     => ( is => 'rw', default => sub { {} } );
+
+# SIP routing (Python parity: AgentBase SIP username mapping).
+has sip_routing_enabled => ( is => 'rw', default => sub { 0 } );
+has sip_auto_map        => ( is => 'rw', default => sub { 1 } );
+has sip_path            => ( is => 'rw', default => sub { '/sip' } );
+has sip_usernames       => ( is => 'rw', default => sub { [] } );
 
 # Context system (lazy)
 has context_builder => (
@@ -487,6 +494,21 @@ sub set_languages {
     return $self;
 }
 
+# Configure ASR-driven multilingual mode (Mode B). Emits a top-level
+# ``multilingual`` object on the AI verb: the recognizer runs in
+# code-switching mode and the agent answers in whatever language the caller
+# actually spoke. Mutually exclusive with set_languages() — when both are
+# set the server prefers ``multilingual`` and ignores ``languages``. Mirrors
+# AIConfigMixin.set_multilingual: an empty/non-hash config is a no-op so the
+# rendered SWML is unchanged. Returns $self for chaining.
+sub set_multilingual {
+    my ( $self, $config ) = @_;
+    if ( defined $config && ref($config) eq 'HASH' && %$config ) {
+        $self->multilingual($config);
+    }
+    return $self;
+}
+
 # Set (or replace) the per-language ``params`` hashref on an
 # already-added language. Python parity (commit 029ca6f): empty hashref
 # removes the key; unknown ``code`` is a no-op; always returns $self
@@ -756,6 +778,66 @@ sub add_post_answer_verb {
 sub add_post_ai_verb {
     my ( $self, $verb_name, $verb_config ) = @_;
     push @{ $self->post_ai_verbs }, { $verb_name => $verb_config };
+    return $self;
+}
+
+# get_name — this agent's name (Python parity: AgentBase.get_name).
+sub get_name {
+    my ($self) = @_;
+    return $self->name;
+}
+
+# add_answer_verb(config) — set the auto-answer verb configuration used when
+# the agent picks up (Python parity: AgentBase.add_answer_verb).
+sub add_answer_verb {
+    my ( $self, $config ) = @_;
+    $self->answer_config( $config // {} );
+    return $self;
+}
+
+# enable_sip_routing(auto_map => 1, path => '/sip') — turn on SIP username
+# routing for this agent (Python parity: AgentBase.enable_sip_routing).
+sub enable_sip_routing {
+    my ( $self, %opts ) = @_;
+    $self->sip_routing_enabled(1);
+    $self->sip_auto_map( exists $opts{auto_map} ? $opts{auto_map} : 1 );
+    $self->sip_path( $opts{path} // '/sip' );
+    $self->auto_map_sip_usernames if $self->sip_auto_map;
+    return $self;
+}
+
+# register_sip_username(username) — register a SIP username that routes to
+# this agent (Python parity: AgentBase.register_sip_username). Deduplicated.
+sub register_sip_username {
+    my ( $self, $username ) = @_;
+    return $self unless defined $username && length $username;
+    push @{ $self->sip_usernames }, $username
+        unless grep { $_ eq $username } @{ $self->sip_usernames };
+    return $self;
+}
+
+# auto_map_sip_usernames — derive SIP usernames from the agent name and
+# route (lower-cased, stripped to [a-z0-9_]) plus a no-vowels variant of the
+# name, registering each. Deduplicated (Python parity).
+sub auto_map_sip_usernames {
+    my ($self) = @_;
+    my $sanitize = sub {
+        my $v = lc( $_[0] // '' );
+        $v =~ s/[^a-z0-9_]//g;
+        return $v;
+    };
+    my $clean_name = $sanitize->( $self->name );
+    $self->register_sip_username($clean_name) if length $clean_name;
+
+    my $clean_route = $sanitize->( $self->route );
+    $self->register_sip_username($clean_route)
+        if length $clean_route && $clean_route ne $clean_name;
+
+    if ( length $clean_name > 3 ) {
+        ( my $no_vowels = $clean_name ) =~ s/[aeiou]//g;
+        $self->register_sip_username($no_vowels)
+            if length $no_vowels && $no_vowels ne $clean_name;
+    }
     return $self;
 }
 
@@ -1290,6 +1372,14 @@ sub _build_ai_verb {
     # Languages
     $ai{languages} = $self->languages if @{ $self->languages };
 
+    # ASR-driven multilingual mode (set_multilingual): emit the top-level
+    # ``multilingual`` object on the AI verb. Mutually exclusive with
+    # ``languages`` — the server prefers ``multilingual`` when both present.
+    {
+        my $ml = $self->multilingual;
+        $ai{multilingual} = $ml if defined $ml && ref($ml) eq 'HASH' && %$ml;
+    }
+
     # Pronunciations
     $ai{pronounce} = $self->pronunciations if @{ $self->pronunciations };
 
@@ -1743,6 +1833,103 @@ sub _clone_for_request {
 sub run {
     my ( $self, %opts ) = @_;
     return $self->serve(%opts);
+}
+
+# handle_serverless_request — dispatch a request in a serverless
+# environment (CGI / Lambda / Cloud Functions).
+#
+# Python parity: ServerlessMixin.handle_serverless_request(event, context,
+# mode). Ruby parity: routes through the same PSGI/rack app the HTTP
+# server uses. When mode is not given it is auto-detected via
+# get_execution_mode(). In 'lambda' mode a Lambda-proxy response hashref
+# ({ statusCode, headers, body }) is returned; in 'cgi' mode the rendered
+# body string is returned; any other mode falls through to run().
+sub handle_serverless_request {
+    my ( $self, %opts ) = @_;
+    my $event   = $opts{event};
+    my $context = $opts{context};
+
+    require SignalWire::Core::LoggingConfig;
+    my $mode = $opts{mode} // SignalWire::Core::LoggingConfig::get_execution_mode();
+
+    if ( $mode eq 'lambda' ) {
+        return $self->_run_serverless_lambda($event);
+    } elsif ( $mode eq 'cgi' ) {
+        return $self->_run_serverless_cgi;
+    }
+
+    return $self->run( host => $opts{host}, port => $opts{port} );
+}
+
+# Build a minimal PSGI env for a serverless/CGI invocation.
+sub _serverless_psgi_env {
+    my ( $self, %args ) = @_;
+    my $body = $args{body} // '';
+    my $input;
+    open $input, '<', \$body or ( $input = undef );
+    return {
+        PATH_INFO      => $args{path}   // '/',
+        REQUEST_METHOD => $args{method} // 'GET',
+        QUERY_STRING   => $args{query}  // '',
+        'psgi.input'   => $input,
+        'psgi.errors'  => \*STDERR,
+    };
+}
+
+# Lambda: run the event through the PSGI app and shape a Lambda-proxy
+# response hashref.
+sub _run_serverless_lambda {
+    my ( $self, $event ) = @_;
+    $event //= {};
+
+    my $path   = $event->{path} // $event->{rawPath} // '/';
+    my $method = $event->{httpMethod} // (
+          $event->{requestContext} && $event->{requestContext}{http}
+        ? $event->{requestContext}{http}{method}
+        : undef
+    ) // 'GET';
+
+    my $env = $self->_serverless_psgi_env(
+        path   => $path,
+        method => $method,
+        query  => '',
+        body   => $event->{body} // '',
+    );
+
+    my ( $status, $headers, $response_body ) = @{ $self->psgi_app->($env) };
+    return {
+        statusCode => int($status),
+        headers    => { @{ $headers // [] } },
+        body       => _join_psgi_body($response_body),
+    };
+}
+
+# CGI: run PATH_INFO through the PSGI app and return the body string.
+sub _run_serverless_cgi {
+    my ($self) = @_;
+    my $body   = '';
+    my $len    = $ENV{CONTENT_LENGTH};
+    if ( defined $len && $len =~ /^\d+$/ && $len > 0 ) {
+        local $/;
+        read( STDIN, $body, $len );
+    }
+
+    my $env = $self->_serverless_psgi_env(
+        path   => $ENV{PATH_INFO}      // '/',
+        method => $ENV{REQUEST_METHOD} // 'GET',
+        query  => $ENV{QUERY_STRING}   // '',
+        body   => $body,
+    );
+
+    my ( undef, undef, $response_body ) = @{ $self->psgi_app->($env) };
+    return _join_psgi_body($response_body);
+}
+
+sub _join_psgi_body {
+    my ($body) = @_;
+    return '' unless defined $body;
+    return join( '', @$body ) if ref $body eq 'ARRAY';
+    return "$body";
 }
 
 sub serve {

@@ -45,6 +45,38 @@ has 'document' => (
     default => sub { SignalWire::SWML::Document->new() },
 );
 
+# Specialized SWML verb handlers keyed by verb name (register_verb_handler).
+has 'verb_handlers' => (
+    is      => 'rw',
+    default => sub { {} },
+);
+
+# Strict-schema-validation flag (full_validation_enabled).
+has 'full_validation' => (
+    is      => 'rw',
+    default => sub { 0 },
+);
+
+# External base URL override for webhook URLs behind a proxy
+# (manual_set_proxy_url / SWML_PROXY_URL_BASE).
+has 'proxy_url_base' => (
+    is      => 'rw',
+    default => sub { $ENV{SWML_PROXY_URL_BASE} // '' },
+);
+
+# Set while serve() is running; cleared by stop().
+has '_server_running' => (
+    is      => 'rw',
+    default => sub { 0 },
+);
+
+# Toggled by enable_debug_routes(); when true the service exposes its
+# debug endpoints (Python WebMixin debug-route parity).
+has '_debug_routes_enabled' => (
+    is      => 'rw',
+    default => sub { 0 },
+);
+
 # SWAIG tool registry — lifted from AgentBase so any Service (sidecar,
 # non-agent verb host) can register and dispatch SWAIG functions.
 has 'tools' => (
@@ -375,6 +407,172 @@ sub render_main_swml {
 sub render_swml {
     my ( $self, $env ) = @_;
     return $self->render_main_swml($env);
+}
+
+# ------------------------------------------------------------------
+# Document manipulation (Python parity: SWMLService document methods).
+# Perl composes a SWML::Document; these expose the reference's
+# SWMLService-level document API directly on the service, delegating to
+# the composed document. Verb/section adds target the ``main`` section
+# unless a section is named (matching the Python reference, whose
+# add_verb/add_section operate on ``sections.main``).
+# ------------------------------------------------------------------
+
+# reset_document — replace the working document with a fresh empty one.
+sub reset_document {
+    my ($self) = @_;
+    $self->document( SignalWire::SWML::Document->new() );
+    return;
+}
+
+# add_verb(verb_name, config) — append a verb to the main section. A
+# specialized verb handler (register_verb_handler) validates when present;
+# otherwise schema validation applies. Returns true on success, false when
+# config is not a hashref (and not the sleep integer special-case).
+sub add_verb {
+    my ( $self, $verb_name, $config ) = @_;
+    if ( $verb_name eq 'sleep' && defined $config && !ref $config ) {
+        $self->document->add_verb( 'main', $verb_name, int($config) );
+        return 1;
+    }
+    return 0 unless defined $config && ref $config eq 'HASH';
+    if ( my $handler = $self->verb_handlers->{$verb_name} ) {
+        my ( $ok, $errors ) = $handler->validate_config($config);
+        die "SWML verb '$verb_name' validation failed: @{ $errors // [] }\n" unless $ok;
+    }
+    $self->document->add_verb( 'main', $verb_name, $config );
+    return 1;
+}
+
+# add_section(section_name) — create a new named section. Returns false if
+# it already exists, true if created.
+sub add_section {
+    my ( $self, $section_name ) = @_;
+    return 0 if $self->document->has_section($section_name);
+    $self->document->add_section($section_name);
+    return 1;
+}
+
+# add_verb_to_section(section_name, verb_name, config) — append a verb to a
+# named section (creating the section if absent).
+sub add_verb_to_section {
+    my ( $self, $section_name, $verb_name, $config ) = @_;
+    if ( $verb_name eq 'sleep' && defined $config && !ref $config ) {
+        $self->document->add_verb( $section_name, $verb_name, int($config) );
+        return 1;
+    }
+    return 0 unless defined $config && ref $config eq 'HASH';
+    $self->document->add_verb( $section_name, $verb_name, $config );
+    return 1;
+}
+
+# get_document — the current document as a plain hashref (parity with
+# SWMLService.get_document, which returns the document dict).
+sub get_document {
+    my ($self) = @_;
+    return $self->document->to_hash;
+}
+
+# render_document — the current document serialized to a JSON string.
+sub render_document {
+    my ($self) = @_;
+    return $self->document->to_json;
+}
+
+# register_verb_handler(handler) — install a specialized verb handler; its
+# get_verb_name() names the verb it validates/builds (parity with
+# SWMLService.register_verb_handler).
+sub register_verb_handler {
+    my ( $self, $handler ) = @_;
+    my $name = $handler->get_verb_name;
+    $self->verb_handlers->{$name} = $handler;
+    return;
+}
+
+# full_validation_enabled — whether strict schema validation is on. Perl
+# validates opportunistically; the flag defaults off and is honored by
+# add_verb when a schema is available.
+sub full_validation_enabled {
+    my ($self) = @_;
+    return $self->full_validation ? 1 : 0;
+}
+
+# manual_set_proxy_url(url) — override the external base URL used when
+# building webhook URLs behind a reverse proxy (parity with
+# SWMLService.manual_set_proxy_url / SWML_PROXY_URL_BASE).
+sub manual_set_proxy_url {
+    my ( $self, $proxy_url ) = @_;
+    $proxy_url =~ s{/+$}{} if defined $proxy_url;
+    $self->proxy_url_base($proxy_url);
+    return;
+}
+
+# as_router — the PSGI app coderef that mounts this service (parity with
+# SWMLService.as_router, which returns a FastAPI APIRouter). Perl's routable
+# unit is the PSGI app.
+sub as_router {
+    my ($self) = @_;
+    return $self->to_psgi_app;
+}
+
+# get_app — return the PSGI application for this service (deployment
+# adapters mount this). Mirrors Python WebMixin.get_app, which returns
+# the FastAPI app; the Perl analogue is the PSGI coderef from
+# to_psgi_app.
+sub get_app {
+    my ($self) = @_;
+    return $self->to_psgi_app;
+}
+
+# enable_debug_routes — turn on the service's debug endpoints. Mirrors
+# WebMixin.enable_debug_routes. Returns $self for chaining.
+sub enable_debug_routes {
+    my ($self) = @_;
+    $self->_debug_routes_enabled(1);
+    return $self;
+}
+
+# setup_graceful_shutdown — install SIGTERM/SIGINT handlers that stop the
+# running server (Kubernetes-friendly). Mirrors
+# WebMixin.setup_graceful_shutdown. Returns $self for chaining; a
+# platform that cannot trap a given signal is ignored quietly.
+sub setup_graceful_shutdown {
+    my ($self) = @_;
+    for my $sig (qw(TERM INT)) {
+        eval {
+            ## no critic (Variables::RequireLocalizedPunctuationVars)
+            # Intentionally a PERSISTENT process-wide signal handler (not a
+            # localized one) — graceful shutdown must survive past this scope.
+            $SIG{$sig} = sub {
+                $self->_logger->info("shutdown_signal_received signal=$sig")
+                    if $self->_logger;
+                $self->stop;
+            };
+            1;
+        };
+    }
+    return $self;
+}
+
+# serve(host, port) — start a blocking Plack HTTP server for this service.
+# Parity with SWMLService.serve(host, port).
+sub serve {
+    my ( $self, %opts ) = @_;
+    my $host = $opts{host} // $self->host;
+    my $port = $opts{port} // $self->port;
+    require Plack::Runner;
+    my $runner = Plack::Runner->new;
+    $runner->parse_options( '--host', $host, '--port', $port );
+    $self->_server_running(1);
+    $runner->run( $self->to_psgi_app );
+    return;
+}
+
+# stop — signal the running server to stop (parity with SWMLService.stop).
+sub stop {
+    my ($self) = @_;
+    $self->_server_running(0);
+    return;
 }
 
 # Customization hook called when SWML is requested. Default delegates to

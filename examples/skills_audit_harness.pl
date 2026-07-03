@@ -59,8 +59,8 @@ $args //= {};
 my @builtins = qw(
     Datetime Math Joke WebSearch WikipediaSearch GoogleMaps Spider
     Datasphere DatasphereServerless ApiNinjasTrivia WeatherApi
-    SwmlTransfer PlayBackgroundFile NativeVectorSearch InfoGatherer
-    ClaudeSkills McpGateway
+    SwmlTransfer PlayBackgroundFile InfoGatherer
+    ClaudeSkills
 );
 for my $mod (@builtins) {
     my $pkg = "SignalWire::Skills::Builtin::$mod";

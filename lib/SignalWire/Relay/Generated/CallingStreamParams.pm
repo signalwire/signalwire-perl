@@ -11,18 +11,18 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'async' => ( is => 'ro' );
+has 'async'                      => ( is => 'ro' );
 has 'authorization_bearer_token' => ( is => 'ro' );
-has 'call_id' => ( is => 'ro' );
-has 'codec' => ( is => 'ro' );
-has 'control_id' => ( is => 'ro' );
-has 'custom_parameters' => ( is => 'ro' );
-has 'name' => ( is => 'ro' );
-has 'node_id' => ( is => 'ro' );
-has 'status_url' => ( is => 'ro' );
-has 'status_url_method' => ( is => 'ro' );
-has 'swml' => ( is => 'ro' );
-has 'track' => ( is => 'ro' );
-has 'url' => ( is => 'ro' );
+has 'call_id'                    => ( is => 'ro' );
+has 'codec'                      => ( is => 'ro' );
+has 'control_id'                 => ( is => 'ro' );
+has 'custom_parameters'          => ( is => 'ro' );
+has 'name'                       => ( is => 'ro' );
+has 'node_id'                    => ( is => 'ro' );
+has 'status_url'                 => ( is => 'ro' );
+has 'status_url_method'          => ( is => 'ro' );
+has 'swml'                       => ( is => 'ro' );
+has 'track'                      => ( is => 'ro' );
+has 'url'                        => ( is => 'ro' );
 
 1;

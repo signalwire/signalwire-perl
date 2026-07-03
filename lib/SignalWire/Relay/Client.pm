@@ -865,6 +865,37 @@ sub run ($self) {
     return;
 }
 
+# --- RelayError ---
+#
+# Error returned by the RELAY server. Mirrors the Python reference's
+# RelayError(code, message): a small exception object carrying the numeric
+# server error code and its human message, stringifying as
+# "RELAY error <code>: <message>". Thrown by RPC helpers when the server
+# rejects a request; catchable via eval { ... } / ref($@).
+package SignalWire::Relay::Client::RelayError;
+use strict;
+use warnings;
+use feature 'signatures';
+no warnings 'experimental::signatures';
+
+use overload
+    '""'     => sub { $_[0]->{_string} },
+    fallback => 1;
+
+sub new ( $class, %args ) {
+    my $code    = $args{code}    // 0;
+    my $message = $args{message} // '';
+    my $self    = {
+        code    => $code,
+        message => $message,
+        _string => "RELAY error $code: $message",
+    };
+    return bless $self, $class;
+}
+
+sub code    ($self) { return $self->{code} }
+sub message ($self) { return $self->{message} }
+
 1;
 
 __END__

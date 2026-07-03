@@ -12,6 +12,26 @@ has 'event_type' => ( is => 'ro', default => sub { '' } );
 has 'timestamp'  => ( is => 'ro', default => sub { 0 } );
 has 'params'     => ( is => 'ro', default => sub { {} } );
 
+# Class-method constructor from a raw ``{event_type, params}`` payload hashref.
+# Mirrors the Python reference's RelayEvent.from_payload / every subclass's
+# from_payload: build an instance of the invoking class, copying the payload's
+# ``params`` fields up into the typed attributes (Moo ignores unknown keys, so
+# a forward-compatible server shape is never rejected). Inherited by every
+# typed subclass, so ``PlayEvent->from_payload($payload)`` yields a populated
+# ::CallPlay-equivalent — the cross-language surface records from_payload on
+# each event class.
+sub from_payload ( $class, $payload = undef ) {
+    $payload //= {};
+    my $event_type = $payload->{event_type} // '';
+    my $params     = $payload->{params}     // {};
+    my %args       = ( event_type => $event_type, params => $params );
+    $args{timestamp} = $params->{timestamp} if defined $params->{timestamp};
+    for my $key ( keys %$params ) {
+        $args{$key} = $params->{$key};
+    }
+    return $class->new(%args);
+}
+
 # --- Subclasses for each event type ---
 
 # Call state change: created, ringing, answered, ending, ended
@@ -182,6 +202,33 @@ has 'call_id'    => ( is => 'ro', default => sub { '' } );
 has 'node_id'    => ( is => 'ro', default => sub { '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 
+# Denoise state change (calling.call.denoise)
+package SignalWire::Relay::Event::CallDenoise;
+use Moo;
+extends 'SignalWire::Relay::Event';
+has 'denoised' => ( is => 'ro', default => sub { 0 } );
+
+# Echo state change (calling.call.echo)
+package SignalWire::Relay::Event::CallEcho;
+use Moo;
+extends 'SignalWire::Relay::Event';
+has 'state' => ( is => 'ro', default => sub { '' } );
+
+# Hold/unhold state change (calling.call.hold)
+package SignalWire::Relay::Event::CallHold;
+use Moo;
+extends 'SignalWire::Relay::Event';
+has 'state' => ( is => 'ro', default => sub { '' } );
+
+# Queue state change (calling.call.queue)
+package SignalWire::Relay::Event::CallQueue;
+use Moo;
+extends 'SignalWire::Relay::Event';
+has 'control_id' => ( is => 'ro', default => sub { '' } );
+has 'status'     => ( is => 'ro', default => sub { '' } );
+has 'position'   => ( is => 'ro', default => sub { 0 } );
+has 'size'       => ( is => 'ro', default => sub { 0 } );
+
 # Inbound message
 package SignalWire::Relay::Event::MessageReceive;
 use Moo;
@@ -246,6 +293,10 @@ my %EVENT_CLASS_MAP = (
     'calling.call.pay'               => 'SignalWire::Relay::Event::CallPay',
     'calling.call.send_digits'       => 'SignalWire::Relay::Event::CallSendDigits',
     'calling.call.refer'             => 'SignalWire::Relay::Event::CallRefer',
+    'calling.call.denoise'           => 'SignalWire::Relay::Event::CallDenoise',
+    'calling.call.echo'              => 'SignalWire::Relay::Event::CallEcho',
+    'calling.call.hold'              => 'SignalWire::Relay::Event::CallHold',
+    'calling.call.queue'             => 'SignalWire::Relay::Event::CallQueue',
     'calling.conference'             => 'SignalWire::Relay::Event::Conference',
     'calling.call.ai'                => 'SignalWire::Relay::Event::CallAI',
     'messaging.receive'              => 'SignalWire::Relay::Event::MessageReceive',

@@ -13,7 +13,7 @@ extends 'SignalWire::REST::Namespaces::CrudResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/video/rooms';
+    $args{_base_path}     //= '/api/video/rooms';
     $args{_update_method} //= 'PUT';
     return $class->$orig(%args);
 };
@@ -21,13 +21,13 @@ around BUILDARGS => sub {
 sub list_streams {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'streams'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'streams' ), params => $p );
 }
 
 sub create_stream {
     my ( $self, $id, %args ) = @_;
-    my $body = { %args };
-    return $self->_http->post( $self->_path($id, 'streams'), body => $body );
+    my $body = {%args};
+    return $self->_http->post( $self->_path( $id, 'streams' ), body => $body );
 }
 
 1;

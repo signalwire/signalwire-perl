@@ -25,26 +25,26 @@ sub get {
 
 sub update {
     my ( $self, $id, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->put( $self->_path($id), body => $body );
 }
 
 sub list_numbers {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'numbers'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'numbers' ), params => $p );
 }
 
 sub list_orders {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'orders'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'orders' ), params => $p );
 }
 
 sub create_order {
     my ( $self, $id, %args ) = @_;
-    my $body = { %args };
-    return $self->_http->post( $self->_path($id, 'orders'), body => $body );
+    my $body = {%args};
+    return $self->_http->post( $self->_path( $id, 'orders' ), body => $body );
 }
 
 1;

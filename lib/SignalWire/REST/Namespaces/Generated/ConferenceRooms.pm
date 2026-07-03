@@ -13,7 +13,7 @@ extends 'SignalWire::REST::Namespaces::Generated::FabricResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/fabric/resources/conference_rooms';
+    $args{_base_path}     //= '/api/fabric/resources/conference_rooms';
     $args{_update_method} //= 'PUT';
     return $class->$orig(%args);
 };
@@ -21,7 +21,8 @@ around BUILDARGS => sub {
 sub list_addresses {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( '/api/fabric/resources/conference_room/' . $id . '/addresses', params => $p );
+    return $self->_http->get( '/api/fabric/resources/conference_room/' . $id . '/addresses',
+        params => $p );
 }
 
 1;

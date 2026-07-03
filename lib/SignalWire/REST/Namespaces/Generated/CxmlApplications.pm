@@ -31,7 +31,7 @@ sub get {
 
 sub update {
     my ( $self, $id, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->put( $self->_path($id), body => $body );
 }
 
@@ -43,7 +43,7 @@ sub delete {
 sub list_addresses {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'addresses'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'addresses' ), params => $p );
 }
 
 1;

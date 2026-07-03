@@ -11,15 +11,15 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'SWAIG' => ( is => 'ro' );
-has 'async' => ( is => 'ro' );
-has 'call_id' => ( is => 'ro' );
-has 'global_data' => ( is => 'ro' );
-has 'node_id' => ( is => 'ro' );
-has 'params' => ( is => 'ro' );
-has 'post_prompt' => ( is => 'ro' );
+has 'SWAIG'           => ( is => 'ro' );
+has 'async'           => ( is => 'ro' );
+has 'call_id'         => ( is => 'ro' );
+has 'global_data'     => ( is => 'ro' );
+has 'node_id'         => ( is => 'ro' );
+has 'params'          => ( is => 'ro' );
+has 'post_prompt'     => ( is => 'ro' );
 has 'post_prompt_url' => ( is => 'ro' );
-has 'prompt' => ( is => 'ro' );
-has 'swml' => ( is => 'ro' );
+has 'prompt'          => ( is => 'ro' );
+has 'swml'            => ( is => 'ro' );
 
 1;

@@ -9,17 +9,17 @@ use_ok('SignalWire::Skills::SkillRegistry');
 use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
-# 1. SkillRegistry - list all 18 skills
+# 1. SkillRegistry - list all 16 skills
 # ============================================================
-subtest 'registry lists 18 skills' => sub {
+subtest 'registry lists 16 skills' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 18, '18 built-in skills registered');
+    is(scalar @$skills, 16, '16 built-in skills registered');
 
     my @expected = sort qw(
         api_ninjas_trivia claude_skills datasphere datasphere_serverless
-        datetime google_maps info_gatherer joke math mcp_gateway
-        native_vector_search play_background_file spider swml_transfer
+        datetime google_maps info_gatherer joke math
+        play_background_file spider swml_transfer
         weather_api web_search wikipedia_search custom_skills
     );
     is_deeply($skills, \@expected, 'all expected skills present');
@@ -264,13 +264,13 @@ subtest 'manager merges prompt sections' => sub {
 };
 
 # ============================================================
-# 20. All 18 skills instantiate
+# 20. All 16 skills instantiate
 # ============================================================
-subtest 'all 18 skills instantiate' => sub {
+subtest 'all 16 skills instantiate' => sub {
     my @skill_names = qw(
         api_ninjas_trivia claude_skills datasphere datasphere_serverless
-        datetime google_maps info_gatherer joke math mcp_gateway
-        native_vector_search play_background_file spider swml_transfer
+        datetime google_maps info_gatherer joke math
+        play_background_file spider swml_transfer
         weather_api web_search wikipedia_search custom_skills
     );
 

@@ -11,7 +11,7 @@ use warnings;
 use Moo;
 use SignalWire::REST::Namespaces::Generated::ProjectTokens ();
 
-has '_http' => ( is => 'ro', required => 1 );
+has '_http'  => ( is => 'ro',   required => 1 );
 has 'tokens' => ( is => 'lazy', init_arg => undef );
 
 sub _build_tokens {

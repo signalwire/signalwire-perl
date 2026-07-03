@@ -11,20 +11,20 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'id' => ( is => 'ro' );
-has 'from' => ( is => 'ro' );
-has 'to' => ( is => 'ro' );
-has 'direction' => ( is => 'ro' );
-has 'source' => ( is => 'ro' );
-has 'url' => ( is => 'ro' );
-has 'charge' => ( is => 'ro' );
-has 'created_at' => ( is => 'ro' );
+has 'id'             => ( is => 'ro' );
+has 'from'           => ( is => 'ro' );
+has 'to'             => ( is => 'ro' );
+has 'direction'      => ( is => 'ro' );
+has 'source'         => ( is => 'ro' );
+has 'url'            => ( is => 'ro' );
+has 'charge'         => ( is => 'ro' );
+has 'created_at'     => ( is => 'ro' );
 has 'charge_details' => ( is => 'ro' );
-has 'status' => ( is => 'ro' );
-has 'duration' => ( is => 'ro' );
-has 'duration_ms' => ( is => 'ro' );
-has 'billing_ms' => ( is => 'ro' );
-has 'type' => ( is => 'ro' );
-has 'parent_id' => ( is => 'ro' );
+has 'status'         => ( is => 'ro' );
+has 'duration'       => ( is => 'ro' );
+has 'duration_ms'    => ( is => 'ro' );
+has 'billing_ms'     => ( is => 'ro' );
+has 'type'           => ( is => 'ro' );
+has 'parent_id'      => ( is => 'ro' );
 
 1;

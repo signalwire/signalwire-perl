@@ -12,6 +12,6 @@ use Moo;
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
 has 'allowed_addresses' => ( is => 'ro' );
-has 'expire_at' => ( is => 'ro' );
+has 'expire_at'         => ( is => 'ro' );
 
 1;

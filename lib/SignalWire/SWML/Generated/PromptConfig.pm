@@ -11,20 +11,20 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'play' => ( is => 'ro' );
-has 'volume' => ( is => 'ro' );
-has 'say_voice' => ( is => 'ro' );
-has 'say_language' => ( is => 'ro' );
-has 'say_gender' => ( is => 'ro' );
-has 'max_digits' => ( is => 'ro' );
-has 'terminators' => ( is => 'ro' );
-has 'digit_timeout' => ( is => 'ro' );
-has 'initial_timeout' => ( is => 'ro' );
-has 'speech_timeout' => ( is => 'ro' );
+has 'play'               => ( is => 'ro' );
+has 'volume'             => ( is => 'ro' );
+has 'say_voice'          => ( is => 'ro' );
+has 'say_language'       => ( is => 'ro' );
+has 'say_gender'         => ( is => 'ro' );
+has 'max_digits'         => ( is => 'ro' );
+has 'terminators'        => ( is => 'ro' );
+has 'digit_timeout'      => ( is => 'ro' );
+has 'initial_timeout'    => ( is => 'ro' );
+has 'speech_timeout'     => ( is => 'ro' );
 has 'speech_end_timeout' => ( is => 'ro' );
-has 'speech_language' => ( is => 'ro' );
-has 'speech_hints' => ( is => 'ro' );
-has 'speech_engine' => ( is => 'ro' );
-has 'status_url' => ( is => 'ro' );
+has 'speech_language'    => ( is => 'ro' );
+has 'speech_hints'       => ( is => 'ro' );
+has 'speech_engine'      => ( is => 'ro' );
+has 'status_url'         => ( is => 'ro' );
 
 1;

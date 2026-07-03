@@ -11,9 +11,9 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'hold_ms' => ( is => 'ro' );
+has 'hold_ms'           => ( is => 'ro' );
 has 'commit_latency_ms' => ( is => 'ro' );
-has 'segments' => ( is => 'ro' );
-has 'walkbacks' => ( is => 'ro' );
+has 'segments'          => ( is => 'ro' );
+has 'walkbacks'         => ( is => 'ro' );
 
 1;

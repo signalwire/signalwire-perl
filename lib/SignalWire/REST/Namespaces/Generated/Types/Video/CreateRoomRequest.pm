@@ -11,19 +11,19 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'name' => ( is => 'ro' );
-has 'display_name' => ( is => 'ro' );
-has 'description' => ( is => 'ro' );
-has 'max_members' => ( is => 'ro' );
-has 'quality' => ( is => 'ro' );
-has 'join_from' => ( is => 'ro' );
-has 'join_until' => ( is => 'ro' );
-has 'remove_at' => ( is => 'ro' );
+has 'name'                         => ( is => 'ro' );
+has 'display_name'                 => ( is => 'ro' );
+has 'description'                  => ( is => 'ro' );
+has 'max_members'                  => ( is => 'ro' );
+has 'quality'                      => ( is => 'ro' );
+has 'join_from'                    => ( is => 'ro' );
+has 'join_until'                   => ( is => 'ro' );
+has 'remove_at'                    => ( is => 'ro' );
 has 'remove_after_seconds_elapsed' => ( is => 'ro' );
-has 'layout' => ( is => 'ro' );
-has 'record_on_start' => ( is => 'ro' );
-has 'enable_room_previews' => ( is => 'ro' );
-has 'meta' => ( is => 'ro' );
-has 'sync_audio_video' => ( is => 'ro' );
+has 'layout'                       => ( is => 'ro' );
+has 'record_on_start'              => ( is => 'ro' );
+has 'enable_room_previews'         => ( is => 'ro' );
+has 'meta'                         => ( is => 'ro' );
+has 'sync_audio_video'             => ( is => 'ro' );
 
 1;

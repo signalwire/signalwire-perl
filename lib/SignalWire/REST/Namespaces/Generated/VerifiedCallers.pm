@@ -13,20 +13,20 @@ extends 'SignalWire::REST::Namespaces::CrudResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/relay/rest/verified_caller_ids';
+    $args{_base_path}     //= '/api/relay/rest/verified_caller_ids';
     $args{_update_method} //= 'PUT';
     return $class->$orig(%args);
 };
 
 sub redial_verification {
     my ( $self, $id ) = @_;
-    return $self->_http->post( $self->_path($id, 'verification'), body => {} );
+    return $self->_http->post( $self->_path( $id, 'verification' ), body => {} );
 }
 
 sub submit_verification {
     my ( $self, $id, %args ) = @_;
-    my $body = { %args };
-    return $self->_http->put( $self->_path($id, 'verification'), body => $body );
+    my $body = {%args};
+    return $self->_http->put( $self->_path( $id, 'verification' ), body => $body );
 }
 
 1;

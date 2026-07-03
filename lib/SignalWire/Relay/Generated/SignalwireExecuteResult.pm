@@ -13,6 +13,6 @@ use Moo;
 # wire key; no methods (the reference records this as a method-less type).
 has 'requester_nodeid' => ( is => 'ro' );
 has 'responder_nodeid' => ( is => 'ro' );
-has 'result' => ( is => 'ro' );
+has 'result'           => ( is => 'ro' );
 
 1;

@@ -13,7 +13,7 @@ extends 'SignalWire::REST::Namespaces::CrudResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/relay/rest/queues';
+    $args{_base_path}     //= '/api/relay/rest/queues';
     $args{_update_method} //= 'PUT';
     return $class->$orig(%args);
 };
@@ -21,19 +21,19 @@ around BUILDARGS => sub {
 sub list_members {
     my ( $self, $queue_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($queue_id, 'members'), params => $p );
+    return $self->_http->get( $self->_path( $queue_id, 'members' ), params => $p );
 }
 
 sub get_next_member {
     my ( $self, $queue_id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($queue_id, 'members', 'next'), params => $p );
+    return $self->_http->get( $self->_path( $queue_id, 'members', 'next' ), params => $p );
 }
 
 sub get_member {
     my ( $self, $queue_id, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($queue_id, 'members', $id), params => $p );
+    return $self->_http->get( $self->_path( $queue_id, 'members', $id ), params => $p );
 }
 
 1;

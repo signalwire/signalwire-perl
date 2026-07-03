@@ -12,10 +12,10 @@ use Moo;
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
 has 'system_prompt' => ( is => 'ro' );
-has 'user_prompt' => ( is => 'ro' );
-has 'system_pom' => ( is => 'ro' );
-has 'user_pom' => ( is => 'ro' );
-has 'consolidate' => ( is => 'ro' );
-has 'full_reset' => ( is => 'ro' );
+has 'user_prompt'   => ( is => 'ro' );
+has 'system_pom'    => ( is => 'ro' );
+has 'user_pom'      => ( is => 'ro' );
+has 'consolidate'   => ( is => 'ro' );
+has 'full_reset'    => ( is => 'ro' );
 
 1;

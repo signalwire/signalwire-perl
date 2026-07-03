@@ -14,7 +14,10 @@ has '+supports_multiple_instances' => ( default => sub { 0 } );
 
 sub setup { return 1 }
 
-sub register_tools {
+# Python parity: get_tools returns the raw SWAIG tool DEFINITION hash(es)
+# (the DataMap tool the skill provides). register_tools builds on top of
+# this by registering each returned tool with the agent.
+sub get_tools {
     my ($self)    = @_;
     my $tool_name = $self->params->{tool_name}        // 'get_weather';
     my $api_key   = $self->params->{api_key}          // '';
@@ -40,7 +43,7 @@ sub register_tools {
 "https://api.weatherapi.com/v1/current.json?key=${api_key}&q=\${lc:enc:args.location}&aqi=no";
     }
 
-    return $self->agent->register_swaig_function(
+    return [
         {
             function    => $tool_name,
             description => 'Get current weather information for any location',
@@ -67,7 +70,16 @@ sub register_tools {
                 ],
             },
         }
-    );
+    ];
+}
+
+sub register_tools {
+    my ($self) = @_;
+    my $result;
+    for my $tool ( @{ $self->get_tools } ) {
+        $result = $self->agent->register_swaig_function($tool);
+    }
+    return $result;
 }
 
 sub get_parameter_schema {

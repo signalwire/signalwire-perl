@@ -25,7 +25,7 @@ sub get {
 
 sub update {
     my ( $self, $id, %args ) = @_;
-    my $body = { %args };
+    my $body = {%args};
     return $self->_http->put( $self->_path($id), body => $body );
 }
 

@@ -54,9 +54,13 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import os
 import re
 import sys
 from pathlib import Path
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _perltidy_gen import perltidy_outputs  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +230,10 @@ def build_outputs(psdk: Path) -> dict:
     outs.update(_build_post_prompt(psdk))
     outs.update(_build_swaig_request(psdk))
     outs.update(_build_swaig_actions(psdk))
+    # §5 format backstop: tidy every generated .pm so GEN-FRESH and the FMT
+    # gate both pass (perltidy aligns consecutive `has` declarations, which a
+    # straight-line emitter cannot reproduce).
+    perltidy_outputs(outs, repo_root())
     return outs
 
 

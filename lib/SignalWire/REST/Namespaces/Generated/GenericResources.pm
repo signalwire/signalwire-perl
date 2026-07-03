@@ -37,19 +37,19 @@ sub delete {
 sub list_addresses {
     my ( $self, $id, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id, 'addresses'), params => $p );
+    return $self->_http->get( $self->_path( $id, 'addresses' ), params => $p );
 }
 
 sub assign_phone_route {
     my ( $self, $id, %args ) = @_;
-    my $body = { %args };
-    return $self->_http->post( $self->_path($id, 'phone_routes'), body => $body );
+    my $body = {%args};
+    return $self->_http->post( $self->_path( $id, 'phone_routes' ), body => $body );
 }
 
 sub assign_domain_application {
     my ( $self, $id, %args ) = @_;
-    my $body = { %args };
-    return $self->_http->post( $self->_path($id, 'domain_applications'), body => $body );
+    my $body = {%args};
+    return $self->_http->post( $self->_path( $id, 'domain_applications' ), body => $body );
 }
 
 1;

@@ -64,6 +64,26 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.core.swml_service', class => 'SWMLService' },
     'SignalWire::SWAIG::FunctionResult' =>
         { module => 'signalwire.core.function_result', class => 'FunctionResult' },
+
+    # SWML/SWAIG standalone helper classes (Python reference factors these out
+    # of the fat SWMLService). NOTE the reference renderer class is SwmlRenderer
+    # (not SWMLRenderer), and the handler base class is SWMLVerbHandler.
+    'SignalWire::SWAIG::SWAIGFunction' =>
+        { module => 'signalwire.core.swaig_function', class => 'SWAIGFunction' },
+    'SignalWire::SWML::SWMLBuilder' =>
+        { module => 'signalwire.core.swml_builder', class => 'SWMLBuilder' },
+    'SignalWire::SWML::SWMLHandler' =>
+        { module => 'signalwire.core.swml_handler', class => 'SWMLVerbHandler' },
+    'SignalWire::SWML::SWMLHandler::AIVerbHandler' =>
+        { module => 'signalwire.core.swml_handler', class => 'AIVerbHandler' },
+    'SignalWire::SWML::SWMLHandler::VerbHandlerRegistry' =>
+        { module => 'signalwire.core.swml_handler', class => 'VerbHandlerRegistry' },
+    'SignalWire::SWML::SWMLRenderer' =>
+        { module => 'signalwire.core.swml_renderer', class => 'SwmlRenderer' },
+    'SignalWire::Utils::SchemaUtils' =>
+        { module => 'signalwire.utils.schema_utils', class => 'SchemaUtils' },
+    'SignalWire::Utils::SchemaValidationError' =>
+        { module => 'signalwire.utils.schema_utils', class => 'SchemaValidationError' },
     'SignalWire::DataMap' => { module => 'signalwire.core.data_map', class => 'DataMap' },
     'SignalWire::Security::SessionManager' =>
         { module => 'signalwire.core.security.session_manager', class => 'SessionManager' },
@@ -78,6 +98,16 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Logging' => { module => 'signalwire.core.logging_config', class => undef },
     'SignalWire::Core::LoggingConfig' =>
         { module => 'signalwire.core.logging_config', class => undef },
+
+    # Standalone core helpers (cluster A)
+    'SignalWire::Core::PomBuilder' =>
+        { module => 'signalwire.core.pom_builder', class => 'PomBuilder' },
+    'SignalWire::Core::ConfigLoader' =>
+        { module => 'signalwire.core.config_loader', class => 'ConfigLoader' },
+    'SignalWire::Core::SecurityConfig' =>
+        { module => 'signalwire.core.security_config', class => 'SecurityConfig' },
+    'SignalWire::Core::AuthHandler' =>
+        { module => 'signalwire.core.auth_handler', class => 'AuthHandler' },
     'SignalWire::Utils'               => { module => 'signalwire.utils', class => undef },
     'SignalWire::Utils::UrlValidator' =>
         { module => 'signalwire.utils.url_validator', class => undef },
@@ -123,10 +153,6 @@ my %PACKAGE_TO_PY = (
         module => 'signalwire.skills.datasphere_serverless.skill',
         class  => 'DataSphereServerlessSkill'
     },
-    'SignalWire::Skills::Builtin::NativeVectorSearch' => {
-        module => 'signalwire.skills.native_vector_search.skill',
-        class  => 'NativeVectorSearchSkill'
-    },
     'SignalWire::Skills::Builtin::ApiNinjasTrivia' =>
         { module => 'signalwire.skills.api_ninjas_trivia.skill', class => 'ApiNinjasTriviaSkill' },
     'SignalWire::Skills::Builtin::SwmlTransfer' =>
@@ -139,8 +165,6 @@ my %PACKAGE_TO_PY = (
     },
     'SignalWire::Skills::Builtin::InfoGatherer' =>
         { module => 'signalwire.skills.info_gatherer.skill', class => 'InfoGathererSkill' },
-    'SignalWire::Skills::Builtin::McpGateway' =>
-        { module => 'signalwire.skills.mcp_gateway.skill', class => 'MCPGatewaySkill' },
     'SignalWire::Skills::Builtin::ClaudeSkills' =>
         { module => 'signalwire.skills.claude_skills.skill', class => 'ClaudeSkillsSkill' },
 
@@ -149,6 +173,22 @@ my %PACKAGE_TO_PY = (
     # namespace with a port-only class; it will surface in PORT_ADDITIONS.md.
     'SignalWire::Skills::Builtin::CustomSkills' =>
         { module => 'signalwire.skills.registry', class => 'CustomSkills' },
+
+    # Agent internals (Python splits AgentBase into standalone core helpers)
+    'SignalWire::Core::Agent::Prompt::Manager' =>
+        { module => 'signalwire.core.agent.prompt.manager', class => 'PromptManager' },
+    'SignalWire::Core::Agent::Tools::Registry' =>
+        { module => 'signalwire.core.agent.tools.registry', class => 'ToolRegistry' },
+    'SignalWire::Core::Agent::Tools::TypeInference' =>
+        { module => 'signalwire.core.agent.tools.type_inference', class => undef },
+
+    # Bedrock agent (extends AgentBase; only its OWN subs are enumerated)
+    'SignalWire::Agents::Bedrock' =>
+        { module => 'signalwire.agents.bedrock', class => 'BedrockAgent' },
+
+    # Static file web service
+    'SignalWire::Web::WebService' =>
+        { module => 'signalwire.web.web_service', class => 'WebService' },
 
     # Prefabs
     'SignalWire::Prefabs::Concierge' =>
@@ -220,6 +260,14 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.relay.event', class => 'ConferenceEvent' },
     'SignalWire::Relay::Event::CallAI' =>
         { module => 'signalwire.relay.event', class => 'CallingErrorEvent' },
+    'SignalWire::Relay::Event::CallDenoise' =>
+        { module => 'signalwire.relay.event', class => 'DenoiseEvent' },
+    'SignalWire::Relay::Event::CallEcho' =>
+        { module => 'signalwire.relay.event', class => 'EchoEvent' },
+    'SignalWire::Relay::Event::CallHold' =>
+        { module => 'signalwire.relay.event', class => 'HoldEvent' },
+    'SignalWire::Relay::Event::CallQueue' =>
+        { module => 'signalwire.relay.event', class => 'QueueEvent' },
     'SignalWire::Relay::Event::MessageReceive' =>
         { module => 'signalwire.relay.event', class => 'MessageReceiveEvent' },
     'SignalWire::Relay::Event::MessageState' =>
@@ -234,6 +282,8 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Relay::Event::Disconnect' =>
         { module => 'signalwire.relay.event', class => 'DisconnectEvent' },
     'SignalWire::Relay::Constants' => { module => 'signalwire.relay.client', class => 'Constants' },
+    'SignalWire::Relay::Client::RelayError' =>
+        { module => 'signalwire.relay.client', class => 'RelayError' },
 
     # REST client
     'SignalWire::REST::RestClient' => { module => 'signalwire.rest.client', class => 'RestClient' },
@@ -811,6 +861,11 @@ my %AGENTBASE_METHOD_TO_PY = (
         class  => 'AIConfigMixin',
         method => 'set_post_prompt_llm_params'
     },
+    'set_multilingual' => {
+        module => 'signalwire.core.mixins.ai_config_mixin',
+        class  => 'AIConfigMixin',
+        method => 'set_multilingual'
+    },
     'add_mcp_server' => {
         module => 'signalwire.core.mixins.ai_config_mixin',
         class  => 'AIConfigMixin',
@@ -820,6 +875,60 @@ my %AGENTBASE_METHOD_TO_PY = (
         module => 'signalwire.core.mixins.ai_config_mixin',
         class  => 'AIConfigMixin',
         method => 'enable_mcp_server'
+    },
+
+    # AgentBase-own methods (reference declares these directly on AgentBase,
+    # not a mixin): SIP routing + name/answer helpers.
+    'get_name' => {
+        module => 'signalwire.core.agent_base',
+        class  => 'AgentBase',
+        method => 'get_name'
+    },
+    'add_answer_verb' => {
+        module => 'signalwire.core.agent_base',
+        class  => 'AgentBase',
+        method => 'add_answer_verb'
+    },
+    'enable_sip_routing' => {
+        module => 'signalwire.core.agent_base',
+        class  => 'AgentBase',
+        method => 'enable_sip_routing'
+    },
+    'register_sip_username' => {
+        module => 'signalwire.core.agent_base',
+        class  => 'AgentBase',
+        method => 'register_sip_username'
+    },
+    'auto_map_sip_usernames' => {
+        module => 'signalwire.core.agent_base',
+        class  => 'AgentBase',
+        method => 'auto_map_sip_usernames'
+    },
+
+    # StateMixin: token validation lives on AgentBase in Perl.
+    'validate_tool_token' => {
+        module => 'signalwire.core.mixins.state_mixin',
+        class  => 'StateMixin',
+        method => 'validate_tool_token'
+    },
+
+    # ServerlessMixin: serverless request dispatch folded onto AgentBase.
+    'handle_serverless_request' => {
+        module => 'signalwire.core.mixins.serverless_mixin',
+        class  => 'ServerlessMixin',
+        method => 'handle_serverless_request'
+    },
+
+    # PromptMixin: post-prompt getter + POM setter (Perl exposes on AgentBase).
+    'get_post_prompt' => {
+        module => 'signalwire.core.mixins.prompt_mixin',
+        class  => 'PromptMixin',
+        method => 'get_post_prompt'
+    },
+    'set_prompt_pom' => {
+        module => 'signalwire.core.mixins.prompt_mixin',
+        class  => 'PromptMixin',
+        method => 'set_prompt_pom'
     },
 
     # SkillMixin
@@ -889,6 +998,42 @@ my %AGENTBASE_METHOD_TO_PY = (
 # Python home, or when Perl had to rename to avoid a builtin.
 my %METHOD_OVERRIDES = (
 
+    # SWAIGFunction: Perl `call` is the callable-protocol analog of the Python
+    # reference's __call__ dunder (mirrors Ruby's call -> __call__ mapping).
+    # The SWMLBuilder verb-dispatch dunder __getattr__ is already named for its
+    # Python reference symbol (recorded verbatim by the parser), so it needs no
+    # rename here; the entry below is kept explicit for the audit trail.
+    'SignalWire::SWAIG::SWAIGFunction' => {
+        'call' => {
+            module => 'signalwire.core.swaig_function',
+            class  => 'SWAIGFunction',
+            method => '__call__'
+        },
+    },
+    'SignalWire::SWML::SWMLBuilder' => {
+        '__getattr__' => {
+            module => 'signalwire.core.swml_builder',
+            class  => 'SWMLBuilder',
+            method => '__getattr__'
+        },
+    },
+
+    # Relay Call: Perl `pass` maps to the reference's reserved-word-escaped
+    # `pass_` (Python renamed `pass` -> `pass_`); Perl `to_string` is the
+    # Perl-idiom human-readable rep the reference exposes as `__repr__`.
+    'SignalWire::Relay::Call' => {
+        'pass' => {
+            module => 'signalwire.relay.call',
+            class  => 'Call',
+            method => 'pass_'
+        },
+        'to_string' => {
+            module => 'signalwire.relay.call',
+            class  => 'Call',
+            method => '__repr__'
+        },
+    },
+
     # SWMLService auth methods come from AuthMixin in Python.
     'SignalWire::SWML::Service' => {
         'validate_basic_auth' => {
@@ -900,6 +1045,59 @@ my %METHOD_OVERRIDES = (
             module => 'signalwire.core.mixins.auth_mixin',
             class  => 'AuthMixin',
             method => 'get_basic_auth_credentials'
+        },
+
+        # WebMixin methods folded onto Perl's SWML::Service (Python composes
+        # them onto AgentBase via WebMixin). Route to the reference's WebMixin.
+        'get_app' => {
+            module => 'signalwire.core.mixins.web_mixin',
+            class  => 'WebMixin',
+            method => 'get_app'
+        },
+        'enable_debug_routes' => {
+            module => 'signalwire.core.mixins.web_mixin',
+            class  => 'WebMixin',
+            method => 'enable_debug_routes'
+        },
+        'setup_graceful_shutdown' => {
+            module => 'signalwire.core.mixins.web_mixin',
+            class  => 'WebMixin',
+            method => 'setup_graceful_shutdown'
+        },
+
+        # ToolMixin methods that live on Perl's SWML::Service (Python hosts
+        # them on ToolMixin). Route to the reference's ToolMixin so they don't
+        # surface as SWMLService extras.
+        'define_tool' => {
+            module => 'signalwire.core.mixins.tool_mixin',
+            class  => 'ToolMixin',
+            method => 'define_tool'
+        },
+        'define_tools' => {
+            module => 'signalwire.core.mixins.tool_mixin',
+            class  => 'ToolMixin',
+            method => 'define_tools'
+        },
+        'on_function_call' => {
+            module => 'signalwire.core.mixins.tool_mixin',
+            class  => 'ToolMixin',
+            method => 'on_function_call'
+        },
+        'register_swaig_function' => {
+            module => 'signalwire.core.mixins.tool_mixin',
+            class  => 'ToolMixin',
+            method => 'register_swaig_function'
+        },
+    },
+
+    # BedrockAgent: Perl has no __repr__ dunder — `to_string` is the
+    # Perl-idiom human-readable rep the reference exposes as `__repr__`
+    # (same idiom as Relay::Call above). Route it onto BedrockAgent.__repr__.
+    'SignalWire::Agents::Bedrock' => {
+        'to_string' => {
+            module => 'signalwire.agents.bedrock',
+            class  => 'BedrockAgent',
+            method => '__repr__'
         },
     },
 
@@ -1057,6 +1255,12 @@ my %METHOD_OVERRIDES = (
 # expose __init__ in python_surface.json.
 my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
 
+    # AgentBase: the reference records AgentBase.__init__; Perl's AgentBase
+    # extends SWML::Service (not a Moo root) and builds via BUILD, so force
+    # the implicit __init__ (routed to agent_base.AgentBase.__init__ via the
+    # AGENTBASE_METHOD_TO_PY{new} entry).
+    'SignalWire::Agent::AgentBase',
+
     # REST core
     'SignalWire::REST::RestClient',
     'SignalWire::REST::HttpClient',
@@ -1113,6 +1317,10 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::Prefabs::Receptionist',
     'SignalWire::Prefabs::Survey',
 
+    # BedrockAgent extends AgentBase (not a Moo root), but the reference
+    # records BedrockAgent.__init__ — force the implicit constructor.
+    'SignalWire::Agents::Bedrock',
+
     # Skills that Python declares __init__ on the top-level Skill class
     # (GoogleMaps, WebSearch have __init__ on the INNER helper class, not
     # the skill itself — don't list those here).
@@ -1120,6 +1328,24 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::Skills::Builtin::PlayBackgroundFile',
     'SignalWire::Skills::Builtin::Spider',
     'SignalWire::Skills::Builtin::WeatherApi',
+
+    # Relay Action subclasses: Python declares __init__ on each concrete
+    # action (it wires the event-type + terminal-state tuple through super).
+    # Perl's subclasses `extends` the base Action (so is_moo_root is false),
+    # but the CAPABILITY (a constructor with the action's identity) is present
+    # — force the implicit __init__ so each concrete action compares equal to
+    # the reference. The abstract base SignalWire::Relay::Action is skipped.
+    'SignalWire::Relay::Action::AI',
+    'SignalWire::Relay::Action::Collect',
+    'SignalWire::Relay::Action::StandaloneCollect',
+    'SignalWire::Relay::Action::Detect',
+    'SignalWire::Relay::Action::Fax',
+    'SignalWire::Relay::Action::Pay',
+    'SignalWire::Relay::Action::Play',
+    'SignalWire::Relay::Action::Record',
+    'SignalWire::Relay::Action::Stream',
+    'SignalWire::Relay::Action::Tap',
+    'SignalWire::Relay::Action::Transcribe',
 );
 
 # Suppress implicit __init__ emission. Relay::Event subclasses and the
@@ -1127,6 +1353,14 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
 # as a public method. Matching that keeps the diff meaningful.
 my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::Relay::Constants',
+
+    # SWML helper classes whose Python reference class does NOT expose an
+    # __init__ in the surface oracle: SwmlRenderer (staticmethod-only) and the
+    # base SWMLVerbHandler ABC. SWMLBuilder / SchemaUtils DO have __init__ in
+    # the oracle, so they are NOT skipped. AIVerbHandler extends the base (not
+    # is_moo_root) so it already gets no implicit __init__.
+    'SignalWire::SWML::SWMLRenderer',
+    'SignalWire::SWML::SWMLHandler',
 
     # Relay::Event and every Relay::Event::Foo subclass
     'SignalWire::Relay::Event',
@@ -1481,6 +1715,256 @@ sub collect_surface {
                     # Module-level (no class)
                     $record_function->( $mod, $method );
                 }
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Reconcile: abstract RELAY action mixin bases (§H abstract-action-base).
+    # Python factors the call-action controls into an abstract mixin chain
+    # (StoppableAction -> PausableAction -> VolumeAction -> concrete
+    # PlayAction/RecordAction/...), so the control methods live on those
+    # abstract bases. Perl flattens the hierarchy: every concrete action
+    # `extends SignalWire::Relay::Action` with the control methods inlined per
+    # concrete subclass (PlayAction.stop/pause/resume/volume,
+    # RecordAction.stop/pause/resume, ...). The abstract bases therefore have
+    # no standalone Perl package, but the CAPABILITY is present. Synthesize the
+    # three bases (with their control methods) so the surface compares EQUAL to
+    # the reference — the concrete flattened copies are recorded in
+    # PORT_ADDITIONS; the signature gate excuses the bases via
+    # _is_abstract_action_base_method. This is idiom reconciled in the emit
+    # (RULES §2), not an omission. Mirrors TS enumerate-surface.ts.
+    {
+        my $RELAY_CALL   = 'signalwire.relay.call';
+        my $call_classes = $modules{$RELAY_CALL}{classes} // {};
+        my $any_concrete_has = sub {
+            my ($method) = @_;
+            for my $cls ( keys %$call_classes ) {
+                next unless $cls =~ /Action\z/;
+                return 1 if grep { $_ eq $method } @{ $call_classes->{$cls} };
+            }
+            return 0;
+        };
+        my %bases = (
+            StoppableAction => ['stop'],
+            PausableAction  => [ 'pause', 'resume' ],
+            VolumeAction    => ['volume'],
+        );
+        for my $base_cls ( keys %bases ) {
+            my @present = grep { $any_concrete_has->($_) } @{ $bases{$base_cls} };
+            next unless @present;
+            my %seen = map { $_ => 1 } @{ $call_classes->{$base_cls} // [] };
+            $seen{$_} = 1 for @present;
+            $modules{$RELAY_CALL}{classes}{$base_cls} = [ keys %seen ];
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Reconcile: RELAY event surface.
+    #   (a) `from_payload` is a class-method constructor DECLARED ONCE on the
+    #       base SignalWire::Relay::Event and INHERITED by every typed event
+    #       subclass. The Python reference records from_payload on every event
+    #       class (RelayEvent + all *Event subclasses). The static parser only
+    #       sees the literal `sub from_payload` on the base package, so project
+    #       it onto every event class the enumerator recorded. Real inherited
+    #       capability (RULES §2 idiom-via-enumerator), not invented surface.
+    #   (b) `parse_event` is declared as a `sub` in the base Event package, so
+    #       the parser attributed it to the RelayEvent class; the reference
+    #       exposes it as a MODULE-level function. Move it from the class method
+    #       list onto the module functions[] (module free-function form).
+    {
+        my $RELAY_EVENT = 'signalwire.relay.event';
+        my $ev          = $modules{$RELAY_EVENT};
+        if ($ev) {
+
+            # (b) parse_event: class-method -> module function.
+            for my $cls ( keys %{ $ev->{classes} } ) {
+                my @kept = grep { $_ ne 'parse_event' } @{ $ev->{classes}{$cls} };
+                if ( @kept != @{ $ev->{classes}{$cls} } ) {
+                    $ev->{classes}{$cls} = \@kept;
+                    push @{ $ev->{functions} }, 'parse_event'
+                        unless grep { $_ eq 'parse_event' } @{ $ev->{functions} };
+                }
+            }
+
+            # (a) from_payload: project onto every event class.
+            for my $cls ( keys %{ $ev->{classes} } ) {
+                next unless $cls =~ /Event\z/ || $cls eq 'RelayEvent';
+                my %seen = map { $_ => 1 } @{ $ev->{classes}{$cls} };
+                next if $seen{from_payload};
+                $seen{from_payload} = 1;
+                $ev->{classes}{$cls} = [ keys %seen ];
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Reconcile: RELAY call surface — inherited/attribute members the static
+    # parser can't see.
+    #   (a) StandaloneCollectAction inherits start_input_timers from its parent
+    #       CollectAction (Perl `extends Collect`); the reference records it on
+    #       StandaloneCollectAction too. Project the inherited method.
+    #   (b) Message.result is a Moo `has 'result'` ATTRIBUTE accessor (a real
+    #       method), which the parser — matching only `sub` — misses. The
+    #       reference exposes it as a @property `result`. Project it.
+    {
+        my $cc = $modules{'signalwire.relay.call'}{classes} // {};
+        if (   $cc->{CollectAction}
+            && ( grep { $_ eq 'start_input_timers' } @{ $cc->{CollectAction} } )
+            && $cc->{StandaloneCollectAction}
+            && !( grep { $_ eq 'start_input_timers' } @{ $cc->{StandaloneCollectAction} } ) )
+        {
+            push @{ $cc->{StandaloneCollectAction} }, 'start_input_timers';
+        }
+        my $mc = $modules{'signalwire.relay.message'}{classes} // {};
+        if ( $mc->{Message}
+            && !( grep { $_ eq 'result' } @{ $mc->{Message} } ) )
+        {
+            push @{ $mc->{Message} }, 'result';
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Reconcile: SWMLService.__getattr__. Perl's SWML::Service implements the
+    # dynamic-verb dispatch via `sub AUTOLOAD` (the direct analog of Python's
+    # __getattr__ — both intercept unknown-method calls to install schema
+    # verbs). AUTOLOAD is in the parser's SKIP_SUB set (it is a Perl special
+    # sub, not a normal method name), so project the reference's __getattr__
+    # onto SWMLService explicitly. Real capability (RULES §2), not invented.
+    {
+        my $sc = $modules{'signalwire.core.swml_service'}{classes} // {};
+        if ( $sc->{SWMLService}
+            && !( grep { $_ eq '__getattr__' } @{ $sc->{SWMLService} } ) )
+        {
+            push @{ $sc->{SWMLService} }, '__getattr__';
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Reconcile: SkillBase-inherited methods on concrete built-in skills.
+    # The static parser records only `sub`s literally declared in each skill
+    # package, so methods inherited from SignalWire::Skills::SkillBase
+    # (get_hints, get_prompt_sections, get_instance_key, cleanup, ...) are
+    # invisible even though the CAPABILITY is genuinely present at runtime.
+    # The Python reference records each skill's inherited methods, so without
+    # this projection those appear as omissions. Project onto each
+    # `<name>.skill` module's `*Skill` class exactly the base methods the
+    # reference declares for THAT skill (union; a method already declared on
+    # the concrete Perl class is a no-op). Real inherited capability
+    # (RULES §2 idiom-via-enumerator), not invented surface.
+    {
+        my %SKILL_INHERITED_PROJECTION = (
+            DateTimeSkill             => [ 'get_hints', 'get_prompt_sections' ],
+            JokeSkill                 => [ 'get_hints', 'get_prompt_sections' ],
+            MathSkill                 => [ 'get_hints', 'get_prompt_sections' ],
+            GoogleMapsSkill           => ['get_prompt_sections'],
+            DataSphereSkill           => [ 'cleanup', 'get_instance_key', 'get_prompt_sections' ],
+            DataSphereServerlessSkill => [ 'get_instance_key', 'get_prompt_sections' ],
+            SWMLTransferSkill         => [ 'get_instance_key', 'get_prompt_sections' ],
+            WebSearchSkill       => [ 'get_hints', 'get_instance_key', 'get_prompt_sections' ],
+            WikipediaSearchSkill => [ 'get_hints', 'get_prompt_sections' ],
+            ApiNinjasTriviaSkill    => ['get_instance_key'],
+            PlayBackgroundFileSkill => ['get_instance_key'],
+            ClaudeSkillsSkill       => ['get_instance_key'],
+            InfoGathererSkill       => ['get_instance_key'],
+            SpiderSkill             => [ 'cleanup', 'get_instance_key' ],
+        );
+        for my $mod ( keys %modules ) {
+            next unless $mod =~ /^signalwire\.skills\.[^.]+\.skill$/;
+            my $classes = $modules{$mod}{classes} // {};
+            for my $cls ( keys %$classes ) {
+                my $projection = $SKILL_INHERITED_PROJECTION{$cls} or next;
+                my %seen = map { $_ => 1 } @{ $classes->{$cls} };
+                for my $method (@$projection) {
+                    next if $seen{$method};
+                    push @{ $classes->{$cls} }, $method;
+                    $seen{$method} = 1;
+                }
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Reconcile: multi-home method DONORS. The Python reference declares some
+    # methods on MORE THAN ONE class (a base + a mixin) that Perl implements
+    # once. Perl's single `sub` lands on its default home; COPY it onto the
+    # additional reference class(es) so the surface compares equal. Each
+    # copied method is a genuine capability already present on the source —
+    # this is idiom-via-enumerator (RULES §2), not invented surface. The
+    # concrete methods (serve/stop/as_router/... on SWMLService; get_basic_
+    # auth_credentials on SWMLService) are real Perl subs; the mixin copies
+    # reflect that AgentBase composes them via the reference's mixins.
+    {
+        my %DONORS = (
+
+            # SWMLService -> WebMixin: web-facing service controls.
+            'signalwire.core.mixins.web_mixin.WebMixin' => {
+                from    => 'signalwire.core.swml_service.SWMLService',
+                methods => [
+                    'as_router', 'serve', 'manual_set_proxy_url',
+                    'on_request', 'on_swml_request',
+                    'register_routing_callback',
+                ],
+            },
+
+            # SWMLService -> AuthMixin: basic-auth credential accessor (the
+            # reference declares it on BOTH). It is redirected to AuthMixin by
+            # a METHOD_OVERRIDE above; donate it back onto SWMLService too.
+            'signalwire.core.swml_service.SWMLService' => {
+                from    => 'signalwire.core.mixins.auth_mixin.AuthMixin',
+                methods => ['get_basic_auth_credentials'],
+            },
+        );
+        for my $target ( keys %DONORS ) {
+            my ( $tmod, $tcls ) = $target =~ /^(.+)\.([^.]+)$/;
+            my $spec = $DONORS{$target};
+            my ( $smod, $scls ) = $spec->{from} =~ /^(.+)\.([^.]+)$/;
+            my $src = $modules{$smod}{classes}{$scls} // [];
+            my %have = map { $_ => 1 } @$src;
+            my $tgt = $modules{$tmod}{classes}{$tcls} //= [];
+            my %seen = map { $_ => 1 } @$tgt;
+            for my $m ( @{ $spec->{methods} } ) {
+                next unless $have{$m};
+                next if $seen{$m};
+                push @$tgt, $m;
+                $seen{$m} = 1;
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Reconcile: module-level FREE FUNCTIONS the reference exposes at module
+    # scope but Perl implements as package subs on a class-ish package.
+    #   * SignalWire::DataMap::create_simple_api_tool / create_expression_tool
+    #     -> signalwire.core.data_map module functions (factory helpers).
+    #   * SignalWire::list_skills -> signalwire.list_skills (top-level).
+    # The parser records these on the DataMap/SignalWire class buckets; move
+    # them to the reference module's functions[] (free-function form).
+    {
+        # SignalWire::list_skills already surfaces as a module function
+        # (SignalWire routes with class => undef, so its subs land in
+        # functions[]); only DataMap's factory helpers need moving off the
+        # DataMap class bucket onto the module's functions[].
+        my %FREE_FN = (
+            'signalwire.core.data_map' => {
+                class   => 'DataMap',
+                methods => [ 'create_simple_api_tool', 'create_expression_tool' ],
+            },
+        );
+        for my $mod ( keys %FREE_FN ) {
+            my $spec    = $FREE_FN{$mod};
+            my $classes = $modules{$mod}{classes} // {};
+            my $cls     = $spec->{class};
+            next unless $classes->{$cls};
+            my %move = map { $_ => 1 } @{ $spec->{methods} };
+            my @kept = grep { !$move{$_} } @{ $classes->{$cls} };
+            my @moved = grep { $move{$_} } @{ $classes->{$cls} };
+            next unless @moved;
+            $classes->{$cls} = \@kept;
+            delete $classes->{$cls} unless @kept;
+            my %seen = map { $_ => 1 } @{ $modules{$mod}{functions} };
+            for my $fn (@moved) {
+                push @{ $modules{$mod}{functions} }, $fn unless $seen{$fn};
             }
         }
     }

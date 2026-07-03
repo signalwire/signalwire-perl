@@ -13,7 +13,7 @@ extends 'SignalWire::REST::Namespaces::CrudResource';
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
-    $args{_base_path}    //= '/api/relay/rest/number_groups';
+    $args{_base_path}     //= '/api/relay/rest/number_groups';
     $args{_update_method} //= 'PUT';
     return $class->$orig(%args);
 };
@@ -21,13 +21,15 @@ around BUILDARGS => sub {
 sub list_memberships {
     my ( $self, $NumberGroupId, %params ) = @_;
     my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($NumberGroupId, 'number_group_memberships'), params => $p );
+    return $self->_http->get( $self->_path( $NumberGroupId, 'number_group_memberships' ),
+        params => $p );
 }
 
 sub add_membership {
     my ( $self, $NumberGroupId, %args ) = @_;
-    my $body = { %args };
-    return $self->_http->post( $self->_path($NumberGroupId, 'number_group_memberships'), body => $body );
+    my $body = {%args};
+    return $self->_http->post( $self->_path( $NumberGroupId, 'number_group_memberships' ),
+        body => $body );
 }
 
 sub get_membership {
