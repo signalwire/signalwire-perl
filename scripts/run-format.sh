@@ -15,12 +15,17 @@
 #                                      not already tidy (perltidy --assert-tidy).
 #                                      This is the CI FMT gate.
 #
-# Formats BOTH hand-written AND generated code — the generated .pm tree is
-# perltidy-clean by construction (the generators run the same perltidy backstop,
-# scripts/_perltidy_gen.py), so --check stays green.
+# Scope: only the HAND-WRITTEN Perl tree (_sw_perl_hand_source_files). The ~1107
+# generated .pm under lib/**/Generated/ are NOT formatted here — they are
+# perltidy-clean by construction (the four generators run the same perltidy
+# backstop, scripts/_perltidy_gen.py, as their final emit pass) and the
+# GEN-FRESH{,-SWML,-RELAY,-SWAIG} gates already byte-compare the on-disk generated
+# tree against a fresh backstopped regen. Formatting them here would be redundant
+# with GEN-FRESH and dominated the wall-clock (~1107 of 1186 files). See
+# scripts/_env.sh (_sw_perl_hand_source_files) for the full rationale.
 #
-# NOTE: perltidy over the 1100+ generated .pm files is SLOW (a minute-plus) —
-# that is expected work, not a hang.
+# Perltidy is per-file independent, so both modes fan out across cores with xargs
+# (-P = nproc). --check collects a non-zero exit if ANY file is non-tidy.
 
 set -euo pipefail
 
@@ -44,31 +49,50 @@ case "${1:-}" in
     *) echo "usage: run-format.sh [--check]" >&2; exit 2 ;;
 esac
 
-PROFILE="$REPO_ROOT/.perltidyrc"
+export PERLTIDY_PROFILE="$REPO_ROOT/.perltidyrc"
+
+# Parallelism: one perltidy per core. nproc (Linux) / hw.ncpu (macOS); default 4.
+NCPU="$( { nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null; } | head -n1 )"
+case "$NCPU" in ''|*[!0-9]*) NCPU=4 ;; esac
+
+# Batch several files per perltidy invocation to amortize interpreter startup
+# without starving cores (hand tree is ~79 files; -n8 gives ~10 batches).
+BATCH=8
+
+# assert-tidy (read-only) worker: exits non-zero if ANY file in its batch is not
+# tidy, so xargs propagates a non-zero overall exit if ANY child failed.
+_fmt_check_batch='rc=0; for f in "$@"; do perltidy --profile="$PERLTIDY_PROFILE" --assert-tidy -nst -se --outfile=/dev/null "$f" || rc=1; done; exit $rc'
+# apply worker: reformat in place (-b), deleting the .bak (-bext='/').
+_fmt_apply_batch='for f in "$@"; do perltidy --profile="$PERLTIDY_PROFILE" -b -bext="/" "$f" || exit 1; done'
+export _fmt_check_batch _fmt_apply_batch
+
 rc=0
 
 if [ "$CHECK" -eq 1 ]; then
-    # VERIFY-ONLY: fail if any file is not already tidy. No writes.
-    while IFS= read -r f; do
-        [ -n "$f" ] || continue
-        perltidy --profile="$PROFILE" --assert-tidy -nst -se --outfile=/dev/null "$f" || rc=1
-    done < <(_sw_perl_source_files)
+    # VERIFY-ONLY: fail if any file is not already tidy. No writes. xargs returns
+    # non-zero (123) if any child exited non-zero, so a single non-tidy file in
+    # ANY batch fails the gate.
+    _sw_perl_hand_source_files \
+        | grep -v '^[[:space:]]*$' \
+        | xargs -P"$NCPU" -n"$BATCH" sh -c "$_fmt_check_batch" sh \
+        || rc=1
     if [ "$rc" -ne 0 ]; then
         echo "FMT: some files are not tidy — run 'bash scripts/run-format.sh' to fix." >&2
     fi
     exit "$rc"
 fi
 
-# APPLY: reformat in place (-b), deleting the .bak (-bext='/').
-while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    perltidy --profile="$PROFILE" -b -bext='/' "$f"
-done < <(_sw_perl_source_files)
+# APPLY: reformat in place across cores.
+_sw_perl_hand_source_files \
+    | grep -v '^[[:space:]]*$' \
+    | xargs -P"$NCPU" -n"$BATCH" sh -c "$_fmt_apply_batch" sh \
+    || rc=1
 
-# A residual issue perltidy could not auto-fix must still surface as a failure.
-while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    perltidy --profile="$PROFILE" --assert-tidy -nst -se --outfile=/dev/null "$f" || rc=1
-done < <(_sw_perl_source_files)
+# A residual issue perltidy could not auto-fix must still surface as a failure:
+# re-verify (parallel) after applying.
+_sw_perl_hand_source_files \
+    | grep -v '^[[:space:]]*$' \
+    | xargs -P"$NCPU" -n"$BATCH" sh -c "$_fmt_check_batch" sh \
+    || rc=1
 
 exit "$rc"

@@ -310,7 +310,11 @@ run_gate "EMISSION" "diff_port_emission vs python to_dict()" \
 #   * CI ($CI=true)     → run-format.sh --check: read-only; fails if any file is
 #                         not already tidy.
 # The script self-bootstraps the same _env.sh env this run-ci sourced, and
-# polices the shared _sw_perl_source_files set (lib/ + bin/ + Perl scripts).
+# polices the HAND-WRITTEN set (_sw_perl_hand_source_files: lib/ minus
+# **/Generated/, plus bin/ + Perl scripts) across cores. The generated .pm tree is
+# NOT in FMT's scope — it is perltidy-clean by construction and already proven
+# tidy by the GEN-FRESH{,-SWML,-RELAY,-SWAIG} gates above (which byte-compare disk
+# to a fresh backstopped regen). LINT (below) still covers the generated tree.
 run_gate "FMT" "run-format.sh (local: apply; CI: --check)" \
     bash scripts/run-format.sh ${CI:+--check}
 

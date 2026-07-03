@@ -96,8 +96,31 @@ _sw_ensure_perl_tools() {
 # in ONE place here so run-format.sh and run-lint.sh police EXACTLY the same
 # files (and it stays in sync with run-ci's historical list). Emits one path per
 # line, relative to the repo root; callers run from "$REPO_ROOT".
+#
+# This is the FULL list — it INCLUDES the ~1107 generated .pm under
+# lib/**/Generated/. run-lint.sh (perlcritic) uses this: perlcritic has no
+# in-generator backstop, so LINT must keep covering the generated tree.
 _sw_perl_source_files() {
-    find lib -type f -name '*.pm'
+    _sw_perl_hand_source_files
+    find lib -type f -name '*.pm' -path '*/Generated/*'
+}
+
+# The HAND-WRITTEN subset only — the generated .pm under lib/**/Generated/ are
+# EXCLUDED. Used by the FMT gate (run-format.sh) exclusively.
+#
+# Why the FMT gate can skip the generated tree: those files are perltidy-clean BY
+# CONSTRUCTION — the four code generators run the identical perltidy backstop
+# (scripts/_perltidy_gen.py) as their final emit pass, and the
+# GEN-FRESH{,-SWML,-RELAY,-SWAIG} gates byte-compare the on-disk generated tree
+# against a fresh (backstopped) regen. So "generated tree is tidy" is already
+# PROVEN by GEN-FRESH; re-running perltidy over it in the FMT gate is redundant
+# work that dominated run-format.sh's wall-clock (~1107 of 1186 files). If a
+# generated file ever drifted non-tidy, GEN-FRESH would catch it (the regen would
+# no longer match disk). The FMT gate therefore polices only the hand-written
+# tree, where perltidy is the only backstop. (LINT still covers everything via
+# _sw_perl_source_files above — perlcritic has no generator backstop.)
+_sw_perl_hand_source_files() {
+    find lib -type f -name '*.pm' -not -path '*/Generated/*'
     echo bin/emit-corpus.pl
     echo bin/emit-skills.pl
     echo bin/swaig-test
