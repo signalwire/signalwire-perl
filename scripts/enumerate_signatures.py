@@ -60,6 +60,141 @@ PYTHON_REFERENCE = _load_python_reference()
 
 
 # ---------------------------------------------------------------------------
+# Reference-type projection for hand-written params (typed-surface strictness).
+#
+# Perl is dynamically typed without ``use feature 'signatures'`` type info — the
+# regex parser recovers a param's NAME and sigil/kind but NOT its TYPE, so the
+# generic per-param path records ``type: any``. That is NOT "Perl can't express
+# this type" — the concrete type the param accepts IS the contract it implements,
+# recorded in the Python oracle (the same way the generated REST layer already
+# unfolds its typed sidecar, and PHP re-attaches PHPDoc types). This pass
+# re-attaches that concrete type onto a hand-written param ONLY when the method
+# is present in the reference AND carries a param of the SAME NAME the reference
+# types concretely. It is a rename/remap, NOT an omission: it never invents a
+# param, never changes a kind, only rewrites a bare ``any`` — a real future param
+# drift (drop/rename/retype) still surfaces.
+def _build_ref_param_type_index() -> dict:
+    idx: dict = {}
+    for mod, me in PYTHON_REFERENCE.get("modules", {}).items():
+        for cls, ce in me.get("classes", {}).items():
+            for meth, sig in ce.get("methods", {}).items():
+                pt = {
+                    p["name"]: p["type"]
+                    for p in sig.get("params", [])
+                    if p.get("name")
+                    and p.get("kind") not in ("self", "cls")
+                    and p.get("type", "any") != "any"
+                }
+                if pt:
+                    idx[(mod, cls, meth)] = pt
+        for fn, sig in me.get("functions", {}).items():
+            pt = {
+                p["name"]: p["type"]
+                for p in sig.get("params", [])
+                if p.get("name")
+                and p.get("kind") not in ("self", "cls")
+                and p.get("type", "any") != "any"
+            }
+            if pt:
+                idx[(mod, None, fn)] = pt
+    return idx
+
+
+REF_PARAM_TYPES = _build_ref_param_type_index()
+
+# Hand-written param RENAMES (renames, NOT omissions — same param slot, same wire
+# role; only the Perl-side identifier differs from the reference-recorded name).
+# The Perl port idiomatically abbreviates (``desc``↔``description``,
+# ``ms``↔``milliseconds``, ``cb``↔``handler``/``callback``, ``lang``↔
+# ``language_code``, ``c``/``fr``/``sp``/``pp``/``up``/``iso`` ↔ the semantic
+# name). Renaming keeps the two comparing EQUAL AND lets the reference-type
+# projection attach the concrete type; a real future param drift still surfaces.
+# Scoped to methods whose param COUNT matches the reference (a genuine 1:1
+# rename) — Perl Moo *constructor* idioms (``__init__`` with a different
+# attribute shape) are NOT renamed here; they stay in PORT_SIGNATURE_OMISSIONS.
+# Keyed (py_module, py_class_or_None, method) -> {perl_param: reference_param}.
+PERL_HAND_PARAM_RENAMES: dict[tuple, dict[str, str]] = {
+    ("signalwire.core.agent_base", "AgentBase", "on_debug_event"): {"cb": "handler"},
+    ("signalwire.core.contexts", "Context", "add_enter_filler"): {"lang": "language_code"},
+    ("signalwire.core.contexts", "Context", "add_exit_filler"): {"lang": "language_code"},
+    ("signalwire.core.contexts", "Context", "set_consolidate"): {"c": "consolidate"},
+    ("signalwire.core.contexts", "Context", "set_enter_fillers"): {"fillers": "enter_fillers"},
+    ("signalwire.core.contexts", "Context", "set_exit_fillers"): {"fillers": "exit_fillers"},
+    ("signalwire.core.contexts", "Context", "set_full_reset"): {"fr": "full_reset"},
+    ("signalwire.core.contexts", "Context", "set_isolated"): {"iso": "isolated"},
+    ("signalwire.core.contexts", "Context", "set_post_prompt"): {"pp": "post_prompt"},
+    ("signalwire.core.contexts", "Context", "set_system_prompt"): {"sp": "system_prompt"},
+    ("signalwire.core.contexts", "Context", "set_user_prompt"): {"up": "user_prompt"},
+    ("signalwire.core.contexts", "Step", "set_reset_consolidate"): {"c": "consolidate"},
+    ("signalwire.core.contexts", "Step", "set_reset_full_reset"): {"fr": "full_reset"},
+    ("signalwire.core.contexts", "Step", "set_reset_system_prompt"): {"sp": "system_prompt"},
+    ("signalwire.core.contexts", "Step", "set_reset_user_prompt"): {"up": "user_prompt"},
+    ("signalwire.core.data_map", "DataMap", "description"): {"desc": "description"},
+    ("signalwire.core.data_map", "DataMap", "parameter"): {"type": "param_type"},
+    ("signalwire.core.data_map", "DataMap", "purpose"): {"desc": "description"},
+    ("signalwire.core.function_result", "FunctionResult", "set_end_of_speech_timeout"): {"ms": "milliseconds"},
+    ("signalwire.core.function_result", "FunctionResult", "set_speech_event_timeout"): {"ms": "milliseconds"},
+    ("signalwire.core.function_result", "FunctionResult", "toggle_functions"): {"toggles": "function_toggles"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_internal_fillers"): {"fillers": "internal_fillers"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_languages"): {"langs": "languages"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_native_functions"): {"funcs": "function_names"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_pronunciations"): {"prons": "pronunciations"},
+    ("signalwire.core.mixins.web_mixin", "WebMixin", "manual_set_proxy_url"): {"url": "proxy_url"},
+    ("signalwire.core.mixins.web_mixin", "WebMixin", "set_dynamic_config_callback"): {"cb": "callback"},
+    ("signalwire.core.skill_manager", "SkillManager", "has_skill"): {"key": "skill_identifier"},
+    ("signalwire.core.skill_manager", "SkillManager", "unload_skill"): {"key": "skill_identifier"},
+    ("signalwire.relay.client", "RelayClient", "on_call"): {"cb": "handler"},
+    ("signalwire.relay.client", "RelayClient", "on_message"): {"cb": "handler"},
+    ("signalwire.relay.message", "Message", "on"): {"cb": "handler"},
+}
+
+
+def apply_hand_param_renames(out_modules: dict) -> None:
+    """Rewrite Perl-idiom hand-written param identifiers to the reference name so
+    the projection + diff compare EQUAL (see PERL_HAND_PARAM_RENAMES). In place."""
+    def apply(key: tuple, sig: dict) -> None:
+        rn = PERL_HAND_PARAM_RENAMES.get(key)
+        if not rn:
+            return
+        for p in sig.get("params", []):
+            new = rn.get(p.get("name"))
+            if new is not None:
+                p["name"] = new
+
+    for mod, me in out_modules.items():
+        for cls, ce in me.get("classes", {}).items():
+            for meth, sig in ce.get("methods", {}).items():
+                apply((mod, cls, meth), sig)
+        for fn, sig in me.get("functions", {}).items():
+            apply((mod, None, fn), sig)
+
+
+def project_reference_param_types(out_modules: dict) -> None:
+    """Re-attach reference-documented concrete param types onto hand-written
+    params the parser recorded as bare ``any`` (see the block comment above).
+    In place."""
+    def apply(key: tuple, sig: dict) -> None:
+        ref_types = REF_PARAM_TYPES.get(key)
+        if not ref_types:
+            return
+        for p in sig.get("params", []):
+            if p.get("kind") in ("self", "cls"):
+                continue
+            if p.get("type") != "any":
+                continue  # never override a type the port already carries
+            rt = ref_types.get(p.get("name"))
+            if rt is not None:
+                p["type"] = rt
+
+    for mod, me in out_modules.items():
+        for cls, ce in me.get("classes", {}).items():
+            for meth, sig in ce.get("methods", {}).items():
+                apply((mod, cls, meth), sig)
+        for fn, sig in me.get("functions", {}).items():
+            apply((mod, None, fn), sig)
+
+
+# ---------------------------------------------------------------------------
 # Generated REST resource-tree signature projection (item B).
 #
 # The REST resource + client-tree surface is GENERATED (scripts/generate_rest.py).
@@ -1262,6 +1397,12 @@ def collect(raw: dict) -> dict:
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"]["classes"]:
                 out_modules.pop("signalwire.core.agent_base")
+
+    # Typed-surface strictness: rename Perl-idiom hand-written params to the
+    # reference identifier, THEN re-attach reference-documented concrete param
+    # types onto hand-written params the parser recorded as bare ``any``.
+    apply_hand_param_renames(out_modules)
+    project_reference_param_types(out_modules)
 
     sorted_modules = {}
     for k in sorted(out_modules):
