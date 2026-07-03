@@ -1025,6 +1025,222 @@ def emit_resource_tree(placed) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Wire-type emitter (item A/H — REAL read-side types, not a loose hash).
+#
+# For each REST namespace, emit one Perl data package per components/schemas
+# entry whose schema is an OBJECT: a method-less Moo class with a read-only
+# `has` attribute per property carrying the snake wire key. The Python reference
+# records these as method-less type definitions, so the surface enumerator
+# surfaces the bare package leaf with `[]` methods (Moo `has` accessors are NOT
+# `sub` declarations, so enumerate_surface.pl's `^sub` scan never picks them up
+# — the class stays method-less, matching the oracle).
+#
+# A named public enum (x-sdk-enum — only PhoneCallHandler in relay-rest) becomes
+# a method-less Moo class exposing its wire values as `use constant` (surfaced as
+# a bare class, matching the oracle which records the enum as a class name). Every
+# OTHER schema kind — a scalar / array / union alias, a plain inline enum — is
+# NOT surfaced by the Python reference (its enumerator drops module-level scalar
+# TypeAlias / inline Literal), so this emitter emits nothing for it (verified per
+# namespace: emit-set == oracle-set, 0 miss / 0 extra across all 13).
+#
+# Files land one-class-per-file under
+#   lib/SignalWire/REST/Namespaces/Generated/Types/<Ns>/<TypeName>.pm
+# in package SignalWire::REST::Namespaces::Generated::Types::<Ns>::<TypeName>.
+# The <Ns> subdir maps 1:1 to the oracle <ns>_types_generated module
+# (enumerate_surface.pl / enumerate_signatures.py route each Types/<Ns>/ file by
+# PATH — the leaf recurs across namespaces, so path routing wins over any
+# name-keyed map). The reference emits the SAME schema name into multiple
+# <ns>_types_generated modules (shared SWML-schema types + shared Types_StatusCodes_*
+# error types); Perl mirrors that per-namespace duplication faithfully, and the
+# SURFACE-DIFF gen-type leaf-name fold collapses the duplicates on both sides.
+#
+# Unlike PHP, Perl package names are unrestricted — Goto/Return/Switch/Unset are
+# valid package leaves (perl -c confirmed), so NO reserved-word suffix is needed;
+# the emit-set matches the oracle bare (php had to suffix `_` and un-rename in its
+# enumerator).
+# ---------------------------------------------------------------------------
+
+# Spec-dir -> the Perl Types subdir leaf + the oracle <ns>_types_generated leaf.
+# The swml-webhooks spec is types-only (no resources, no servers block) and is
+# loaded via _load_types_schemas. relay-rest folds registry.
+TYPE_NS = [
+    ("relay-rest", "RelayRest", "relay_rest"),
+    ("fabric", "Fabric", "fabric"),
+    ("calling", "Calling", "calling"),
+    ("video", "Video", "video"),
+    ("datasphere", "Datasphere", "datasphere"),
+    ("logs", "Logs", "logs"),
+    ("message", "Message", "message"),
+    ("voice", "Voice", "voice"),
+    ("fax", "Fax", "fax"),
+    ("project", "Project", "project"),
+    ("chat", "Chat", "chat"),
+    ("pubsub", "PubSub", "pubsub"),
+    ("swml-webhooks", "SwmlWebhooks", "swml_webhooks"),
+]
+
+
+def type_name(raw: str) -> str:
+    """Sanitise a components/schemas key to a valid Perl package leaf, folding
+    every non-identifier rune to ``_`` — matching the Go/TS/python ref_name so the
+    LEAF the surface diff compares is the identical token across ports
+    (``Types.StatusCodes.StatusCode400`` -> ``Types_StatusCodes_StatusCode400``).
+    Perl imposes no reserved-word restriction on package names, so no suffix."""
+    s = re.sub(r"[^A-Za-z0-9_]", "_", raw).lstrip("_")
+    if not s:
+        return "Schema"
+    if s[0].isdigit():
+        return "Schema_" + s
+    return s
+
+
+def _type_schema_type(node: dict):
+    t = node.get("type")
+    if isinstance(t, list):
+        return next((x for x in t if x != "null"), None)
+    return t
+
+
+def is_object_schema(node: dict) -> bool:
+    """Mirror the reference is_object test: type:object (or no type but non-empty
+    properties) AND not a oneOf/anyOf/allOf combinator AND properties non-empty."""
+    if any(k in node for k in ("oneOf", "anyOf", "allOf")):
+        return False
+    props = node.get("properties")
+    t = _type_schema_type(node)
+    return (t == "object" or (t is None and props)) and isinstance(props, dict) and len(props) > 0
+
+
+def perl_attr_name(wire_key: str) -> str:
+    """Perl `has` attribute name for a wire key. Fold non-identifier runes to
+    ``_`` (rare — wire keys are snake_case); a leading digit gets a ``_`` prefix."""
+    s = re.sub(r"[^A-Za-z0-9_]", "_", wire_key)
+    if not s:
+        s = "field"
+    if s[0].isdigit():
+        s = "_" + s
+    return s
+
+
+# Moo imports these keyword subs into every `use Moo;` package; a `has '<name>'`
+# whose accessor would be named identically OVERWRITES the imported keyword and
+# Moo dies ("cannot overwrite a locally defined method with a reader"). For such a
+# property we still declare `has '<name>'` (so the wire key + the signature member
+# name are preserved — signature_dump reads the has-name), but install the accessor
+# under a safe ``get_<name>`` reader so nothing clobbers the Moo keyword. Verified
+# collision set (empirically): with/extends/around/before/after/has (meta/blessed
+# do NOT collide).
+MOO_RESERVED_ATTRS = {"with", "extends", "around", "before", "after", "has"}
+
+
+def perl_has_decl(attr: str) -> str:
+    """The `has '<attr>' => ( ... );` line for a method-less data DTO property,
+    read-only, with a safe reader when the name collides with a Moo keyword."""
+    if attr in MOO_RESERVED_ATTRS:
+        return f"has '{attr}' => ( is => 'ro', reader => 'get_{attr}' );"
+    return f"has '{attr}' => ( is => 'ro' );"
+
+
+TYPES_HEADER = (
+    "# Code generated by scripts/generate_rest.py; DO NOT EDIT.\n"
+    "#\n"
+    "# AUTO-GENERATED from porting-sdk/rest-apis/ (components/schemas) — regenerate with:\n"
+    "#   python3 scripts/generate_rest.py\n"
+    "#\n"
+    "# {desc}\n"
+)
+
+
+def emit_type_class(sub: str, raw_name: str, node: dict, ns_key: str) -> str:
+    """Emit one method-less Moo data package for an object schema."""
+    pl_name = type_name(raw_name)
+    pkg = f"SignalWire::REST::Namespaces::Generated::Types::{sub}::{pl_name}"
+    desc = (f"Generated REST wire type {pl_name!r} from the {ns_key!r} spec "
+            f"(components/schemas {raw_name!r}).")
+    out = TYPES_HEADER.format(desc=desc)
+    out += f"package {pkg};\n"
+    out += "use strict;\n"
+    out += "use warnings;\n"
+    out += "use Moo;\n\n"
+    out += "# Pure data DTO: one read-only accessor per property carrying the snake\n"
+    out += "# wire key; no methods (the reference records this as a method-less type).\n"
+    props = node.get("properties") or {}
+    used: set[str] = set()
+    for wire_key in props:
+        attr = perl_attr_name(wire_key)
+        while attr in used:
+            attr += "_"
+        used.add(attr)
+        if attr != wire_key:
+            out += f"# wire key: {wire_key}\n"
+        out += perl_has_decl(attr) + "\n"
+    out += "\n1;\n"
+    return out
+
+
+def emit_type_enum(sub: str, enum_name: str, values: list, ns_key: str, raw_name: str) -> str:
+    """Emit a method-less Moo package exposing an x-sdk-enum public enum's wire
+    values as `use constant` (surfaced as a bare class by the reference)."""
+    pkg = f"SignalWire::REST::Namespaces::Generated::Types::{sub}::{enum_name}"
+    desc = (f"Generated REST public enum {enum_name!r} (x-sdk-enum on "
+            f"components/schemas {raw_name!r}, {ns_key!r} spec).")
+    out = TYPES_HEADER.format(desc=desc)
+    out += f"package {pkg};\n"
+    out += "use strict;\n"
+    out += "use warnings;\n"
+    out += "use Moo;\n\n"
+    out += "# Backed enum: each constant's value is the exact wire string.\n"
+    used: set[str] = set()
+    for v in values:
+        if v == "":
+            continue
+        cname = re.sub(r"[^A-Za-z0-9]+", "_", str(v)).strip("_").upper()
+        if not cname:
+            cname = "VALUE"
+        if cname[0].isdigit():
+            cname = "V_" + cname
+        while cname in used:
+            cname += "_"
+        used.add(cname)
+        out += f"use constant {cname} => {perl_str(str(v))};\n"
+    out += "\n1;\n"
+    return out
+
+
+def _load_types_schemas(psdk: Path, spec_dir: str) -> dict:
+    """Load a spec's components/schemas WITHOUT the full Spec model (swml-webhooks
+    has no servers block, so Spec() would fail). Ordered by yaml declaration."""
+    doc = yaml.safe_load((psdk / "rest-apis" / spec_dir / "openapi.yaml").read_text())
+    return ((doc.get("components") or {}).get("schemas")) or {}
+
+
+def emit_types(psdk: Path, outs: dict) -> None:
+    """Emit every <ns>_types_generated Perl data package / enum into
+    ``Types/<Sub>/<TypeName>.pm`` keys of ``outs`` (relative to the Generated dir)."""
+    for spec_dir, sub, ns_key in TYPE_NS:
+        schemas = _load_types_schemas(psdk, spec_dir)
+        for raw_name, node in schemas.items():
+            if not isinstance(node, dict):
+                continue
+            # x-sdk-enum public enum → emit a constants class (surfaced as a class).
+            xe = node.get("x-sdk-enum")
+            if xe:
+                enum_name = type_name(xe)
+                fn = f"Types/{sub}/{enum_name}.pm"
+                if fn not in outs:
+                    outs[fn] = emit_type_enum(
+                        sub, enum_name, list(node.get("enum") or []), ns_key, raw_name)
+            # Object schema → a data class. (Non-object, non-x-sdk-enum schemas —
+            # scalar/array/union aliases and plain inline enums — are NOT surfaced
+            # by the reference, so emit nothing for them.)
+            if is_object_schema(node):
+                pl_name = type_name(raw_name)
+                fn = f"Types/{sub}/{pl_name}.pm"
+                if fn not in outs:
+                    outs[fn] = emit_type_class(sub, raw_name, node, ns_key)
+
+
+# ---------------------------------------------------------------------------
 # Driver.
 # ---------------------------------------------------------------------------
 
@@ -1060,6 +1276,10 @@ def build_outputs(psdk: Path) -> dict[str, str]:
         outs[cls + ".pm"] = emit_container(container, by_container[container])
 
     outs["ResourceTree.pm"] = emit_resource_tree(placed)
+
+    # Wire types (item A/H): one method-less Moo data package per components/schemas
+    # object across all 13 namespaces, under Types/<Sub>/.
+    emit_types(psdk, outs)
 
     # Sidecar (§5): canonical typed-param records the signature enumerator unfolds
     # onto the regex-parsed Perl params (Perl signatures aren't introspectable —

@@ -431,6 +431,54 @@ def _generated_module(ns: str) -> str:
     return f"signalwire.rest.namespaces.{ns}_resources_generated"
 
 
+SWML_VERBS_MODULE = "signalwire.core.swml_verbs_generated"
+
+
+def project_swml_verbs(cls: str, type_entry: dict, out_modules: dict) -> None:
+    """Project a generated SWML-verb config class (SignalWire::SWML::Generated::<Name>)
+    onto the oracle signature module signalwire.core.swml_verbs_generated (item D2).
+    Each `has` accessor is a zero-arg getter member (self -> any); the diff-tool
+    gen-payload fold keys these as gen-payload.<Class>.<field>, matching the
+    reference's generated swml_verbs_generated field set. Method-less config classes
+    (no properties) still record the bare class (empty member set)."""
+    methods: dict = {}
+    for a in type_entry.get("attributes", []):
+        attr = (a.get("name") or "").lstrip("+")
+        if not attr or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
+            continue
+        methods.setdefault(attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"})
+    out_modules.setdefault(SWML_VERBS_MODULE, {"classes": {}})
+    out_modules[SWML_VERBS_MODULE]["classes"].setdefault(cls, {"methods": {}})
+    out_modules[SWML_VERBS_MODULE]["classes"][cls]["methods"].update(methods)
+
+
+_SWAIG_SUB_MODULE = {
+    "PostPrompt": "signalwire.core.post_prompt_generated",
+    "SwaigRequest": "signalwire.core.swaig_request_generated",
+    "SwaigActions": "signalwire.core.swaig_actions_generated",
+}
+
+
+def project_swaig(sub: str, cls: str, type_entry: dict, out_modules: dict) -> None:
+    """Project a generated SWAIG payload class (SignalWire::SWAIG::Generated::<Sub>::<Name>)
+    onto its oracle signature module by <Sub> (item D1). Each `has` accessor is a
+    zero-arg getter member (self -> any); the gen-payload fold keys class-typed
+    fields as gen-payload.<Class>.<field> (matching the reference's recorded fields),
+    while a scalar field is excused by the diff-tool as a port-side state accessor."""
+    mod = _SWAIG_SUB_MODULE.get(sub)
+    if not mod:
+        return
+    methods: dict = {}
+    for a in type_entry.get("attributes", []):
+        attr = (a.get("name") or "").lstrip("+")
+        if not attr or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
+            continue
+        methods.setdefault(attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"})
+    out_modules.setdefault(mod, {"classes": {}})
+    out_modules[mod]["classes"].setdefault(cls, {"methods": {}})
+    out_modules[mod]["classes"][cls]["methods"].update(methods)
+
+
 def _sig_from_parsed_method(m: dict) -> dict:
     """Best-effort signature for a generated method the sidecar doesn't cover
     (should be rare — only methods emitted without a body record). Mirrors the
@@ -587,6 +635,25 @@ def collect(raw: dict) -> dict:
 
     for type_entry in raw.get("types", []):
         full = type_entry.get("full_name", "")
+
+        # --- Generated SWAIG read-side payloads (item D1) — path-routed ---
+        # SignalWire::SWAIG::Generated::<Sub>::<Name> -> the <Sub>'s core.*_generated
+        # module; `has` accessors become zero-arg members (gen-payload fold keys the
+        # class-typed fields; scalar fields excused as port-side state accessors).
+        m = re.match(r"^SignalWire::SWAIG::Generated::(\w+)::(\w+)$", full)
+        if m:
+            project_swaig(m.group(1), m.group(2), type_entry, out_modules)
+            continue
+
+        # --- Generated SWML-verb CONFIG types (item D2) — path-routed ---
+        # SignalWire::SWML::Generated::<Name> -> signalwire.core.swml_verbs_generated
+        # (its `has` accessors become zero-arg members; the gen-payload fold keys
+        # them gen-payload.<Class>.<field>). Path routing wins so a config type name
+        # that collides with an SDK builder or recurs as a REST wire type lands here.
+        m = re.match(r"^SignalWire::SWML::Generated::(\w+)$", full)
+        if m:
+            project_swml_verbs(m.group(1), type_entry, out_modules)
+            continue
 
         # --- Generated REST resource-tree projection (item B) ---
         m = re.match(r"^SignalWire::REST::Namespaces::Generated::(\w+)$", full)

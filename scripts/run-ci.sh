@@ -147,6 +147,27 @@ echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 run_gate "GEN-FRESH" "generate_rest.py --check (generated REST layer matches specs)" \
     python3 scripts/generate_rest.py --check
 
+# Gate 0b: GEN-FRESH-SWML — the SWML-verbs typed CONFIG surface under
+# lib/SignalWire/SWML/Generated/ is GENERATED from porting-sdk/schema.json ($defs)
+# by scripts/generate_swml_verbs.py (item D2). Fails if stale. Regenerate with
+# `python3 scripts/generate_swml_verbs.py`.
+run_gate "GEN-FRESH-SWML" "generate_swml_verbs.py --check (generated SWML-verb types match schema.json)" \
+    python3 scripts/generate_swml_verbs.py --check
+
+# Gate 0c: GEN-FRESH-RELAY — the RELAY protocol wire types under
+# lib/SignalWire/Relay/Generated/ are GENERATED from porting-sdk/relay-protocol/*.json
+# by scripts/generate_relay_protocol.py (item I). Fails if stale. Regenerate with
+# `python3 scripts/generate_relay_protocol.py`.
+run_gate "GEN-FRESH-RELAY" "generate_relay_protocol.py --check (generated RELAY types match relay-protocol)" \
+    python3 scripts/generate_relay_protocol.py --check
+
+# Gate 0d: GEN-FRESH-SWAIG — the SWAIG read-side payloads under
+# lib/SignalWire/SWAIG/Generated/ are GENERATED from porting-sdk/swaig-specs/*.yaml
+# by scripts/generate_swaig_payloads.py (item D1). Fails if stale. Regenerate with
+# `python3 scripts/generate_swaig_payloads.py`.
+run_gate "GEN-FRESH-SWAIG" "generate_swaig_payloads.py --check (generated SWAIG payloads match swaig-specs)" \
+    python3 scripts/generate_swaig_payloads.py --check
+
 # Gate 1: prove
 run_gate "TEST" "prove -Ilib -It/lib t/" \
     prove -Ilib -It/lib t/
@@ -443,6 +464,17 @@ run_gate "SWAIG-CLI" "swaig-test shared mini-contract (verbs/serverless-reject/d
         --require-url-model \
         --default-action-argv='--url|http://user:pass@127.0.0.1:1/' \
         --no-serverless-argv='--url|http://user:pass@127.0.0.1:1/|--simulate-serverless|lambda|--list-tools'
+
+# SWAIG-COVERAGE — the SWAIG back-pressure gate (SWAIG_PIPELINE §5): every engine
+# response action in the vendored swaig-specs/swaig-response.yaml must be emittable
+# by the port's FunctionResult, or be signed off in SWAIG_COVERAGE_ALLOWLIST.md.
+# The shared checker scrapes perl's FunctionResult (add_action('key',…) + the
+# top-level keys of `push @{ $self->action }, {…}` action hashrefs — .pm scraper in
+# swaig_coverage.py). Current: engine 27, perl emits 25, the 2 gaps
+# (back_to_back_functions, user_event) are the shared signed-off allowlist.
+run_gate "SWAIG-COVERAGE" "every engine SWAIG action emittable by FunctionResult (or allowlisted)" \
+    python3 "$PORTING_SDK_DIR/scripts/swaig_coverage.py" --check \
+        --emission "$PORT_ROOT/lib/SignalWire/SWAIG/FunctionResult.pm"
 
 if [ -z "$FAILED_GATES" ]; then
     echo "==> CI PASS"

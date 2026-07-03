@@ -509,6 +509,34 @@ my %GENERATED_BASE_SURFACE = (
 );
 
 # -------------------------------------------------------------------------
+# Generated read-side TYPE modules (item D / A-H) — path-routed.
+#
+# generate_rest.py emits one method-less Moo data package per components/schemas
+# object into lib/.../Generated/Types/<Sub>/<TypeName>.pm. The type leaf recurs
+# across namespaces (DataMap / Document / Section / Types_StatusCodes_*), so we
+# route each such file by its <Sub> PATH segment to the oracle
+# signalwire.rest.namespaces.<ns>_types_generated module — path routing WINS over
+# any name-keyed package map (a bare-leaf map would cross-contaminate with the SDK
+# builder classes of the same name). Each type surfaces as a method-less class
+# (Moo `has` accessors are not `sub` decls, so parse_file records zero subs).
+# Scoped strictly to the Types/<Sub>/ subtree so no other package leaks.
+my %TYPE_SUBDIR_NS = (
+    'RelayRest'    => 'relay_rest',
+    'Fabric'       => 'fabric',
+    'Calling'      => 'calling',
+    'Video'        => 'video',
+    'Datasphere'   => 'datasphere',
+    'Logs'         => 'logs',
+    'Message'      => 'message',
+    'Voice'        => 'voice',
+    'Fax'          => 'fax',
+    'Project'      => 'project',
+    'Chat'         => 'chat',
+    'PubSub'       => 'pubsub',
+    'SwmlWebhooks' => 'swml_webhooks',
+);
+
+# -------------------------------------------------------------------------
 # AgentBase method -> Python module/class router.
 #
 # In the Python SDK, AgentBase inherits from many mixins. Each mixin owns a
@@ -1257,6 +1285,78 @@ sub collect_surface {
         my $packages = parse_file($file);
         for my $pkg (@$packages) {
             my $pkg_name = $pkg->{name};
+
+            # --- Generated read-side TYPE modules (item D / A-H) — path-routed ---
+            # A package under Generated::Types::<Sub>:: routes by its <Sub> path
+            # segment to signalwire.rest.namespaces.<ns>_types_generated, recorded
+            # as a method-less class (its `has` accessors are not `sub` decls).
+            if ( $pkg_name =~
+                /^SignalWire::REST::Namespaces::Generated::Types::(\w+)::(\w+)$/ )
+            {
+                my ( $sub, $tname ) = ( $1, $2 );
+                my $ns = $TYPE_SUBDIR_NS{$sub};
+                if ( !$ns ) {
+                    warn "enumerate_surface: generated type package $pkg_name has "
+                        . "no Types subdir mapping\n";
+                    next;
+                }
+                my $tmod = "signalwire.rest.namespaces.${ns}_types_generated";
+                $record_class_only->( $tmod, $tname );
+                next;
+            }
+
+            # --- Generated SWAIG read-side payloads (item D1) — path-routed ---
+            # generate_swaig_payloads.py emits method-less Moo data packages under
+            # lib/.../SWAIG/Generated/<Sub>/<Name>.pm, one <Sub> per oracle module.
+            # Route by the <Sub> path segment; scoped to SWAIG::Generated:: so the
+            # hand SWAIG SDK classes (FunctionResult/ParameterSchema) are not
+            # misrouted.
+            if ( $pkg_name =~
+                /^SignalWire::SWAIG::Generated::(\w+)::(\w+)$/ )
+            {
+                my ( $sub, $tname ) = ( $1, $2 );
+                my %swaig_sub_mod = (
+                    'PostPrompt'   => 'signalwire.core.post_prompt_generated',
+                    'SwaigRequest' => 'signalwire.core.swaig_request_generated',
+                    'SwaigActions' => 'signalwire.core.swaig_actions_generated',
+                );
+                my $smod = $swaig_sub_mod{$sub};
+                if ( !$smod ) {
+                    warn "enumerate_surface: generated SWAIG package $pkg_name has "
+                        . "no subdir mapping\n";
+                    next;
+                }
+                $record_class_only->( $smod, $tname );
+                next;
+            }
+
+            # --- Generated RELAY protocol wire types (item I) — path-routed ---
+            # generate_relay_protocol.py emits one method-less Moo data package per
+            # relay-protocol/*.{params,result}.json object into
+            # lib/.../Relay/Generated/<Name>.pm. Route to
+            # signalwire.relay.protocol_types_generated as a method-less class.
+            # Scoped to Relay::Generated:: so the hand Relay SDK classes one level
+            # up (Call/Client/CallState/Event/…) are never misrouted.
+            if ( $pkg_name =~ /^SignalWire::Relay::Generated::(\w+)$/ ) {
+                my $tname = $1;
+                $record_class_only->(
+                    'signalwire.relay.protocol_types_generated', $tname );
+                next;
+            }
+
+            # --- Generated SWML-verb CONFIG types (item D2) — path-routed ---
+            # generate_swml_verbs.py emits one method-less Moo data package per
+            # schema.json $defs object into lib/.../SWML/Generated/<Name>.pm. Route
+            # every such package to signalwire.core.swml_verbs_generated as a
+            # method-less class (125 of the 155 recur as REST wire types; the
+            # gen-type leaf fold collapses the cross-module duplicates on both
+            # sides). Scoped to the SWML::Generated:: package space only.
+            if ( $pkg_name =~ /^SignalWire::SWML::Generated::(\w+)$/ ) {
+                my $tname = $1;
+                $record_class_only->(
+                    'signalwire.core.swml_verbs_generated', $tname );
+                next;
+            }
 
             # --- Generated REST resource-tree projection (item B) ---
             # Packages under SignalWire::REST::Namespaces::Generated::<Name> project
