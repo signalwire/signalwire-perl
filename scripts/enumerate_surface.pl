@@ -294,6 +294,7 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.rest._base', class => 'BaseResource' },
     'SignalWire::REST::Namespaces::CrudResource' =>
         { module => 'signalwire.rest._base', class => 'CrudResource' },
+
     # PhoneCallHandler is the `call_handler` value enum used by
     # phone_numbers->update / the set_* helpers. In the REST-generated oracle
     # layout it lives as a TYPE under the relay-rest generated types module.
@@ -495,59 +496,59 @@ my %PACKAGE_TO_PY = (
 # sync with the specs; diff_port_surface keeps THIS table in sync with the oracle
 # (a missing/renamed class fails the surface diff loudly).
 my %GENERATED_PROJECTION = (
-    'Addresses' => { ns => 'relay_rest', base => 'Base' },
-    'AiAgents' => { ns => 'fabric', base => 'FabricResource' },
-    'CallFlows' => { ns => 'fabric', base => 'FabricResource' },
-    'Calling' => { ns => 'calling', base => 'Base' },
-    'Chat' => { ns => 'chat', base => 'Base' },
-    'ConferenceLogs' => { ns => 'logs', base => 'Base' },
-    'ConferenceRooms' => { ns => 'fabric', base => 'FabricResource' },
-    'CxmlApplications' => { ns => 'fabric', base => 'Base' },
-    'CxmlScripts' => { ns => 'fabric', base => 'FabricResource' },
-    'CxmlWebhooks' => { ns => 'fabric', base => 'FabricResource' },
-    'DatasphereDocuments' => { ns => 'datasphere', base => 'CrudResource' },
-    'DatasphereNamespace' => { ns => '_client_tree', base => 'Base' },
-    'FabricAddresses' => { ns => 'fabric', base => 'ReadResource' },
-    'FabricNamespace' => { ns => '_client_tree', base => 'Base' },
-    'FabricTokens' => { ns => 'fabric', base => 'Base' },
-    'FaxLogs' => { ns => 'fax', base => 'ReadResource' },
-    'FreeswitchConnectors' => { ns => 'fabric', base => 'FabricResource' },
-    'GenericResources' => { ns => 'fabric', base => 'Base' },
-    'ImportedNumbers' => { ns => 'relay_rest', base => 'Base' },
-    'LogsNamespace' => { ns => '_client_tree', base => 'Base' },
-    'Lookup' => { ns => 'relay_rest', base => 'Base' },
-    'MessageLogs' => { ns => 'message', base => 'ReadResource' },
-    'Mfa' => { ns => 'relay_rest', base => 'Base' },
-    'NumberGroups' => { ns => 'relay_rest', base => 'CrudResource' },
-    'PhoneNumbers' => { ns => 'relay_rest', base => 'CrudResource' },
-    'ProjectNamespace' => { ns => '_client_tree', base => 'Base' },
-    'ProjectTokens' => { ns => 'project', base => 'Base' },
-    'PubSub' => { ns => 'pubsub', base => 'Base' },
-    'Queues' => { ns => 'relay_rest', base => 'CrudResource' },
-    'Recordings' => { ns => 'relay_rest', base => 'Base' },
-    'RegistryBrands' => { ns => 'relay_rest', base => 'Base' },
-    'RegistryCampaigns' => { ns => 'relay_rest', base => 'Base' },
-    'RegistryNamespace' => { ns => '_client_tree', base => 'Base' },
-    'RegistryNumbers' => { ns => 'relay_rest', base => 'Base' },
-    'RegistryOrders' => { ns => 'relay_rest', base => 'Base' },
-    'RelayApplications' => { ns => 'fabric', base => 'FabricResource' },
-    'ShortCodes' => { ns => 'relay_rest', base => 'Base' },
-    'SipEndpoints' => { ns => 'fabric', base => 'FabricResource' },
-    'SipGateways' => { ns => 'fabric', base => 'FabricResource' },
-    'SipProfile' => { ns => 'relay_rest', base => 'Base' },
-    'Subscribers' => { ns => 'fabric', base => 'FabricResource' },
-    'SwmlScripts' => { ns => 'fabric', base => 'FabricResource' },
-    'SwmlWebhooks' => { ns => 'fabric', base => 'FabricResource' },
-    'VerifiedCallers' => { ns => 'relay_rest', base => 'CrudResource' },
-    'VideoConferenceTokens' => { ns => 'video', base => 'Base' },
-    'VideoConferences' => { ns => 'video', base => 'CrudResource' },
-    'VideoNamespace' => { ns => '_client_tree', base => 'Base' },
-    'VideoRoomRecordings' => { ns => 'video', base => 'Base' },
-    'VideoRoomSessions' => { ns => 'video', base => 'ReadResource' },
-    'VideoRoomTokens' => { ns => 'video', base => 'Base' },
-    'VideoRooms' => { ns => 'video', base => 'CrudResource' },
-    'VideoStreams' => { ns => 'video', base => 'Base' },
-    'VoiceLogs' => { ns => 'voice', base => 'ReadResource' },
+    'Addresses'             => { ns => 'relay_rest',   base => 'Base' },
+    'AiAgents'              => { ns => 'fabric',       base => 'FabricResource' },
+    'CallFlows'             => { ns => 'fabric',       base => 'FabricResource' },
+    'Calling'               => { ns => 'calling',      base => 'Base' },
+    'Chat'                  => { ns => 'chat',         base => 'Base' },
+    'ConferenceLogs'        => { ns => 'logs',         base => 'Base' },
+    'ConferenceRooms'       => { ns => 'fabric',       base => 'FabricResource' },
+    'CxmlApplications'      => { ns => 'fabric',       base => 'Base' },
+    'CxmlScripts'           => { ns => 'fabric',       base => 'FabricResource' },
+    'CxmlWebhooks'          => { ns => 'fabric',       base => 'FabricResource' },
+    'DatasphereDocuments'   => { ns => 'datasphere',   base => 'CrudResource' },
+    'DatasphereNamespace'   => { ns => '_client_tree', base => 'Base' },
+    'FabricAddresses'       => { ns => 'fabric',       base => 'ReadResource' },
+    'FabricNamespace'       => { ns => '_client_tree', base => 'Base' },
+    'FabricTokens'          => { ns => 'fabric',       base => 'Base' },
+    'FaxLogs'               => { ns => 'fax',          base => 'ReadResource' },
+    'FreeswitchConnectors'  => { ns => 'fabric',       base => 'FabricResource' },
+    'GenericResources'      => { ns => 'fabric',       base => 'Base' },
+    'ImportedNumbers'       => { ns => 'relay_rest',   base => 'Base' },
+    'LogsNamespace'         => { ns => '_client_tree', base => 'Base' },
+    'Lookup'                => { ns => 'relay_rest',   base => 'Base' },
+    'MessageLogs'           => { ns => 'message',      base => 'ReadResource' },
+    'Mfa'                   => { ns => 'relay_rest',   base => 'Base' },
+    'NumberGroups'          => { ns => 'relay_rest',   base => 'CrudResource' },
+    'PhoneNumbers'          => { ns => 'relay_rest',   base => 'CrudResource' },
+    'ProjectNamespace'      => { ns => '_client_tree', base => 'Base' },
+    'ProjectTokens'         => { ns => 'project',      base => 'Base' },
+    'PubSub'                => { ns => 'pubsub',       base => 'Base' },
+    'Queues'                => { ns => 'relay_rest',   base => 'CrudResource' },
+    'Recordings'            => { ns => 'relay_rest',   base => 'Base' },
+    'RegistryBrands'        => { ns => 'relay_rest',   base => 'Base' },
+    'RegistryCampaigns'     => { ns => 'relay_rest',   base => 'Base' },
+    'RegistryNamespace'     => { ns => '_client_tree', base => 'Base' },
+    'RegistryNumbers'       => { ns => 'relay_rest',   base => 'Base' },
+    'RegistryOrders'        => { ns => 'relay_rest',   base => 'Base' },
+    'RelayApplications'     => { ns => 'fabric',       base => 'FabricResource' },
+    'ShortCodes'            => { ns => 'relay_rest',   base => 'Base' },
+    'SipEndpoints'          => { ns => 'fabric',       base => 'FabricResource' },
+    'SipGateways'           => { ns => 'fabric',       base => 'FabricResource' },
+    'SipProfile'            => { ns => 'relay_rest',   base => 'Base' },
+    'Subscribers'           => { ns => 'fabric',       base => 'FabricResource' },
+    'SwmlScripts'           => { ns => 'fabric',       base => 'FabricResource' },
+    'SwmlWebhooks'          => { ns => 'fabric',       base => 'FabricResource' },
+    'VerifiedCallers'       => { ns => 'relay_rest',   base => 'CrudResource' },
+    'VideoConferenceTokens' => { ns => 'video',        base => 'Base' },
+    'VideoConferences'      => { ns => 'video',        base => 'CrudResource' },
+    'VideoNamespace'        => { ns => '_client_tree', base => 'Base' },
+    'VideoRoomRecordings'   => { ns => 'video',        base => 'Base' },
+    'VideoRoomSessions'     => { ns => 'video',        base => 'ReadResource' },
+    'VideoRoomTokens'       => { ns => 'video',        base => 'Base' },
+    'VideoRooms'            => { ns => 'video',        base => 'CrudResource' },
+    'VideoStreams'          => { ns => 'video',        base => 'Base' },
+    'VoiceLogs'             => { ns => 'voice',        base => 'ReadResource' },
 );
 
 # Base-provided methods the oracle SURFACE lists on a generated subclass.
@@ -1524,9 +1525,7 @@ sub collect_surface {
             # A package under Generated::Types::<Sub>:: routes by its <Sub> path
             # segment to signalwire.rest.namespaces.<ns>_types_generated, recorded
             # as a method-less class (its `has` accessors are not `sub` decls).
-            if ( $pkg_name =~
-                /^SignalWire::REST::Namespaces::Generated::Types::(\w+)::(\w+)$/ )
-            {
+            if ( $pkg_name =~ /^SignalWire::REST::Namespaces::Generated::Types::(\w+)::(\w+)$/ ) {
                 my ( $sub, $tname ) = ( $1, $2 );
                 my $ns = $TYPE_SUBDIR_NS{$sub};
                 if ( !$ns ) {
@@ -1545,9 +1544,7 @@ sub collect_surface {
             # Route by the <Sub> path segment; scoped to SWAIG::Generated:: so the
             # hand SWAIG SDK classes (FunctionResult/ParameterSchema) are not
             # misrouted.
-            if ( $pkg_name =~
-                /^SignalWire::SWAIG::Generated::(\w+)::(\w+)$/ )
-            {
+            if ( $pkg_name =~ /^SignalWire::SWAIG::Generated::(\w+)::(\w+)$/ ) {
                 my ( $sub, $tname ) = ( $1, $2 );
                 my %swaig_sub_mod = (
                     'PostPrompt'   => 'signalwire.core.post_prompt_generated',
@@ -1573,8 +1570,7 @@ sub collect_surface {
             # up (Call/Client/CallState/Event/…) are never misrouted.
             if ( $pkg_name =~ /^SignalWire::Relay::Generated::(\w+)$/ ) {
                 my $tname = $1;
-                $record_class_only->(
-                    'signalwire.relay.protocol_types_generated', $tname );
+                $record_class_only->( 'signalwire.relay.protocol_types_generated', $tname );
                 next;
             }
 
@@ -1587,8 +1583,7 @@ sub collect_surface {
             # sides). Scoped to the SWML::Generated:: package space only.
             if ( $pkg_name =~ /^SignalWire::SWML::Generated::(\w+)$/ ) {
                 my $tname = $1;
-                $record_class_only->(
-                    'signalwire.core.swml_verbs_generated', $tname );
+                $record_class_only->( 'signalwire.core.swml_verbs_generated', $tname );
                 next;
             }
 
@@ -1735,8 +1730,8 @@ sub collect_surface {
     # _is_abstract_action_base_method. This is idiom reconciled in the emit
     # (RULES §2), not an omission. Mirrors TS enumerate-surface.ts.
     {
-        my $RELAY_CALL   = 'signalwire.relay.call';
-        my $call_classes = $modules{$RELAY_CALL}{classes} // {};
+        my $RELAY_CALL       = 'signalwire.relay.call';
+        my $call_classes     = $modules{$RELAY_CALL}{classes} // {};
         my $any_concrete_has = sub {
             my ($method) = @_;
             for my $cls ( keys %$call_classes ) {
@@ -1861,20 +1856,20 @@ sub collect_surface {
             DataSphereSkill           => [ 'cleanup', 'get_instance_key', 'get_prompt_sections' ],
             DataSphereServerlessSkill => [ 'get_instance_key', 'get_prompt_sections' ],
             SWMLTransferSkill         => [ 'get_instance_key', 'get_prompt_sections' ],
-            WebSearchSkill       => [ 'get_hints', 'get_instance_key', 'get_prompt_sections' ],
-            WikipediaSearchSkill => [ 'get_hints', 'get_prompt_sections' ],
-            ApiNinjasTriviaSkill    => ['get_instance_key'],
-            PlayBackgroundFileSkill => ['get_instance_key'],
-            ClaudeSkillsSkill       => ['get_instance_key'],
-            InfoGathererSkill       => ['get_instance_key'],
-            SpiderSkill             => [ 'cleanup', 'get_instance_key' ],
+            WebSearchSkill            => [ 'get_hints', 'get_instance_key', 'get_prompt_sections' ],
+            WikipediaSearchSkill      => [ 'get_hints', 'get_prompt_sections' ],
+            ApiNinjasTriviaSkill      => ['get_instance_key'],
+            PlayBackgroundFileSkill   => ['get_instance_key'],
+            ClaudeSkillsSkill         => ['get_instance_key'],
+            InfoGathererSkill         => ['get_instance_key'],
+            SpiderSkill               => [ 'cleanup', 'get_instance_key' ],
         );
         for my $mod ( keys %modules ) {
             next unless $mod =~ /^signalwire\.skills\.[^.]+\.skill$/;
             my $classes = $modules{$mod}{classes} // {};
             for my $cls ( keys %$classes ) {
                 my $projection = $SKILL_INHERITED_PROJECTION{$cls} or next;
-                my %seen = map { $_ => 1 } @{ $classes->{$cls} };
+                my %seen       = map { $_ => 1 } @{ $classes->{$cls} };
                 for my $method (@$projection) {
                     next if $seen{$method};
                     push @{ $classes->{$cls} }, $method;
@@ -1901,9 +1896,9 @@ sub collect_surface {
             'signalwire.core.mixins.web_mixin.WebMixin' => {
                 from    => 'signalwire.core.swml_service.SWMLService',
                 methods => [
-                    'as_router', 'serve', 'manual_set_proxy_url',
-                    'on_request', 'on_swml_request',
-                    'register_routing_callback',
+                    'as_router',            'serve',
+                    'manual_set_proxy_url', 'on_request',
+                    'on_swml_request',      'register_routing_callback',
                 ],
             },
 
@@ -1919,9 +1914,9 @@ sub collect_surface {
             my ( $tmod, $tcls ) = $target =~ /^(.+)\.([^.]+)$/;
             my $spec = $DONORS{$target};
             my ( $smod, $scls ) = $spec->{from} =~ /^(.+)\.([^.]+)$/;
-            my $src = $modules{$smod}{classes}{$scls} // [];
+            my $src  = $modules{$smod}{classes}{$scls} // [];
             my %have = map { $_ => 1 } @$src;
-            my $tgt = $modules{$tmod}{classes}{$tcls} //= [];
+            my $tgt  = $modules{$tmod}{classes}{$tcls} //= [];
             my %seen = map { $_ => 1 } @$tgt;
             for my $m ( @{ $spec->{methods} } ) {
                 next unless $have{$m};
@@ -1956,13 +1951,14 @@ sub collect_surface {
             my $classes = $modules{$mod}{classes} // {};
             my $cls     = $spec->{class};
             next unless $classes->{$cls};
-            my %move = map { $_ => 1 } @{ $spec->{methods} };
-            my @kept = grep { !$move{$_} } @{ $classes->{$cls} };
+            my %move  = map  { $_ => 1 } @{ $spec->{methods} };
+            my @kept  = grep { !$move{$_} } @{ $classes->{$cls} };
             my @moved = grep { $move{$_} } @{ $classes->{$cls} };
             next unless @moved;
             $classes->{$cls} = \@kept;
             delete $classes->{$cls} unless @kept;
             my %seen = map { $_ => 1 } @{ $modules{$mod}{functions} };
+
             for my $fn (@moved) {
                 push @{ $modules{$mod}{functions} }, $fn unless $seen{$fn};
             }

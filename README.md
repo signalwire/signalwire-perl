@@ -258,21 +258,33 @@ Guides are also available in the [`docs/`](docs/) directory:
 | `SIGNALWIRE_LOG_LEVEL` | All | Logging level (`debug`, `info`, `warn`, `error`) |
 | `SIGNALWIRE_LOG_MODE` | All | Set to `off` to suppress all logging |
 
-## Testing
+## Testing, linting, and formatting
+
+Three canonical scripts under `scripts/` are the single entry point for testing,
+linting, and formatting. Each **self-bootstraps its tool environment** (perltidy,
+perlcritic, and the local::lib runtime deps) and runs from **any directory** — no
+`PERL5LIB` / `PATH` setup required from the caller.
 
 ```bash
-# Install dependencies
-cpanm --installdeps .
+# Install dependencies (first time only)
+cpanm --with-develop --installdeps .
 
 # Run the full test suite
-prove -lv t/
+bash scripts/run-tests.sh
 
-# Run a single test
-prove -lv t/06_agent.t
+# Run a subset (any prove target passes straight through)
+bash scripts/run-tests.sh t/06_agent.t
 
-# Coverage
-cover -test -report html
+# Lint (perlcritic severity 4, zero findings)
+bash scripts/run-lint.sh
+
+# Format the tree in place (perltidy)
+bash scripts/run-format.sh
+# ...or verify-only, no writes (the CI FMT gate)
+bash scripts/run-format.sh --check
 ```
+
+All of the above also run as gates inside `bash scripts/run-ci.sh`.
 
 ## License
 
