@@ -168,6 +168,20 @@ run_gate "GEN-FRESH-RELAY" "generate_relay_protocol.py --check (generated RELAY 
 run_gate "GEN-FRESH-SWAIG" "generate_swaig_payloads.py --check (generated SWAIG payloads match swaig-specs)" \
     python3 scripts/generate_swaig_payloads.py --check
 
+# Gate 0e: GEN-FRESH-TESTS — the generated full-mock REST wire-test suite under
+# t/rest/generated/<spec>_generated.t is GENERATED (changeset item E) from the
+# route-registry × spec-operationId oracle by scripts/generate_rest_tests.py
+# (route_registry.pl + rest_test_plan.pl captured off the REAL client, joined to
+# the OpenAPI operationId). Each implemented route gets a SUCCESS test (assert
+# method + matched_route) and an ERROR test (arm a 500, assert
+# HttpClient::Error->status_code == 500). These generated tests ARE part of the
+# REST coverage suite; this gate fails if a spec/route changed without
+# regenerating (or a generated test file was hand-edited). Regenerate with
+# `python3 scripts/generate_rest_tests.py`. Mirrors the go/php/ts/ruby REST
+# test-GEN-FRESH gate.
+run_gate "GEN-FRESH-TESTS" "generate_rest_tests.py --check (generated REST wire-test suite matches route-registry × spec oracle)" \
+    python3 scripts/generate_rest_tests.py --check
+
 # Gate 1: prove
 run_gate "TEST" "prove -Ilib -It/lib t/" \
     prove -Ilib -It/lib t/
@@ -267,7 +281,10 @@ rest_coverage_gate() {
     # Run the REST suite serially against this one mock (one shared journal). The
     # harness probes 127.0.0.1:$port (MOCK_SIGNALWIRE_PORT), finds it healthy, and
     # reuses it instead of self-spawning.
-    MOCK_SIGNALWIRE_PORT="$port" prove -Ilib -It/lib -j1 t/rest/ || return 1
+    # -r so the generated wire-test suite under t/rest/generated/ (changeset E)
+    # is picked up too — prove does NOT recurse into subdirs without it, and the
+    # generated tests ARE part of the REST coverage journal.
+    MOCK_SIGNALWIRE_PORT="$port" prove -Ilib -It/lib -j1 -r t/rest/ || return 1
     python3 -m mock_signalwire.rest_coverage \
         --mock-url "http://127.0.0.1:$port" \
         --spec-root "$PORTING_SDK_DIR/rest-apis" \
@@ -332,6 +349,7 @@ perl_source_files() {
     echo scripts/enumerate_surface.pl
     echo scripts/signature_dump.pl
     echo scripts/route_registry.pl
+    echo scripts/rest_test_plan.pl
 }
 
 # Gate 7: FMT — the language format gate (perl: Perl::Tidy). perltidy is the
