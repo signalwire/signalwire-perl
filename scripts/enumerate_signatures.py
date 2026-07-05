@@ -149,6 +149,49 @@ PERL_HAND_PARAM_RENAMES: dict[tuple, dict[str, str]] = {
 }
 
 
+# Return-type reconciliation for methods whose Perl return is an idiomatic
+# value the regex parser can only record as bare ``any``, but which implements a
+# NAMED cross-port capability the oracle types concretely. Keyed
+# (py_module, py_class_or_None, method) -> canonical reference return type.
+#
+# ``as_router`` is the "embed my routes in a host app" mountable unit. Python's
+# WebMixin.as_router / SWMLService.as_router return a ``HostAppRouter`` (a FastAPI
+# APIRouter). Perl's routable unit is a PSGI application coderef
+# (``sub { my $env = shift; ...; [$status,$headers,$body] }``, mountable in any
+# Plack app via ``Plack::Builder`` ``mount``) — the SAME capability in Perl's
+# idiom, returned by ``as_router`` (which returns ``$self->to_psgi_app``). The
+# ``CodeRef`` maps to ``callable<...>`` in the perl type-alias table, but for
+# this named cross-port unit we reconcile it to the SHARED ``HostAppRouter``
+# class-ref (mirrors Ruby's ``Rack::Builder`` → HostAppRouter and Go's
+# ``http.Handler`` → HostAppRouter mappings in porting-sdk/type_aliases.yaml), so
+# as_router drifts 0 against the reference on a named type rather than the ``any``
+# wildcard. Applied ONLY when the port currently records the return as ``any``
+# (never overrides a concrete type the port already carries).
+PERL_RETURN_TYPE_OVERRIDES: dict[tuple, str] = {
+    ("signalwire.core.mixins.web_mixin", "WebMixin", "as_router"):
+        "class:signalwire.core.web.HostAppRouter",
+    ("signalwire.core.swml_service", "SWMLService", "as_router"):
+        "class:signalwire.core.web.HostAppRouter",
+}
+
+
+def apply_return_type_overrides(out_modules: dict) -> None:
+    """Reconcile a named-capability method's idiomatic ``any`` return to the
+    canonical reference return type (see PERL_RETURN_TYPE_OVERRIDES). In place.
+    Only rewrites a bare ``any`` return — never a concrete type already present."""
+    def apply(key: tuple, sig: dict) -> None:
+        rt = PERL_RETURN_TYPE_OVERRIDES.get(key)
+        if rt is not None and sig.get("returns", "any") == "any":
+            sig["returns"] = rt
+
+    for mod, me in out_modules.items():
+        for cls, ce in me.get("classes", {}).items():
+            for meth, sig in ce.get("methods", {}).items():
+                apply((mod, cls, meth), sig)
+        for fn, sig in me.get("functions", {}).items():
+            apply((mod, None, fn), sig)
+
+
 def apply_hand_param_renames(out_modules: dict) -> None:
     """Rewrite Perl-idiom hand-written param identifiers to the reference name so
     the projection + diff compare EQUAL (see PERL_HAND_PARAM_RENAMES). In place."""
@@ -1413,6 +1456,7 @@ def collect(raw: dict) -> dict:
     # types onto hand-written params the parser recorded as bare ``any``.
     apply_hand_param_renames(out_modules)
     project_reference_param_types(out_modules)
+    apply_return_type_overrides(out_modules)
 
     sorted_modules = {}
     for k in sorted(out_modules):
