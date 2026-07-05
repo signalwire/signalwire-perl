@@ -31,10 +31,17 @@ if ! command -v prove >/dev/null 2>&1; then
     exit 1
 fi
 
+# Run tests in PARALLEL (prove -j) — the test suite is the CI wall-clock driver (~11min
+# serial); the mock-using tests are concurrency-safe (each picks its own free port via
+# PortPicker when MOCK_*_PORT isn't the pre-spawned one — see t/lib/MockTest.pm), so
+# fanning across cores is a straight win. Measured green + ~3.5x on t/rest/. Job count =
+# cores (min 1); override with PROVE_JOBS.
+jobs="${PROVE_JOBS:-$( (command -v nproc >/dev/null && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}"
+
 # Optional filter passthrough: default to the whole tree, else run exactly what
 # the caller named.
 if [ "$#" -eq 0 ]; then
-    exec prove -Ilib -It/lib -r t/
+    exec prove -j"$jobs" -Ilib -It/lib -r t/
 else
-    exec prove -Ilib -It/lib -r "$@"
+    exec prove -j"$jobs" -Ilib -It/lib -r "$@"
 fi
