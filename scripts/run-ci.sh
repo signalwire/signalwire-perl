@@ -33,6 +33,7 @@ set -u
 set -o pipefail
 
 PORT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+mkdir -p "$PORT_ROOT/.sw-tmp"  # repo-local CI scratch (never /tmp)
 PORT_NAME="signalwire-perl"
 
 resolve_porting_sdk() {
@@ -82,12 +83,12 @@ pick_free_port() {
 # via the Perl surface enumerator, compare the committed copy modulo the volatile
 # generated_from git-sha, then always restore the working copy.
 surface_fresh_gate() {
-    if ! git show HEAD:port_surface.json > /tmp/committed_surface.json 2>/dev/null; then
-        cp "$PORT_ROOT/port_surface.json" /tmp/committed_surface.json
+    if ! git show HEAD:port_surface.json > "$PORT_ROOT/.sw-tmp/committed_surface.json" 2>/dev/null; then
+        cp "$PORT_ROOT/port_surface.json" "$PORT_ROOT/.sw-tmp/committed_surface.json"
     fi
     perl scripts/enumerate_surface.pl >/dev/null || return $?
     python3 "$PORTING_SDK_DIR/scripts/check_surface_freshness.py" \
-        --committed /tmp/committed_surface.json \
+        --committed "$PORT_ROOT/.sw-tmp/committed_surface.json" \
         --fresh "$PORT_ROOT/port_surface.json"
     local rc=$?
     git checkout -- port_surface.json 2>/dev/null
@@ -102,7 +103,7 @@ rest_coverage_gate() {
     local mock_pkg_parent="$PORTING_SDK_DIR/test_harness/mock_signalwire"
     export PYTHONPATH="$mock_pkg_parent${PYTHONPATH:+:$PYTHONPATH}"
     python3 -m mock_signalwire --host 127.0.0.1 --port "$port" --log-level error \
-        >/tmp/rest_cov_mock_perl.$$.log 2>&1 &
+        >"$PORT_ROOT/.sw-tmp/rest_cov_mock_perl.$$.log" 2>&1 &
     local mock_pid=$!
     # shellcheck disable=SC2064
     trap "kill $mock_pid 2>/dev/null" RETURN
@@ -110,7 +111,7 @@ rest_coverage_gate() {
     for i in $(seq 1 60); do
         if ! kill -0 "$mock_pid" 2>/dev/null; then
             echo "mock_signalwire died on port $port — log:" >&2
-            cat "/tmp/rest_cov_mock_perl.$$.log" >&2
+            cat "$PORT_ROOT/.sw-tmp/rest_cov_mock_perl.$$.log" >&2
             return 1
         fi
         if python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:$port/__mock__/health',timeout=1)" 2>/dev/null; then
@@ -155,7 +156,7 @@ spec_parity_gate() {
 # SURFACE-DIFF — diff the port's public surface against the Python reference.
 # Regenerate the surface in place, diff, restore unconditionally.
 surface_diff_gate() {
-    local committed="/tmp/committed_surface_diff_${PORT_NAME}.$$"
+    local committed="$PORT_ROOT/.sw-tmp/committed_surface_diff_${PORT_NAME}.$$"
     git show HEAD:port_surface.json >"$committed" 2>/dev/null \
         || cp port_surface.json "$committed"
     perl scripts/enumerate_surface.pl --output port_surface.json
