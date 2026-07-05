@@ -9,12 +9,12 @@ use SignalWire::Skills::SkillRegistry;
 use SignalWire::Agent::AgentBase;
 
 # ============================================================
-# 1. list_skills returns all 16
+# 1. list_skills returns all 17
 # ============================================================
 subtest 'list all skills' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 16, '16 skills');
+    is(scalar @$skills, 17, '17 skills');
 };
 
 # ============================================================
@@ -24,7 +24,7 @@ subtest 'get_factory all skills' => sub {
     my @expected = qw(
         api_ninjas_trivia claude_skills custom_skills datasphere
         datasphere_serverless datetime google_maps info_gatherer
-        joke math
+        joke math native_vector_search
         play_background_file spider swml_transfer weather_api
         web_search wikipedia_search
     );
@@ -49,7 +49,7 @@ subtest 'clear_registry' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     # After clearing, list_skills will re-load all builtins
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 16, 're-loaded after clear');
+    is(scalar @$skills, 17, 're-loaded after clear');
 };
 
 # ============================================================
@@ -65,6 +65,12 @@ subtest 'skills sorted' => sub {
 # 6. All skills instantiate and setup
 # ============================================================
 subtest 'all skills instantiate' => sub {
+    # Network-only skills require mandatory config (e.g. remote_url) and
+    # deliberately return false from setup() when it is absent — matches the
+    # Python/ruby reference. They still instantiate; we just don't assert a
+    # truthy bare setup for them.
+    my %requires_config = ( native_vector_search => 1 );
+
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
     for my $name (@$skills) {
         my $agent = SignalWire::Agent::AgentBase->new(name => "test_$name");
@@ -72,7 +78,12 @@ subtest 'all skills instantiate' => sub {
         my $skill = eval { $factory->new(agent => $agent, params => {}) };
         ok(defined $skill, "$name: instantiated") or diag($@);
         my $ok = eval { $skill->setup };
-        ok($ok, "$name: setup") or diag($@);
+        if ($requires_config{$name}) {
+            ok(!$ok, "$name: setup false without required config") or diag($@);
+        }
+        else {
+            ok($ok, "$name: setup") or diag($@);
+        }
     }
 };
 

@@ -9,7 +9,7 @@ package SignalWire::Skills::SkillName;
 # compile-time typo checking — a bare string like 'datetiem' still only
 # fails at load time, when the registry can't find the skill. What it
 # DOES buy:
-#   - a single source of truth for the 18 built-in skill names, co-located
+#   - a single source of truth for the 17 built-in skill names, co-located
 #     with the skill system (the list otherwise lives only inside
 #     SkillRegistry::_load_all_builtins and the test suite);
 #   - editor autocomplete + discoverability via named constants;
@@ -54,6 +54,7 @@ use constant {
     INFO_GATHERER         => 'info_gatherer',
     JOKE                  => 'joke',
     MATH                  => 'math',
+    NATIVE_VECTOR_SEARCH  => 'native_vector_search',
     PLAY_BACKGROUND_FILE  => 'play_background_file',
     SPIDER                => 'spider',
     SWML_TRANSFER         => 'swml_transfer',
@@ -66,7 +67,7 @@ use constant {
 our @EXPORT_OK = qw(
     API_NINJAS_TRIVIA CLAUDE_SKILLS CUSTOM_SKILLS DATASPHERE
     DATASPHERE_SERVERLESS DATETIME GOOGLE_MAPS INFO_GATHERER JOKE MATH
-    PLAY_BACKGROUND_FILE SPIDER
+    NATIVE_VECTOR_SEARCH PLAY_BACKGROUND_FILE SPIDER
     SWML_TRANSFER WEATHER_API WEB_SEARCH WIKIPEDIA_SEARCH
 );
 our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
@@ -84,6 +85,7 @@ my @ALL = sort qw(
     info_gatherer
     joke
     math
+    native_vector_search
     play_background_file
     spider
     swml_transfer
@@ -94,7 +96,7 @@ my @ALL = sort qw(
 
 my %IS_BUILTIN = map { $_ => 1 } @ALL;
 
-# SkillName->all — arrayref of the 18 built-in skill wire names (sorted).
+# SkillName->all — arrayref of the 17 built-in skill wire names (sorted).
 sub all {
     return [@ALL];
 }
@@ -129,11 +131,11 @@ SignalWire::Skills::SkillName - built-in skill names as a typed closed set
     # Membership / iteration helpers:
     SignalWire::Skills::SkillName->is_builtin('datetime');     # 1
     SignalWire::Skills::SkillName->is_builtin('my_custom');    # 0
-    @{ SignalWire::Skills::SkillName->all };                   # 18 names
+    @{ SignalWire::Skills::SkillName->all };                   # 17 names
 
 =head1 DESCRIPTION
 
-The 18 built-in skill names, surfaced as typed, named constants. Each
+The 17 built-in skill names, surfaced as typed, named constants. Each
 constant's value is the skill's registered wire name — the exact string
 passed to C<< SkillRegistry->register_skill >> in the matching
 C<SignalWire::Skills::Builtin::*> module.
@@ -153,7 +155,7 @@ plus editor autocomplete and the membership/iteration helpers below.
 Exported on request via L<Exporter>; C<:all> pulls every name. The full
 set: C<API_NINJAS_TRIVIA>, C<CLAUDE_SKILLS>, C<CUSTOM_SKILLS>,
 C<DATASPHERE>, C<DATASPHERE_SERVERLESS>, C<DATETIME>, C<GOOGLE_MAPS>,
-C<INFO_GATHERER>, C<JOKE>, C<MATH>,
+C<INFO_GATHERER>, C<JOKE>, C<MATH>, C<NATIVE_VECTOR_SEARCH>,
 C<PLAY_BACKGROUND_FILE>, C<SPIDER>,
 C<SWML_TRANSFER>, C<WEATHER_API>, C<WEB_SEARCH>, C<WIKIPEDIA_SEARCH>.
 
@@ -163,7 +165,7 @@ C<SWML_TRANSFER>, C<WEATHER_API>, C<WEB_SEARCH>, C<WIKIPEDIA_SEARCH>.
 
     my $aref = SignalWire::Skills::SkillName->all;
 
-Arrayref of the 18 built-in skill wire names, sorted so the order matches
+Arrayref of the 17 built-in skill wire names, sorted so the order matches
 C<< SkillRegistry->list_skills >>.
 
 =head2 is_builtin

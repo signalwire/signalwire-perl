@@ -37,7 +37,7 @@ subtest 'constants equal wire strings' => sub {
 subtest 'all lists every built-in, matching the registry' => sub {
     my $all = SignalWire::Skills::SkillName->all;
     is(ref $all, 'ARRAY', 'all returns an arrayref');
-    is(scalar @$all, 16, '16 built-in skill names');
+    is(scalar @$all, 17, '17 built-in skill names');
 
     # Single source of truth: SkillName->all must equal SkillRegistry's
     # registered set. If a builtin is added/removed, this catches drift

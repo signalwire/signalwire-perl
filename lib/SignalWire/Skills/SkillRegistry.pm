@@ -83,8 +83,8 @@ sub list_all_skill_sources {
     my @builtins = qw(
         api_ninjas_trivia claude_skills custom_skills datasphere
         datasphere_serverless datetime google_maps info_gatherer joke math
-        play_background_file spider swml_transfer weather_api web_search
-        wikipedia_search
+        native_vector_search play_background_file spider swml_transfer
+        weather_api web_search wikipedia_search
     );
     my %is_builtin = map  { $_ => 1 } @builtins;
     my @registered = grep { !$is_builtin{$_} } sort keys %REGISTRY;
@@ -154,7 +154,7 @@ sub _load_all_builtins {
     my ($class) = @_;
     my @names = qw(
         api_ninjas_trivia claude_skills datasphere datasphere_serverless
-        datetime google_maps info_gatherer joke math
+        datetime google_maps info_gatherer joke math native_vector_search
         play_background_file spider swml_transfer
         weather_api web_search wikipedia_search custom_skills
     );

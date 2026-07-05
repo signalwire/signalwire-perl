@@ -23347,10 +23347,9 @@
                   "kind": "self"
                 },
                 {
-                  "name": "opts",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
+                  "name": "behavior",
+                  "type": "optional<string>",
+                  "required": false
                 }
               ],
               "returns": "any"
@@ -33785,6 +33784,41 @@
     "signalwire.skills.math.skill": {
       "classes": {
         "MathSkill": {
+          "methods": {
+            "skill_description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "skill_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "supports_multiple_instances": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.skills.native_vector_search.skill": {
+      "classes": {
+        "NativeVectorSearchSkill": {
           "methods": {
             "skill_description": {
               "params": [

@@ -167,6 +167,10 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.skills.info_gatherer.skill', class => 'InfoGathererSkill' },
     'SignalWire::Skills::Builtin::ClaudeSkills' =>
         { module => 'signalwire.skills.claude_skills.skill', class => 'ClaudeSkillsSkill' },
+    'SignalWire::Skills::Builtin::NativeVectorSearch' => {
+        module => 'signalwire.skills.native_vector_search.skill',
+        class  => 'NativeVectorSearchSkill'
+    },
 
     # CustomSkills has no direct Python equivalent — it's a Perl-only harness
     # for loading user-supplied skill packages. Report it under the registry
@@ -1863,6 +1867,7 @@ sub collect_surface {
             ClaudeSkillsSkill         => ['get_instance_key'],
             InfoGathererSkill         => ['get_instance_key'],
             SpiderSkill               => [ 'cleanup', 'get_instance_key' ],
+            NativeVectorSearchSkill   => [ 'cleanup', 'get_instance_key', 'get_prompt_sections' ],
         );
         for my $mod ( keys %modules ) {
             next unless $mod =~ /^signalwire\.skills\.[^.]+\.skill$/;
