@@ -10,13 +10,13 @@
             {
               "name": "args",
               "type": "list<any>",
-              "required": true,
+              "required": false,
               "kind": "var_positional"
             },
             {
               "name": "kwargs",
               "type": "dict<string,any>",
-              "required": true,
+              "required": false,
               "kind": "var_keyword"
             }
           ],
@@ -360,7 +360,7 @@
                 {
                   "name": "opts",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],
@@ -403,7 +403,7 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],
@@ -418,7 +418,7 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],
@@ -842,12 +842,6 @@
                   "name": "is_typed_handler",
                   "type": "bool",
                   "required": false
-                },
-                {
-                  "name": "swaig_fields",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -2061,7 +2055,7 @@
                 {
                   "name": "opts",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],
@@ -2946,12 +2940,6 @@
                   "name": "question",
                   "type": "string",
                   "required": true
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -3820,7 +3808,7 @@
             {
               "name": "opts",
               "type": "dict<string,any>",
-              "required": true,
+              "required": false,
               "kind": "var_keyword"
             }
           ],
@@ -3831,7 +3819,7 @@
             {
               "name": "opts",
               "type": "dict<string,any>",
-              "required": true,
+              "required": false,
               "kind": "var_keyword"
             }
           ],
@@ -5393,7 +5381,7 @@
                   "kind": "self"
                 },
                 {
-                  "name": "params",
+                  "name": "p",
                   "type": "dict<string,any>",
                   "required": false,
                   "kind": "var_keyword"
@@ -5408,7 +5396,7 @@
                   "kind": "self"
                 },
                 {
-                  "name": "params",
+                  "name": "p",
                   "type": "dict<string,any>",
                   "required": false,
                   "kind": "var_keyword"
@@ -5507,7 +5495,7 @@
                 {
                   "name": "opts",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],
@@ -5910,12 +5898,6 @@
                   "name": "is_typed_handler",
                   "type": "bool",
                   "required": false
-                },
-                {
-                  "name": "swaig_fields",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -5929,7 +5911,7 @@
                 {
                   "name": "tool_defs",
                   "type": "list<any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_positional"
                 }
               ],
@@ -8094,7 +8076,7 @@
             {
               "name": "opts",
               "type": "dict<string,any>",
-              "required": true,
+              "required": false,
               "kind": "var_keyword"
             }
           ],
@@ -8554,7 +8536,7 @@
                   "kind": "self"
                 },
                 {
-                  "name": "kwargs",
+                  "name": "opts",
                   "type": "dict<string,any>",
                   "required": false,
                   "kind": "var_keyword"
@@ -9648,12 +9630,6 @@
                   "name": "swaig",
                   "type": "optional<dict<string,any>>",
                   "required": false
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -9944,12 +9920,6 @@
                   "name": "swaig",
                   "type": "optional<dict<string,any>>",
                   "required": false
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -18677,12 +18647,6 @@
                   "required": false
                 },
                 {
-                  "name": "kwargs",
-                  "kind": "var_keyword",
-                  "type": "dict<string,any>",
-                  "required": false
-                },
-                {
                   "name": "host",
                   "type": "any",
                   "required": false
@@ -19126,12 +19090,6 @@
                   "required": false
                 },
                 {
-                  "name": "kwargs",
-                  "kind": "var_keyword",
-                  "type": "dict<string,any>",
-                  "required": false
-                },
-                {
                   "name": "host",
                   "type": "any",
                   "required": false
@@ -19516,12 +19474,6 @@
                 {
                   "name": "route",
                   "type": "string",
-                  "required": false
-                },
-                {
-                  "name": "kwargs",
-                  "kind": "var_keyword",
-                  "type": "dict<string,any>",
                   "required": false
                 },
                 {
@@ -19970,12 +19922,6 @@
                   "required": false
                 },
                 {
-                  "name": "kwargs",
-                  "kind": "var_keyword",
-                  "type": "dict<string,any>",
-                  "required": false
-                },
-                {
                   "name": "host",
                   "type": "any",
                   "required": false
@@ -20361,12 +20307,6 @@
                 {
                   "name": "route",
                   "type": "string",
-                  "required": false
-                },
-                {
-                  "name": "kwargs",
-                  "kind": "var_keyword",
-                  "type": "dict<string,any>",
                   "required": false
                 },
                 {
@@ -21191,12 +21131,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21218,12 +21152,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21257,12 +21185,6 @@
                   "type": "optional<dict<string,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21278,12 +21200,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21329,12 +21245,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21346,7 +21256,7 @@
                   "kind": "self"
                 },
                 {
-                  "name": "kwargs",
+                  "name": "opts",
                   "type": "dict<string,any>",
                   "required": false,
                   "kind": "var_keyword"
@@ -21387,12 +21297,6 @@
                   "type": "optional<int>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21417,12 +21321,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21486,12 +21384,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21536,12 +21428,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21610,12 +21496,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21789,12 +21669,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21964,12 +21838,6 @@
                   "type": "optional<dict<string,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -21990,12 +21858,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22010,12 +21872,6 @@
                   "name": "conference_id",
                   "type": "string",
                   "required": true
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22027,7 +21883,7 @@
                   "kind": "self"
                 },
                 {
-                  "name": "kwargs",
+                  "name": "opts",
                   "type": "dict<string,any>",
                   "required": false,
                   "kind": "var_keyword"
@@ -22045,12 +21901,6 @@
                   "name": "action",
                   "type": "dict<string,any>",
                   "required": true
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22071,12 +21921,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22237,12 +22081,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22296,12 +22134,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22339,12 +22171,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22573,12 +22399,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22611,12 +22431,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22638,12 +22452,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22670,12 +22478,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22696,12 +22498,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22760,12 +22556,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22843,12 +22633,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22889,12 +22673,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22931,12 +22709,6 @@
                   "type": "optional<callable<list<class:signalwire.relay.event.RelayEvent>,any>>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22951,12 +22723,6 @@
                   "name": "dest",
                   "type": "string",
                   "required": true
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -22981,12 +22747,6 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -23549,7 +23309,7 @@
                 {
                   "name": "opts",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],
@@ -27371,7 +27131,7 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],
@@ -27387,12 +27147,6 @@
                   "name": "resource_id",
                   "type": "string",
                   "required": true
-                },
-                {
-                  "name": "kwargs",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"
@@ -27415,7 +27169,7 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],
@@ -27636,7 +27390,7 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true,
+                  "required": false,
                   "kind": "var_keyword"
                 }
               ],

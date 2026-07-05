@@ -577,9 +577,11 @@ def _project_kwargs_from_python(
         if kind == "var_keyword":
             proj["kind"] = "var_keyword"
             proj["type"] = "dict<string,any>"
+            proj["required"] = False  # a splat/kwargs tail is never required
         elif kind == "var_positional":
             proj["kind"] = "var_positional"
             proj["type"] = "list<any>"
+            proj["required"] = False
         elif kind == "keyword":
             proj["kind"] = "keyword"
         out.append(proj)
@@ -656,8 +658,14 @@ def _sig_from_parsed_method(m: dict) -> dict:
         param: dict = {"name": pname, "type": "any", "required": True}
         if sigil == "@":
             param["kind"] = "var_positional"; param["type"] = "list<any>"
+            # A slurpy tail (@args / %opts) is a splat door — you can always call
+            # without passing anything into it, so it is NEVER required. Marking it
+            # required makes the checker treat it as a mandatory extra param and drift
+            # vs the reference (whose **kwargs/**params tail is dropped entirely).
+            param["required"] = False
         elif sigil == "%":
             param["kind"] = "var_keyword"; param["type"] = "dict<string,any>"
+            param["required"] = False  # var_keyword tail is optional (see above)
         params_out.append(param)
     if not params_out or params_out[0].get("kind") not in ("self", "cls"):
         params_out.insert(0, {"name": "self", "kind": "self"})
@@ -958,9 +966,11 @@ def collect(raw: dict) -> dict:
                 if sigil == "@":
                     param["kind"] = "var_positional"
                     param["type"] = "list<any>"
+                    param["required"] = False  # slurpy tail is never required
                 elif sigil == "%":
                     param["kind"] = "var_keyword"
                     param["type"] = "dict<string,any>"
+                    param["required"] = False  # var_keyword tail is never required
                 params_out.append(param)
 
             # Perl-idiom projection: the canonical Perl ``%opts`` slurpy
