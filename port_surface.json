@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 1049e6ee163658a191424e5d3266ba1bc78ae623",
+   "generated_from" : "signalwire-perl @ 78a67ca950b5587f07fc62e4380d8aa041623a85",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -504,6 +504,7 @@
       "signalwire.core.security.webhook_middleware" : {
          "classes" : {},
          "functions" : [
+            "validate",
             "wrap"
          ]
       },

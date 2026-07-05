@@ -172,6 +172,15 @@ PERL_RETURN_TYPE_OVERRIDES: dict[tuple, str] = {
         "class:signalwire.core.web.HostAppRouter",
     ("signalwire.core.swml_service", "SWMLService", "as_router"):
         "class:signalwire.core.web.HostAppRouter",
+    # webhook_middleware.validate — the decomposed, framework-free
+    # validation core. It returns a PSGI-style reject triple
+    # ``[status, headers, body]`` or ``undef`` to pass. The regex parser only
+    # sees a bare ``any`` return; reconcile it to the oracle's cross-port
+    # ``optional<(int, dict<string,string>, string)>`` decision-triple type.
+    # (An arrayref IS a PSGI response, so this is the SAME shape dotnet ships
+    # as WebhookValidationMiddleware.Validate and Rack/PSGI middleware are.)
+    ("signalwire.core.security.webhook_middleware", None, "validate"):
+        "optional<tuple<int,dict<string,string>,string>>",
 }
 
 
@@ -576,6 +585,13 @@ PERL_HASHREF_KWARG_METHODS = {
     ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_relay_application"),
     ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_relay_topic"),
     ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_swml_webhook"),
+    # webhook_middleware.validate — free FUNCTION (class None). The Perl
+    # source is ``sub validate { my ($method,$url,$headers,$body,%opts)=@_; }``
+    # where the trailing ``%opts`` slurpy carries the reference's keyword-only
+    # ``signing_key``. Whitelisting it here projects that keyword param from
+    # the oracle (mirroring the class-method kwargs idiom) so the decomposed
+    # validate core drifts 0 on the cross-port contract.
+    ("signalwire.core.security.webhook_middleware", None, "validate"),
 }
 
 
@@ -1025,10 +1041,21 @@ def collect(raw: dict) -> dict:
             # mismatch. Same logic for the ``%foo`` hash hash specialty
             # like ``add_language(%lang)``: the slurpy carries every
             # python-named kwarg.
+            # Free FUNCTIONS (class None) get the same slurpy→keyword
+            # projection, but ONLY when whitelisted in
+            # PERL_HASHREF_KWARG_METHODS keyed ``(mod, None, method)`` — a
+            # free function's ``%opts`` sink is projected deliberately (e.g.
+            # webhook_middleware.validate's keyword-only signing_key), never
+            # heuristically, so an unrelated free-function ``%opts`` tail is
+            # left as a plain var_keyword.
+            fn_kwargs_whitelisted = (
+                canonical_class is None
+                and (mod, None, method_canonical) in PERL_HASHREF_KWARG_METHODS
+            )
             if (
                 params_out
                 and params_out[-1].get("kind") == "var_keyword"
-                and canonical_class is not None
+                and (canonical_class is not None or fn_kwargs_whitelisted)
             ):
                 py_sig = python_signature(mod, canonical_class, method_canonical)
                 leading = params_out[:-1]

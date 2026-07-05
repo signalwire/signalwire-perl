@@ -382,4 +382,79 @@ subtest 'Form-encoded body validates via middleware (Scheme B)' => sub {
     };
 };
 
+# ---------------------------------------------------------------------------
+# 13. Decomposed validate() core — the framework-free reject-triple-or-undef
+#     shape (SAME cross-port contract dotnet ships as
+#     WebhookValidationMiddleware.Validate). A PSGI [status,headers,body] triple
+#     IS a response, so undef = pass and [403,{},''] = reject.
+# ---------------------------------------------------------------------------
+subtest 'validate() decomposed core - valid signature -> undef (pass)' => sub {
+    my $url  = 'https://example.ngrok.io/webhook';
+    my $body = '{"event":"call.state","params":{"call_id":"abc-123"}}';
+    my $sig  = scheme_a_sig($SIGNING_KEY, $url, $body);
+
+    my $rej = SignalWire::Security::WebhookMiddleware::validate(
+        'POST', $url, { 'X-SignalWire-Signature' => $sig }, $body,
+        signing_key => $SIGNING_KEY,
+    );
+    is($rej, undef, 'valid signature returns undef (let the handler run)');
+};
+
+subtest 'validate() decomposed core - bad signature -> [403,{},""] triple' => sub {
+    my $url  = 'https://example.ngrok.io/webhook';
+    my $body = '{"event":"call.state"}';
+
+    my $rej = SignalWire::Security::WebhookMiddleware::validate(
+        'POST', $url, { 'X-SignalWire-Signature' => 'totally-bogus' }, $body,
+        signing_key => $SIGNING_KEY,
+    );
+    is(ref($rej), 'ARRAY', 'bad signature returns a reject triple (arrayref)');
+    is($rej->[0], 403, 'reject status is 403');
+    is_deeply($rej->[1], {}, 'reject headers are empty (no detail leaked)');
+    is($rej->[2], '', 'reject body is empty (no detail leaked)');
+};
+
+subtest 'validate() decomposed core - missing signature header -> 403 triple' => sub {
+    my $rej = SignalWire::Security::WebhookMiddleware::validate(
+        'POST', 'https://example.ngrok.io/webhook', {}, '{"x":1}',
+        signing_key => $SIGNING_KEY,
+    );
+    is(ref($rej), 'ARRAY', 'missing header returns a reject triple');
+    is($rej->[0], 403, 'missing header rejects with 403 (never throws)');
+};
+
+subtest 'validate() decomposed core - X-Twilio-Signature alias honored' => sub {
+    my $url  = 'https://example.ngrok.io/cxml';
+    my $body = '{"event":"call.state"}';
+    my $sig  = scheme_a_sig($SIGNING_KEY, $url, $body);
+
+    my $rej = SignalWire::Security::WebhookMiddleware::validate(
+        'POST', $url, { 'X-Twilio-Signature' => $sig }, $body,
+        signing_key => $SIGNING_KEY,
+    );
+    is($rej, undef, 'legacy X-Twilio-Signature alias accepted (undef = pass)');
+};
+
+subtest 'validate() decomposed core - header lookup is case-insensitive' => sub {
+    my $url  = 'https://example.ngrok.io/webhook';
+    my $body = '{"ci":"headers"}';
+    my $sig  = scheme_a_sig($SIGNING_KEY, $url, $body);
+
+    my $rej = SignalWire::Security::WebhookMiddleware::validate(
+        'POST', $url, { 'x-signalwire-signature' => $sig }, $body,
+        signing_key => $SIGNING_KEY,
+    );
+    is($rej, undef, 'lower-cased signature header still resolves');
+};
+
+subtest 'validate() decomposed core - empty signing_key croaks' => sub {
+    dies_ok {
+        SignalWire::Security::WebhookMiddleware::validate(
+            'POST', 'https://example.ngrok.io/webhook',
+            { 'X-SignalWire-Signature' => 'x' }, '{}',
+            signing_key => '',
+        );
+    } 'empty signing_key is a programming error (croaks)';
+};
+
 done_testing;

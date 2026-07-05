@@ -49,6 +49,63 @@ use warnings;
 use Carp                                   qw(croak);
 use SignalWire::Security::WebhookValidator qw(validate_webhook_signature);
 
+# Header names the decomposed ``validate`` core consults, lower-cased for a
+# case-insensitive lookup. ``X-SignalWire-Signature`` is present on every
+# signed request; ``X-Twilio-Signature`` is honored as a legacy cXML alias.
+my $SIGNALWIRE_SIGNATURE_HEADER    = 'x-signalwire-signature';
+my $TWILIO_COMPAT_SIGNATURE_HEADER = 'x-twilio-signature';
+
+# ``validate`` — the framework-free webhook-validation decision core.
+#
+#   validate($method, $url, \%headers, $body, signing_key => $key)
+#       -> undef             (signature valid; let the handler run)
+#       -> [403, {}, '']     (missing/bad signature; short-circuit)
+#
+# This is the SAME decomposed shape every port ships (dotnet
+# ``WebhookValidationMiddleware.Validate``, python
+# ``webhook_middleware.validate``, a Rack/PSGI middleware response): a request
+# reduced to language-neutral primitives, returning either a 403-shaped
+# reject triple or ``undef`` to pass. In PSGI a ``[status, headers, body]``
+# arrayref literally IS a response, so the reject triple is returned as-is
+# and can be handed straight back from a Plack handler; the ``wrap`` Plack
+# middleware below is the only framework idiom layered on top of this core.
+#
+# ``$headers`` is a hashref looked up case-insensitively for the signature
+# header (``X-SignalWire-Signature`` or the ``X-Twilio-Signature`` alias).
+# ``$method`` is accepted for cross-port signature parity but is not part of
+# the HMAC. The signing key is passed as a trailing named argument
+# (``signing_key => $key``) mirroring the reference's keyword-only parameter.
+#
+# On any failure (missing or bad signature, validator error) it returns
+# ``[403, {}, '']`` with no body detail, so which branch tripped is not
+# leaked. An empty ``signing_key`` is a programming error and croaks.
+sub validate {
+    my ( $method, $url, $headers, $body, %opts ) = @_;
+    my $signing_key = $opts{signing_key};
+    croak "signing_key is required"
+        unless defined $signing_key && length $signing_key;
+
+    $headers = {} unless ref($headers) eq 'HASH';
+    $body    = '' unless defined $body;
+
+    # Case-insensitive header lookup: prefer X-SignalWire-Signature, fall
+    # back to the legacy X-Twilio-Signature alias for cXML compat.
+    my %lc_headers;
+    for my $k ( keys %$headers ) {
+        $lc_headers{ lc $k } = $headers->{$k};
+    }
+    my $signature = $lc_headers{$SIGNALWIRE_SIGNATURE_HEADER};
+    $signature = $lc_headers{$TWILIO_COMPAT_SIGNATURE_HEADER}
+        unless defined $signature;
+
+    return [ 403, {}, '' ] unless defined $signature && length $signature;
+
+    my $ok = eval { validate_webhook_signature( $signing_key, $signature, $url, $body ); };
+    return [ 403, {}, '' ] if $@ || !$ok;
+
+    return undef;    ## no critic (Subroutines::ProhibitExplicitReturnUndef)
+}
+
 # ``wrap`` returns a PSGI app that performs validation and forwards
 # successful requests to the wrapped ``app``. Options:
 #
@@ -102,18 +159,27 @@ sub wrap {
         my $raw_body = _slurp_body($env);
         $env->{'signalwire.raw_body'} = $raw_body;
 
-        # Header lookup: prefer X-SignalWire-Signature, fall back to
-        # X-Twilio-Signature for cXML compat.
-        my $sig = $env->{HTTP_X_SIGNALWIRE_SIGNATURE} // $env->{HTTP_X_TWILIO_SIGNATURE} // '';
-
-        if ( $sig eq '' ) {
-            return [ 403, [ 'Content-Type' => 'text/plain' ], ['Forbidden'] ];
-        }
-
         my $url = _reconstruct_url( $env, $trust_proxy, $public_url_base );
 
-        my $ok = eval { validate_webhook_signature( $signing_key, $sig, $url, $raw_body ); };
-        if ( $@ || !$ok ) {
+        # Delegate the signature decision to the decomposed ``validate``
+        # core: header lookup (X-SignalWire-Signature / X-Twilio-Signature
+        # alias) + validate_webhook_signature, returning a reject triple or
+        # undef. The wrapper is just the Plack idiom on top of that core.
+        my %headers = (
+            (
+                defined $env->{HTTP_X_SIGNALWIRE_SIGNATURE}
+                ? ( 'X-SignalWire-Signature' => $env->{HTTP_X_SIGNALWIRE_SIGNATURE} )
+                : ()
+            ),
+            (
+                defined $env->{HTTP_X_TWILIO_SIGNATURE}
+                ? ( 'X-Twilio-Signature' => $env->{HTTP_X_TWILIO_SIGNATURE} )
+                : ()
+            ),
+        );
+
+        my $reject = validate( $method, $url, \%headers, $raw_body, signing_key => $signing_key );
+        if ($reject) {
             return [ 403, [ 'Content-Type' => 'text/plain' ], ['Forbidden'] ];
         }
 
