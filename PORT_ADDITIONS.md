@@ -174,17 +174,6 @@ signalwire.core.security.webhook_middleware.wrap: perl-idiom port-only: Plack mi
 signalwire.core.auth_handler.AuthHandler.plack_middleware: port-only: PSGI/Plack analog of the Flask decorator; wraps a PSGI app and 401s unauthenticated requests (Python's web binding is Flask/FastAPI)
 signalwire.core.auth_handler.AuthHandler.plack_dependency: port-only: PSGI/Plack analog of the FastAPI dependency; a PSGI-env callable returning the auth decision (Python's web binding is FastAPI)
 
-# Flattened concrete RELAY action controls. The reference declares
-# pause/resume/volume on the abstract StoppableAction/PausableAction/VolumeAction
-# mixin bases (surfaced via the enumerator's abstract-action-base synthesis);
-# Perl flattens them onto each concrete Action, so they also appear per concrete
-# class (§H abstract-action-base surface analog).
-signalwire.relay.call.PlayAction.pause: port-only: Perl flattens the abstract PausableAction.pause onto the concrete PlayAction (reference declares it on the abstract base)
-signalwire.relay.call.PlayAction.resume: port-only: Perl flattens the abstract PausableAction.resume onto the concrete PlayAction (reference declares it on the abstract base)
-signalwire.relay.call.PlayAction.volume: port-only: Perl flattens the abstract VolumeAction.volume onto the concrete PlayAction (reference declares it on the abstract base)
-signalwire.relay.call.RecordAction.pause: port-only: Perl flattens the abstract PausableAction.pause onto the concrete RecordAction (reference declares it on the abstract base)
-signalwire.relay.call.RecordAction.resume: port-only: Perl flattens the abstract PausableAction.resume onto the concrete RecordAction (reference declares it on the abstract base)
-
 # RelayError typed accessors. Python's RelayError exposes code/message as plain
 # attributes (only __init__ on the surface); Perl exposes them as explicit
 # read accessors (same idiom as the RecordAction url/duration/size accessors).

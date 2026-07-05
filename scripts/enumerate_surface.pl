@@ -1719,42 +1719,28 @@ sub collect_surface {
     }
 
     # -----------------------------------------------------------------
-    # Reconcile: abstract RELAY action mixin bases (§H abstract-action-base).
-    # Python factors the call-action controls into an abstract mixin chain
-    # (StoppableAction -> PausableAction -> VolumeAction -> concrete
-    # PlayAction/RecordAction/...), so the control methods live on those
-    # abstract bases. Perl flattens the hierarchy: every concrete action
-    # `extends SignalWire::Relay::Action` with the control methods inlined per
-    # concrete subclass (PlayAction.stop/pause/resume/volume,
-    # RecordAction.stop/pause/resume, ...). The abstract bases therefore have
-    # no standalone Perl package, but the CAPABILITY is present. Synthesize the
-    # three bases (with their control methods) so the surface compares EQUAL to
-    # the reference — the concrete flattened copies are recorded in
-    # PORT_ADDITIONS; the signature gate excuses the bases via
-    # _is_abstract_action_base_method. This is idiom reconciled in the emit
-    # (RULES §2), not an omission. Mirrors TS enumerate-surface.ts.
+    # Reconcile: RELAY action control methods projected onto concrete actions.
+    # The reference no longer factors the controls into abstract mixin bases;
+    # it projects them directly onto each concrete action (PlayAction: stop,
+    # pause, resume, volume; RecordAction: stop, pause, resume; CollectAction:
+    # + volume + start_input_timers; the rest: stop). Perl flattens the
+    # hierarchy: every concrete action `extends SignalWire::Relay::Action`,
+    # which defines `stop` — so `stop` is a real INHERITED method the static
+    # per-package parser doesn't see on the subclass. Project the inherited
+    # `stop` onto every concrete *Action class (real capability, not invented
+    # surface — RULES §2 idiom-via-enumerator). pause/resume/volume are defined
+    # on the concrete subclasses themselves, so the parser already records
+    # them; StandaloneCollect inherits its controls from Collect (handled in
+    # the inherited-members block below).
     {
-        my $RELAY_CALL       = 'signalwire.relay.call';
-        my $call_classes     = $modules{$RELAY_CALL}{classes} // {};
-        my $any_concrete_has = sub {
-            my ($method) = @_;
-            for my $cls ( keys %$call_classes ) {
-                next unless $cls =~ /Action\z/;
-                return 1 if grep { $_ eq $method } @{ $call_classes->{$cls} };
-            }
-            return 0;
-        };
-        my %bases = (
-            StoppableAction => ['stop'],
-            PausableAction  => [ 'pause', 'resume' ],
-            VolumeAction    => ['volume'],
-        );
-        for my $base_cls ( keys %bases ) {
-            my @present = grep { $any_concrete_has->($_) } @{ $bases{$base_cls} };
-            next unless @present;
-            my %seen = map { $_ => 1 } @{ $call_classes->{$base_cls} // [] };
-            $seen{$_} = 1 for @present;
-            $modules{$RELAY_CALL}{classes}{$base_cls} = [ keys %seen ];
+        my $RELAY_CALL   = 'signalwire.relay.call';
+        my $call_classes = $modules{$RELAY_CALL}{classes} // {};
+        for my $cls ( keys %$call_classes ) {
+            next unless $cls =~ /\wAction\z/;    # concrete *Action (not bare Action)
+            next if $cls eq 'Action';
+            my %seen = map { $_ => 1 } @{ $call_classes->{$cls} };
+            next if $seen{stop};
+            push @{ $call_classes->{$cls} }, 'stop';
         }
     }
 

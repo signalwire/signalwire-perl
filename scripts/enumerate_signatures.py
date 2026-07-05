@@ -1365,6 +1365,27 @@ def collect(raw: dict) -> dict:
         standalone_a["start_input_timers"] = dict(collect_a["start_input_timers"])
 
     # -----------------------------------------------------------------
+    # Reconcile: RELAY action control methods projected onto concrete actions.
+    # The reference no longer factors the controls into abstract mixin bases
+    # (StoppableAction/PausableAction/VolumeAction are gone); it projects them
+    # directly onto each concrete action. Perl's concrete actions
+    # `extends SignalWire::Relay::Action`, whose `sub stop` the per-package
+    # regex parser doesn't attribute to the subclass. Project the inherited
+    # `stop` (control_id-only, dict return) onto every concrete *Action class.
+    # pause/resume/volume are defined on the concrete subclasses themselves
+    # (Play/Record/Collect), so the parser already records them and the
+    # reference-type projection concretizes their param types below.
+    _relay_stop_sig = {
+        "params": [{"name": "self", "kind": "self"}],
+        "returns": "dict<string,any>",
+    }
+    for _cls_name, _cls_entry in rc.items():
+        if not _cls_name.endswith("Action") or _cls_name == "Action":
+            continue
+        _methods = _cls_entry.setdefault("methods", {})
+        _methods.setdefault("stop", dict(_relay_stop_sig))
+
+    # -----------------------------------------------------------------
     # Reconcile: DataMap factory helpers are MODULE-level free functions in the
     # reference (signalwire.core.data_map.create_expression_tool /
     # create_simple_api_tool), but Perl declares them as `sub`s in the
