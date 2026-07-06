@@ -130,8 +130,8 @@ my $meta = RouteRegistry::walk(
 );
 
 push @errors, @{ $meta->{errors} };
-@plan   = sort { $a->{via} cmp $b->{via} } @plan;
-@errors = sort { ( $a->{via} // '' ) cmp( $b->{via} // '' ) } @errors;
+@plan   = sort { $a->{via}           cmp $b->{via} } @plan;
+@errors = sort { ( $a->{via} // '' ) cmp ( $b->{via} // '' ) } @errors;
 
 my $json = JSON::PP->new->canonical->pretty;
 print $json->encode( { plan => \@plan, errors => \@errors } );
