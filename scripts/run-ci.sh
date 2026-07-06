@@ -54,6 +54,29 @@ PORTING_SDK_DIR="$(resolve_porting_sdk)" || {
     exit 2
 }
 
+# signalwire-python (the behavioral ORACLE source) — same adjacency convention the
+# EMISSION differ's _resolve_python_sdk() uses: the cross-port CI workflow checks it
+# out as a *sibling of porting-sdk in the workspace*, not under ~/src. Resolve it
+# here and pass it explicitly to the Layer-D BEHAVIORAL-* differs so the gate never
+# depends on the caller's CWD or a ~/src fallback (which is absent in CI).
+resolve_python_sdk() {
+    if [ -n "${PYTHON_SDK:-}" ] && [ -d "$PYTHON_SDK/signalwire" ]; then
+        echo "$PYTHON_SDK"; return 0
+    fi
+    if [ -d "$PORTING_SDK_DIR/../signalwire-python/signalwire" ]; then
+        (cd "$PORTING_SDK_DIR/../signalwire-python" && pwd); return 0
+    fi
+    if [ -d "$HOME/src/signalwire-python/signalwire" ]; then
+        echo "$HOME/src/signalwire-python"; return 0
+    fi
+    return 1
+}
+PYTHON_SDK_DIR="$(resolve_python_sdk)" || {
+    echo "FATAL: signalwire-python (behavioral oracle) not found" >&2
+    echo "       (expected sibling of porting-sdk, or \$PYTHON_SDK env var)" >&2
+    exit 2
+}
+
 # shellcheck source=/dev/null
 source "$PORTING_SDK_DIR/scripts/gate_scheduler.sh"
 
@@ -226,6 +249,35 @@ sched_gate EMISSION desc="diff_port_emission vs python to_dict()" \
     -- python3 "$PORTING_SDK_DIR/scripts/diff_port_emission.py" \
         --dump-cmd "perl bin/emit-corpus.pl" \
         --port-repo "$PORT_ROOT"
+
+# BEHAVIORAL-* (Layer D) — run the shared behavioral corpus through the port's
+# dump programs and structurally byte-compare against the signalwire-python oracle.
+# 2>/dev/null suppresses perl's experimental-feature warnings on stderr so ONLY JSON
+# reaches stdout; --python-sdk pins the oracle source (never the caller's CWD/env).
+sched_gate BEHAVIORAL-WIRE desc="diff_port_wire vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_wire.py" \
+        --port perl --python-sdk "$PYTHON_SDK_DIR" \
+        --dump-cmd "perl -Ilib bin/wire-dump.pl 2>/dev/null"
+
+sched_gate BEHAVIORAL-SWML desc="diff_port_swml vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_swml.py" \
+        --port perl --python-sdk "$PYTHON_SDK_DIR" \
+        --dump-cmd "perl -Ilib bin/swml-dump.pl 2>/dev/null"
+
+sched_gate BEHAVIORAL-STATE desc="diff_port_state vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_state.py" \
+        --port perl --python-sdk "$PYTHON_SDK_DIR" \
+        --dump-cmd "perl -Ilib bin/state-dump.pl 2>/dev/null"
+
+sched_gate BEHAVIORAL-HTTP desc="diff_port_http vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_http.py" \
+        --port perl --python-sdk "$PYTHON_SDK_DIR" \
+        --dump-cmd "perl -Ilib bin/http-dump.pl 2>/dev/null"
+
+sched_gate BEHAVIORAL-WIRE-RELAY desc="diff_port_wire_relay vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_wire_relay.py" \
+        --port perl --python-sdk "$PYTHON_SDK_DIR" \
+        --dump-cmd "perl -Ilib bin/wire-relay-dump.pl 2>/dev/null"
 
 sched_gate FMT defer=1 desc="run-format.sh (local: apply; CI: --check)" \
     -- bash scripts/run-format.sh ${CI:+--check}
