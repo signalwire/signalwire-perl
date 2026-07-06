@@ -11,7 +11,12 @@ use Time::HiRes ();
 use JSON qw(encode_json decode_json);
 use IO::Socket::INET;
 use IO::Socket::SSL;
-use Protocol::WebSocket::Client;
+
+# Protocol::WebSocket::Client (a SEPARATE CPAN dist from Protocol::WebSocket) is
+# the live WebSocket transport, needed ONLY when a socket is actually opened in
+# connect_ws. It is loaded lazily there (require, not a compile-time use) so
+# code paths that never connect — pure frame capture / event decoding — don't
+# drag in the transport dependency.
 use SignalWire::Relay::Constants qw(
     PROTOCOL_VERSION
     CALL_TERMINAL_STATES
@@ -191,6 +196,7 @@ sub connect_ws ($self) {
         }
     }
 
+    require Protocol::WebSocket::Client;
     my $ws = Protocol::WebSocket::Client->new( url => $url );
 
     $ws->on(
