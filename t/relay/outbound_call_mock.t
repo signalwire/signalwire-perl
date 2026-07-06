@@ -8,6 +8,8 @@ use Test::More;
 use FindBin ();
 use lib "$FindBin::Bin/../lib";
 use Time::HiRes qw(sleep time);
+use File::Path ();
+use POSIX ();
 
 use RelayMockTest;
 use SignalWire::Relay::Client;
@@ -146,7 +148,11 @@ $ua->post($purl,
 exit 0;
 PERLEOF
 
-    my $tmp = "/tmp/rmt_watcher_$$.pl";
+    # Repo-local scratch dir (never /tmp — machine-wide, invites cross-run
+    # collision). Derive it from this test file's location so it works from any CWD.
+    my $tmpdir = "$FindBin::Bin/../../.sw-tmp";
+    File::Path::make_path($tmpdir) unless -d $tmpdir;
+    my $tmp = "$tmpdir/rmt_watcher_$$.pl";
     open my $fh, '>', $tmp or die "open: $!";
     print $fh $watcher_script;
     close $fh;
@@ -166,7 +172,25 @@ PERLEOF
             timeout => 5,
         );
     };
-    waitpid($pid, 0);
+    # BOUNDED reap: the watcher polls the mock's HTTP journal (up to 400 * 5s
+    # HTTP::Tiny timeouts). If the mock's control endpoint wedges, an unbounded
+    # waitpid($pid, 0) hangs the whole suite forever (root cause of the historic
+    # outbound_call_mock hang — the parent sat in wait4 on a stuck watcher). Reap
+    # with a hard deadline generous enough for the watcher's normal ~10s poll, then
+    # SIGKILL a wedged child and reap the corpse so the suite never hangs.
+    my $deadline = time + 30;
+    my $reaped   = 0;
+    while (time < $deadline) {
+        my $w = waitpid($pid, POSIX::WNOHANG());
+        if ($w == $pid || $w == -1) { $reaped = 1; last; }
+        Time::HiRes::sleep(0.05);
+    }
+    unless ($reaped) {
+        kill 'KILL', $pid;
+        waitpid($pid, 0);
+        diag("outbound_call_mock: watcher child $pid exceeded 30s reap deadline "
+            . "(mock HTTP control endpoint likely wedged) — killed to avoid suite hang");
+    }
     unlink $tmp;
     isa_ok($call, 'SignalWire::Relay::Call');
     is($call->call_id, 'auto-tag-winner', 'auto-tag winner');
