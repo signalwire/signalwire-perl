@@ -1496,19 +1496,62 @@ sub handle_request {
         }
     }
 
+    # Per-request dynamic configuration (multi-tenancy): clone this agent and
+    # let the callback mutate the clone, then render off the clone — so the
+    # served path (which routes through handle_request) keeps the same dynamic
+    # config behavior the old inline _handle_swml had.
+    my $agent = $self;
+    if ( $self->dynamic_config_callback ) {
+        $agent = $self->_clone_for_request;
+        my $query_params = _query_params_from_url($url);
+        my $body_params  = ( ref $body eq 'HASH' ) ? $body : {};
+        my $lc_headers   = {};
+        for my $k ( keys %$headers ) {
+            $lc_headers->{ lc $k } = $headers->{$k};
+        }
+        eval {
+            $self->dynamic_config_callback->( $query_params, $body_params, $lc_headers, $agent );
+            1;
+        } or do {
+            $self->log->error( "error_in_dynamic_config", error => "$@" );
+        };
+    }
+
     # Subclass request-modification hook (on_swml_request); the primitive
     # path passes undef for the FastAPI-Request third arg.
-    my $modifications = eval { $self->on_swml_request( $body, $callback_path, undef ) };
+    my $modifications = eval { $agent->on_swml_request( $body, $callback_path, undef ) };
     if ($@) {
         $self->log->error( "error_in_request_modifier", error => "$@" );
         $modifications = undef;
     }
 
-    my $swml = $self->render_swml($request_env);
+    my $swml = $agent->render_swml($request_env);
     if ( $modifications && ref $modifications eq 'HASH' ) {
         $swml = { %$swml, %$modifications };
     }
     return ( 200, {}, encode_json($swml) );
+}
+
+# Parse the query string of a request URL into a plain hashref (last value
+# wins for repeated keys). Used to feed dynamic_config_callback the same
+# query-parameter view the PSGI path derived from $req->query_parameters.
+sub _query_params_from_url {
+    my ($url) = @_;
+    my %params;
+    return \%params unless defined $url && $url =~ /\?(.*)$/;
+    my $qs = $1;
+    for my $pair ( split /[&;]/, $qs ) {
+        next unless length $pair;
+        my ( $k, $v ) = split /=/, $pair, 2;
+        next unless defined $k && length $k;
+        $v //= '';
+        for ( $k, $v ) {
+            tr/+/ /;
+            s/%([0-9A-Fa-f]{2})/chr hex $1/ge;
+        }
+        $params{$k} = $v;
+    }
+    return \%params;
 }
 
 # Build a synthetic PSGI env from handle_request's (url, headers) so the
@@ -1576,7 +1619,16 @@ sub _build_psgi_app {
             $is_main = 1;
         }
 
-        if ( $is_main || $is_swaig || $is_post_prompt ) {
+        # The MAIN SWML route delegates its auth/routing/render DECISION to the
+        # decomposed handle_request core (401 auth, 307 routing-callback
+        # redirect, 200 render) so the served path can no longer skip the
+        # routing-callback 307 the old inline _handle_swml did. swaig /
+        # post_prompt keep the inline auth + handler below.
+        if ( $is_main && ( $req->method eq 'GET' || $req->method eq 'POST' ) ) {
+            return $agent->_serve_main_via_handle_request($env);
+        }
+
+        if ( $is_swaig || $is_post_prompt ) {
             my $auth_ok = $agent->_check_auth($env);
             unless ($auth_ok) {
                 return [
@@ -1591,9 +1643,7 @@ sub _build_psgi_app {
         }
 
         # Route dispatch
-        if ( $is_main && ( $req->method eq 'GET' || $req->method eq 'POST' ) ) {
-            return $agent->_handle_swml( $env, $req );
-        } elsif ( $is_swaig && $req->method eq 'POST' ) {
+        if ( $is_swaig && $req->method eq 'POST' ) {
             return $agent->_handle_swaig( $env, $req );
         } elsif ( $is_post_prompt && $req->method eq 'POST' ) {
             return $agent->_handle_post_prompt( $env, $req );

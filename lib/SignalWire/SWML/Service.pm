@@ -328,6 +328,22 @@ sub _json_response {
     return [ $status, \@headers, [$body] ];
 }
 
+# Append the standard security headers to an existing PSGI response's header
+# list in place (skipping Content-Type, which the caller already set). Used by
+# to_psgi_app to layer security headers onto the handle_request-marshalled
+# response, since Service has no wrapping middleware the way AgentBase does.
+sub _add_security_headers {
+    my ($res) = @_;
+    return unless ref $res eq 'ARRAY' && ref $res->[1] eq 'ARRAY';
+    my @sec = _security_headers();
+    while (@sec) {
+        my ( $k, $v ) = splice @sec, 0, 2;
+        next if $k eq 'Content-Type';
+        push @{ $res->[1] }, $k => $v;
+    }
+    return;
+}
+
 sub _read_body {
     my ($env) = @_;
     my $input = $env->{'psgi.input'};
@@ -362,7 +378,17 @@ sub to_psgi_app {
         my $is_swaig_route = ( $path eq "$route/swaig" );
         my $is_post_prompt = ( $path eq "$route/post_prompt" );
 
-        if ( $is_swml_route || $is_swaig_route || $is_post_prompt ) {
+        # The MAIN SWML route delegates its auth/routing/render DECISION to the
+        # decomposed handle_request core (401 auth, 307 routing-callback
+        # redirect, 200 render) — so the served path can no longer skip the
+        # routing-callback 307 the way the old inline _handle_swml_request did.
+        if ($is_swml_route) {
+            my $res = $self->_serve_main_via_handle_request($env);
+            _add_security_headers($res);
+            return $res;
+        }
+
+        if ( $is_swaig_route || $is_post_prompt ) {
 
             # Require basic auth for protected routes
             unless ( $self->_check_basic_auth($env) ) {
@@ -376,9 +402,7 @@ sub to_psgi_app {
                 ];
             }
 
-            if ($is_swml_route) {
-                return $self->_handle_swml_request($env);
-            } elsif ($is_swaig_route) {
+            if ($is_swaig_route) {
                 return $self->_handle_swaig_request($env);
             } elsif ($is_post_prompt) {
                 return $self->_handle_post_prompt($env);
@@ -456,6 +480,85 @@ sub handle_request {
     }
 
     return ( 200, {}, $self->render_document );
+}
+
+# ------------------------------------------------------------------
+# _serve_main_via_handle_request — the thin PSGI adapter for the MAIN SWML
+# endpoint. Extracts (method, url, headers, body) from the PSGI $env, calls
+# the decomposed handle_request core (which owns the auth-401 / routing-307 /
+# render-200 DECISION), and marshals the returned (status, \%headers, body)
+# triple back into a PSGI [status, \@headers, [body]] response — INCLUDING the
+# 307 Location redirect and the 401 WWW-Authenticate.
+#
+# Both serve paths (Service->to_psgi_app and AgentBase->_build_psgi_app) route
+# the main route through this so the served path can no longer diverge from
+# handle_request (it previously rendered a 200 SWML even when a routing
+# callback wanted a 307). php/rust/dotnet share this same "framework adapter
+# delegates to handle_request" shape.
+sub _serve_main_via_handle_request {
+    my ( $self, $env ) = @_;
+
+    my ( $method, $url, $headers, $body ) = $self->_psgi_primitives($env);
+    my ( $status, $resp_headers, $resp_body ) =
+        $self->handle_request( $method, $url, $headers, $body );
+
+    return _marshal_handle_request_psgi( $status, $resp_headers, $resp_body );
+}
+
+# Extract the (method, url, headers, body) primitives handle_request wants
+# from a PSGI $env. Headers are recovered from the CGI-style HTTP_* keys back
+# to their header-name form (so _check_basic_auth_headers and the routing
+# callback's second arg see Authorization / X-Trace / forwarding headers), and
+# the POST body is buffered and JSON-parsed into the hashref handle_request
+# expects.
+sub _psgi_primitives {
+    my ( $self, $env ) = @_;
+
+    my $method = $env->{REQUEST_METHOD} // 'GET';
+    my $path   = $env->{PATH_INFO}      // '/';
+    my $query  = $env->{QUERY_STRING};
+    my $url    = $path;
+    $url .= "?$query" if defined $query && length $query;
+
+    my %headers;
+    for my $k ( keys %$env ) {
+        if ( $k =~ /^HTTP_(.+)$/ ) {
+            ( my $name = $1 ) =~ s/_/-/g;
+            $name = join '-', map { ucfirst lc } split /-/, $name;
+            $headers{$name} = $env->{$k};
+        }
+    }
+    $headers{'Content-Type'}   = $env->{CONTENT_TYPE}   if defined $env->{CONTENT_TYPE};
+    $headers{'Content-Length'} = $env->{CONTENT_LENGTH} if defined $env->{CONTENT_LENGTH};
+
+    my $body;
+    if ( $method eq 'POST' || $method eq 'PUT' ) {
+        my $raw = _read_body($env);
+        if ( defined $raw && length $raw ) {
+            $body = eval { JSON::decode_json($raw) };
+            $body = undef unless ref $body eq 'HASH';
+        }
+    }
+
+    return ( $method, $url, \%headers, $body );
+}
+
+# Marshal a handle_request (status, \%headers, $body_string) triple into a PSGI
+# [status, \@headers, [body]] response. Content-Type defaults to
+# application/json; the handle_request headers (Location for the 307,
+# WWW-Authenticate for the 401) are passed through. Security headers are added
+# by each serve path's own layer (AgentBase's middleware / Service's wrap
+# below), not baked in here, so they aren't emitted twice.
+sub _marshal_handle_request_psgi {
+    my ( $status, $headers, $body ) = @_;
+    $headers //= {};
+    $body    //= '';
+
+    my @out = ( 'Content-Type' => 'application/json' );
+    for my $k ( sort keys %$headers ) {
+        push @out, $k => $headers->{$k};
+    }
+    return [ $status, \@out, [$body] ];
 }
 
 # Derive the registered routing-callback path (if any) that $url targets.
