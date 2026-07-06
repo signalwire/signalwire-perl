@@ -464,9 +464,41 @@ sub add_hints {
     return $self;
 }
 
+# Add a complex pattern-matching hint. Perl hashref-kwargs idiom of
+# Python's add_pattern_hint(hint, pattern, replace, ignore_case=False):
+# the caller passes a hashref carrying { hint, pattern, replace,
+# ignore_case }. A STRUCTURED hint dict (not a bare string) is appended
+# to pattern_hints and flows into the rendered SWML ``ai.hints`` list,
+# byte-parity with Python's ``self._hints.append({...})``. Matches
+# Python's guard: only appended when hint, pattern, AND replace are all
+# truthy; ignore_case defaults to false.
 sub add_pattern_hint {
-    my ( $self, $pattern ) = @_;
-    push @{ $self->pattern_hints }, $pattern;
+    my ( $self, $args ) = @_;
+    $args = {} unless defined $args && ref($args) eq 'HASH';
+
+    my $hint    = $args->{hint};
+    my $pattern = $args->{pattern};
+    my $replace = $args->{replace};
+    my $ignore_case =
+        exists $args->{ignore_case}
+        ? ( $args->{ignore_case} ? JSON::true : JSON::false )
+        : JSON::false;
+
+    if (   defined $hint
+        && length $hint
+        && defined $pattern
+        && length $pattern
+        && defined $replace
+        && length $replace )
+    {
+        push @{ $self->pattern_hints },
+            {
+            hint        => $hint,
+            pattern     => $pattern,
+            replace     => $replace,
+            ignore_case => $ignore_case,
+            };
+    }
     return $self;
 }
 

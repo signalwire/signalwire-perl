@@ -278,8 +278,13 @@ subtest 'all 17 skills instantiate' => sub {
     );
 
     # Skills whose setup() requires mandatory config get it here.
+    # claude_skills needs an existing skills_path (real SKILL.md discovery);
+    # an empty temp dir is a valid (empty) skill set.
+    require File::Temp;
+    my $claude_dir = File::Temp::tempdir( CLEANUP => 1 );
     my %params_for = (
         native_vector_search => { remote_url => 'http://search.example.test:8001' },
+        claude_skills        => { skills_path => $claude_dir },
     );
 
     for my $name (@skill_names) {

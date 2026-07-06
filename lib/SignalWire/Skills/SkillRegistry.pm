@@ -185,13 +185,26 @@ sub clear_registry {
 # validate the path, die with an "X: <path>" message (Perl's analog of
 # raising ValueError) when the path doesn't exist or isn't a directory,
 # and de-duplicate entries in the external paths list.
+# Add a load-path to search for skills AND return the file-based skills
+# (SKILL.md dirs) discovered under it. Validates the load-path (dies loud on
+# a missing / non-directory path — the Perl analog of Python raising
+# ValueError), de-duplicates the external-paths list, then walks the path
+# with the SHARED SignalWire::Skills::SkillDiscovery walker (the same one the
+# claude_skills builtin uses — one implementation, two callers) and returns
+# the parsed SKILL.md skills. In list context the discovered skills are
+# returned; this is the framework-level load-path discovery (#75). Parity
+# surface with Python's add_skill_directory (which validates + registers the
+# path); the SKILL.md file discovery is the interpreted-port extension.
 sub add_skill_directory {
     my ( $class, $path ) = @_;
     die "Skill directory does not exist: $path\n" unless -e $path;
     die "Path is not a directory: $path\n"        unless -d $path;
-    return if grep { $_ eq $path } @EXTERNAL_PATHS;
-    push @EXTERNAL_PATHS, $path;
-    return;
+    unless ( grep { $_ eq $path } @EXTERNAL_PATHS ) {
+        push @EXTERNAL_PATHS, $path;
+    }
+
+    require SignalWire::Skills::SkillDiscovery;
+    return SignalWire::Skills::SkillDiscovery::discover_skills($path);
 }
 
 # Returns the registered external skill directories.

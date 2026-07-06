@@ -56,10 +56,24 @@ subtest 'hints in SWML' => sub {
 subtest 'pattern hints in SWML' => sub {
     my $a = SignalWire::Agent::AgentBase->new(name => 'ph');
     $a->add_hint('normal');
-    $a->add_pattern_hint('pattern1');
+    # Structured hint (Python parity): hint/pattern/replace/ignore_case
+    $a->add_pattern_hint({
+        hint    => 'AI',
+        pattern => 'A\\.I\\.',
+        replace => 'AI',
+    });
     my $swml = $a->render_swml;
     my @ai = grep { exists $_->{ai} } @{$swml->{sections}{main}};
-    is_deeply($ai[0]{ai}{hints}, ['normal', 'pattern1'], 'combined hints');
+    is($ai[0]{ai}{hints}[0], 'normal', 'plain hint first');
+    is_deeply(
+        {
+            hint    => $ai[0]{ai}{hints}[1]{hint},
+            pattern => $ai[0]{ai}{hints}[1]{pattern},
+            replace => $ai[0]{ai}{hints}[1]{replace},
+        },
+        { hint => 'AI', pattern => 'A\\.I\\.', replace => 'AI' },
+        'structured pattern hint survives into SWML',
+    );
 };
 
 # ============================================================

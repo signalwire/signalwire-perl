@@ -69,7 +69,10 @@ subtest 'all skills instantiate' => sub {
     # deliberately return false from setup() when it is absent — matches the
     # Python/ruby reference. They still instantiate; we just don't assert a
     # truthy bare setup for them.
-    my %requires_config = ( native_vector_search => 1 );
+    # claude_skills now requires a skills_path (real SKILL.md discovery,
+    # #72) and returns false from setup() without it — matches Python
+    # ClaudeSkillsSkill.setup.
+    my %requires_config = ( native_vector_search => 1, claude_skills => 1 );
 
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
     for my $name (@$skills) {
