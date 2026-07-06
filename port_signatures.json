@@ -209,7 +209,7 @@
                 },
                 {
                   "name": "callback_fn",
-                  "type": "callable<list<class:Request,dict<string,any>>,optional<string>>",
+                  "type": "callable<list<dict<string,any>,dict<string,any>>,optional<string>>",
                   "required": true
                 },
                 {
