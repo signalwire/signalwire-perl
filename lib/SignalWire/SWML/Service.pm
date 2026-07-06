@@ -389,6 +389,113 @@ sub to_psgi_app {
     };
 }
 
+# ------------------------------------------------------------------
+# handle_request — the framework-free request-dispatch core.
+#
+# Python parity: SWMLService.handle_request(method, url, headers, body)
+# -> (status, response_headers, body_string). This is the primitive
+# dispatch surface the SDK ports share (the same one dotnet ships as
+# HandleRequest and Python's FastAPI _handle_request delegates to). It
+# performs basic-auth, the routing-callback check, and on_request
+# modification over plain primitives instead of a PSGI $env, returning a
+# ($status, \%headers, $body_string) triple. The PSGI app (to_psgi_app)
+# is a thin adapter that marshals $env into these primitives and the
+# triple back into a PSGI response.
+#
+#   $method  HTTP method string ("GET"/"POST")
+#   $url     full request URL (used for callback-path derivation + proxy)
+#   $headers hashref of request headers (plain, lower/any-case)
+#   $body    already-parsed JSON body hashref for POST, or undef
+#
+# Returns the list ($status, $headers_hashref, $body_string). For a 200
+# it is the SWML JSON document; for a routing redirect it is 307 with a
+# Location header and an empty body; for an auth failure it is 401 with a
+# WWW-Authenticate: Basic header and a JSON error body.
+sub handle_request {
+    my ( $self, $method, $url, $headers, $body ) = @_;
+    $headers //= {};
+    $body    //= {};
+    my $callback_path = $self->_callback_path_for_url($url);
+
+    # Auth (over the plain headers hashref).
+    unless ( $self->_check_basic_auth_headers($headers) ) {
+        return (
+            401,
+            { 'WWW-Authenticate' => 'Basic' },
+            JSON::encode_json( { error => 'Unauthorized' } ),
+        );
+    }
+
+    # Routing callback: (body, headers) -> route | undef. Only for a POST
+    # with a non-empty parsed body targeting a registered callback path.
+    if (   $method eq 'POST'
+        && ref $body eq 'HASH'
+        && %$body
+        && defined $callback_path
+        && $self->routing_callbacks->{$callback_path} )
+    {
+        my $cb    = $self->routing_callbacks->{$callback_path};
+        my $route = eval { $cb->( $body, $headers ) };
+        if ($@) {
+            $self->log->error( "error_in_routing_callback", error => "$@" );
+        } elsif ( defined $route ) {
+
+            # 307 preserves the POST method + body on the redirect.
+            return ( 307, { 'Location' => $route }, '' );
+        }
+    }
+
+    # Subclass modification hook.
+    my $modifications = $self->on_request( $body, $callback_path );
+    if ( $modifications && ref $modifications eq 'HASH' ) {
+        my $document = $self->get_document;
+        for my $key ( keys %$modifications ) {
+            $document->{$key} = $modifications->{$key} if exists $document->{$key};
+        }
+        return ( 200, {}, JSON::encode_json($document) );
+    }
+
+    return ( 200, {}, $self->render_document );
+}
+
+# Derive the registered routing-callback path (if any) that $url targets.
+# The PSGI path already normalizes the route; here we recover the
+# equivalent by matching the URL's path against the registered callbacks.
+sub _callback_path_for_url {
+    my ( $self, $url ) = @_;
+    return unless %{ $self->routing_callbacks };
+    my $path = defined $url ? $url : '';
+    $path =~ s{^[a-z][a-z0-9+.\-]*://[^/]+}{}i;    # strip scheme+authority
+    $path =~ s{\?.*$}{};                           # strip query
+    my $trimmed = $path;
+    $trimmed =~ s{^/+}{};
+    $trimmed =~ s{/+$}{};
+    my $normalized = length $trimmed ? "/$trimmed" : $path;
+    $normalized =~ s{/+$}{} unless $normalized eq '/';
+
+    for my $cb_path ( keys %{ $self->routing_callbacks } ) {
+        return $cb_path
+            if $normalized eq $cb_path
+            || ( length $cb_path && $normalized =~ /\Q$cb_path\E$/ );
+    }
+    return;
+}
+
+# Basic-auth check over a plain headers hashref (the handle_request
+# primitive analog of _check_basic_auth, which reads a PSGI $env). Accepts
+# either an ``Authorization`` or CGI-style ``HTTP_AUTHORIZATION`` key.
+sub _check_basic_auth_headers {
+    my ( $self, $headers ) = @_;
+    my $auth = $headers->{Authorization} // $headers->{authorization}
+        // $headers->{HTTP_AUTHORIZATION} // '';
+    return 0 unless $auth =~ /^Basic\s+(.+)$/i;
+    my $decoded = MIME::Base64::decode_base64($1);
+    my ( $user, $pass ) = split( /:/, $decoded, 2 );
+    return 0 unless defined $user && defined $pass;
+    return _timing_safe_compare( $user, $self->basic_auth_user )
+        && _timing_safe_compare( $pass, $self->basic_auth_password );
+}
+
 sub _handle_swml_request {
     my ( $self, $env ) = @_;
     my $doc = $self->render_main_swml($env);

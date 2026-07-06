@@ -915,6 +915,42 @@
         }
       }
     },
+    "signalwire.core.agent.tools.type_inference": {
+      "classes": {},
+      "functions": {
+        "create_typed_handler_wrapper": {
+          "params": [
+            {
+              "name": "func",
+              "type": "callable<list<any>,any>",
+              "required": true
+            },
+            {
+              "name": "has_raw_data",
+              "type": "bool",
+              "required": true
+            }
+          ],
+          "returns": "any"
+        },
+        "infer_schema": {
+          "params": [
+            {
+              "name": "func",
+              "type": "callable<list<any>,any>",
+              "required": true
+            },
+            {
+              "name": "opts",
+              "type": "dict<string,any>",
+              "required": false,
+              "kind": "var_keyword"
+            }
+          ],
+          "returns": "any"
+        }
+      }
+    },
     "signalwire.core.agent_base": {
       "classes": {
         "AgentBase": {
@@ -10485,6 +10521,35 @@
                 {
                   "name": "env",
                   "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "handle_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "method",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "url",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "headers",
+                  "type": "dict<string,string>",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "optional<dict<string,any>>",
                   "required": true
                 }
               ],

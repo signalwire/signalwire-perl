@@ -398,6 +398,17 @@ PARENT_OVERRIDE_FILTER: dict = {
         "define_tool", "update_skill_data",
         "validate_env_vars", "validate_packages",
     },
+    # AgentBase overrides SWMLService.handle_request in Python source, but the
+    # signature oracle's AST walker records handle_request ONLY on SWMLService
+    # (AgentBase's redefinition is signature-identical, so it is not re-recorded
+    # on the subclass). Perl's regex parser sees the literal `sub handle_request`
+    # on the AgentBase package and would emit a subclass entry — filter it so the
+    # method is covered by the inherited SWMLService signature, matching the
+    # oracle. (SURFACE requires the symbol on AgentBase, and it is present there;
+    # this filter is signatures-only.)
+    ("signalwire.core.swml_service", "SWMLService"): {
+        "handle_request",
+    },
 }
 
 # Map of Perl-package -> the canonical (Python-module, Python-class)
@@ -416,6 +427,7 @@ PERL_SUBCLASS_PARENT = {
 # whose instance methods would otherwise leak) get suppressed.
 FREE_FN_PACKAGES = {
     "SignalWire",  # top-level RestClient/register_skill/add_skill_directory/list_skills_with_params
+    "SignalWire::Core::Agent::Tools::TypeInference",  # infer_schema + create_typed_handler_wrapper (module-level fns)
     "SignalWire::Core::LoggingConfig",
     "SignalWire::Contexts",  # create_simple_context() helper
     "SignalWire::Utils",

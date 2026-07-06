@@ -1447,6 +1447,89 @@ sub psgi_app {
     return $self->_build_psgi_app;
 }
 
+# handle_request — the framework-free request-dispatch core for AgentBase.
+#
+# Python parity: AgentBase.handle_request overrides SWMLService.handle_request
+# so the primitive dispatch surface renders SWML via AgentBase's render_swml
+# (mirroring the FastAPI _handle_root_request path) instead of the base
+# render_document. Performs proxy detection, basic-auth, the routing-callback
+# check, and on_swml_request modification over plain primitives, returning a
+# ($status, \%headers, $body_string) triple with the 401-auth and 307-redirect
+# behavior preserved.
+#
+#   $method  HTTP method string ("GET"/"POST")
+#   $url     full request URL (callback-path derivation + proxy detection)
+#   $headers hashref of request headers
+#   $body    already-parsed JSON body hashref for POST, or undef
+sub handle_request {
+    my ( $self, $method, $url, $headers, $body ) = @_;
+    $headers //= {};
+    $body    //= {};
+    my $callback_path = $self->_callback_path_for_url($url);
+
+    # Auth (over the plain headers hashref; inherited from SWMLService).
+    unless ( $self->_check_basic_auth_headers($headers) ) {
+        return (
+            401,
+            { 'WWW-Authenticate' => 'Basic' },
+            encode_json( { error => 'Unauthorized' } ),
+        );
+    }
+
+    # A synthetic PSGI-style env so render_swml's proxy detection sees the
+    # request's forwarding headers (the primitive analog of the $env the
+    # PSGI path passes).
+    my $request_env = $self->_env_from_primitives( $url, $headers );
+
+    # call_id from the parsed body (POST); routing callback: (body, headers).
+    if ( $method eq 'POST' && ref $body eq 'HASH' && %$body ) {
+        if ( defined $callback_path
+            && $self->routing_callbacks->{$callback_path} )
+        {
+            my $cb    = $self->routing_callbacks->{$callback_path};
+            my $route = eval { $cb->( $body, $headers ) };
+            if ($@) {
+                $self->log->error( "error_in_routing_callback", error => "$@" );
+            } elsif ( defined $route ) {
+                return ( 307, { 'Location' => $route }, '' );
+            }
+        }
+    }
+
+    # Subclass request-modification hook (on_swml_request); the primitive
+    # path passes undef for the FastAPI-Request third arg.
+    my $modifications = eval { $self->on_swml_request( $body, $callback_path, undef ) };
+    if ($@) {
+        $self->log->error( "error_in_request_modifier", error => "$@" );
+        $modifications = undef;
+    }
+
+    my $swml = $self->render_swml($request_env);
+    if ( $modifications && ref $modifications eq 'HASH' ) {
+        $swml = { %$swml, %$modifications };
+    }
+    return ( 200, {}, encode_json($swml) );
+}
+
+# Build a synthetic PSGI env from handle_request's (url, headers) so the
+# proxy-URL detection in render_swml/_detect_proxy_url works off the same
+# forwarding headers the PSGI path would carry.
+sub _env_from_primitives {
+    my ( $self, $url, $headers ) = @_;
+    my %env;
+    for my $k ( keys %$headers ) {
+        my $cgi = uc $k;
+        $cgi =~ s/-/_/g;
+        $env{"HTTP_$cgi"} = $headers->{$k}
+            unless $cgi =~ /^HTTP_/;    # already CGI-cased
+        $env{$k} = $headers->{$k} if $k =~ /^HTTP_/;
+    }
+    if ( defined $url && $url =~ m{^([a-z][a-z0-9+.\-]*)://}i ) {
+        $env{'psgi.url_scheme'} = lc $1;
+    }
+    return \%env;
+}
+
 sub _build_psgi_app {
     my ($self) = @_;
     require Plack::Request;

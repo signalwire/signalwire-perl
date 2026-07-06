@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 5cf04c5ee7cb06f3580ef5ad42d51d508a4d6daf",
+   "generated_from" : "signalwire-perl @ fe98b7ba5e306afb0344b24a828fb0140b56b5a3",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -107,6 +107,7 @@
                "get_full_url",
                "get_name",
                "get_raw_prompt",
+               "handle_request",
                "list_tool_names",
                "on_debug_event",
                "on_summary",
@@ -669,6 +670,7 @@
                "get_document",
                "get_function",
                "handle_additional_route",
+               "handle_request",
                "has_function",
                "list_tool_names",
                "manual_set_proxy_url",
