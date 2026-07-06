@@ -108,8 +108,20 @@ subtest 'InfoGatherer static mode' => sub {
     like( $sq->response, qr/\[Question 1 of 2\]/,          'question index shown' );
     like( $sq->response, qr/What is your full name\?/,     'first question text' );
 
+    # submit_answer is a state machine: at index 0 of 2 questions it records the
+    # answer, advances the index, and presents the 2nd question (with the answer
+    # recorded via a set_global_data action, not echoed back in the text).
     my $sa = $a->submit_answer( { answer => 'Jane Doe' } );
-    is( $sa->response, 'Answer recorded: Jane Doe', 'answer recorded' );
+    like( $sa->response, qr/\[Question 2 of 2\]/, 'advances to the 2nd question' );
+    like( $sa->response, qr/Email\?/,             '2nd question text presented' );
+    my ($upd) = grep { exists $_->{set_global_data} } @{ $sa->action };
+    ok( defined $upd, 'answer recorded via a set_global_data action' );
+    is( $upd->{set_global_data}{question_index}, 1, 'question_index advanced' );
+    is_deeply(
+        $upd->{set_global_data}{answers},
+        [ { key_name => 'full_name', answer => 'Jane Doe' } ],
+        'answer stored under its key_name',
+    );
 
     # static mode -> on_swml_request is a no-op
     is( $a->on_swml_request( {}, undef ), undef, 'static mode on_swml_request no-op' );

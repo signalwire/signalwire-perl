@@ -99,30 +99,93 @@ sub set_question_callback {
     return $self;
 }
 
-# Tool handler: start_questions — returns the first configured question.
+# Read the live per-call state from the request's global_data, falling back
+# to the agent's construction-time global_data (static mode) when the SWAIG
+# request didn't carry one. Python parity: the handlers read
+# raw_data['global_data'] (which the platform seeds from set_global_data /
+# prior update_global_data actions).
+sub _live_global_data {
+    my ( $self, $raw_data ) = @_;
+    if ( ref $raw_data eq 'HASH' && ref $raw_data->{global_data} eq 'HASH' ) {
+        return $raw_data->{global_data};
+    }
+    return $self->global_data // {};
+}
+
+# Tool handler: start_questions — returns the first question from the live
+# global_data (Python parity: prefabs/info_gatherer.py start_questions reads
+# question_index/questions from raw_data['global_data']).
 sub start_questions {
     my ( $self, $args, $raw_data ) = @_;
     require SignalWire::SWAIG::FunctionResult;
 
-    my @questions = @{ $self->questions };
-    unless (@questions) {
+    my $gdata          = $self->_live_global_data($raw_data);
+    my $questions      = $gdata->{questions}      // [];
+    my $question_index = $gdata->{question_index} // 0;
+
+    if ( !( ref $questions eq 'ARRAY' && @$questions )
+        || $question_index >= @$questions )
+    {
         return SignalWire::SWAIG::FunctionResult->new(
             response => "I don't have any questions to ask." );
     }
 
-    my $first = $questions[0];
-    my $n     = scalar @questions;
-    return SignalWire::SWAIG::FunctionResult->new(
-        response => "[Question 1 of $n]: \"$first->{question_text}\"" );
+    my $current = $questions->[$question_index];
+    my $n       = scalar @$questions;
+    my $result  = SignalWire::SWAIG::FunctionResult->new(
+        response => "[Question 1 of $n]: \"$current->{question_text}\"" );
+    $result->replace_in_history('Welcome! Let me ask you a few questions.');
+    return $result;
 }
 
-# Tool handler: submit_answer — records the answer for the current
-# question (state is tracked in global_data in a real deployment).
+# Tool handler: submit_answer — the state machine. Python parity
+# (prefabs/info_gatherer.py submit_answer):
+#   1. store { key_name, answer } in global_data.answers,
+#   2. advance question_index,
+#   3. present the next question (or the completion message),
+#   4. emit the updated { answers, question_index } via a set_global_data
+#      action (update_global_data) so the platform persists it for the next
+#      turn.
 sub submit_answer {
     my ( $self, $args, $raw_data ) = @_;
     require SignalWire::SWAIG::FunctionResult;
-    my $answer = $args->{answer} // '';
-    return SignalWire::SWAIG::FunctionResult->new( response => "Answer recorded: $answer" );
+
+    my $answer         = $args->{answer} // '';
+    my $gdata          = $self->_live_global_data($raw_data);
+    my $questions      = $gdata->{questions}      // [];
+    my $question_index = $gdata->{question_index} // 0;
+    my $answers        = $gdata->{answers}        // [];
+
+    if ( $question_index >= @$questions ) {
+        return SignalWire::SWAIG::FunctionResult->new(
+            response => 'All questions have already been answered.' );
+    }
+
+    my $current  = $questions->[$question_index];
+    my $key_name = $current->{key_name} // '';
+
+    my @new_answers = ( @$answers, { key_name => $key_name, answer => $answer } );
+    my $new_index   = $question_index + 1;
+
+    if ( $new_index < @$questions ) {
+        my $next = $questions->[$new_index];
+        my $n    = scalar @$questions;
+        my $result =
+            SignalWire::SWAIG::FunctionResult->new( response =>
+                sprintf( '[Question %d of %d]: "%s"', $new_index + 1, $n, $next->{question_text} )
+            );
+        $result->replace_in_history;
+        $result->update_global_data( { answers => \@new_answers, question_index => $new_index } );
+        return $result;
+    }
+
+    my $result =
+        SignalWire::SWAIG::FunctionResult->new( response =>
+'Thank you! All questions have been answered. You can now summarize the information collected or ask if there is anything else the user would like to discuss.'
+        );
+    $result->replace_in_history;
+    $result->update_global_data( { answers => \@new_answers, question_index => $new_index } );
+    return $result;
 }
 
 # Lifecycle hook: on_swml_request — Python parity

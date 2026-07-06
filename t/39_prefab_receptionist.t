@@ -41,13 +41,24 @@ subtest 'global data' => sub {
     is(scalar @{$a->global_data->{departments}}, 2, 'two departments');
 };
 
-subtest 'transfer tool execution - found' => sub {
+subtest 'transfer tool execution - found (actually connects)' => sub {
     my $a = SignalWire::Prefabs::Receptionist->new(
         departments => [{ name => 'sales', description => 'Sales', number => '+15551235555' }],
     );
     my $result = $a->on_function_call('transfer_to_department', { department => 'sales' }, {});
     ok(defined $result, 'returns result');
     like($result->response, qr/sales/i, 'mentions department');
+
+    # The call must actually be transferred: a connect (SWML/transfer) action
+    # carrying the department's number, not just an acknowledgement string.
+    my ($connect) = grep { exists $_->{transfer} && exists $_->{SWML} } @{ $result->action };
+    ok(defined $connect, 'transfer emits a connect (SWML/transfer) action');
+    is($connect->{transfer}, 'true', 'permanent transfer (final)');
+    is(
+        $connect->{SWML}{sections}{main}[0]{connect}{to},
+        '+15551235555',
+        'connects to the department number',
+    );
 };
 
 subtest 'transfer tool execution - not found' => sub {
@@ -56,7 +67,8 @@ subtest 'transfer tool execution - not found' => sub {
     );
     my $result = $a->on_function_call('transfer_to_department', { department => 'unknown' }, {});
     ok(defined $result, 'returns result');
-    like($result->response, qr/not found/i, 'mentions not found');
+    like($result->response, qr/couldn't find/i, 'mentions department not found');
+    is_deeply($result->action, [], 'no connect action when department not found');
 };
 
 subtest 'custom greeting' => sub {

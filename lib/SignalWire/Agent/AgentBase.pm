@@ -801,9 +801,64 @@ sub enable_sip_routing {
     my ( $self, %opts ) = @_;
     $self->sip_routing_enabled(1);
     $self->sip_auto_map( exists $opts{auto_map} ? $opts{auto_map} : 1 );
-    $self->sip_path( $opts{path} // '/sip' );
+    my $path = $opts{path} // '/sip';
+    $self->sip_path($path);
+
+    # Register a routing callback at the SIP path so the served /sip endpoint
+    # actually consults the SIP username mapping (Python parity:
+    # enable_sip_routing calls register_routing_callback(sip_routing_callback,
+    # path=path)). The callback extracts the SIP username from the request body;
+    # if it is registered with this agent it is handled here (return undef → the
+    # agent renders its own SWML), otherwise it delegates to the SIP-routing hook
+    # (on_sip_request) which may return a redirect URL for a username routed to a
+    # different agent.
+    $self->register_routing_callback(
+        $path,
+        sub {
+            my ( $body, $headers ) = @_;
+            return $self->_sip_routing_callback( $body, $headers );
+        },
+    );
+
     $self->auto_map_sip_usernames if $self->sip_auto_map;
     return $self;
+}
+
+# _sip_routing_callback(body, headers) — the framework-free routing callback
+# registered at the SIP path. Extracts the SIP username from the body; if it is
+# registered with THIS agent, returns undef (this agent handles the request and
+# renders its SWML). If it is not registered here, delegates to the
+# _on_sip_request hook, which a subclass may override to return a redirect URL
+# for the agent that owns that username. Python parity: the inner
+# sip_routing_callback closure created by AgentBase.enable_sip_routing (a
+# closure there, an underscore-private method here — off the public surface).
+sub _sip_routing_callback {
+    my ( $self, $body, $headers ) = @_;
+    my $sip_username = $self->extract_sip_username($body);
+    return unless defined $sip_username && length $sip_username;
+
+    $self->_logger->info("sip_username_extracted username=$sip_username");
+
+    if ( grep { lc($_) eq lc($sip_username) } @{ $self->sip_usernames } ) {
+        $self->_logger->info("sip_username_matched username=$sip_username");
+
+        # Registered with this agent — handled here, no redirect.
+        return;
+    }
+
+    $self->_logger->info("sip_username_not_matched username=$sip_username");
+    return $self->_on_sip_request( $sip_username, $body, $headers );
+}
+
+# _on_sip_request(username, body, headers) — extension hook invoked when a SIP
+# username is NOT registered with this agent. The base returns undef (no
+# redirect; routing continues / this agent renders). A multi-agent router
+# (AgentServer) or a subclass overrides this to return the URL of the agent that
+# owns the username. Internal hook (underscore-private) — not part of the
+# Python public surface.
+sub _on_sip_request {
+    my ( $self, $username, $body, $headers ) = @_;
+    return;
 }
 
 # register_sip_username(username) — register a SIP username that routes to
@@ -1628,6 +1683,22 @@ sub _build_psgi_app {
             return $agent->_serve_main_via_handle_request($env);
         }
 
+        # A request to a registered routing-callback path (e.g. the SIP path
+        # from enable_sip_routing) also flows through handle_request, so the
+        # stored callback is actually consulted at its served endpoint — a 307
+        # redirect (routed elsewhere) or the agent's own SWML (handled here).
+        # Without this, a /sip mapping would be stored-but-unconsulted (the
+        # dispatch would fall through to the 404 below). Matches on the path via
+        # the same _callback_path_for_url the routing dispatch uses.
+        if (   !$is_swaig
+            && !$is_post_prompt
+            && !$is_mcp
+            && ( $req->method eq 'GET' || $req->method eq 'POST' )
+            && defined $agent->_callback_path_for_url($path) )
+        {
+            return $agent->_serve_main_via_handle_request($env);
+        }
+
         if ( $is_swaig || $is_post_prompt ) {
             my $auth_ok = $agent->_check_auth($env);
             unless ($auth_ok) {
@@ -1989,6 +2060,10 @@ sub handle_serverless_request {
         return $self->_run_serverless_lambda($event);
     } elsif ( $mode eq 'cgi' ) {
         return $self->_run_serverless_cgi;
+    } elsif ( $mode eq 'google_cloud_function' || $mode eq 'gcf' ) {
+        return $self->_run_serverless_gcf($event);
+    } elsif ( $mode eq 'azure_function' || $mode eq 'azure' ) {
+        return $self->_run_serverless_azure($event);
     }
 
     return $self->run( host => $opts{host}, port => $opts{port} );
@@ -2056,6 +2131,64 @@ sub _run_serverless_cgi {
 
     my ( undef, undef, $response_body ) = @{ $self->psgi_app->($env) };
     return _join_psgi_body($response_body);
+}
+
+# Google Cloud Function: an event carries method/path/body (a Flask-request
+# analog); run it through the PSGI app and shape a { status, headers, body }
+# response hashref. Python parity: ServerlessMixin.
+# _handle_google_cloud_function_request. php parity: Adapter::handleGcf.
+sub _run_serverless_gcf {
+    my ( $self, $event ) = @_;
+    $event //= {};
+
+    my $path = $event->{path} // $event->{rawPath} // '/';
+    $path =~ s{\?.*$}{};    # strip any query string from the path
+    my $method = uc( $event->{method} // $event->{httpMethod} // 'GET' );
+
+    my $env = $self->_serverless_psgi_env(
+        path   => $path,
+        method => $method,
+        query  => $event->{query} // '',
+        body   => $event->{body}  // '',
+    );
+
+    my ( $status, $headers, $response_body ) = @{ $self->psgi_app->($env) };
+    return {
+        status  => int($status),
+        headers => { @{ $headers // [] } },
+        body    => _join_psgi_body($response_body),
+    };
+}
+
+# Azure Function: an event carries a request URL + method/body; parse the path
+# out of the URL, run it through the PSGI app, and shape a { status, headers,
+# body } response hashref. Python parity:
+# ServerlessMixin._handle_azure_function_request. php parity:
+# Adapter::handleAzure.
+sub _run_serverless_azure {
+    my ( $self, $event ) = @_;
+    $event //= {};
+
+    my $url = $event->{url} // $event->{Url} // $event->{path} // '/';
+    ( my $path = $url ) =~ s{^[a-z][a-z0-9+.\-]*://[^/]+}{}i;    # strip scheme+authority
+    $path =~ s{\?.*$}{};                                         # strip query
+    $path = '/' unless length $path;
+    my $method = uc( $event->{method} // $event->{Method} // $event->{httpMethod} // 'GET' );
+    my $body   = $event->{body} // $event->{Body} // '';
+
+    my $env = $self->_serverless_psgi_env(
+        path   => $path,
+        method => $method,
+        query  => '',
+        body   => $body,
+    );
+
+    my ( $status, $headers, $response_body ) = @{ $self->psgi_app->($env) };
+    return {
+        status  => int($status),
+        headers => { @{ $headers // [] } },
+        body    => _join_psgi_body($response_body),
+    };
 }
 
 sub _join_psgi_body {
