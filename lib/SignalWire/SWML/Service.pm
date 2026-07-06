@@ -116,7 +116,11 @@ has 'verb_registry' => (
         # uses AUTOLOAD against the schema for verb lookup; this hashref
         # mirrors Python's VerbHandlerRegistry surface (handlers indexed
         # by verb name) so callers can introspect / extend it.
-        return { handlers => {} };
+        #
+        # Python parity: VerbHandlerRegistry.__init__ pre-registers the
+        # AIVerbHandler under verb name "ai" (swml_handler.py). Ship the same
+        # default handler so a fresh registry already knows the "ai" verb.
+        return { handlers => { ai => { verb => 'ai' } } };
     },
 );
 
@@ -696,6 +700,12 @@ sub register_verb_handler {
     my ( $self, $handler ) = @_;
     my $name = $handler->get_verb_name;
     $self->verb_handlers->{$name} = $handler;
+
+    # Python parity: VerbHandlerRegistry.register_handler indexes the handler
+    # by verb name under _handlers. Mirror the registration into the
+    # introspectable verb_registry (which ships pre-loaded with the "ai"
+    # handler — see the verb_registry default) so the registry reflects both.
+    $self->verb_registry->{handlers}{$name} = $handler;
     return;
 }
 
@@ -934,6 +944,15 @@ sub handle_additional_route {
 # Register a routing callback at a given sub-path under the service route.
 sub register_routing_callback {
     my ( $self, $path, $cb ) = @_;
+
+    # Normalize the path for consistent lookup (Python parity:
+    # SWMLService.register_routing_callback -> path.rstrip("/") then ensure a
+    # leading "/"). Without this, "/sip/" and "voice" register under
+    # non-canonical keys and never match an incoming request path.
+    $path = '' unless defined $path;
+    $path =~ s{/+$}{};
+    $path = "/$path" unless $path =~ m{^/};
+
     $self->routing_callbacks->{$path} = $cb;
     return $self;
 }

@@ -86,12 +86,25 @@ sub setup_sip_routing {
 }
 
 # register_sip_username(username, route) — map a SIP username to a route
-# (Python parity: AgentServer.register_sip_username).
+# (Python parity: AgentServer.register_sip_username). The username key is
+# LOWER-CASED and the route is normalized (leading slash added, trailing
+# stripped) so lookups are case-insensitive and route-shape agnostic — matching
+# Python's ``self._sip_username_mapping[username.lower()] = route.rstrip("/")``.
 sub register_sip_username {
     my ( $self, $username, $route ) = @_;
     $route = "/$route" unless $route =~ m{^/};
-    $self->_sip_username_mapping->{$username} = $route;
+    $route =~ s{/+$}{} unless $route eq '/';
+    $self->_sip_username_mapping->{ lc $username } = $route;
     return $self;
+}
+
+# _lookup_sip_route(username) — return the route mapped to a SIP username, or
+# undef when unmapped. Case-insensitive, internal (Python parity:
+# AgentServer._lookup_sip_route -> mapping.get(username.lower())).
+sub _lookup_sip_route {
+    my ( $self, $username ) = @_;
+    return unless defined $username;
+    return $self->_sip_username_mapping->{ lc $username };
 }
 
 # register_global_routing_callback(callback => sub, path => '/x') — register

@@ -198,10 +198,12 @@ sub set_post_prompt {
 
 sub prompt_add_section {
     my ( $self, $title, $body, %opts ) = @_;
-    my $section = {
-        title => $title,
-        body  => $body // '',
-    };
+    my $section = { title => $title };
+
+    # Python parity: signalwire.pom Section.to_dict emits ``body`` only when
+    # it is non-empty (``if self.body``). Mirror that here so a bullets-only
+    # section renders without a spurious ``body => ""`` key.
+    $section->{body}    = $body          if defined $body && length $body;
     $section->{bullets} = $opts{bullets} if $opts{bullets};
     push @{ $self->pom_sections }, $section;
     return $self;
@@ -898,6 +900,13 @@ sub _on_sip_request {
 sub register_sip_username {
     my ( $self, $username ) = @_;
     return $self unless defined $username && length $username;
+
+    # Python parity: AgentBase.register_sip_username does
+    # ``self._sip_usernames.add(sip_username.lower())`` — the store is a
+    # LOWER-CASED set, so "Bob"/"BOB"/"bob" collapse to one entry. Without
+    # the case-fold the same username registered in different casings would
+    # accumulate duplicate routes.
+    $username = lc $username;
     push @{ $self->sip_usernames }, $username
         unless grep { $_ eq $username } @{ $self->sip_usernames };
     return $self;
@@ -2116,31 +2125,115 @@ sub _serverless_psgi_env {
     };
 }
 
-# Lambda: run the event through the PSGI app and shape a Lambda-proxy
-# response hashref.
+# Lambda: dispatch the event DIRECTLY (Python parity:
+# ServerlessMixin.handle_serverless_request, mode "lambda") — this does NOT
+# route through the PSGI/framework app. It (1) enforces Basic auth and returns a
+# 401 challenge when it fails, (2) strips rawPath and dispatches "/swaig"
+# (function named in the body) or a path-named function to the SWAIG executor,
+# and (3) falls back to rendering the SWML document at the root. Each success is
+# a {statusCode:200, headers:{Content-Type:application/json}, body:<json>}
+# Lambda-proxy response.
 sub _run_serverless_lambda {
     my ( $self, $event ) = @_;
-    $event //= {};
 
-    my $path   = $event->{path} // $event->{rawPath} // '/';
-    my $method = $event->{httpMethod} // (
-          $event->{requestContext} && $event->{requestContext}{http}
-        ? $event->{requestContext}{http}{method}
-        : undef
-    ) // 'GET';
+    # Auth challenge (Python: _check_lambda_auth -> _send_lambda_auth_challenge).
+    unless ( $self->_check_lambda_auth($event) ) {
+        return {
+            statusCode => 401,
+            headers    => { 'WWW-Authenticate' => 'Basic', 'Content-Type' => 'application/json' },
+            body       => JSON::encode_json( { error => 'Unauthorized' } ),
+        };
+    }
 
-    my $env = $self->_serverless_psgi_env(
-        path   => $path,
-        method => $method,
-        query  => '',
-        body   => $event->{body} // '',
-    );
+    # No event at all -> root SWML.
+    return $self->_lambda_swml_response unless $event && ref $event eq 'HASH';
 
-    my ( $status, $headers, $response_body ) = @{ $self->psgi_app->($env) };
+    # HTTP API v2 uses rawPath; REST API v1 uses pathParameters.proxy.
+    my $path = $event->{rawPath} // '';
+    $path =~ s{^/+}{};
+    $path =~ s{/+$}{};
+    if ( $path eq '' && ref $event->{pathParameters} eq 'HASH' ) {
+        $path = $event->{pathParameters}{proxy} // '';
+    }
+
+    # Parse the request body for the function name + arguments.
+    my ( $function_name, $args, $call_id, $raw_data ) = ( undef, {}, undef, undef );
+    my $body_content = $event->{body};
+    if ( defined $body_content && length $body_content ) {
+        eval {
+            $raw_data = ref $body_content ? $body_content : JSON::decode_json($body_content);
+            if ( ref $raw_data eq 'HASH' ) {
+                $call_id       = $raw_data->{call_id};
+                $function_name = $raw_data->{function};
+                if ( ref $raw_data->{argument} eq 'HASH' ) {
+                    my $parsed = $raw_data->{argument}{parsed};
+                    if ( ref $parsed eq 'ARRAY' && @$parsed ) {
+                        $args = $parsed->[0];
+                    } elsif ( defined $raw_data->{argument}{raw} ) {
+                        my $decoded = eval { JSON::decode_json( $raw_data->{argument}{raw} ) };
+                        $args = $decoded if ref $decoded eq 'HASH';
+                    }
+                }
+            }
+            1;
+        };    # best-effort parse; empty args on failure (Python parity)
+    }
+
+    # /swaig endpoint with the function named in the body.
+    if (   ( $path eq 'swaig' || $path eq 'swaig/' )
+        && defined $function_name
+        && length $function_name )
+    {
+        return $self->_lambda_swaig_response( $function_name, $args, $call_id, $raw_data );
+    }
+
+    # Path-based function routing (e.g. /say_hello).
+    if ( length $path && $path ne 'swaig' && $path ne 'swaig/' ) {
+        return $self->_lambda_swaig_response( $path, $args, $call_id, $raw_data );
+    }
+
+    # Root path (or /swaig without a function) -> SWML.
+    return $self->_lambda_swml_response;
+}
+
+# _check_lambda_auth — Basic-auth gate for lambda mode (Python parity:
+# ServerlessMixin._check_lambda_auth). Reads the event's headers hashref
+# (case-insensitively) and compares against the agent's configured credentials.
+sub _check_lambda_auth {
+    my ( $self, $event ) = @_;
+    my $headers = ( $event && ref $event->{headers} eq 'HASH' ) ? $event->{headers} : {};
+    return $self->_check_basic_auth_headers($headers) ? 1 : 0;
+}
+
+# _lambda_swaig_response — execute a SWAIG function and shape the 200 response.
+sub _lambda_swaig_response {
+    my ( $self, $function_name, $args, $call_id, $raw_data ) = @_;
+    $args //= {};
+    my $result = $self->on_function_call( $function_name, $args, $raw_data );
+
+    my $result_hash;
+    if ( ref $result eq 'HASH' ) {
+        $result_hash = $result;
+    } elsif ( Scalar::Util::blessed($result) && $result->can('to_hash') ) {
+        $result_hash = $result->to_hash;
+    } else {
+        $result_hash = { response => defined $result ? "$result" : '' };
+    }
     return {
-        statusCode => int($status),
-        headers    => { @{ $headers // [] } },
-        body       => _join_psgi_body($response_body),
+        statusCode => 200,
+        headers    => { 'Content-Type' => 'application/json' },
+        body       => JSON::encode_json($result_hash),
+    };
+}
+
+# _lambda_swml_response — render the SWML document as the 200 root response.
+sub _lambda_swml_response {
+    my ($self) = @_;
+    my $doc = $self->render_swml;
+    return {
+        statusCode => 200,
+        headers    => { 'Content-Type' => 'application/json' },
+        body       => ref $doc ? JSON::encode_json($doc) : $doc,
     };
 }
 

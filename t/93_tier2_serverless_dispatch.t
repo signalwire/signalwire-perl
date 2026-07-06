@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Test::More;
 use JSON qw(decode_json);
+use MIME::Base64 qw(encode_base64);
 
 # =============================================================================
 # Behavioral contract #5 — Serverless per-platform DISPATCH (not detection-only,
@@ -29,16 +30,29 @@ sub new_agent {
     );
 }
 
-subtest 'lambda: proxy event -> Lambda-proxy response' => sub {
+subtest 'lambda: direct dispatch -> Lambda-proxy response' => sub {
+    # Python parity (serverless_mixin.py, mode "lambda"): the event is
+    # dispatched DIRECTLY — Basic-auth gate, then a root event renders the SWML
+    # document as a {statusCode,headers,body} Lambda-proxy response. Lambda does
+    # NOT proxy through the PSGI app, so /health is a framework route, not a
+    # lambda one.
+    my $auth = 'Basic ' . encode_base64( 'u:p', '' );
     my $resp = new_agent()->handle_serverless_request(
         mode  => 'lambda',
-        event => { rawPath => '/health', httpMethod => 'GET' },
+        event => { rawPath => '/', headers => { authorization => $auth } },
     );
     is( ref $resp,           'HASH', 'lambda response is a hashref' );
-    is( $resp->{statusCode}, 200,    'lambda proxy statusCode 200' );
+    is( $resp->{statusCode}, 200,    'lambda root statusCode 200' );
     is( ref $resp->{headers}, 'HASH', 'headers folded to a hashref' );
     my $doc = eval { decode_json( $resp->{body} ) };
-    is( $doc->{status}, 'healthy', 'health document dispatched (not empty / not serve())' );
+    is( ref $doc, 'HASH', 'root event renders the SWML document' );
+
+    # No Authorization header -> 401 auth challenge.
+    my $noauth = new_agent()->handle_serverless_request(
+        mode  => 'lambda',
+        event => { rawPath => '/', headers => {} },
+    );
+    is( $noauth->{statusCode}, 401, 'lambda without auth -> 401 challenge' );
 };
 
 subtest 'cgi: PATH_INFO env -> rendered body' => sub {

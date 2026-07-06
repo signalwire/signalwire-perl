@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Test::More;
 use JSON qw(decode_json);
+use MIME::Base64 ();
 
 use_ok('SignalWire::SWML::Service');
 use_ok('SignalWire::Agent::AgentBase');
@@ -50,16 +51,33 @@ subtest 'Service setup_graceful_shutdown installs handlers' => sub {
 # AgentBase ServerlessMixin surface: handle_serverless_request
 # ---------------------------------------------------------------------------
 subtest 'handle_serverless_request lambda mode' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new( name => 'svc', route => '/svc' );
+    # Python parity: lambda mode dispatches the event DIRECTLY (auth gate,
+    # then /swaig-or-path SWAIG dispatch, else root SWML) — it does NOT proxy
+    # through the PSGI app, so /health is not a lambda route and a valid Basic
+    # header is required. A root event with good auth renders the SWML doc.
+    my $agent = SignalWire::Agent::AgentBase->new(
+        name                => 'svc',
+        route               => '/svc',
+        basic_auth_user     => 'u',
+        basic_auth_password => 'p',
+    );
+    my $auth = 'Basic ' . MIME::Base64::encode_base64( 'u:p', '' );
 
     my $resp = $agent->handle_serverless_request(
         mode  => 'lambda',
-        event => { rawPath => '/health', httpMethod => 'GET' },
+        event => { rawPath => '/', headers => { authorization => $auth } },
     );
     is( ref $resp, 'HASH', 'lambda response is a hashref' );
-    is( $resp->{statusCode}, 200, 'lambda proxy statusCode' );
+    is( $resp->{statusCode}, 200, 'lambda root statusCode 200' );
     ok( defined $resp->{body}, 'lambda response carries a body' );
     is( ref $resp->{headers}, 'HASH', 'headers folded to hashref' );
+    my $doc = eval { decode_json( $resp->{body} ) };
+    is( ref $doc, 'HASH', 'body is the rendered SWML document' );
+
+    # No auth -> 401 challenge (Python parity: _send_lambda_auth_challenge).
+    my $noauth =
+        $agent->handle_serverless_request( mode => 'lambda', event => { rawPath => '/', headers => {} } );
+    is( $noauth->{statusCode}, 401, 'lambda without auth -> 401' );
 };
 
 subtest 'handle_serverless_request cgi mode' => sub {

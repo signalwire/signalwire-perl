@@ -24613,6 +24613,11 @@
                   "required": false
                 },
                 {
+                  "name": "direction",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "device",
                   "type": "dict<string,any>",
                   "required": false
@@ -24654,6 +24659,15 @@
               "returns": "any"
             },
             "device": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "direction": {
               "params": [
                 {
                   "name": "self",
@@ -24832,8 +24846,18 @@
                   "required": false
                 },
                 {
+                  "name": "state",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "result",
                   "type": "dict<string,any>",
+                  "required": false
+                },
+                {
+                  "name": "final",
+                  "type": "optional<bool>",
                   "required": false
                 },
                 {
@@ -24854,6 +24878,15 @@
               "returns": "any"
             },
             "control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "final": {
               "params": [
                 {
                   "name": "self",
@@ -24886,6 +24919,15 @@
               "returns": "any"
             },
             "result": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "state": {
               "params": [
                 {
                   "name": "self",
@@ -26189,6 +26231,16 @@
                   "required": false
                 },
                 {
+                  "name": "queue_id",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "queue_name",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "position",
                   "type": "int",
                   "required": false
@@ -26213,7 +26265,7 @@
             "from_payload": {
               "params": [
                 {
-                  "name": "cls",
+                  "name": "self",
                   "kind": "cls"
                 },
                 {
@@ -26225,6 +26277,24 @@
               "returns": "any"
             },
             "position": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "queue_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "queue_name": {
               "params": [
                 {
                   "name": "self",
@@ -26349,7 +26419,7 @@
             "from_payload": {
               "params": [
                 {
-                  "name": "cls",
+                  "name": "self",
                   "kind": "cls"
                 },
                 {

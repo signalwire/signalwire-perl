@@ -28,7 +28,10 @@ subtest 'prompt_add_section with bullets' => sub {
 subtest 'prompt_add_section empty body' => sub {
     my $agent = SignalWire::Agent::AgentBase->new(name => 'empty');
     $agent->prompt_add_section('Title', undef);
-    is($agent->pom_sections->[0]{body}, '', 'undef body becomes empty string');
+    # Python parity: signalwire.pom Section.to_dict omits ``body`` when empty
+    # (``if self.body``), so an undef/empty body is NOT stored as body => "".
+    ok(!exists $agent->pom_sections->[0]{body}, 'empty body key is omitted (Python parity)');
+    is($agent->pom_sections->[0]{title}, 'Title', 'title stored');
 };
 
 # ============================================================

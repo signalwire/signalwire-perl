@@ -303,10 +303,11 @@ sub execute ( $self, $method, $params = undef ) {
 
     my $id = _generate_uuid();
 
-    # Add protocol to params (except for signalwire.connect itself)
-    if ( $method ne 'signalwire.connect' && $self->protocol ) {
-        $params->{protocol} = $self->protocol;
-    }
+    # Python parity: RelayClient._send_request sends params VERBATIM — the
+    # server-assigned protocol is echoed only on the signalwire.connect
+    # handshake (see authenticate), NOT injected into every calling.*/messaging.*
+    # frame. Injecting it here produced a phantom ``protocol`` key on every wire
+    # frame that the reference never emits.
 
     my $request = {
         jsonrpc => '2.0',
@@ -448,8 +449,9 @@ sub dial ( $self, %opts ) {
     my $on_completed = delete $opts{on_completed};
 
     my %params = ( tag => $tag );
-    $params{devices}              = $opts{devices} if $opts{devices};
-    $params{region}               = $opts{region}  if $opts{region};
+    $params{devices}              = $opts{devices}      if $opts{devices};
+    $params{region}               = $opts{region}       if $opts{region};
+    $params{max_duration}         = $opts{max_duration} if $opts{max_duration};
     $params{max_price_per_minute} = $opts{max_price_per_minute}
         if exists $opts{max_price_per_minute};
 

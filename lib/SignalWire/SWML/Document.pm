@@ -10,8 +10,13 @@ has 'version' => (
 );
 
 has 'sections' => (
-    is      => 'rw',
-    default => sub { {} },
+    is => 'rw',
+
+    # Python parity: SWMLService._create_empty_document seeds the document with
+    # an (empty) "main" section — {"version":"1.0.0","sections":{"main":[]}} —
+    # so a freshly rendered SWML doc always carries sections.main, even before
+    # any verb is added.
+    default => sub { { main => [] } },
 );
 
 sub add_section {
