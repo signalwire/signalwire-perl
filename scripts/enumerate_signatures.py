@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -43,9 +44,13 @@ PORT_ROOT = HERE.parent
 # Python keyword-argument shape so the cross-language diff doesn't fail
 # on what is functionally the same kwargs contract.
 PSDK_CANDIDATES = [
-    PORT_ROOT.parent / "porting-sdk" / "python_signatures.json",
-    Path("/home/devuser/src/porting-sdk/python_signatures.json"),
-    Path("/usr/local/home/devuser/src/porting-sdk/python_signatures.json"),
+    p for p in (
+        # explicit override wins
+        (Path(os.environ["PORTING_SDK"]) / "python_signatures.json")
+        if os.environ.get("PORTING_SDK") else None,
+        # default adjacency layout: porting-sdk beside the port repo
+        PORT_ROOT.parent / "porting-sdk" / "python_signatures.json",
+    ) if p is not None
 ]
 
 

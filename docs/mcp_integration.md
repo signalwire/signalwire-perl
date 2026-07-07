@@ -3,85 +3,104 @@
 The SDK supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) in two ways:
 
 1. **MCP Client** — Connect to external MCP servers and use their tools in your agent
-2. **MCP Server** — Expose your agent's `@tool` functions as an MCP endpoint for other clients
+2. **MCP Server** — Expose your agent's `define_tool` functions as an MCP endpoint for other clients
 
 These features are independent and can be used separately or together.
 
 ## Adding External MCP Servers
 
-Use `add_mcp_server()` to connect your agent to remote MCP servers. Tools are discovered at call start via the MCP protocol and added to the AI's tool list alongside your `@tool` functions.
+Use `add_mcp_server()` to connect your agent to remote MCP servers. Tools are discovered at call start via the MCP protocol and added to the AI's tool list alongside your `define_tool` functions.
 
-```python
-from signalwire_agents import AgentBase
+```perl
+package MyAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
 
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent", route="/agent")
+sub BUILD {
+    my ($self) = @_;
 
-        self.add_mcp_server(
-            "https://mcp.example.com/tools",
-            headers={"Authorization": "Bearer sk-xxx"}
-        )
+    $self->add_mcp_server(
+        'https://mcp.example.com/tools',
+        headers => { Authorization => 'Bearer sk-xxx' },
+    );
+}
+
+# Construct with:  MyAgent->new(name => 'my-agent', route => '/agent');
 ```
 
 ### Parameters
 
 | Parameter | Type | Description |
 |---|---|---|
-| `url` | str | MCP server HTTP endpoint URL |
-| `headers` | dict | Optional HTTP headers for authentication |
-| `resources` | bool | Fetch resources into `global_data` (default: False) |
-| `resource_vars` | dict | Variables for URI template substitution |
+| `$url` | string | MCP server HTTP endpoint URL (first positional argument) |
+| `headers` | hashref | Optional HTTP headers for authentication |
+| `resources` | boolean | Fetch resources into `global_data` (default: false) |
+| `resource_vars` | hashref | Variables for URI template substitution |
 
 ### With Resources
 
 MCP servers can expose read-only data as resources. When enabled, resources are fetched at session start and merged into `global_data`:
 
-```python
-self.add_mcp_server(
-    "https://mcp.example.com/crm",
-    headers={"Authorization": "Bearer sk-xxx"},
-    resources=True,
-    resource_vars={"caller_id": "${caller_id_number}"}
-)
+```perl
+$self->add_mcp_server(
+    'https://mcp.example.com/crm',
+    headers       => { Authorization => 'Bearer sk-xxx' },
+    resources     => 1,
+    resource_vars => { caller_id => '${caller_id_number}' },
+);
 ```
 
 Resource data is available in prompts via `${global_data.key}` and included in every webhook call.
 
 ### Multiple Servers
 
-```python
-self.add_mcp_server("https://mcp-search.example.com/tools",
-    headers={"Authorization": "Bearer search-key"})
-self.add_mcp_server("https://mcp-crm.example.com/tools",
-    headers={"Authorization": "Bearer crm-key"})
+```perl
+$self->add_mcp_server('https://mcp-search.example.com/tools',
+    headers => { Authorization => 'Bearer search-key' });
+$self->add_mcp_server('https://mcp-crm.example.com/tools',
+    headers => { Authorization => 'Bearer crm-key' });
 ```
 
-Tools from all servers are merged into one list. If an MCP tool has the same name as a `@tool` function, your local function's description is used but execution routes through MCP.
+Tools from all servers are merged into one list. If an MCP tool has the same name as a `define_tool` function, your local function's description is used but execution routes through MCP.
 
 ## Exposing Tools as MCP Server
 
-Use `enable_mcp_server()` to add an MCP endpoint at `/mcp` on your agent's server. Any MCP client can connect and use your `@tool` functions.
+Use `enable_mcp_server()` to add an MCP endpoint at `/mcp` on your agent's server. Any MCP client can connect and use your `define_tool` functions.
 
-```python
-from signalwire_agents import AgentBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
+```perl
+package MyAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
+use SignalWire::SWAIG::FunctionResult;
 
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent", route="/agent")
-        self.enable_mcp_server()
+sub BUILD {
+    my ($self) = @_;
+    $self->enable_mcp_server;
 
-    @AgentBase.tool("get_weather", description="Get weather for a location")
-    def get_weather(self, args, raw_data):
-        location = args.get("location", "unknown")
-        return SwaigFunctionResult(f"72F sunny in {location}")
+    $self->define_tool(
+        name        => 'get_weather',
+        description => 'Get weather for a location',
+        parameters  => {
+            type       => 'object',
+            properties => {
+                location => { type => 'string', description => 'City name' },
+            },
+        },
+        handler => sub {
+            my ($args, $raw_data) = @_;
+            my $location = $args->{location} // 'unknown';
+            return SignalWire::SWAIG::FunctionResult->new("72F sunny in $location");
+        },
+    );
+}
+
+# Construct with:  MyAgent->new(name => 'my-agent', route => '/agent');
 ```
 
 The `/mcp` endpoint handles the full MCP protocol:
 - `initialize` — protocol version and capability negotiation
 - `notifications/initialized` — ready signal
-- `tools/list` — returns all `@tool` functions in MCP format
+- `tools/list` — returns all `define_tool` functions in MCP format
 - `tools/call` — invokes the handler and returns the result
 - `ping` — keepalive
 
@@ -99,29 +118,42 @@ Add your agent as an MCP server in Claude Desktop's config:
 }
 ```
 
-Your `@tool` functions are now available in Claude Desktop conversations.
+Your `define_tool` functions are now available in Claude Desktop conversations.
 
 ## Using Both Together
 
 The two features are independent:
 
-```python
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent", route="/agent")
+```perl
+package MyAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
+use SignalWire::SWAIG::FunctionResult;
 
-        # Expose my tools as MCP (for Claude Desktop, other agents)
-        self.enable_mcp_server()
+sub BUILD {
+    my ($self) = @_;
 
-        # Pull in tools from external MCP servers (for voice calls)
-        self.add_mcp_server("https://mcp.example.com/crm",
-            headers={"Authorization": "Bearer sk-xxx"},
-            resources=True)
+    # Expose my tools as MCP (for Claude Desktop, other agents)
+    $self->enable_mcp_server;
 
-    @AgentBase.tool("transfer_call", description="Transfer the caller")
-    def transfer_call(self, args, raw_data):
-        # This tool is available both as MCP AND as SWAIG webhook
-        return SwaigFunctionResult("Transferring now.")
+    # Pull in tools from external MCP servers (for voice calls)
+    $self->add_mcp_server('https://mcp.example.com/crm',
+        headers   => { Authorization => 'Bearer sk-xxx' },
+        resources => 1);
+
+    $self->define_tool(
+        name        => 'transfer_call',
+        description => 'Transfer the caller',
+        parameters  => { type => 'object', properties => {} },
+        handler     => sub {
+            my ($args, $raw_data) = @_;
+            # This tool is available both as MCP AND as SWAIG webhook
+            return SignalWire::SWAIG::FunctionResult->new('Transferring now.');
+        },
+    );
+}
+
+# Construct with:  MyAgent->new(name => 'my-agent', route => '/agent');
 ```
 
 In this setup:
@@ -133,9 +165,9 @@ In this setup:
 
 If you want your agent's voice calls to also discover tools via MCP instead of webhooks:
 
-```python
-self.enable_mcp_server()
-self.add_mcp_server("https://your-server.com/agent/mcp")
+```perl
+$self->enable_mcp_server;
+$self->add_mcp_server('https://your-server.com/agent/mcp');
 ```
 
 This is optional — by default, `enable_mcp_server()` only adds the endpoint without affecting the agent's own SWML output.
@@ -149,4 +181,4 @@ This is optional — by default, `enable_mcp_server()` only adds the endpoint wi
 | Discovery | Defined in SWML config | Auto-discovered via protocol |
 | Auth | `web_hook_auth_user/password` | `headers` dict |
 
-MCP tools are best for data retrieval. Use `@tool` functions with SWAIG webhooks when you need call control actions.
+MCP tools are best for data retrieval. Use `define_tool` functions with SWAIG webhooks when you need call control actions.

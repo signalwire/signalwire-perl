@@ -49,7 +49,6 @@ $client->calling->dial(
 - [Client Reference](docs/client-reference.md) -- RestClient constructor, namespaces, error handling
 - [Fabric Resources](docs/fabric.md) -- managing AI agents, SWML scripts, subscribers, call flows, and more
 - [Calling Commands](docs/calling.md) -- REST-based call control (dial, play, record, collect, AI, etc.)
-- [Compatibility API](docs/compat.md) -- Twilio-compatible LAML endpoints
 - [All Namespaces](docs/namespaces.md) -- phone numbers, video, datasphere, logs, registry, and more
 
 ## Examples
@@ -59,7 +58,6 @@ $client->calling->dial(
 | [rest_10dlc_registration.pl](examples/rest_10dlc_registration.pl) | 10DLC brand and campaign compliance registration |
 | [rest_calling_ivr_and_ai.pl](examples/rest_calling_ivr_and_ai.pl) | IVR input, AI operations, live transcription, tap, stream |
 | [rest_calling_play_and_record.pl](examples/rest_calling_play_and_record.pl) | Media operations: play, record, transcribe, denoise |
-| [rest_compat_laml.pl](examples/rest_compat_laml.pl) | Twilio-compatible LAML migration |
 | [rest_datasphere_search.pl](examples/rest_datasphere_search.pl) | Upload document, run semantic search |
 | [rest_fabric_conferences_and_routing.pl](examples/rest_fabric_conferences_and_routing.pl) | Conferences, cXML resources, generic routing, tokens |
 | [rest_fabric_subscribers_and_sip.pl](examples/rest_fabric_subscribers_and_sip.pl) | Provision SIP-enabled users on Fabric |

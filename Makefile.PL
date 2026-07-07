@@ -31,11 +31,11 @@ WriteMakefile(
         resources => {
             repository => {
                 type => 'git',
-                url  => 'https://github.com/signalwire/signalwire-agents-perl.git',
-                web  => 'https://github.com/signalwire/signalwire-agents-perl',
+                url  => 'https://github.com/signalwire/signalwire-perl.git',
+                web  => 'https://github.com/signalwire/signalwire-perl',
             },
             bugtracker => {
-                web => 'https://github.com/signalwire/signalwire-agents-perl/issues',
+                web => 'https://github.com/signalwire/signalwire-perl/issues',
             },
         },
     },

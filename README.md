@@ -113,7 +113,7 @@ The [`examples/`](examples/) directory contains 50+ working examples:
 | [session_and_state_demo.pl](examples/session_and_state_demo.pl) | on_summary, global data, post-prompt summaries |
 | [multi_agent_server.pl](examples/multi_agent_server.pl) | Multiple agents on one server |
 | [lambda_agent.pl](examples/lambda_agent.pl) | AWS Lambda deployment |
-| [comprehensive_dynamic.pl](examples/comprehensive_dynamic.pl) | Per-request dynamic configuration, multi-tenant routing |
+| [comprehensive_dynamic.pl](examples/comprehensive_dynamic_agent.pl) | Per-request dynamic configuration, multi-tenant routing |
 
 See [examples/README.md](examples/README.md) for the full list organized by category.
 
@@ -227,7 +227,6 @@ Guides are also available in the [`docs/`](docs/) directory:
 
 - [Skills System](docs/skills_system.md) -- built-in skills and the modular framework
 - [Third-Party Skills](docs/third_party_skills.md) -- creating and publishing custom skills
-- [MCP Gateway](docs/mcp_gateway_reference.md) -- Model Context Protocol integration
 
 ### Deployment
 

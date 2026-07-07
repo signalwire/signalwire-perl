@@ -16,129 +16,112 @@ This document provides a comprehensive reference for all public APIs in the Sign
 
 ## AgentBase Class
 
-The `AgentBase` class is the foundation for creating AI agents. It extends `SWMLService` (the base class for generating SWML -- SignalWire Markup Language -- documents) and provides comprehensive functionality for building conversational AI agents.
+The `AgentBase` class is the foundation for creating AI agents. It extends `SignalWire::SWML::Service` (the base class for generating SWML -- SignalWire Markup Language -- documents) and provides comprehensive functionality for building conversational AI agents. Agents are `Moo` packages that `extends 'SignalWire::Agent::AgentBase'` and configure themselves in `BUILD`.
 
 ### Constructor
 
-```python
-AgentBase(
-    name: str,
-    route: str = "/",
-    host: str = "0.0.0.0",
-    port: int = 3000,
-    basic_auth: Optional[Tuple[str, str]] = None,
-    use_pom: bool = True,
-    token_expiry_secs: int = 3600,
-    auto_answer: bool = True,
-    record_call: bool = False,
-    record_format: str = "mp4",
-    record_stereo: bool = True,
-    default_webhook_url: Optional[str] = None,
-    agent_id: Optional[str] = None,
-    native_functions: Optional[List[str]] = None,
-    schema_path: Optional[str] = None,
-    suppress_logs: bool = False,
-    enable_post_prompt_override: bool = False,
-    check_for_input_override: bool = False,
-    config_file: Optional[str] = None
-)
+Construct an agent with `SignalWire::Agent::AgentBase->new(...)` (or, from a subclass, `MyAgent->new(...)`). Constructor options are passed as `key => value` pairs:
+
+```perl
+my $agent = SignalWire::Agent::AgentBase->new(
+    name          => 'my-agent',
+    route         => '/',
+    host          => '0.0.0.0',
+    port          => 3000,
+    use_pom       => 1,
+    auto_answer   => 1,
+    record_call   => 0,
+    record_format => 'mp4',
+    record_stereo => 1,
+);
 ```
 
 **Parameters:**
-- `name` (str): Human-readable name for the agent
-- `route` (str): HTTP route path for the agent (default: "/")
-- `host` (str): Host address to bind to (default: "0.0.0.0")
-- `port` (int): Port number to listen on (default: 3000)
-- `basic_auth` (Optional[Tuple[str, str]]): Username/password for HTTP basic auth
-- `use_pom` (bool): Whether to use Prompt Object Model (default: True)
-- `token_expiry_secs` (int): Security token expiration time (default: 3600)
-- `auto_answer` (bool): Automatically answer incoming calls (default: True)
-- `record_call` (bool): Record calls by default (default: False)
-- `record_format` (str): Recording format: "mp4", "wav", "mp3" (default: "mp4")
-- `record_stereo` (bool): Record in stereo (default: True)
-- `default_webhook_url` (Optional[str]): Default webhook URL for functions
-- `agent_id` (Optional[str]): Unique identifier for the agent
-- `native_functions` (Optional[List[str]]): List of native function names to enable
-- `schema_path` (Optional[str]): Path to custom SWML schema file
-- `suppress_logs` (bool): Suppress logging output (default: False)
-- `enable_post_prompt_override` (bool): Allow post-prompt URL override (default: False)
-- `check_for_input_override` (bool): Allow check-for-input URL override (default: False)
-- `config_file` (Optional[str]): Path to JSON configuration file with environment variable substitution support. See [Configuration Guide](configuration.md) for details.
+- `name` (Str): Human-readable name for the agent
+- `route` (Str): HTTP route path for the agent (default: "/")
+- `host` (Str): Host address to bind to (default: "0.0.0.0")
+- `port` (Int): Port number to listen on (default: 3000, or `$ENV{PORT}`)
+- `basic_auth_user` / `basic_auth_password` (Str): Username/password for HTTP basic auth (auto-generated when not set)
+- `use_pom` (Bool): Whether to use Prompt Object Model (default: 1)
+- `auto_answer` (Bool): Automatically answer incoming calls (default: 1)
+- `record_call` (Bool): Record calls by default (default: 0)
+- `record_format` (Str): Recording format: "mp4", "wav", "mp3" (default: "mp4")
+- `record_stereo` (Bool): Record in stereo (default: 1)
+
+See the [Configuration Guide](configuration.md) for details on JSON configuration files with environment-variable substitution.
 
 ### Core Methods
 
 #### Deployment and Execution
 
-##### `run(event=None, context=None, force_mode=None, host=None, port=None)`
-Auto-detects deployment environment and runs the agent appropriately.
+##### `run(%opts)`
+Auto-detects deployment environment and runs the agent appropriately. Accepts optional `host` / `port` overrides (and, for serverless dispatch, `event` / `context` / `mode`). Delegates to `serve` for the HTTP-server case.
 
 **Parameters:**
-- `event`: Event object for serverless environments
-- `context`: Context object for serverless environments  
-- `force_mode` (str): Force specific mode: "server", "lambda", "cgi", "cloud_function"
-- `host` (Optional[str]): Override host address
-- `port` (Optional[int]): Override port number
+- `host` (Str): Override host address
+- `port` (Int): Override port number
+- `event` / `context`: Event/context objects for serverless environments
+- `mode` (Str): Force a specific mode: "server", "lambda", "cgi", "cloud_function"
 
 **Usage:**
-```python
-# Auto-detect environment
-agent.run()
+```perl
+# Auto-detect / run the HTTP server
+$agent->run;
 
-# Force server mode
-agent.run(force_mode="server", host="localhost", port=8080)
+# Override host and port
+$agent->run( host => 'localhost', port => 8080 );
 
-# Lambda handler
-def lambda_handler(event, context):
-    return agent.run(event, context)
+# Serverless dispatch (CGI / Lambda / Cloud Functions)
+$agent->handle_serverless_request( event => $event, context => $context );
 ```
 
-##### `serve(host=None, port=None)`
-Explicitly run as HTTP server using FastAPI/Uvicorn.
+##### `serve(%opts)`
+Explicitly run as an HTTP server using Plack/PSGI.
 
 **Parameters:**
-- `host` (Optional[str]): Host address to bind to
-- `port` (Optional[int]): Port number to listen on
+- `host` (Str): Host address to bind to
+- `port` (Int): Port number to listen on
 
 **Usage:**
-```python
-agent.serve()  # Use constructor defaults
-agent.serve(host="0.0.0.0", port=3000)
+```perl
+$agent->serve;                              # Use constructor defaults
+$agent->serve( host => '0.0.0.0', port => 3000 );
 ```
 
 ### Prompt Configuration
 
 #### Text-Based Prompts
 
-##### `set_prompt_text(text: str) -> AgentBase`
-Set the agent's prompt as raw text.
+##### `set_prompt_text($text)`
+Set the agent's prompt as raw text. Returns `$self` for chaining.
 
 **Parameters:**
-- `text` (str): The complete prompt text
+- `$text` (Str): The complete prompt text
 
 **Usage:**
-```python
-agent.set_prompt_text("You are a helpful customer service agent.")
+```perl
+$agent->set_prompt_text('You are a helpful customer service agent.');
 ```
 
-##### `set_post_prompt(text: str) -> AgentBase`
-Set additional text to append after the main prompt.
+##### `set_post_prompt($text)`
+Set additional text to append after the main prompt. Returns `$self` for chaining.
 
 **Parameters:**
-- `text` (str): Text to append after main prompt
+- `$text` (Str): Text to append after main prompt
 
 **Usage:**
-```python
-agent.set_post_prompt("Always be polite and professional.")
+```perl
+$agent->set_post_prompt('Always be polite and professional.');
 ```
 
 #### LLM Parameter Configuration
 
 ##### `set_prompt_llm_params`
 
-```python
-def set_prompt_llm_params(**params) -> AgentBase
+```perl
+$agent->set_prompt_llm_params( %params );
 ```
-Set Language Model parameters for the main prompt. Accepts any parameters which will be passed through to the SignalWire server. The server validates and applies parameters based on the target model's capabilities.
+Set Language Model parameters for the main prompt. Accepts any parameters which will be passed through to the SignalWire server. The server validates and applies parameters based on the target model's capabilities. Returns `$self` for chaining.
 
 **Common Parameters:**
 - `temperature`: Controls randomness. Lower = more focused
@@ -150,23 +133,23 @@ Set Language Model parameters for the main prompt. Accepts any parameters which 
 Note: No defaults are sent unless explicitly set. Invalid parameters for the selected model will be handled/ignored by the server.
 
 **Usage:**
-```python
+```perl
 # Configure for consistent, professional responses
-agent.set_prompt_llm_params(
-    temperature=0.3,
-    top_p=0.9,
-    barge_confidence=0.7,
-    presence_penalty=0.1,
-    frequency_penalty=0.2
-)
+$agent->set_prompt_llm_params(
+    temperature       => 0.3,
+    top_p             => 0.9,
+    barge_confidence  => 0.7,
+    presence_penalty  => 0.1,
+    frequency_penalty => 0.2,
+);
 ```
 
 ##### `set_post_prompt_llm_params`
 
-```python
-def set_post_prompt_llm_params(**params) -> AgentBase
+```perl
+$agent->set_post_prompt_llm_params( %params );
 ```
-Set Language Model parameters for the post-prompt. Accepts any parameters which will be passed through to the SignalWire server. The server validates and applies parameters based on the target model's capabilities.
+Set Language Model parameters for the post-prompt. Accepts any parameters which will be passed through to the SignalWire server. The server validates and applies parameters based on the target model's capabilities. Returns `$self` for chaining.
 
 **Common Parameters:**
 - `temperature`: Controls randomness. Lower = more focused
@@ -177,285 +160,241 @@ Set Language Model parameters for the post-prompt. Accepts any parameters which 
 Note: barge_confidence is not applicable to post-prompt. No defaults are sent unless explicitly set.
 
 **Usage:**
-```python
+```perl
 # Configure for focused summaries
-agent.set_post_prompt_llm_params(
-    temperature=0.2,
-    top_p=0.9
-)
+$agent->set_post_prompt_llm_params(
+    temperature => 0.2,
+    top_p       => 0.9,
+);
 ```
 
 #### Structured Prompts (POM)
 
 ##### `prompt_add_section`
 
-```python
-def prompt_add_section(
-    title: str, 
-    body: str = "", 
-    bullets: Optional[List[str]] = None, 
-    numbered: bool = False, 
-    numbered_bullets: bool = False, 
-    subsections: Optional[List[Dict[str, Any]]] = None
-) -> AgentBase
+```perl
+$agent->prompt_add_section( $title, $body, bullets => \@bullets );
 ```
-Add a structured section to the prompt using Prompt Object Model.
+Add a structured section to the prompt using Prompt Object Model. `$title` and `$body` are positional; `bullets` is an optional named argument. Returns `$self` for chaining.
 
 **Parameters:**
-- `title` (str): Section title/heading
-- `body` (str): Main section content (default: "")
-- `bullets` (Optional[List[str]]): List of bullet points
-- `numbered` (bool): Use numbered sections (default: False)
-- `numbered_bullets` (bool): Use numbered bullet points (default: False)
-- `subsections` (Optional[List[Dict]]): Nested subsections
+- `$title` (Str): Section title/heading
+- `$body` (Str): Main section content (optional)
+- `bullets` (ArrayRef[Str]): List of bullet points
 
 **Usage:**
-```python
+```perl
 # Simple section
-agent.prompt_add_section("Role", "You are a customer service representative.")
+$agent->prompt_add_section( 'Role', 'You are a customer service representative.' );
 
 # Section with bullets
-agent.prompt_add_section(
-    "Guidelines", 
-    "Follow these principles:",
-    bullets=["Be helpful", "Stay professional", "Listen carefully"]
-)
+$agent->prompt_add_section(
+    'Guidelines',
+    'Follow these principles:',
+    bullets => [ 'Be helpful', 'Stay professional', 'Listen carefully' ],
+);
 
-# Numbered bullets
-agent.prompt_add_section(
-    "Process",
-    "Follow these steps:",
-    bullets=["Greet the customer", "Identify their need", "Provide solution"],
-    numbered_bullets=True
-)
+# Section describing a process
+$agent->prompt_add_section(
+    'Process',
+    'Follow these steps:',
+    bullets => [ 'Greet the customer', 'Identify their need', 'Provide solution' ],
+);
 ```
 
 ##### `prompt_add_to_section`
 
-```python
-def prompt_add_to_section(
-    title: str, 
-    body: Optional[str] = None, 
-    bullet: Optional[str] = None, 
-    bullets: Optional[List[str]] = None
-) -> AgentBase
+```perl
+$agent->prompt_add_to_section( $title, body => $body, bullets => \@bullets );
 ```
-Add content to an existing prompt section.
+Add content to an existing prompt section (auto-creating it when absent). `$title` is positional; `body` and `bullets` are named arguments. Returns `$self` for chaining.
 
 **Parameters:**
-- `title` (str): Title of existing section to modify
-- `body` (Optional[str]): Additional body text to append
-- `bullet` (Optional[str]): Single bullet point to add
-- `bullets` (Optional[List[str]]): Multiple bullet points to add
+- `$title` (Str): Title of the section to modify
+- `body` (Str): Additional body text to append
+- `bullets` (ArrayRef[Str]): Bullet points to add
 
 **Usage:**
-```python
-# Add body text to existing section
-agent.prompt_add_to_section("Guidelines", "Remember to always verify customer identity.")
+```perl
+# Add body text to an existing section
+$agent->prompt_add_to_section( 'Guidelines', body => 'Remember to always verify customer identity.' );
 
-# Add single bullet
-agent.prompt_add_to_section("Process", bullet="Document the interaction")
+# Add a single bullet
+$agent->prompt_add_to_section( 'Process', bullets => ['Document the interaction'] );
 
 # Add multiple bullets
-agent.prompt_add_to_section("Process", bullets=["Follow up", "Close ticket"])
+$agent->prompt_add_to_section( 'Process', bullets => [ 'Follow up', 'Close ticket' ] );
 ```
 
 ##### `prompt_add_subsection`
 
-```python
-def prompt_add_subsection(
-    parent_title: str, 
-    title: str, 
-    body: str = "", 
-    bullets: Optional[List[str]] = None
-) -> AgentBase
+```perl
+$agent->prompt_add_subsection( $parent_title, $title, $body, bullets => \@bullets );
 ```
-Add a subsection to an existing prompt section.
+Add a subsection to an existing prompt section (auto-creating the parent when absent). `$parent_title`, `$title`, and `$body` are positional; `bullets` is a named argument. Returns `$self` for chaining.
 
 **Parameters:**
-- `parent_title` (str): Title of parent section
-- `title` (str): Subsection title
-- `body` (str): Subsection content (default: "")
-- `bullets` (Optional[List[str]]): Subsection bullet points
+- `$parent_title` (Str): Title of parent section
+- `$title` (Str): Subsection title
+- `$body` (Str): Subsection content (optional)
+- `bullets` (ArrayRef[Str]): Subsection bullet points
 
 **Usage:**
-```python
-agent.prompt_add_subsection(
-    "Guidelines",
-    "Escalation Rules", 
-    "Escalate when:",
-    bullets=["Customer is angry", "Technical issue beyond scope"]
-)
+```perl
+$agent->prompt_add_subsection(
+    'Guidelines',
+    'Escalation Rules',
+    'Escalate when:',
+    bullets => [ 'Customer is angry', 'Technical issue beyond scope' ],
+);
 ```
 
 ### Voice and Language Configuration
 
 ##### `add_language`
 
-```python
-def add_language(
-    name: str, 
-    code: str, 
-    voice: str, 
-    speech_fillers: Optional[List[str]] = None, 
-    function_fillers: Optional[List[str]] = None, 
-    engine: Optional[str] = None, 
-    model: Optional[str] = None
-) -> AgentBase
+```perl
+$agent->add_language(
+    name  => $name,
+    code  => $code,
+    voice => $voice,
+    # optional: speech_fillers, function_fillers, engine, model, params
+);
 ```
-Configure voice and language settings for the agent.
+Configure voice and language settings for the agent. All arguments are named (`key => value`). Returns `$self` for chaining.
 
 **Parameters:**
-- `name` (str): Human-readable language name
-- `code` (str): Language code (e.g., "en-US", "es-ES")
-- `voice` (str): Voice identifier (e.g., "rime.spore", "nova.luna")
-- `speech_fillers` (Optional[List[str]]): Filler phrases during speech processing
-- `function_fillers` (Optional[List[str]]): Filler phrases during function execution
-- `engine` (Optional[str]): TTS engine to use
-- `model` (Optional[str]): AI model to use
+- `name` (Str): Human-readable language name
+- `code` (Str): Language code (e.g., "en-US", "es-ES")
+- `voice` (Str): Voice identifier (e.g., "rime.spore", "nova.luna")
+- `speech_fillers` (ArrayRef[Str]): Filler phrases during speech processing
+- `function_fillers` (ArrayRef[Str]): Filler phrases during function execution
+- `engine` (Str): TTS engine to use
+- `model` (Str): AI model to use
 
 **Usage:**
-```python
+```perl
 # Basic language setup
-agent.add_language("English", "en-US", "rime.spore")
+$agent->add_language( name => 'English', code => 'en-US', voice => 'rime.spore' );
 
 # With custom fillers
-agent.add_language(
-    "English", 
-    "en-US", 
-    "nova.luna",
-    speech_fillers=["Let me think...", "One moment..."],
-    function_fillers=["Processing...", "Looking that up..."]
-)
+$agent->add_language(
+    name             => 'English',
+    code             => 'en-US',
+    voice            => 'nova.luna',
+    speech_fillers   => [ 'Let me think...', 'One moment...' ],
+    function_fillers => [ 'Processing...', 'Looking that up...' ],
+);
 ```
 
-##### `set_languages(languages: List[Dict[str, Any]]) -> AgentBase`
-Set multiple language configurations at once.
+##### `set_languages($languages)`
+Set multiple language configurations at once. Returns `$self` for chaining.
 
 **Parameters:**
-- `languages` (List[Dict]): List of language configuration dictionaries
+- `$languages` (ArrayRef[HashRef]): List of language configuration hashrefs
 
 **Usage:**
-```python
-agent.set_languages([
-    {"name": "English", "code": "en-US", "voice": "rime.spore"},
-    {"name": "Spanish", "code": "es-ES", "voice": "nova.luna"}
-])
+```perl
+$agent->set_languages([
+    { name => 'English', code => 'en-US', voice => 'rime.spore' },
+    { name => 'Spanish', code => 'es-ES', voice => 'nova.luna' },
+]);
 ```
 
 ### Speech Recognition Configuration
 
-##### `add_hint(hint: str) -> AgentBase`
-Add a single speech recognition hint.
+##### `add_hint($hint)`
+Add a single speech recognition hint. Returns `$self` for chaining.
 
 **Parameters:**
-- `hint` (str): Word or phrase to improve recognition accuracy
+- `$hint` (Str): Word or phrase to improve recognition accuracy
 
 **Usage:**
-```python
-agent.add_hint("SignalWire")
+```perl
+$agent->add_hint('SignalWire');
 ```
 
-##### `add_hints(hints: List[str]) -> AgentBase`
-Add multiple speech recognition hints.
+##### `add_hints($hints)`
+Add multiple speech recognition hints. Returns `$self` for chaining.
 
 **Parameters:**
-- `hints` (List[str]): List of words/phrases for better recognition
+- `$hints` (ArrayRef[Str]): List of words/phrases for better recognition
 
 **Usage:**
-```python
-agent.add_hints(["SignalWire", "SWML", "API", "webhook", "SIP"])
+```perl
+$agent->add_hints([ 'SignalWire', 'SWML', 'API', 'webhook', 'SIP' ]);
 ```
 
-##### `add_pattern_hint`
+##### `add_pattern_hint($config)`
+Add a pattern-based hint for speech recognition. Takes a single hashref with `hint`, `pattern`, `replace`, and optional `ignore_case`. Returns `$self` for chaining.
 
-```python
-def add_pattern_hint(
-    hint: str, 
-    pattern: str, 
-    replace: str, 
-    ignore_case: bool = False
-) -> AgentBase
-```
-Add a pattern-based hint for speech recognition.
-
-**Parameters:**
-- `hint` (str): The hint phrase
-- `pattern` (str): Regex pattern to match
-- `replace` (str): Replacement text
-- `ignore_case` (bool): Case-insensitive matching (default: False)
+**Parameters (hashref keys):**
+- `hint` (Str): The hint phrase
+- `pattern` (Str): Regex pattern to match
+- `replace` (Str): Replacement text
+- `ignore_case` (Bool): Case-insensitive matching (default: false)
 
 **Usage:**
-```python
-agent.add_pattern_hint(
-    "phone number",
-    r"(\d{3})-(\d{3})-(\d{4})",
-    r"(\1) \2-\3"
-)
+```perl
+$agent->add_pattern_hint({
+    hint    => 'phone number',
+    pattern => '(\d{3})-(\d{3})-(\d{4})',
+    replace => '(\1) \2-\3',
+});
 ```
 
 ##### `add_pronunciation`
 
-```python
-def add_pronunciation(
-    replace: str, 
-    with_text: str, 
-    ignore_case: bool = False
-) -> AgentBase
+```perl
+$agent->add_pronunciation( replace => $text, with => $replacement, ignore_case => 0 );
 ```
-Add pronunciation rules for text-to-speech.
+Add a pronunciation rule for text-to-speech. All arguments are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `replace` (str): Text to replace
-- `with_text` (str): Replacement pronunciation
-- `ignore_case` (bool): Case-insensitive replacement (default: False)
+- `replace` (Str): Text to replace
+- `with` (Str): Replacement pronunciation
+- `ignore_case` (Bool): Case-insensitive replacement (default: false)
 
 **Usage:**
-```python
-agent.add_pronunciation("API", "A P I")
-agent.add_pronunciation("SWML", "swim-el")
+```perl
+$agent->add_pronunciation( replace => 'API',  with => 'A P I' );
+$agent->add_pronunciation( replace => 'SWML', with => 'swim-el' );
 ```
 
-##### `set_pronunciations`
-
-```python
-def set_pronunciations(
-    pronunciations: List[Dict[str, Any]]
-) -> AgentBase
-```
-Set multiple pronunciation rules at once.
+##### `set_pronunciations($pronunciations)`
+Set multiple pronunciation rules at once. Returns `$self` for chaining.
 
 **Parameters:**
-- `pronunciations` (List[Dict]): List of pronunciation rule dictionaries
+- `$pronunciations` (ArrayRef[HashRef]): List of pronunciation rule hashrefs
 
 **Usage:**
-```python
-agent.set_pronunciations([
-    {"replace": "API", "with": "A P I"},
-    {"replace": "SWML", "with": "swim-el", "ignore_case": True}
-])
+```perl
+$agent->set_pronunciations([
+    { replace => 'API',  with => 'A P I' },
+    { replace => 'SWML', with => 'swim-el', ignore_case => 1 },
+]);
 ```
 
 ### AI Parameters Configuration
 
-##### `set_param(key: str, value: Any) -> AgentBase`
-Set a single AI parameter.
+##### `set_param($key, $value)`
+Set a single AI parameter. Returns `$self` for chaining.
 
 **Parameters:**
-- `key` (str): Parameter name
-- `value` (Any): Parameter value
+- `$key` (Str): Parameter name
+- `$value` (Any): Parameter value
 
 **Usage:**
-```python
-agent.set_param("ai_model", "gpt-4.1-nano")
-agent.set_param("end_of_speech_timeout", 500)
+```perl
+$agent->set_param( 'ai_model', 'gpt-4.1-nano' );
+$agent->set_param( 'end_of_speech_timeout', 500 );
 ```
 
-##### `set_params(params: Dict[str, Any]) -> AgentBase`
-Set multiple AI parameters at once.
+##### `set_params($params)`
+Set multiple AI parameters at once (merged with existing). Returns `$self` for chaining.
 
 **Parameters:**
-- `params` (Dict[str, Any]): Dictionary of parameter key-value pairs
+- `$params` (HashRef): Hashref of parameter key-value pairs
 
 **Common Parameters:**
 - `ai_model`: AI model to use ("gpt-4.1-nano", "gpt-4.1-mini", etc.)
@@ -467,152 +406,135 @@ Set multiple AI parameters at once.
 - `top_p`: Nucleus sampling parameter (0.0 to 1.0)
 
 **Usage:**
-```python
-agent.set_params({
-    "ai_model": "gpt-4.1-nano",
-    "end_of_speech_timeout": 500,
-    "attention_timeout": 15000,
-    "background_file_volume": -20,
-    "temperature": 0.7
-})
+```perl
+$agent->set_params({
+    ai_model               => 'gpt-4.1-nano',
+    end_of_speech_timeout  => 500,
+    attention_timeout      => 15000,
+    background_file_volume => -20,
+    temperature            => 0.7,
+});
 ```
 
 ### Global Data Management
 
-##### `set_global_data(data: Dict[str, Any]) -> AgentBase`
-Set global data available to the AI and functions.
+##### `set_global_data($data)`
+Set global data available to the AI and functions. Returns `$self` for chaining.
 
 **Parameters:**
-- `data` (Dict[str, Any]): Global data dictionary
+- `$data` (HashRef): Global data hashref
 
 **Usage:**
-```python
-agent.set_global_data({
-    "company_name": "Acme Corp",
-    "support_hours": "9 AM - 5 PM EST",
-    "escalation_number": "+1-555-0123"
-})
+```perl
+$agent->set_global_data({
+    company_name      => 'Acme Corp',
+    support_hours     => '9 AM - 5 PM EST',
+    escalation_number => '+1-555-0123',
+});
 ```
 
-##### `update_global_data(data: Dict[str, Any]) -> AgentBase`
-Update existing global data (merge with existing).
+##### `update_global_data($data)`
+Update existing global data (merge with existing). Returns `$self` for chaining.
 
 **Parameters:**
-- `data` (Dict[str, Any]): Data to merge with existing global data
+- `$data` (HashRef): Data to merge with existing global data
 
 **Usage:**
-```python
-agent.update_global_data({
-    "current_promotion": "20% off all services",
-    "promotion_expires": "2024-12-31"
-})
+```perl
+$agent->update_global_data({
+    current_promotion => '20% off all services',
+    promotion_expires => '2024-12-31',
+});
 ```
 
 ### Function Definition
 
 ##### `define_tool`
 
-```python
-def define_tool(
-    name: str,
-    description: str,
-    parameters: Dict[str, Any],
-    handler: Callable,
-    secure: bool = True,
-    fillers: Optional[Dict[str, List[str]]] = None,
-    webhook_url: Optional[str] = None,
-    is_typed_handler: bool = False,
-    **swaig_fields
-) -> AgentBase
+```perl
+$self->define_tool(
+    name        => $name,
+    description => $description,
+    parameters  => $parameters,   # JSON-schema hashref
+    handler     => sub { my ( $args, $raw_data ) = @_; ... },
+    # optional: secure, fillers, webhook_url, and any additional SWAIG fields
+);
 ```
-Define a custom SWAIG function/tool.
+Define a custom SWAIG function/tool. All arguments are named (`key => value`). Returns `$self` for chaining. Any extra `key => value` pairs beyond the recognized ones are passed through as additional SWAIG function properties.
 
 **Parameters:**
-- `name` (str): Function name
-- `description` (str): Function description for AI
-- `parameters` (Dict[str, Any]): JSON schema for function parameters. If omitted when using the decorator and the handler has type-hinted parameters, the schema is inferred automatically from the type hints.
-- `handler` (Callable): Function to execute when called
-- `secure` (bool): Require security token (default: True)
-- `fillers` (Optional[Dict[str, List[str]]]): Language-specific filler phrases
-- `webhook_url` (Optional[str]): Custom webhook URL
-- `**swaig_fields`: Additional SWAIG function properties
+- `name` (Str): Function name
+- `description` (Str): Function description for the AI
+- `parameters` (HashRef): JSON schema for function parameters
+- `handler` (CodeRef): Anonymous sub to execute when called; receives `($args, $raw_data)` and returns a `SignalWire::SWAIG::FunctionResult`
+- `secure` (Bool): Require a security token (default: true)
+- `fillers` (HashRef): Language-specific filler phrases
+- `webhook_url` (Str): Custom webhook URL
 
 **Usage:**
-```python
-def get_weather(args, raw_data):
-    location = args.get("location", "Unknown")
-    return SwaigFunctionResult(f"The weather in {location} is sunny and 75°F")
-
-agent.define_tool(
-    name="get_weather",
-    description="Get current weather for a location",
-    parameters={
-        "type": "object",
-        "properties": {
-            "location": {
-                "type": "string",
-                "description": "City name"
-            }
+```perl
+$self->define_tool(
+    name        => 'get_weather',
+    description => 'Get current weather for a location',
+    parameters  => {
+        type       => 'object',
+        properties => {
+            location => {
+                type        => 'string',
+                description => 'City name',
+            },
         },
-        "required": ["location"]
+        required => ['location'],
     },
-    handler=get_weather,
-    fillers={"en-US": ["Checking weather...", "Looking up forecast..."]}
-)
+    handler => sub {
+        my ( $args, $raw_data ) = @_;
+        require SignalWire::SWAIG::FunctionResult;
+        my $location = $args->{location} // 'Unknown';
+        return SignalWire::SWAIG::FunctionResult->new(
+            "The weather in $location is sunny and 75\x{b0}F" );
+    },
+    fillers => { 'en-US' => [ 'Checking weather...', 'Looking up forecast...' ] },
+);
 ```
 
-##### `@AgentBase.tool(name=None, **kwargs)` (Class Decorator)
-Decorator for defining tools as class methods.
+Because Perl has no method decorators, tools are registered by calling `define_tool` (typically inside `BUILD`) rather than by annotating a method. The handler is an anonymous sub that closes over the agent when needed.
+
+**Usage (in a Moo agent subclass):**
+```perl
+package MyAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
+
+sub BUILD {
+    my ($self) = @_;
+
+    $self->define_tool(
+        name        => 'get_time',
+        description => 'Get current time',
+        parameters  => { type => 'object', properties => {} },
+        handler     => sub {
+            my ( $args, $raw_data ) = @_;
+            require SignalWire::SWAIG::FunctionResult;
+            return SignalWire::SWAIG::FunctionResult->new( 'Current time: ' . localtime );
+        },
+    );
+}
+
+1;
+```
+
+##### `register_swaig_function($function_hash)`
+Register a pre-built SWAIG function hashref (for example, one produced by `DataMap->to_swaig_function`). Returns `$self` for chaining.
 
 **Parameters:**
-- `name` (Optional[str]): Function name (defaults to method name)
-- `**kwargs`: Same parameters as `define_tool()`
-
-When `parameters` is omitted and the handler has type-hinted parameters (beyond `self`), the schema is inferred automatically from the type hints. The description is extracted from the docstring's first line, and per-parameter descriptions come from the `Args:` block.
-
-**Usage (explicit schema):**
-```python
-class MyAgent(AgentBase):
-    @AgentBase.tool(
-        description="Get current time",
-        parameters={"type": "object", "properties": {}}
-    )
-    def get_time(self, args, raw_data):
-        import datetime
-        return SwaigFunctionResult(f"Current time: {datetime.datetime.now()}")
-```
-
-**Usage (type-hinted, schema inferred):**
-```python
-class MyAgent(AgentBase):
-    @AgentBase.tool(name="get_weather")
-    def get_weather(self, city: str, units: str = "celsius"):
-        """Get the weather forecast.
-
-        Args:
-            city: Name of the city
-            units: Temperature units
-        """
-        return SwaigFunctionResult(f"Weather in {city}")
-```
-
-##### `register_swaig_function`
-
-```python
-def register_swaig_function(
-    function_dict: Dict[str, Any]
-) -> AgentBase
-```
-Register a pre-built SWAIG function dictionary.
-
-**Parameters:**
-- `function_dict` (Dict[str, Any]): Complete SWAIG function definition
+- `$function_hash` (HashRef): Complete SWAIG function definition
 
 **Usage:**
-```python
+```perl
 # Register a DataMap tool
-weather_tool = DataMap('get_weather').webhook('GET', 'https://api.weather.com/...')
-agent.register_swaig_function(weather_tool.to_swaig_function())
+my $weather_tool = SignalWire::DataMap->new('get_weather')
+    ->webhook( 'GET', 'https://api.weather.com/...' );
+$agent->register_swaig_function( $weather_tool->to_swaig_function );
 ```
 
 ### Session Lifecycle Hooks
@@ -620,35 +542,41 @@ agent.register_swaig_function(weather_tool.to_swaig_function())
 SignalWire AI agents support special SWAIG functions that are automatically called at specific points in the conversation lifecycle:
 
 ##### `startup_hook`
-Called when a new conversation/call begins.
+Called when a new conversation/call begins. Register it as a tool named `startup_hook`.
 
 **Implementation:**
-```python
-@AgentBase.tool(
-    name="startup_hook",
-    description="Called when a new conversation starts to initialize state",
-    parameters={}
-)
-def startup_hook(self, args, raw_data):
-    call_id = raw_data.get("call_id")
-    # Initialize session resources, load user data, etc.
-    return SwaigFunctionResult("Session initialized")
+```perl
+$self->define_tool(
+    name        => 'startup_hook',
+    description => 'Called when a new conversation starts to initialize state',
+    parameters  => { type => 'object', properties => {} },
+    handler     => sub {
+        my ( $args, $raw_data ) = @_;
+        require SignalWire::SWAIG::FunctionResult;
+        my $call_id = $raw_data->{call_id};
+        # Initialize session resources, load user data, etc.
+        return SignalWire::SWAIG::FunctionResult->new('Session initialized');
+    },
+);
 ```
 
 ##### `hangup_hook`
-Called when a conversation/call ends.
+Called when a conversation/call ends. Register it as a tool named `hangup_hook`.
 
 **Implementation:**
-```python
-@AgentBase.tool(
-    name="hangup_hook",
-    description="Called when conversation ends to clean up resources",
-    parameters={}
-)
-def hangup_hook(self, args, raw_data):
-    call_id = raw_data.get("call_id")
-    # Clean up resources, save session data, etc.
-    return SwaigFunctionResult("Session ended")
+```perl
+$self->define_tool(
+    name        => 'hangup_hook',
+    description => 'Called when conversation ends to clean up resources',
+    parameters  => { type => 'object', properties => {} },
+    handler     => sub {
+        my ( $args, $raw_data ) = @_;
+        require SignalWire::SWAIG::FunctionResult;
+        my $call_id = $raw_data->{call_id};
+        # Clean up resources, save session data, etc.
+        return SignalWire::SWAIG::FunctionResult->new('Session ended');
+    },
+);
 ```
 
 **Common Use Cases:**
@@ -662,17 +590,14 @@ def hangup_hook(self, args, raw_data):
 
 ##### `add_skill`
 
-```python
-def add_skill(
-    skill_name: str, 
-    params: Optional[Dict[str, Any]] = None
-) -> AgentBase
+```perl
+$agent->add_skill( $skill_name, $params );
 ```
-Add a modular skill to the agent.
+Add a modular skill to the agent. `$params` is an optional configuration hashref. Returns `$self` for chaining.
 
 **Parameters:**
-- `skill_name` (str): Name of the skill to add
-- `params` (Optional[Dict[str, Any]]): Skill configuration parameters
+- `$skill_name` (Str): Name of the skill to add
+- `$params` (HashRef): Skill configuration parameters (optional)
 
 **Available Skills:**
 - `datetime`: Current date/time information
@@ -682,83 +607,78 @@ Add a modular skill to the agent.
 - `native_vector_search`: Local document search
 
 **Usage:**
-```python
+```perl
 # Simple skill
-agent.add_skill("datetime")
-agent.add_skill("math")
+$agent->add_skill('datetime');
+$agent->add_skill('math');
 
 # Skill with configuration
-agent.add_skill("web_search", {
-    "api_key": "your-google-api-key",
-    "search_engine_id": "your-search-engine-id",
-    "num_results": 3
-})
+$agent->add_skill('web_search', {
+    api_key          => 'your-google-api-key',
+    search_engine_id => 'your-search-engine-id',
+    num_results      => 3,
+});
 
 # Multiple instances with different names
-agent.add_skill("web_search", {
-    "api_key": "your-api-key",
-    "search_engine_id": "general-engine",
-    "tool_name": "search_general"
-})
+$agent->add_skill('web_search', {
+    api_key          => 'your-api-key',
+    search_engine_id => 'general-engine',
+    tool_name        => 'search_general',
+});
 
-agent.add_skill("web_search", {
-    "api_key": "your-api-key", 
-    "search_engine_id": "news-engine",
-    "tool_name": "search_news"
-})
+$agent->add_skill('web_search', {
+    api_key          => 'your-api-key',
+    search_engine_id => 'news-engine',
+    tool_name        => 'search_news',
+});
 ```
 
-##### `remove_skill(skill_name: str) -> AgentBase`
-Remove a skill from the agent.
+##### `remove_skill($skill_name)`
+Remove a skill from the agent. Returns `$self` for chaining.
 
 **Parameters:**
-- `skill_name` (str): Name of skill to remove
+- `$skill_name` (Str): Name of skill to remove
 
 **Usage:**
-```python
-agent.remove_skill("web_search")
+```perl
+$agent->remove_skill('web_search');
 ```
 
-##### `list_skills() -> List[str]`
-Get list of currently added skills.
+##### `list_skills()`
+Get the list of currently added skills.
 
 **Returns:**
-- List[str]: Names of active skills
+- ArrayRef[Str]: Names of active skills
 
 **Usage:**
-```python
-active_skills = agent.list_skills()
-print(f"Active skills: {active_skills}")
+```perl
+my $active_skills = $agent->list_skills;
+print "Active skills: @$active_skills\n";
 ```
 
-##### `has_skill(skill_name: str) -> bool`
-Check if a skill is currently added.
+##### `has_skill($skill_name)`
+Check whether a skill is currently added.
 
 **Parameters:**
-- `skill_name` (str): Name of skill to check
+- `$skill_name` (Str): Name of skill to check
 
 **Returns:**
-- bool: True if skill is active
+- Bool: true if the skill is active
 
 **Usage:**
-```python
-if agent.has_skill("web_search"):
-    print("Web search is available")
+```perl
+if ( $agent->has_skill('web_search') ) {
+    print "Web search is available\n";
+}
 ```
 
 ### Native Functions
 
-##### `set_native_functions`
-
-```python
-def set_native_functions(
-    function_names: List[str]
-) -> AgentBase
-```
-Enable specific native SWML functions.
+##### `set_native_functions($function_names)`
+Enable specific native SWML functions. Returns `$self` for chaining.
 
 **Parameters:**
-- `function_names` (List[str]): List of native function names to enable
+- `$function_names` (ArrayRef[Str]): List of native function names to enable
 
 **Available Native Functions:**
 - `transfer`: Transfer calls
@@ -768,21 +688,15 @@ Enable specific native SWML functions.
 - `send_sms`: Send SMS messages
 
 **Usage:**
-```python
-agent.set_native_functions(["transfer", "hangup", "send_sms"])
+```perl
+$agent->set_native_functions([ 'transfer', 'hangup', 'send_sms' ]);
 ```
 
-##### `set_internal_fillers`
-
-```python
-def set_internal_fillers(
-    internal_fillers: Dict[str, Dict[str, List[str]]]
-) -> AgentBase
-```
-Set custom filler phrases for internal/native SWAIG functions.
+##### `set_internal_fillers($internal_fillers)`
+Set custom filler phrases for internal/native SWAIG functions. Returns `$self` for chaining.
 
 **Parameters:**
-- `internal_fillers` (Dict[str, Dict[str, List[str]]]): Function name → language code → filler phrases
+- `$internal_fillers` (HashRef): Function name → language code → filler-phrases arrayref
 
 **Available Internal Functions:**
 - `next_step`: Moving between workflow steps (contexts system)
@@ -793,165 +707,140 @@ Set custom filler phrases for internal/native SWAIG functions.
 - `get_visual_input`: Processing visual data
 
 **Usage:**
-```python
-agent.set_internal_fillers({
-    "next_step": {
-        "en-US": ["Moving to the next step...", "Let's continue..."],
-        "es": ["Pasando al siguiente paso...", "Continuemos..."]
+```perl
+$agent->set_internal_fillers({
+    next_step => {
+        'en-US' => [ 'Moving to the next step...', "Let's continue..." ],
+        'es'    => [ 'Pasando al siguiente paso...', 'Continuemos...' ],
     },
-    "check_time": {
-        "en-US": ["Let me check the time...", "Getting current time..."]
-    }
-})
+    check_time => {
+        'en-US' => [ 'Let me check the time...', 'Getting current time...' ],
+    },
+});
 ```
 
-##### `add_internal_filler`
-
-```python
-def add_internal_filler(
-    function_name: str, 
-    language_code: str, 
-    fillers: List[str]
-) -> AgentBase
-```
-Add internal fillers for a specific function and language.
+##### `add_internal_filler($function_name, $language_code, $fillers)`
+Add internal fillers for a specific function and language. Returns `$self` for chaining.
 
 **Parameters:**
-- `function_name` (str): Name of the internal function
-- `language_code` (str): Language code (e.g., "en-US", "es", "fr")
-- `fillers` (List[str]): List of filler phrases
+- `$function_name` (Str): Name of the internal function
+- `$language_code` (Str): Language code (e.g., "en-US", "es", "fr")
+- `$fillers` (ArrayRef[Str]): List of filler phrases
 
 **Usage:**
-```python
-agent.add_internal_filler("next_step", "en-US", [
+```perl
+$agent->add_internal_filler( 'next_step', 'en-US', [
     "Great! Let's move to the next step...",
-    "Perfect! Moving forward..."
-])
+    'Perfect! Moving forward...',
+]);
 ```
 
 ### Function Includes
 
-##### `add_function_include`
+##### `add_function_include($include)`
+Include external SWAIG functions from another service. Takes a single hashref with `url`, `functions`, and optional `meta_data`. Returns `$self` for chaining.
 
-```python
-def add_function_include(
-    url: str, 
-    functions: List[str], 
-    meta_data: Optional[Dict[str, Any]] = None
-) -> AgentBase
-```
-Include external SWAIG functions from another service.
-
-**Parameters:**
-- `url` (str): URL of external SWAIG service
-- `functions` (List[str]): List of function names to include
-- `meta_data` (Optional[Dict[str, Any]]): Additional metadata
+**Parameters (hashref keys):**
+- `url` (Str): URL of external SWAIG service
+- `functions` (ArrayRef[Str]): List of function names to include
+- `meta_data` (HashRef): Additional metadata
 
 **Usage:**
-```python
-agent.add_function_include(
-    "https://external-service.com/swaig",
-    ["external_function1", "external_function2"],
-    meta_data={"service": "external", "version": "1.0"}
-)
+```perl
+$agent->add_function_include({
+    url       => 'https://external-service.com/swaig',
+    functions => [ 'external_function1', 'external_function2' ],
+    meta_data => { service => 'external', version => '1.0' },
+});
 ```
 
-##### `set_function_includes`
-
-```python
-def set_function_includes(
-    includes: List[Dict[str, Any]]
-) -> AgentBase
-```
-Set multiple function includes at once.
+##### `set_function_includes($includes)`
+Set multiple function includes at once. Returns `$self` for chaining.
 
 **Parameters:**
-- `includes` (List[Dict[str, Any]]): List of function include configurations
+- `$includes` (ArrayRef[HashRef]): List of function-include configurations
 
 **Usage:**
-```python
-agent.set_function_includes([
+```perl
+$agent->set_function_includes([
     {
-        "url": "https://service1.com/swaig",
-        "functions": ["func1", "func2"]
+        url       => 'https://service1.com/swaig',
+        functions => [ 'func1', 'func2' ],
     },
     {
-        "url": "https://service2.com/swaig", 
-        "functions": ["func3"],
-        "meta_data": {"priority": "high"}
-    }
-])
+        url       => 'https://service2.com/swaig',
+        functions => ['func3'],
+        meta_data => { priority => 'high' },
+    },
+]);
 ```
 
 ### Webhook Configuration
 
-##### `set_web_hook_url(url: str) -> AgentBase`
-Set default webhook URL for SWAIG functions.
+##### `set_web_hook_url($url)`
+Set the default webhook URL for SWAIG functions. Returns `$self` for chaining.
 
 **Parameters:**
-- `url` (str): Default webhook URL
+- `$url` (Str): Default webhook URL
 
 **Usage:**
-```python
-agent.set_web_hook_url("https://myserver.com/webhook")
+```perl
+$agent->set_web_hook_url('https://myserver.com/webhook');
 ```
 
-##### `set_post_prompt_url(url: str) -> AgentBase`
-Set URL for post-prompt processing.
+##### `set_post_prompt_url($url)`
+Set the URL for post-prompt processing. Returns `$self` for chaining.
 
 **Parameters:**
-- `url` (str): Post-prompt webhook URL
+- `$url` (Str): Post-prompt webhook URL
 
 **Usage:**
-```python
-agent.set_post_prompt_url("https://myserver.com/post-prompt")
+```perl
+$agent->set_post_prompt_url('https://myserver.com/post-prompt');
 ```
 
-##### `add_swaig_query_params(params: dict) -> AgentBase`
-Add query parameters to be included in all SWAIG webhook URLs.
+##### `add_swaig_query_params(%params)`
+Add query parameters to be included in all SWAIG webhook URLs. Arguments are named (`key => value`). Returns `$self` for chaining.
 
-This is useful for preserving dynamic configuration state across SWAIG callbacks. For example, if your dynamic config adds skills based on query parameters, you can pass those same parameters through to the SWAIG webhook so the same configuration is applied.
+This is useful for preserving dynamic-configuration state across SWAIG callbacks. For example, if your dynamic config adds skills based on query parameters, you can pass those same parameters through to the SWAIG webhook so the same configuration is applied.
 
 **Parameters:**
-- `params` (dict): Dictionary of query parameter key-value pairs
+- `%params`: Query-parameter key-value pairs
 
 **Usage:**
-```python
-# In dynamic config callback, preserve configuration parameters
-def configure_agent(query_params, headers, body, agent):
-    customer_id = query_params.get("customer_id")
-    if customer_id:
+```perl
+# In a dynamic config callback, preserve configuration parameters
+$agent->set_dynamic_config_callback( sub {
+    my ( $query_params, $body_params, $headers, $agent ) = @_;
+    my $customer_id = $query_params->{customer_id};
+    if ($customer_id) {
         # Pass through to SWAIG callbacks
-        agent.add_swaig_query_params({"customer_id": customer_id})
-        agent.add_skill("customer_lookup", {"customer_id": customer_id})
-
-agent.set_dynamic_config_callback(configure_agent)
+        $agent->add_swaig_query_params( customer_id => $customer_id );
+        $agent->add_skill( 'customer_lookup', { customer_id => $customer_id } );
+    }
+});
 ```
 
-##### `clear_swaig_query_params() -> AgentBase`
-Clear all SWAIG query parameters.
+##### `clear_swaig_query_params()`
+Clear all SWAIG query parameters. Returns `$self` for chaining.
 
 **Usage:**
-```python
-agent.clear_swaig_query_params()
+```perl
+$agent->clear_swaig_query_params;
 ```
 
 ### Debug Events
 
-##### `enable_debug_events`
-
-```python
-def enable_debug_events(level: int = 1) -> AgentBase
-```
-Enable the debug event webhook for this agent. When enabled, the AI module will POST real-time debug events to a `/debug_events` endpoint on this agent during calls. Events are automatically logged via the agent's structured logger and can optionally be handled with a custom callback via `on_debug_event()`.
+##### `enable_debug_events($level)`
+Enable the debug-event webhook for this agent. When enabled, the AI module will POST real-time debug events to a `/debug_events` endpoint on this agent during calls. Events are automatically logged via the agent's structured logger and can optionally be handled with a custom callback via `on_debug_event()`. Returns `$self` for chaining.
 
 **Parameters:**
-- `level` (int): Debug event verbosity level. `1` = high-level events (barge, errors, session start/end, step changes). `2+` = adds high-volume events (every LLM request/response, conversation_add). Default: `1`
+- `$level` (Int): Debug-event verbosity level. `1` = high-level events (barge, errors, session start/end, step changes). `2+` = adds high-volume events (every LLM request/response, conversation_add). Default: `1`
 
 **Usage:**
-```python
-agent.enable_debug_events()        # level 1 (default)
-agent.enable_debug_events(level=2) # include high-volume events
+```perl
+$agent->enable_debug_events;      # level 1 (default)
+$agent->enable_debug_events(2);   # include high-volume events
 ```
 
 **How it works:**
@@ -990,429 +879,406 @@ agent.enable_debug_events(level=2) # include high-volume events
 
 These methods allow you to customize the SWML call flow by inserting verbs at different stages of the call lifecycle.
 
-##### `add_pre_answer_verb(verb_name: str, config: dict) -> AgentBase`
-Add a verb to run before the call is answered (while still ringing).
+##### `add_pre_answer_verb($verb_name, $config)`
+Add a verb to run before the call is answered (while still ringing). Returns `$self` for chaining.
 
 **Safe pre-answer verbs:** `transfer`, `execute`, `return`, `label`, `goto`, `request`, `switch`, `cond`, `if`, `eval`, `set`, `unset`, `hangup`, `send_sms`, `sleep`, `stop_record_call`, `stop_denoise`, `stop_tap`
 
 **Parameters:**
-- `verb_name` (str): The SWML verb name
-- `config` (dict): Verb configuration dictionary
+- `$verb_name` (Str): The SWML verb name
+- `$config` (HashRef): Verb configuration hashref
 
 **Usage:**
-```python
+```perl
 # Send SMS before answering
-agent.add_pre_answer_verb("send_sms", {
-    "to": "+15551234567",
-    "from": "+15559876543",
-    "body": "Incoming call from AI agent"
-})
+$agent->add_pre_answer_verb( 'send_sms', {
+    to   => '+15551234567',
+    from => '+15559876543',
+    body => 'Incoming call from AI agent',
+});
 
 # Set variables before answer
-agent.add_pre_answer_verb("set", {"call_start": "${system.timestamp}"})
+$agent->add_pre_answer_verb( 'set', { call_start => '${system.timestamp}' } );
 ```
 
-##### `add_answer_verb(config: dict = None) -> AgentBase`
-Configure the answer verb that connects the call.
+##### `add_answer_verb($config)`
+Configure the answer verb that connects the call. Returns `$self` for chaining.
 
 **Parameters:**
-- `config` (dict, optional): Answer verb configuration (e.g., `{"max_duration": 3600}`)
+- `$config` (HashRef, optional): Answer-verb configuration (e.g., `{ max_duration => 3600 }`)
 
 **Usage:**
-```python
+```perl
 # Set maximum call duration to 1 hour
-agent.add_answer_verb({"max_duration": 3600})
+$agent->add_answer_verb({ max_duration => 3600 });
 ```
 
-##### `add_post_answer_verb(verb_name: str, config: dict) -> AgentBase`
-Add a verb to run after the call is answered but before the AI starts.
+##### `add_post_answer_verb($verb_name, $config)`
+Add a verb to run after the call is answered but before the AI starts. Returns `$self` for chaining.
 
 **Parameters:**
-- `verb_name` (str): The SWML verb name (e.g., "play", "sleep")
-- `config` (dict): Verb configuration dictionary
+- `$verb_name` (Str): The SWML verb name (e.g., "play", "sleep")
+- `$config` (HashRef): Verb configuration hashref
 
 **Usage:**
-```python
-# Play welcome message before AI starts
-agent.add_post_answer_verb("play", {
-    "url": "say:Welcome to our AI assistant. This call may be recorded."
-})
+```perl
+# Play a welcome message before the AI starts
+$agent->add_post_answer_verb( 'play', {
+    url => 'say:Welcome to our AI assistant. This call may be recorded.',
+});
 
 # Add a brief pause
-agent.add_post_answer_verb("sleep", {"duration": 1})
+$agent->add_post_answer_verb( 'sleep', { duration => 1 } );
 ```
 
-##### `add_post_ai_verb(verb_name: str, config: dict) -> AgentBase`
-Add a verb to run after the AI conversation ends.
+##### `add_post_ai_verb($verb_name, $config)`
+Add a verb to run after the AI conversation ends. Returns `$self` for chaining.
 
 **Parameters:**
-- `verb_name` (str): The SWML verb name (e.g., "hangup", "transfer", "request")
-- `config` (dict): Verb configuration dictionary
+- `$verb_name` (Str): The SWML verb name (e.g., "hangup", "transfer", "request")
+- `$config` (HashRef): Verb configuration hashref
 
 **Usage:**
-```python
-# Clean hangup after AI ends
-agent.add_post_ai_verb("hangup", {})
+```perl
+# Clean hangup after the AI ends
+$agent->add_post_ai_verb( 'hangup', {} );
 
-# Transfer to human after AI conversation
-agent.add_post_ai_verb("transfer", {"to": "+15551234567"})
+# Transfer to a human after the AI conversation
+$agent->add_post_ai_verb( 'transfer', { to => '+15551234567' } );
 
 # Log call completion
-agent.add_post_ai_verb("request", {
-    "url": "https://myserver.com/call-complete",
-    "method": "POST"
-})
+$agent->add_post_ai_verb( 'request', {
+    url    => 'https://myserver.com/call-complete',
+    method => 'POST',
+});
 ```
 
-##### `clear_pre_answer_verbs() -> AgentBase`
-Remove all pre-answer verbs.
+##### `clear_pre_answer_verbs()`
+Remove all pre-answer verbs. Returns `$self` for chaining.
 
-##### `clear_post_answer_verbs() -> AgentBase`
-Remove all post-answer verbs.
+##### `clear_post_answer_verbs()`
+Remove all post-answer verbs. Returns `$self` for chaining.
 
-##### `clear_post_ai_verbs() -> AgentBase`
-Remove all post-AI verbs.
+##### `clear_post_ai_verbs()`
+Remove all post-AI verbs. Returns `$self` for chaining.
 
 **Method Chaining Example:**
-```python
-agent.add_pre_answer_verb("set", {"source": "ai_agent"}) \
-     .add_answer_verb({"max_duration": 1800}) \
-     .add_post_answer_verb("play", {"url": "say:Hello!"}) \
-     .add_post_ai_verb("hangup", {})
+```perl
+$agent->add_pre_answer_verb( 'set', { source => 'ai_agent' } )
+      ->add_answer_verb({ max_duration => 1800 })
+      ->add_post_answer_verb( 'play', { url => 'say:Hello!' } )
+      ->add_post_ai_verb( 'hangup', {} );
 ```
 
 ### Dynamic Configuration
 
-##### `set_dynamic_config_callback`
-
-```python
-def set_dynamic_config_callback(
-    callback: Callable[[dict, dict, dict, AgentBase], None]
-) -> AgentBase
-```
-Set callback for per-request dynamic configuration.
+##### `set_dynamic_config_callback($callback)`
+Set a callback for per-request dynamic configuration. The callback is an anonymous sub that receives `($query_params, $headers, $body, $agent)`. Returns `$self` for chaining.
 
 **Parameters:**
-- `callback` (Callable): Function that receives (query_params, headers, body, config)
+- `$callback` (CodeRef): Sub that receives `($query_params, $headers, $body, $agent)`
 
 **Usage:**
-```python
-def configure_agent(query_params, headers, body, config):
-    # Configure based on request
-    if query_params.get("language") == "spanish":
-        config.add_language("Spanish", "es-ES", "nova.luna")
-    
-    # Set customer-specific data
-    customer_id = headers.get("X-Customer-ID")
-    if customer_id:
-        config.set_global_data({"customer_id": customer_id})
+```perl
+$agent->set_dynamic_config_callback( sub {
+    my ( $query_params, $body_params, $headers, $agent ) = @_;
 
-agent.set_dynamic_config_callback(configure_agent)
+    # Configure based on the request
+    if ( ( $query_params->{language} // '' ) eq 'spanish' ) {
+        $agent->add_language( name => 'Spanish', code => 'es-ES', voice => 'nova.luna' );
+    }
+
+    # Set customer-specific data
+    my $customer_id = $headers->{'X-Customer-ID'};
+    if ($customer_id) {
+        $agent->set_global_data({ customer_id => $customer_id });
+    }
+});
 ```
 
 ### SIP Integration
 
 ##### `enable_sip_routing`
 
-```python
-def enable_sip_routing(
-    auto_map: bool = True, 
-    path: str = "/sip"
-) -> AgentBase
+```perl
+$agent->enable_sip_routing( auto_map => 1, path => '/sip' );
 ```
-Enable SIP-based routing for voice calls.
+Enable SIP-based routing for voice calls. Arguments are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `auto_map` (bool): Automatically map SIP usernames (default: True)
-- `path` (str): SIP routing endpoint path (default: "/sip")
+- `auto_map` (Bool): Automatically map SIP usernames (default: 1)
+- `path` (Str): SIP routing endpoint path (default: "/sip")
 
 **Usage:**
-```python
-agent.enable_sip_routing()
+```perl
+$agent->enable_sip_routing;
 ```
 
-##### `register_sip_username(sip_username: str) -> AgentBase`
-Register a specific SIP username for this agent.
+##### `register_sip_username($sip_username)`
+Register a specific SIP username for this agent. Returns `$self` for chaining.
 
 **Parameters:**
-- `sip_username` (str): SIP username to register
+- `$sip_username` (Str): SIP username to register
 
 **Usage:**
-```python
-agent.register_sip_username("support")
-agent.register_sip_username("sales")
+```perl
+$agent->register_sip_username('support');
+$agent->register_sip_username('sales');
 ```
 
-##### `register_routing_callback`
-
-```python
-def register_routing_callback(
-    callback_fn: Callable[[Request, Dict[str, Any]], Optional[str]], 
-    path: str = "/sip"
-) -> None
-```
-Register custom routing logic for SIP calls.
+##### `register_routing_callback($path, $callback)`
+Register custom routing logic for SIP calls. The callback receives the request env and parsed body and returns an agent route (or `undef`). Returns `$self` for chaining.
 
 **Parameters:**
-- `callback_fn` (Callable): Function that returns agent route based on request
-- `path` (str): Routing endpoint path (default: "/sip")
+- `$path` (Str): Routing endpoint path (e.g., "/sip")
+- `$callback` (CodeRef): Sub that returns an agent route based on the request
 
 **Usage:**
-```python
-def route_call(request, body):
-    sip_username = body.get("sip_username")
-    if sip_username == "support":
-        return "/support-agent"
-    elif sip_username == "sales":
-        return "/sales-agent"
-    return None
-
-agent.register_routing_callback(route_call)
+```perl
+$agent->register_routing_callback( '/sip', sub {
+    my ( $request, $body ) = @_;
+    my $sip_username = $body->{sip_username} // '';
+    return '/support-agent' if $sip_username eq 'support';
+    return '/sales-agent'   if $sip_username eq 'sales';
+    return undef;
+});
 ```
 
 ### Utility Methods
 
-##### `get_name() -> str`
+##### `get_name()`
 Get the agent's name.
 
 **Returns:**
-- str: Agent name
+- Str: Agent name
 
-##### `get_app()`
-Get the FastAPI application instance.
-
-**Returns:**
-- FastAPI: The underlying FastAPI app
-
-##### `as_router() -> APIRouter`
-Get the agent as a FastAPI router for embedding in larger applications.
+##### `psgi_app()`
+Get the agent as a PSGI application coderef, for mounting in any Plack handler or larger PSGI application.
 
 **Returns:**
-- APIRouter: FastAPI router instance
+- CodeRef: A PSGI application
 
 **Usage:**
-```python
-# Embed agent in larger FastAPI app
-main_app = FastAPI()
-agent_router = agent.as_router()
-main_app.include_router(agent_router, prefix="/agent")
+```perl
+# Mount the agent in a larger Plack app
+use Plack::Builder;
+
+my $app = builder {
+    mount '/agent' => $agent->psgi_app;
+};
 ```
 
 ### Event Handlers
 
 ##### `on_summary`
-
-```python
-def on_summary(
-    summary: Optional[Dict[str, Any]],
-    raw_data: Optional[Dict[str, Any]] = None
-) -> None
-```
-Override to handle conversation summaries. This callback is triggered when the AI generates a summary based on your `post_prompt` configuration.
+Handle conversation summaries. This is triggered when the AI generates a summary based on your `post_prompt` configuration. Register a handler by passing an anonymous sub (`$agent->on_summary(sub { ... })`), or override `sub on_summary` in a subclass. The handler receives `($summary, $raw_data)`.
 
 **Parameters:**
-- `summary` (Optional[Dict[str, Any]]): Parsed summary data (from `post_prompt_data.parsed[0]`)
-- `raw_data` (Optional[Dict[str, Any]]): Complete raw POST data including `post_prompt_data` with both `raw` and `parsed` fields
+- `$summary` (HashRef): Parsed summary data (from `post_prompt_data.parsed[0]`)
+- `$raw_data` (HashRef): Complete raw POST data including `post_prompt_data` with both `raw` and `parsed` fields
 
-**Usage:**
-```python
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="summary-agent", route="/agent")
+**Usage (callback registration):**
+```perl
+package MyAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
 
-        # Configure post-prompt to request JSON summary
-        self.set_post_prompt("""
-        Return a JSON summary of the conversation:
-        {
-            "topic": "MAIN_TOPIC",
-            "satisfied": true/false,
-            "follow_up_needed": true/false,
-            "key_points": ["point1", "point2"]
-        }
-        """)
+sub BUILD {
+    my ($self) = @_;
 
-    def on_summary(self, summary, raw_data):
-        """Handle conversation summaries after call ends"""
-        if summary:
-            # Access parsed JSON fields directly
-            topic = summary.get("topic", "Unknown")
-            satisfied = summary.get("satisfied", False)
+    # Configure the post-prompt to request a JSON summary
+    $self->set_post_prompt(<<'PROMPT');
+Return a JSON summary of the conversation:
+{
+    "topic": "MAIN_TOPIC",
+    "satisfied": true/false,
+    "follow_up_needed": true/false,
+    "key_points": ["point1", "point2"]
+}
+PROMPT
 
-            print(f"Call about: {topic}, Customer satisfied: {satisfied}")
+    # Register a summary handler
+    $self->on_summary( sub {
+        my ( $summary, $raw_data ) = @_;
+        if ($summary) {
+            my $topic     = $summary->{topic}     // 'Unknown';
+            my $satisfied = $summary->{satisfied} // 0;
+            print "Call about: $topic, Customer satisfied: $satisfied\n";
 
             # Save to database, send to CRM, trigger follow-up, etc.
-            if summary.get("follow_up_needed"):
-                self.schedule_follow_up(summary)
+            if ( $summary->{follow_up_needed} ) {
+                $self->schedule_follow_up($summary);
+            }
+        }
 
-        # Access raw summary text if needed
-        if raw_data and 'post_prompt_data' in raw_data:
-            raw_text = raw_data['post_prompt_data'].get('raw', '')
-            print(f"Raw summary: {raw_text}")
+        # Access the raw summary text if needed
+        if ( $raw_data && $raw_data->{post_prompt_data} ) {
+            my $raw_text = $raw_data->{post_prompt_data}{raw} // '';
+            print "Raw summary: $raw_text\n";
+        }
+    });
+}
+
+1;
 ```
 
 ##### `on_debug_event`
-
-```python
-def on_debug_event(handler: Callable) -> Callable
-```
-Register a handler for debug webhook events. Use as a decorator. Requires `enable_debug_events()` to be called first.
+Register a handler for debug webhook events. Pass an anonymous sub; requires `enable_debug_events()` to have been called first.
 
 The handler receives:
-- `event_type` (str): The event label (e.g. `"barge"`, `"llm_error"`, `"session_start"`)
-- `data` (dict): The full event payload including `call_id`, `label`, and event-specific fields
+- `$event_type` (Str): The event label (e.g. `"barge"`, `"llm_error"`, `"session_start"`)
+- `$data` (HashRef): The full event payload including `call_id`, `label`, and event-specific fields
 
-The handler may be sync or async.
+**Usage:**
+```perl
+my $agent = SignalWire::Agent::AgentBase->new( name => 'my_agent' );
+$agent->enable_debug_events;
 
-**Usage (decorator style):**
-```python
-agent = AgentBase("my_agent")
-agent.enable_debug_events()
-
-@agent.on_debug_event
-def handle_debug(event_type, data):
-    call_id = data.get("call_id")
-    if event_type == "llm_error":
-        print(f"LLM error on call {call_id}: {data.get('event')}")
-    elif event_type == "barge":
-        print(f"Barge after {data.get('barge_elapsed_ms')}ms")
-    elif event_type == "session_end":
-        print(f"Call ended: {data.get('reason')}, duration: {data.get('duration_ms')}ms")
+$agent->on_debug_event( sub {
+    my ( $event_type, $data ) = @_;
+    my $call_id = $data->{call_id};
+    if ( $event_type eq 'llm_error' ) {
+        print "LLM error on call $call_id: " . ( $data->{event} // '' ) . "\n";
+    }
+    elsif ( $event_type eq 'barge' ) {
+        print "Barge after " . ( $data->{barge_elapsed_ms} // 0 ) . "ms\n";
+    }
+    elsif ( $event_type eq 'session_end' ) {
+        print "Call ended: " . ( $data->{reason} // '' )
+            . ", duration: " . ( $data->{duration_ms} // 0 ) . "ms\n";
+    }
+});
 ```
 
 **Usage (subclass style):**
-```python
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="debug-agent", route="/agent")
-        self.enable_debug_events(level=2)
-        self.on_debug_event(self.handle_debug)
+```perl
+package MyAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
 
-    def handle_debug(self, event_type, data):
-        if event_type == "llm_error":
-            self.alert_ops_team(data)
+sub BUILD {
+    my ($self) = @_;
+    $self->enable_debug_events(2);
+    $self->on_debug_event( sub {
+        my ( $event_type, $data ) = @_;
+        $self->alert_ops_team($data) if $event_type eq 'llm_error';
+    });
+}
+
+1;
 ```
 
 > **Note:** Even without registering a handler, all debug events are automatically logged via the agent's structured logger when `enable_debug_events()` is called.
 
-##### `on_function_call`
-
-```python
-def on_function_call(
-    name: str,
-    args: Dict[str, Any],
-    raw_data: Optional[Dict[str, Any]] = None
-) -> Any
-```
-Override to handle function calls with custom logic.
+##### `on_function_call($name, $args, $raw_data)`
+Override in a subclass to handle function calls with custom logic. The default implementation dispatches to the handler registered via `define_tool`.
 
 **Parameters:**
-- `name` (str): Function name being called
-- `args` (Dict[str, Any]): Function arguments
-- `raw_data` (Optional[Dict[str, Any]]): Raw request data
+- `$name` (Str): Function name being called
+- `$args` (HashRef): Function arguments
+- `$raw_data` (HashRef): Raw request data
 
 **Returns:**
-- Any: Function result (typically SwaigFunctionResult)
+- The function result (typically a `SignalWire::SWAIG::FunctionResult`)
 
 **Usage:**
-```python
-class MyAgent(AgentBase):
-    def on_function_call(self, name, args, raw_data):
-        if name == "get_weather":
-            location = args.get("location")
-            # Custom weather logic
-            return SwaigFunctionResult(f"Weather in {location}: Sunny")
-        return super().on_function_call(name, args, raw_data)
+```perl
+package MyAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
+
+sub on_function_call {
+    my ( $self, $name, $args, $raw_data ) = @_;
+    if ( $name eq 'get_weather' ) {
+        require SignalWire::SWAIG::FunctionResult;
+        my $location = $args->{location};
+        # Custom weather logic
+        return SignalWire::SWAIG::FunctionResult->new("Weather in $location: Sunny");
+    }
+    return $self->SUPER::on_function_call( $name, $args, $raw_data );
+}
+
+1;
 ```
 
-##### `on_request`
-
-```python
-def on_request(
-    request_data: Optional[dict] = None, 
-    callback_path: Optional[str] = None
-) -> Optional[dict]
-```
-Override to handle general requests.
+##### `on_request($request_data, $callback_path)`
+Override in a subclass to handle general requests. The default implementation delegates to `on_swml_request`.
 
 **Parameters:**
-- `request_data` (Optional[dict]): Request data
-- `callback_path` (Optional[str]): Callback path
+- `$request_data` (HashRef): Request data
+- `$callback_path` (Str): Callback path
 
 **Returns:**
-- Optional[dict]: Response modifications
+- HashRef of response modifications, or undef for no change
 
-##### `on_swml_request`
-
-```python
-def on_swml_request(
-    request_data: Optional[dict] = None, 
-    callback_path: Optional[str] = None, 
-    request: Optional[Request] = None
-) -> Optional[dict]
-```
-Override to handle SWML generation requests.
+##### `on_swml_request($request_data, $callback_path, $request)`
+Override in a subclass to handle SWML generation requests.
 
 **Parameters:**
-- `request_data` (Optional[dict]): Request data
-- `callback_path` (Optional[str]): Callback path  
-- `request` (Optional[Request]): FastAPI request object
+- `$request_data` (HashRef): Request data
+- `$callback_path` (Str): Callback path
+- `$request`: The PSGI `$env` hashref (analogous to Python's request object)
 
 **Returns:**
-- Optional[dict]: SWML modifications
+- HashRef of SWML modifications, or undef for no change
 
 ### Authentication
 
-##### `validate_basic_auth(username: str, password: str) -> bool`
-Override to implement custom basic authentication logic.
+##### `validate_basic_auth($username, $password)`
+Override in a subclass to implement custom basic-authentication logic.
 
 **Parameters:**
-- `username` (str): Username from basic auth
-- `password` (str): Password from basic auth
+- `$username` (Str): Username from basic auth
+- `$password` (Str): Password from basic auth
 
 **Returns:**
-- bool: True if credentials are valid
+- Bool: true if credentials are valid
 
 **Usage:**
-```python
-class MyAgent(AgentBase):
-    def validate_basic_auth(self, username, password):
-        # Custom auth logic
-        return username == "admin" and password == "secret"
+```perl
+package MyAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
+
+sub validate_basic_auth {
+    my ( $self, $username, $password ) = @_;
+    # Custom auth logic
+    return $username eq 'admin' && $password eq 'secret';
+}
+
+1;
 ```
 
-##### `get_basic_auth_credentials`
-
-```python
-def get_basic_auth_credentials(
-    include_source: bool = False
-) -> Union[Tuple[str, str], Tuple[str, str, str]]
-```
-Get basic auth credentials from environment or constructor.
+##### `get_basic_auth_credentials($include_source)`
+Get basic-auth credentials from the environment or constructor. Returns a list `($user, $password)`, or `($user, $password, $source)` when `$include_source` is truthy (source is one of "provided", "environment", or "generated").
 
 **Parameters:**
-- `include_source` (bool): Include source information (default: False)
+- `$include_source` (Bool): Include source information (default: false)
 
 **Returns:**
-- Tuple: (username, password) or (username, password, source)
+- List: `($username, $password)` or `($username, $password, $source)`
 
 ### Context System
 
-##### `define_contexts() -> ContextBuilder`
-Define structured workflow contexts for the agent.
+##### `define_contexts()`
+Define structured workflow contexts for the agent. Called with no arguments it returns the `ContextBuilder` for fluent chaining.
 
 **Returns:**
 - ContextBuilder: Builder for creating contexts and steps
 
 **Usage:**
-```python
-contexts = agent.define_contexts()
-contexts.add_context("greeting") \
-    .add_step("welcome", "Welcome! How can I help?") \
-    .on_completion_go_to("main_menu")
+```perl
+my $contexts = $agent->define_contexts;
 
-contexts.add_context("main_menu") \
-    .add_step("menu", "Choose: 1) Support 2) Sales 3) Billing") \
-    .allow_functions(["transfer_to_support", "transfer_to_sales"])
+$contexts->add_context('greeting')
+    ->add_step('welcome')
+    ->set_text('Welcome! How can I help?')
+    ->set_valid_steps(['menu']);
+
+$contexts->add_context('main_menu')
+    ->add_step('menu')
+    ->set_text('Choose: 1) Support 2) Sales 3) Billing')
+    ->set_functions([ 'transfer_to_support', 'transfer_to_sales' ]);
 ```
 
 This concludes Part 1 of the API reference covering the AgentBase class. The document will continue with SwaigFunctionResult, DataMap, and other components in subsequent parts.
@@ -1421,759 +1287,758 @@ This concludes Part 1 of the API reference covering the AgentBase class. The doc
 
 ## SwaigFunctionResult Class
 
-The `SwaigFunctionResult` class is used to create structured responses from SWAIG functions. It handles both natural language responses and structured actions that the agent should execute.
+The `SignalWire::SWAIG::FunctionResult` class is used to create structured responses from SWAIG functions. It handles both natural-language responses and structured actions that the agent should execute. (The Python `SwaigFunctionResult` maps to Perl's `SignalWire::SWAIG::FunctionResult`.)
 
 ### Constructor
 
-```python
-SwaigFunctionResult(
-    response: Optional[str] = None, 
-    post_process: bool = False
-)
+```perl
+SignalWire::SWAIG::FunctionResult->new( $response, post_process => $bool );
 ```
 
 **Parameters:**
-- `response` (Optional[str]): Natural language response text for the AI to speak
-- `post_process` (bool): Whether to let AI take another turn before executing actions (default: False)
+- `$response` (Str): Natural-language response text for the AI to speak (optional)
+- `post_process` (Bool): Whether to let the AI take another turn before executing actions (default: false)
 
 **Post-processing Behavior:**
-- `post_process=False` (default): Execute actions immediately after AI response
-- `post_process=True`: Let AI respond to user one more time, then execute actions
+- `post_process => 0` (default): Execute actions immediately after the AI response
+- `post_process => 1`: Let the AI respond to the user one more time, then execute actions
 
 **Usage:**
-```python
+```perl
+use SignalWire::SWAIG::FunctionResult;
+
 # Simple response
-result = SwaigFunctionResult("The weather is sunny and 75°F")
+my $result = SignalWire::SWAIG::FunctionResult->new("The weather is sunny and 75\x{b0}F");
 
 # Response with post-processing enabled
-result = SwaigFunctionResult("I'll transfer you now", post_process=True)
+my $result2 = SignalWire::SWAIG::FunctionResult->new( "I'll transfer you now", post_process => 1 );
 
 # Empty response (actions only)
-result = SwaigFunctionResult()
+my $result3 = SignalWire::SWAIG::FunctionResult->new;
 ```
 
 ### Core Methods
 
 #### Response Configuration
 
-##### `set_response(response: str) -> SwaigFunctionResult`
-Set or update the natural language response text.
+##### `set_response($response)`
+Set or update the natural-language response text. Returns `$self` for chaining.
 
 **Parameters:**
-- `response` (str): The text the AI should speak
+- `$response` (Str): The text the AI should speak
 
 **Usage:**
-```python
-result = SwaigFunctionResult()
-result.set_response("I found your order information")
+```perl
+my $result = SignalWire::SWAIG::FunctionResult->new;
+$result->set_response('I found your order information');
 ```
 
-##### `set_post_process(post_process: bool) -> SwaigFunctionResult`
-Enable or disable post-processing for this result.
+##### `set_post_process($post_process)`
+Enable or disable post-processing for this result. Returns `$self` for chaining.
 
 **Parameters:**
-- `post_process` (bool): True to let AI respond once more before executing actions
+- `$post_process` (Bool): true to let the AI respond once more before executing actions
 
 **Usage:**
-```python
-result = SwaigFunctionResult("I'll help you with that")
-result.set_post_process(True)  # Let AI handle follow-up questions first
+```perl
+my $result = SignalWire::SWAIG::FunctionResult->new("I'll help you with that");
+$result->set_post_process(1);   # Let the AI handle follow-up questions first
 ```
 
 #### Action Management
 
-##### `add_action(name: str, data: Any) -> SwaigFunctionResult`
-Add a structured action to execute.
+##### `add_action($name, $data)`
+Add a structured action to execute. Returns `$self` for chaining.
 
 **Parameters:**
-- `name` (str): Action name/type (e.g., "play", "transfer", "set_global_data")
-- `data` (Any): Action data - can be string, boolean, object, or array
+- `$name` (Str): Action name/type (e.g., "play", "transfer", "set_global_data")
+- `$data` (Any): Action data - can be a string, boolean, hashref, or arrayref
 
 **Usage:**
-```python
-# Simple action with boolean
-result.add_action("hangup", True)
+```perl
+# Simple action with a boolean
+$result->add_action( 'hangup', JSON::true );
 
 # Action with string data
-result.add_action("play", "welcome.mp3")
+$result->add_action( 'play', 'welcome.mp3' );
 
-# Action with object data
-result.add_action("set_global_data", {"customer_id": "12345", "status": "verified"})
+# Action with hashref data
+$result->add_action( 'set_global_data', { customer_id => '12345', status => 'verified' } );
 
-# Action with array data
-result.add_action("send_sms", ["+15551234567", "Your order is ready!"])
+# Action with arrayref data
+$result->add_action( 'send_sms', [ '+15551234567', 'Your order is ready!' ] );
 ```
 
-##### `add_actions(actions: List[Dict[str, Any]]) -> SwaigFunctionResult`
-Add multiple actions at once.
+##### `add_actions($actions)`
+Add multiple actions at once. Returns `$self` for chaining.
 
 **Parameters:**
-- `actions` (List[Dict[str, Any]]): List of action dictionaries
+- `$actions` (ArrayRef[HashRef]): List of action hashrefs
 
 **Usage:**
-```python
-result.add_actions([
-    {"play": "hold_music.mp3"},
-    {"set_global_data": {"status": "on_hold"}},
-    {"wait": 5000}
-])
+```perl
+$result->add_actions([
+    { play => 'hold_music.mp3' },
+    { set_global_data => { status => 'on_hold' } },
+    { wait => 5000 },
+]);
 ```
 
 ### Call Control Actions
 
 #### Call Transfer and Connection
 
-##### `connect(destination: str, final: bool = True, from_addr: Optional[str] = None) -> SwaigFunctionResult`
-Transfer or connect the call to another destination.
+##### `connect($destination, %opts)`
+Transfer or connect the call to another destination. Returns `$self` for chaining.
 
 **Parameters:**
-- `destination` (str): Phone number, SIP address, or other destination
-- `final` (bool): Permanent transfer (True) vs temporary transfer (False) (default: True)
-- `from_addr` (Optional[str]): Override caller ID
+- `$destination` (Str): Phone number, SIP address, or other destination
+- `final` (Bool): Permanent transfer (true) vs temporary transfer (false) (default: true)
+- `from` (Str): Override caller ID
 
 **Transfer Types:**
-- `final=True`: Permanent transfer - call exits agent completely
-- `final=False`: Temporary transfer - call returns to agent if far end hangs up
+- `final => 1`: Permanent transfer - the call exits the agent completely
+- `final => 0`: Temporary transfer - the call returns to the agent if the far end hangs up
 
 **Usage:**
-```python
-# Permanent transfer to phone number
-result.connect("+15551234567", final=True)
+```perl
+# Permanent transfer to a phone number
+$result->connect( '+15551234567', final => 1 );
 
-# Temporary transfer to SIP address with custom caller ID
-result.connect("support@company.com", final=False, from_addr="+15559876543")
+# Temporary transfer to a SIP address with a custom caller ID
+$result->connect( 'support@company.com', final => 0, from => '+15559876543' );
 
-# Transfer with response
-result = SwaigFunctionResult("Transferring you to our sales team")
-result.connect("sales@company.com")
+# Transfer with a response
+my $result = SignalWire::SWAIG::FunctionResult->new('Transferring you to our sales team');
+$result->connect('sales@company.com');
 ```
 
-##### `swml_transfer(dest: str, ai_response: str) -> SwaigFunctionResult`
-Create a SWML-based transfer with AI response setup.
+##### `swml_transfer($dest, $ai_response, %opts)`
+Create a SWML-based transfer with an AI-response setup. Returns `$self` for chaining.
 
 **Parameters:**
-- `dest` (str): Transfer destination
-- `ai_response` (str): AI response when transfer completes
+- `$dest` (Str): Transfer destination
+- `$ai_response` (Str): AI response when the transfer completes
+- `final` (Bool): Permanent (true) vs temporary (false) transfer (default: true)
 
 **Usage:**
-```python
-result.swml_transfer(
-    "+15551234567", 
-    "You've been transferred back to me. How else can I help?"
-)
+```perl
+$result->swml_transfer(
+    '+15551234567',
+    "You've been transferred back to me. How else can I help?",
+);
 ```
 
-##### `sip_refer(to_uri: str) -> SwaigFunctionResult`
-Perform a SIP REFER transfer.
+##### `sip_refer($to_uri)`
+Perform a SIP REFER transfer. Returns `$self` for chaining.
 
 **Parameters:**
-- `to_uri` (str): SIP URI to transfer to
+- `$to_uri` (Str): SIP URI to transfer to
 
 **Usage:**
-```python
-result.sip_refer("sip:support@company.com")
+```perl
+$result->sip_refer('sip:support@company.com');
 ```
 
 #### Call Management
 
-##### `hangup() -> SwaigFunctionResult`
-End the call immediately.
+##### `hangup()`
+End the call immediately. Returns `$self` for chaining.
 
 **Usage:**
-```python
-result = SwaigFunctionResult("Thank you for calling. Goodbye!")
-result.hangup()
+```perl
+my $result = SignalWire::SWAIG::FunctionResult->new('Thank you for calling. Goodbye!');
+$result->hangup;
 ```
 
-##### `hold(timeout: int = 300) -> SwaigFunctionResult`
-Put the call on hold.
+##### `hold($timeout)`
+Put the call on hold. Returns `$self` for chaining.
 
 **Parameters:**
-- `timeout` (int): Hold timeout in seconds (default: 300)
+- `$timeout` (Int): Hold timeout in seconds (default: 300)
 
 **Usage:**
-```python
-result = SwaigFunctionResult("Please hold while I look that up")
-result.hold(timeout=60)
+```perl
+my $result = SignalWire::SWAIG::FunctionResult->new('Please hold while I look that up');
+$result->hold(60);
 ```
 
-##### `stop() -> SwaigFunctionResult`
-Stop current audio playback or recording.
+##### `stop()`
+Stop current audio playback or recording. Returns `$self` for chaining.
 
 **Usage:**
-```python
-result.stop()
+```perl
+$result->stop;
 ```
 
 #### Audio Control
 
-##### `say(text: str) -> SwaigFunctionResult`
-Add text for the AI to speak.
+##### `say($text)`
+Add text for the AI to speak. Returns `$self` for chaining.
 
 **Parameters:**
-- `text` (str): Text to speak
+- `$text` (Str): Text to speak
 
 **Usage:**
-```python
-result.say("Please wait while I process your request")
+```perl
+$result->say('Please wait while I process your request');
 ```
 
-##### `play_background_file(filename: str, wait: bool = False) -> SwaigFunctionResult`
-Play an audio file in the background.
+##### `play_background_file($filename, %opts)`
+Play an audio file in the background. Returns `$self` for chaining.
 
 **Parameters:**
-- `filename` (str): Audio file path or URL
-- `wait` (bool): Wait for file to finish before continuing (default: False)
+- `$filename` (Str): Audio file path or URL
+- `wait` (Bool): Wait for the file to finish before continuing (default: false)
 
 **Usage:**
-```python
-# Play hold music in background
-result.play_background_file("hold_music.mp3")
+```perl
+# Play hold music in the background
+$result->play_background_file('hold_music.mp3');
 
-# Play announcement and wait for completion
-result.play_background_file("important_announcement.wav", wait=True)
+# Play an announcement and wait for completion
+$result->play_background_file( 'important_announcement.wav', wait => 1 );
 ```
 
-##### `stop_background_file() -> SwaigFunctionResult`
-Stop background audio playback.
+##### `stop_background_file()`
+Stop background audio playback. Returns `$self` for chaining.
 
 **Usage:**
-```python
-result.stop_background_file()
+```perl
+$result->stop_background_file;
 ```
 
 ### Data Management Actions
 
-##### `set_global_data(data: Dict[str, Any]) -> SwaigFunctionResult`
-Set global data for the conversation.
+##### `set_global_data($data)`
+Set global data for the conversation. Returns `$self` for chaining.
 
 **Parameters:**
-- `data` (Dict[str, Any]): Global data to set
+- `$data` (HashRef): Global data to set
 
 **Usage:**
-```python
-result.set_global_data({
-    "customer_id": "12345",
-    "order_status": "shipped",
-    "tracking_number": "1Z999AA1234567890"
-})
+```perl
+$result->set_global_data({
+    customer_id     => '12345',
+    order_status    => 'shipped',
+    tracking_number => '1Z999AA1234567890',
+});
 ```
 
-##### `update_global_data(data: Dict[str, Any]) -> SwaigFunctionResult`
-Update existing global data (merge with existing).
+##### `update_global_data($data)`
+Update existing global data (merge with existing). Returns `$self` for chaining.
 
 **Parameters:**
-- `data` (Dict[str, Any]): Data to merge
+- `$data` (HashRef): Data to merge
 
 **Usage:**
-```python
-result.update_global_data({
-    "last_interaction": "2024-01-15T10:30:00Z",
-    "agent_notes": "Customer satisfied with resolution"
-})
+```perl
+$result->update_global_data({
+    last_interaction => '2024-01-15T10:30:00Z',
+    agent_notes      => 'Customer satisfied with resolution',
+});
 ```
 
-##### `remove_global_data(keys: Union[str, List[str]]) -> SwaigFunctionResult`
-Remove specific keys from global data.
+##### `remove_global_data($keys)`
+Remove specific keys from global data. Returns `$self` for chaining.
 
 **Parameters:**
-- `keys` (Union[str, List[str]]): Key name or list of key names to remove
+- `$keys` (Str | ArrayRef[Str]): Key name or arrayref of key names to remove
 
 **Usage:**
-```python
-# Remove single key
-result.remove_global_data("temporary_data")
+```perl
+# Remove a single key
+$result->remove_global_data('temporary_data');
 
 # Remove multiple keys
-result.remove_global_data(["temp1", "temp2", "cache_data"])
+$result->remove_global_data([ 'temp1', 'temp2', 'cache_data' ]);
 ```
 
-##### `set_metadata(data: Dict[str, Any]) -> SwaigFunctionResult`
-Set metadata for the conversation.
+##### `set_metadata($data)`
+Set metadata for the conversation. Returns `$self` for chaining.
 
 **Parameters:**
-- `data` (Dict[str, Any]): Metadata to set
+- `$data` (HashRef): Metadata to set
 
 **Usage:**
-```python
-result.set_metadata({
-    "call_type": "support",
-    "priority": "high",
-    "department": "technical"
-})
+```perl
+$result->set_metadata({
+    call_type  => 'support',
+    priority   => 'high',
+    department => 'technical',
+});
 ```
 
-##### `remove_metadata(keys: Union[str, List[str]]) -> SwaigFunctionResult`
-Remove specific metadata keys.
+##### `remove_metadata($keys)`
+Remove specific metadata keys. Returns `$self` for chaining.
 
 **Parameters:**
-- `keys` (Union[str, List[str]]): Key name or list of key names to remove
+- `$keys` (Str | ArrayRef[Str]): Key name or arrayref of key names to remove
 
 **Usage:**
-```python
-result.remove_metadata(["temporary_flag", "debug_info"])
+```perl
+$result->remove_metadata([ 'temporary_flag', 'debug_info' ]);
 ```
 
 ### AI Behavior Control
 
-##### `set_end_of_speech_timeout(milliseconds: int) -> SwaigFunctionResult`
-Adjust how long to wait for speech to end.
+##### `set_end_of_speech_timeout($milliseconds)`
+Adjust how long to wait for speech to end. Returns `$self` for chaining.
 
 **Parameters:**
-- `milliseconds` (int): Timeout in milliseconds
+- `$milliseconds` (Int): Timeout in milliseconds
 
 **Usage:**
-```python
+```perl
 # Shorter timeout for quick responses
-result.set_end_of_speech_timeout(300)
+$result->set_end_of_speech_timeout(300);
 
 # Longer timeout for thoughtful responses
-result.set_end_of_speech_timeout(2000)
+$result->set_end_of_speech_timeout(2000);
 ```
 
-##### `set_speech_event_timeout(milliseconds: int) -> SwaigFunctionResult`
-Set timeout for speech events.
+##### `set_speech_event_timeout($milliseconds)`
+Set the timeout for speech events. Returns `$self` for chaining.
 
 **Parameters:**
-- `milliseconds` (int): Timeout in milliseconds
+- `$milliseconds` (Int): Timeout in milliseconds
 
 **Usage:**
-```python
-result.set_speech_event_timeout(5000)
+```perl
+$result->set_speech_event_timeout(5000);
 ```
 
-##### `wait_for_user(enabled: Optional[bool] = None, timeout: Optional[int] = None, answer_first: bool = False) -> SwaigFunctionResult`
-Control whether to wait for user input.
+##### `wait_for_user(%opts)`
+Control whether to wait for user input. Arguments are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `enabled` (Optional[bool]): Enable/disable waiting for user
-- `timeout` (Optional[int]): Timeout in milliseconds
-- `answer_first` (bool): Answer call before waiting (default: False)
+- `enabled` (Bool): Enable/disable waiting for the user
+- `timeout` (Int): Timeout in milliseconds
+- `answer_first` (Bool): Answer the call before waiting (default: false)
 
 **Usage:**
-```python
-# Wait for user input with 10 second timeout
-result.wait_for_user(enabled=True, timeout=10000)
+```perl
+# Wait for user input with a 10-second timeout
+$result->wait_for_user( enabled => 1, timeout => 10000 );
 
-# Don't wait for user (immediate response)
-result.wait_for_user(enabled=False)
+# Don't wait for the user (immediate response)
+$result->wait_for_user( enabled => 0 );
 ```
 
-##### `toggle_functions(function_toggles: List[Dict[str, Any]]) -> SwaigFunctionResult`
-Enable or disable specific functions.
+##### `toggle_functions($function_toggles)`
+Enable or disable specific functions. Returns `$self` for chaining.
 
 **Parameters:**
-- `function_toggles` (List[Dict[str, Any]]): List of function toggle configurations
+- `$function_toggles` (ArrayRef[HashRef]): List of function-toggle configurations
 
 **Usage:**
-```python
-result.toggle_functions([
-    {"name": "transfer_to_sales", "enabled": True},
-    {"name": "end_call", "enabled": False},
-    {"name": "escalate", "enabled": True, "timeout": 30000}
-])
+```perl
+$result->toggle_functions([
+    { function => 'transfer_to_sales', active => JSON::true },
+    { function => 'end_call',          active => JSON::false },
+    { function => 'escalate',          active => JSON::true },
+]);
 ```
 
-##### `enable_functions_on_timeout(enabled: bool = True) -> SwaigFunctionResult`
-Control whether functions are enabled when timeout occurs.
+##### `enable_functions_on_timeout($enabled)`
+Control whether functions are enabled when a timeout occurs. Returns `$self` for chaining.
 
 **Parameters:**
-- `enabled` (bool): Enable functions on timeout (default: True)
+- `$enabled` (Bool): Enable functions on timeout (default: true)
 
 **Usage:**
-```python
-result.enable_functions_on_timeout(False)  # Disable functions on timeout
+```perl
+$result->enable_functions_on_timeout(0);   # Disable functions on timeout
 ```
 
-##### `enable_extensive_data(enabled: bool = True) -> SwaigFunctionResult`
-Enable extensive data collection.
+##### `enable_extensive_data($enabled)`
+Enable extensive data collection. Returns `$self` for chaining.
 
 **Parameters:**
-- `enabled` (bool): Enable extensive data (default: True)
+- `$enabled` (Bool): Enable extensive data (default: true)
 
 **Usage:**
-```python
-result.enable_extensive_data(True)
+```perl
+$result->enable_extensive_data(1);
 ```
 
-##### `update_settings(settings: Dict[str, Any]) -> SwaigFunctionResult`
-Update various AI settings.
+##### `update_settings($settings)`
+Update various AI settings. Returns `$self` for chaining.
 
 **Parameters:**
-- `settings` (Dict[str, Any]): Settings to update
+- `$settings` (HashRef): Settings to update
 
 **Usage:**
-```python
-result.update_settings({
-    "temperature": 0.8,
-    "max_tokens": 150,
-    "end_of_speech_timeout": 800
-})
+```perl
+$result->update_settings({
+    temperature           => 0.8,
+    max_tokens            => 150,
+    end_of_speech_timeout => 800,
+});
 ```
 
 ### Context and Conversation Control
 
-##### `switch_context(system_prompt: Optional[str] = None, user_prompt: Optional[str] = None, consolidate: bool = False, full_reset: bool = False) -> SwaigFunctionResult`
-Switch conversation context or reset the conversation.
+##### `switch_context(%opts)`
+Switch conversation context or reset the conversation. Arguments are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `system_prompt` (Optional[str]): New system prompt
-- `user_prompt` (Optional[str]): New user prompt
-- `consolidate` (bool): Consolidate conversation history (default: False)
-- `full_reset` (bool): Completely reset conversation (default: False)
+- `system_prompt` (Str): New system prompt
+- `user_prompt` (Str): New user prompt
+- `consolidate` (Bool): Consolidate conversation history (default: false)
+- `full_reset` (Bool): Completely reset the conversation (default: false)
 
 **Usage:**
-```python
-# Switch to technical support context
-result.switch_context(
-    system_prompt="You are now a technical support specialist",
-    user_prompt="The customer needs technical help"
-)
+```perl
+# Switch to a technical-support context
+$result->switch_context(
+    system_prompt => 'You are now a technical support specialist',
+    user_prompt   => 'The customer needs technical help',
+);
 
-# Reset conversation completely
-result.switch_context(full_reset=True)
+# Reset the conversation completely
+$result->switch_context( full_reset => 1 );
 
 # Consolidate conversation history
-result.switch_context(consolidate=True)
+$result->switch_context( consolidate => 1 );
 ```
 
-##### `simulate_user_input(text: str) -> SwaigFunctionResult`
-Simulate user input for testing or automation.
+##### `simulate_user_input($text)`
+Simulate user input for testing or automation. Returns `$self` for chaining.
 
 **Parameters:**
-- `text` (str): Text to simulate as user input
+- `$text` (Str): Text to simulate as user input
 
 **Usage:**
-```python
-result.simulate_user_input("I need help with my order")
+```perl
+$result->simulate_user_input('I need help with my order');
 ```
 
 ### Communication Actions
 
-##### `send_sms(to_number: str, from_number: str, body: Optional[str] = None, media: Optional[List[str]] = None, tags: Optional[List[str]] = None, region: Optional[str] = None) -> SwaigFunctionResult`
-Send an SMS message.
+##### `send_sms(%opts)`
+Send an SMS message. Arguments are named. Either `body` or `media` must be provided. Returns `$self` for chaining.
 
 **Parameters:**
-- `to_number` (str): Recipient phone number
-- `from_number` (str): Sender phone number
-- `body` (Optional[str]): SMS message text
-- `media` (Optional[List[str]]): List of media URLs
-- `tags` (Optional[List[str]]): Message tags
-- `region` (Optional[str]): SignalWire region
+- `to_number` (Str): Recipient phone number (required)
+- `from_number` (Str): Sender phone number (required)
+- `body` (Str): SMS message text
+- `media` (ArrayRef[Str]): List of media URLs
+- `tags` (ArrayRef[Str]): Message tags
+- `region` (Str): SignalWire region
 
 **Usage:**
-```python
+```perl
 # Simple text message
-result.send_sms(
-    to_number="+15551234567",
-    from_number="+15559876543", 
-    body="Your order #12345 has shipped!"
-)
+$result->send_sms(
+    to_number   => '+15551234567',
+    from_number => '+15559876543',
+    body        => 'Your order #12345 has shipped!',
+);
 
 # Message with media and tags
-result.send_sms(
-    to_number="+15551234567",
-    from_number="+15559876543",
-    body="Here's your receipt",
-    media=["https://example.com/receipt.pdf"],
-    tags=["receipt", "order_12345"]
-)
+$result->send_sms(
+    to_number   => '+15551234567',
+    from_number => '+15559876543',
+    body        => "Here's your receipt",
+    media       => ['https://example.com/receipt.pdf'],
+    tags        => [ 'receipt', 'order_12345' ],
+);
 ```
 
 ### Recording and Media
 
-##### `record_call(control_id: Optional[str] = None, stereo: bool = False, format: str = "wav", direction: str = "both", terminators: Optional[str] = None, beep: bool = False, input_sensitivity: float = 44.0, initial_timeout: float = 0.0, end_silence_timeout: float = 0.0, max_length: Optional[float] = None, status_url: Optional[str] = None) -> SwaigFunctionResult`
-Start call recording.
+##### `record_call(%opts)`
+Start call recording. Arguments are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `control_id` (Optional[str]): Unique identifier for this recording
-- `stereo` (bool): Record in stereo (default: False)
-- `format` (str): Recording format: "wav", "mp3", "mp4" (default: "wav")
-- `direction` (str): Recording direction: "both", "inbound", "outbound" (default: "both")
-- `terminators` (Optional[str]): DTMF keys to stop recording
-- `beep` (bool): Play beep before recording (default: False)
-- `input_sensitivity` (float): Input sensitivity level (default: 44.0)
-- `initial_timeout` (float): Initial timeout in seconds (default: 0.0)
-- `end_silence_timeout` (float): End silence timeout in seconds (default: 0.0)
-- `max_length` (Optional[float]): Maximum recording length in seconds
-- `status_url` (Optional[str]): Webhook URL for recording status
+- `control_id` (Str): Unique identifier for this recording
+- `stereo` (Bool): Record in stereo (default: false)
+- `format` (Str): Recording format: "wav", "mp3", "mp4" (default: "wav")
+- `direction` (Str): Recording direction: "speak", "listen", "both" (default: "both")
+- `terminators` (Str): DTMF keys to stop recording
+- `beep` (Bool): Play a beep before recording (default: false)
+- `input_sensitivity` (Num): Input sensitivity level (default: 44.0)
+- `initial_timeout` (Num): Initial timeout in seconds
+- `end_silence_timeout` (Num): End-silence timeout in seconds
+- `max_length` (Num): Maximum recording length in seconds
+- `status_url` (Str): Webhook URL for recording status
 
 **Usage:**
-```python
+```perl
 # Basic recording
-result.record_call(format="mp3", direction="both")
+$result->record_call( format => 'mp3', direction => 'both' );
 
-# Recording with control ID and settings
-result.record_call(
-    control_id="customer_call_001",
-    stereo=True,
-    format="wav",
-    beep=True,
-    max_length=300.0,
-    terminators="#*"
-)
+# Recording with a control ID and settings
+$result->record_call(
+    control_id  => 'customer_call_001',
+    stereo      => 1,
+    format      => 'wav',
+    beep        => 1,
+    max_length  => 300.0,
+    terminators => '#*',
+);
 ```
 
-##### `stop_record_call(control_id: Optional[str] = None) -> SwaigFunctionResult`
-Stop call recording.
+##### `stop_record_call(%opts)`
+Stop call recording. Returns `$self` for chaining.
 
 **Parameters:**
-- `control_id` (Optional[str]): Control ID of recording to stop
+- `control_id` (Str): Control ID of the recording to stop
 
 **Usage:**
-```python
-result.stop_record_call()
-result.stop_record_call(control_id="customer_call_001")
+```perl
+$result->stop_record_call;
+$result->stop_record_call( control_id => 'customer_call_001' );
 ```
 
 ### Conference and Room Management
 
-##### `join_room(name: str) -> SwaigFunctionResult`
-Join a SignalWire room.
+##### `join_room($name)`
+Join a SignalWire room. Returns `$self` for chaining.
 
 **Parameters:**
-- `name` (str): Room name to join
+- `$name` (Str): Room name to join
 
 **Usage:**
-```python
-result.join_room("support_room_1")
+```perl
+$result->join_room('support_room_1');
 ```
 
-##### `join_conference(name: str, muted: bool = False, beep: str = "true", start_on_enter: bool = True, end_on_exit: bool = False, wait_url: Optional[str] = None, max_participants: int = 250, record: str = "do-not-record", region: Optional[str] = None, trim: str = "trim-silence", coach: Optional[str] = None, status_callback_event: Optional[str] = None, status_callback: Optional[str] = None, status_callback_method: str = "POST", recording_status_callback: Optional[str] = None, recording_status_callback_method: str = "POST", recording_status_callback_event: str = "completed", result: Optional[Any] = None) -> SwaigFunctionResult`
-Join a conference call.
+##### `join_conference($name, %opts)`
+Join a conference call. `$name` is positional; the remaining options are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `name` (str): Conference name
-- `muted` (bool): Join muted (default: False)
-- `beep` (str): Beep setting: "true", "false", "onEnter", "onExit" (default: "true")
-- `start_on_enter` (bool): Start conference when this participant enters (default: True)
-- `end_on_exit` (bool): End conference when this participant exits (default: False)
-- `wait_url` (Optional[str]): URL for hold music/content
-- `max_participants` (int): Maximum participants (default: 250)
-- `record` (str): Recording setting (default: "do-not-record")
-- `region` (Optional[str]): SignalWire region
-- `trim` (str): Trim setting for recordings (default: "trim-silence")
-- `coach` (Optional[str]): Coach participant identifier
-- `status_callback_event` (Optional[str]): Status callback events
-- `status_callback` (Optional[str]): Status callback URL
-- `status_callback_method` (str): Status callback HTTP method (default: "POST")
-- `recording_status_callback` (Optional[str]): Recording status callback URL
-- `recording_status_callback_method` (str): Recording status callback method (default: "POST")
-- `recording_status_callback_event` (str): Recording status callback events (default: "completed")
+- `$name` (Str): Conference name
+- `muted` (Bool): Join muted (default: false)
+- `beep` (Str): Beep setting: "true", "false", "onEnter", "onExit" (default: "true")
+- `start_on_enter` (Bool): Start the conference when this participant enters (default: true)
+- `end_on_exit` (Bool): End the conference when this participant exits (default: false)
+- `wait_url` (Str): URL for hold music/content
+- `max_participants` (Int): Maximum participants (default: 250)
+- `record` (Str): Recording setting (default: "do-not-record")
+- `region` (Str): SignalWire region
+- `trim` (Str): Trim setting for recordings (default: "trim-silence")
+- `coach` (Str): Coach participant identifier
+- `status_callback_event` (Str): Status-callback events
+- `status_callback` (Str): Status-callback URL
+- `status_callback_method` (Str): Status-callback HTTP method (default: "POST")
+- `recording_status_callback` (Str): Recording status-callback URL
+- `recording_status_callback_method` (Str): Recording status-callback method (default: "POST")
+- `recording_status_callback_event` (Str): Recording status-callback events (default: "completed")
 
 **Usage:**
-```python
+```perl
 # Basic conference join
-result.join_conference("sales_meeting")
+$result->join_conference('sales_meeting');
 
 # Conference with recording and settings
-result.join_conference(
-    name="support_conference",
-    muted=False,
-    beep="onEnter",
-    record="record-from-start",
-    max_participants=10
-)
+$result->join_conference(
+    'support_conference',
+    muted            => 0,
+    beep             => 'onEnter',
+    record           => 'record-from-start',
+    max_participants => 10,
+);
 ```
 
 ### Payment Processing
 
-##### `pay(payment_connector_url: str, input_method: str = "dtmf", status_url: Optional[str] = None, payment_method: str = "credit-card", timeout: int = 5, max_attempts: int = 1, security_code: bool = True, postal_code: Union[bool, str] = True, min_postal_code_length: int = 0, token_type: str = "reusable", charge_amount: Optional[str] = None, currency: str = "usd", language: str = "en-US", voice: str = "woman", description: Optional[str] = None, valid_card_types: str = "visa mastercard amex", parameters: Optional[List[Dict[str, str]]] = None, prompts: Optional[List[Dict[str, Any]]] = None) -> SwaigFunctionResult`
-Process a payment through the call.
+##### `pay(%opts)`
+Process a payment through the call. Arguments are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `payment_connector_url` (str): Payment processor webhook URL
-- `input_method` (str): Input method: "dtmf", "speech" (default: "dtmf")
-- `status_url` (Optional[str]): Payment status webhook URL
-- `payment_method` (str): Payment method: "credit-card" (default: "credit-card")
-- `timeout` (int): Input timeout in seconds (default: 5)
-- `max_attempts` (int): Maximum retry attempts (default: 1)
-- `security_code` (bool): Require security code (default: True)
-- `postal_code` (Union[bool, str]): Require postal code (default: True)
-- `min_postal_code_length` (int): Minimum postal code length (default: 0)
-- `token_type` (str): Token type: "reusable", "one-time" (default: "reusable")
-- `charge_amount` (Optional[str]): Amount to charge
-- `currency` (str): Currency code (default: "usd")
-- `language` (str): Language for prompts (default: "en-US")
-- `voice` (str): Voice for prompts (default: "woman")
-- `description` (Optional[str]): Payment description
-- `valid_card_types` (str): Accepted card types (default: "visa mastercard amex")
-- `parameters` (Optional[List[Dict[str, str]]]): Additional parameters
-- `prompts` (Optional[List[Dict[str, Any]]]): Custom prompts
+- `payment_connector_url` (Str): Payment-processor webhook URL (required)
+- `input_method` (Str): Input method: "dtmf", "speech" (default: "dtmf")
+- `status_url` (Str): Payment-status webhook URL
+- `payment_method` (Str): Payment method: "credit-card" (default: "credit-card")
+- `timeout` (Int): Input timeout in seconds (default: 5)
+- `max_attempts` (Int): Maximum retry attempts (default: 1)
+- `security_code` (Bool): Require a security code (default: true)
+- `postal_code` (Bool | Str): Require a postal code (default: true)
+- `min_postal_code_length` (Int): Minimum postal-code length (default: 0)
+- `token_type` (Str): Token type: "reusable", "one-time" (default: "reusable")
+- `charge_amount` (Str): Amount to charge
+- `currency` (Str): Currency code (default: "usd")
+- `language` (Str): Language for prompts (default: "en-US")
+- `voice` (Str): Voice for prompts (default: "woman")
+- `description` (Str): Payment description
+- `valid_card_types` (Str): Accepted card types (default: "visa mastercard amex")
+- `parameters` (ArrayRef[HashRef]): Additional parameters
+- `prompts` (ArrayRef[HashRef]): Custom prompts
 
 **Usage:**
-```python
+```perl
 # Basic payment processing
-result.pay(
-    payment_connector_url="https://payment-processor.com/webhook",
-    charge_amount="29.99",
-    description="Monthly subscription"
-)
+$result->pay(
+    payment_connector_url => 'https://payment-processor.com/webhook',
+    charge_amount         => '29.99',
+    description           => 'Monthly subscription',
+);
 
 # Payment with custom settings
-result.pay(
-    payment_connector_url="https://payment-processor.com/webhook",
-    input_method="speech",
-    timeout=10,
-    max_attempts=3,
-    security_code=True,
-    postal_code=True,
-    charge_amount="149.99",
-    currency="usd",
-    description="Premium service upgrade"
-)
+$result->pay(
+    payment_connector_url => 'https://payment-processor.com/webhook',
+    input_method          => 'speech',
+    timeout               => 10,
+    max_attempts          => 3,
+    security_code         => 1,
+    postal_code           => 1,
+    charge_amount         => '149.99',
+    currency              => 'usd',
+    description           => 'Premium service upgrade',
+);
 ```
 
 ### Call Monitoring
 
-##### `tap(uri: str, control_id: Optional[str] = None, direction: str = "both", codec: str = "PCMU", rtp_ptime: int = 20, status_url: Optional[str] = None) -> SwaigFunctionResult`
-Start call tapping/monitoring.
+##### `tap($uri, %opts)`
+Start call tapping/monitoring. `$uri` is positional; the rest are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `uri` (str): URI to send tapped audio to
-- `control_id` (Optional[str]): Unique identifier for this tap
-- `direction` (str): Tap direction: "both", "inbound", "outbound" (default: "both")
-- `codec` (str): Audio codec: "PCMU", "PCMA", "G722" (default: "PCMU")
-- `rtp_ptime` (int): RTP packet time in milliseconds (default: 20)
-- `status_url` (Optional[str]): Status webhook URL
+- `$uri` (Str): URI to send tapped audio to
+- `control_id` (Str): Unique identifier for this tap
+- `direction` (Str): Tap direction: "both", "inbound", "outbound" (default: "both")
+- `codec` (Str): Audio codec: "PCMU", "PCMA", "G722" (default: "PCMU")
+- `rtp_ptime` (Int): RTP packet time in milliseconds (default: 20)
+- `status_url` (Str): Status webhook URL
 
 **Usage:**
-```python
+```perl
 # Basic call tapping
-result.tap("sip:monitor@company.com")
+$result->tap('sip:monitor@company.com');
 
 # Tap with specific settings
-result.tap(
-    uri="sip:quality@company.com",
-    control_id="quality_monitor_001",
-    direction="both",
-    codec="G722"
-)
+$result->tap(
+    'sip:quality@company.com',
+    control_id => 'quality_monitor_001',
+    direction  => 'both',
+    codec      => 'G722',
+);
 ```
 
-##### `stop_tap(control_id: Optional[str] = None) -> SwaigFunctionResult`
-Stop call tapping.
+##### `stop_tap(%opts)`
+Stop call tapping. Returns `$self` for chaining.
 
 **Parameters:**
-- `control_id` (Optional[str]): Control ID of tap to stop
+- `control_id` (Str): Control ID of the tap to stop
 
 **Usage:**
-```python
-result.stop_tap()
-result.stop_tap(control_id="quality_monitor_001")
+```perl
+$result->stop_tap;
+$result->stop_tap( control_id => 'quality_monitor_001' );
 ```
 
 ### Advanced SWML Execution
 
-##### `execute_swml(swml_content, transfer: bool = False) -> SwaigFunctionResult`
-Execute custom SWML content.
+##### `execute_swml($swml_content, %opts)`
+Execute custom SWML content. `$swml_content` may be a hashref or a JSON string. Returns `$self` for chaining.
 
 **Parameters:**
-- `swml_content`: SWML document or content to execute
-- `transfer` (bool): Whether this is a transfer operation (default: False)
+- `$swml_content` (HashRef | Str): SWML document or content to execute
+- `transfer` (Bool): Whether this is a transfer operation (default: false)
 
 **Usage:**
-```python
+```perl
 # Execute custom SWML
-custom_swml = {
-    "version": "1.0.0",
-    "sections": {
-        "main": [
-            {"play": {"url": "https://example.com/custom.mp3"}},
-            {"say": {"text": "Custom SWML execution"}}
-        ]
-    }
-}
-result.execute_swml(custom_swml)
+my $custom_swml = {
+    version  => '1.0.0',
+    sections => {
+        main => [
+            { play => { url  => 'https://example.com/custom.mp3' } },
+            { say  => { text => 'Custom SWML execution' } },
+        ],
+    },
+};
+$result->execute_swml($custom_swml);
 ```
 
 ### Utility Methods
 
-##### `to_dict() -> Dict[str, Any]`
-Convert the result to a dictionary for serialization.
+##### `to_hash()`
+Convert the result to a hashref for serialization (the Perl equivalent of Python's `to_dict()`). Use `to_json()` to get the JSON string directly.
 
 **Returns:**
-- Dict[str, Any]: Dictionary representation of the result
+- HashRef: Hashref representation of the result
 
 **Usage:**
-```python
-result = SwaigFunctionResult("Hello world")
-result.add_action("play", "music.mp3")
-result_dict = result.to_dict()
-print(result_dict)
-# Output: {"response": "Hello world", "action": [{"play": "music.mp3"}]}
+```perl
+my $result = SignalWire::SWAIG::FunctionResult->new('Hello world');
+$result->add_action( 'play', 'music.mp3' );
+my $result_hash = $result->to_hash;
+# $result_hash is { response => 'Hello world', action => [ { play => 'music.mp3' } ] }
 ```
 
 ### Static Helper Methods
 
-##### `create_payment_prompt(for_situation: str, actions: List[Dict[str, str]], card_type: Optional[str] = None, error_type: Optional[str] = None) -> Dict[str, Any]`
-Create a payment prompt configuration.
+##### `create_payment_prompt(%opts)`
+Create a payment-prompt configuration hashref. Callable as a class or instance method. Arguments are named.
 
 **Parameters:**
-- `for_situation` (str): Situation identifier
-- `actions` (List[Dict[str, str]]): List of action configurations
-- `card_type` (Optional[str]): Card type for prompts
-- `error_type` (Optional[str]): Error type for error prompts
+- `for_situation` (Str): Situation identifier (required)
+- `actions` (ArrayRef[HashRef]): List of action configurations (required)
+- `card_type` (Str): Card type for prompts
+- `error_type` (Str): Error type for error prompts
 
 **Usage:**
-```python
-prompt = SwaigFunctionResult.create_payment_prompt(
-    for_situation="card_number",
-    actions=[
-        SwaigFunctionResult.create_payment_action("say", "Please enter your card number")
-    ]
-)
+```perl
+my $prompt = SignalWire::SWAIG::FunctionResult->create_payment_prompt(
+    for_situation => 'card_number',
+    actions       => [
+        SignalWire::SWAIG::FunctionResult->create_payment_action( 'say', 'Please enter your card number' ),
+    ],
+);
 ```
 
-##### `create_payment_action(action_type: str, phrase: str) -> Dict[str, str]`
-Create a payment action configuration.
+##### `create_payment_action($action_type, $phrase)`
+Create a payment-action configuration hashref. Callable as a class or instance method.
 
 **Parameters:**
-- `action_type` (str): Action type
-- `phrase` (str): Action phrase
+- `$action_type` (Str): Action type
+- `$phrase` (Str): Action phrase
 
 **Usage:**
-```python
-action = SwaigFunctionResult.create_payment_action("say", "Enter your card number")
+```perl
+my $action = SignalWire::SWAIG::FunctionResult->create_payment_action( 'say', 'Enter your card number' );
 ```
 
-##### `create_payment_parameter(name: str, value: str) -> Dict[str, str]`
-Create a payment parameter configuration.
+##### `create_payment_parameter($name, $value)`
+Create a payment-parameter configuration hashref. Callable as a class or instance method.
 
 **Parameters:**
-- `name` (str): Parameter name
-- `value` (str): Parameter value
+- `$name` (Str): Parameter name
+- `$value` (Str): Parameter value
 
 **Usage:**
-```python
-param = SwaigFunctionResult.create_payment_parameter("merchant_id", "12345")
+```perl
+my $param = SignalWire::SWAIG::FunctionResult->create_payment_parameter( 'merchant_id', '12345' );
 ```
 
 ### Method Chaining
 
-All methods return `self`, enabling fluent method chaining:
+All mutating methods return `$self`, enabling fluent method chaining:
 
-```python
-result = (SwaigFunctionResult("I'll help you with that")
-    .set_post_process(True)
-    .update_global_data({"status": "helping"})
-    .set_end_of_speech_timeout(800)
-    .add_action("play", "thinking.mp3"))
+```perl
+my $result = SignalWire::SWAIG::FunctionResult->new("I'll help you with that")
+    ->set_post_process(1)
+    ->update_global_data({ status => 'helping' })
+    ->set_end_of_speech_timeout(800)
+    ->add_action( 'play', 'thinking.mp3' );
 
 # Complex workflow
-result = (SwaigFunctionResult("Processing your payment")
-    .set_post_process(True)
-    .update_global_data({"payment_status": "processing"})
-    .pay(
-        payment_connector_url="https://payments.com/webhook",
-        charge_amount="99.99",
-        description="Service payment"
+my $result2 = SignalWire::SWAIG::FunctionResult->new('Processing your payment')
+    ->set_post_process(1)
+    ->update_global_data({ payment_status => 'processing' })
+    ->pay(
+        payment_connector_url => 'https://payments.com/webhook',
+        charge_amount         => '99.99',
+        description           => 'Service payment',
     )
-    .send_sms(
-        to_number="+15551234567",
-        from_number="+15559876543",
-        body="Payment confirmation will be sent shortly"
-    ))
+    ->send_sms(
+        to_number   => '+15551234567',
+        from_number => '+15559876543',
+        body        => 'Payment confirmation will be sent shortly',
+    );
 ```
 
 This concludes Part 2 of the API reference covering the SwaigFunctionResult class. The document will continue with DataMap and other components in subsequent parts.
@@ -2182,95 +2047,99 @@ This concludes Part 2 of the API reference covering the SwaigFunctionResult clas
 
 ## DataMap Class
 
-The `DataMap` class provides a declarative approach to creating SWAIG tools that integrate with REST APIs without requiring webhook infrastructure. DataMap tools execute on SignalWire's server infrastructure, eliminating the need to expose webhook endpoints.
+The `SignalWire::DataMap` class provides a declarative approach to creating SWAIG tools that integrate with REST APIs without requiring webhook infrastructure. DataMap tools execute on SignalWire's server infrastructure, eliminating the need to expose webhook endpoints.
 
 ### Constructor
 
-```python
-DataMap(function_name: str)
+```perl
+SignalWire::DataMap->new($function_name);
 ```
 
 **Parameters:**
-- `function_name` (str): Name of the SWAIG function this DataMap will create
+- `$function_name` (Str): Name of the SWAIG function this DataMap will create
 
 **Usage:**
-```python
+```perl
+use SignalWire::DataMap;
+
 # Create a new DataMap tool
-weather_map = DataMap('get_weather')
-search_map = DataMap('search_docs')
+my $weather_map = SignalWire::DataMap->new('get_weather');
+my $search_map  = SignalWire::DataMap->new('search_docs');
 ```
 
 ### Core Configuration Methods
 
 #### Function Metadata
 
-##### `purpose(description: str) -> DataMap`
-Set the function description/purpose.
+##### `purpose($description)`
+Set the function description/purpose. Returns `$self` for chaining.
 
 **Parameters:**
-- `description` (str): Human-readable description of what this function does
+- `$description` (Str): Human-readable description of what this function does
 
 **Usage:**
-```python
-data_map = DataMap('get_weather').purpose('Get current weather information for any city')
+```perl
+my $data_map = SignalWire::DataMap->new('get_weather')
+    ->purpose('Get current weather information for any city');
 ```
 
-##### `description(description: str) -> DataMap`
-Alias for `purpose()` - set the function description.
+##### `description($description)`
+Alias for `purpose()` - set the function description. Returns `$self` for chaining.
 
 **Parameters:**
-- `description` (str): Function description
+- `$description` (Str): Function description
 
 **Usage:**
-```python
-data_map = DataMap('search_api').description('Search our knowledge base for information')
+```perl
+my $data_map = SignalWire::DataMap->new('search_api')
+    ->description('Search our knowledge base for information');
 ```
 
 #### Parameter Definition
 
-##### `parameter(name: str, param_type: str, description: str, required: bool = False, enum: Optional[List[str]] = None) -> DataMap`
-Add a function parameter with JSON schema validation.
+##### `parameter($name, $param_type, $description, %opts)`
+Add a function parameter with JSON-schema validation. `$name`, `$param_type`, and `$description` are positional; `required` and `enum` are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `name` (str): Parameter name
-- `param_type` (str): JSON schema type: "string", "number", "boolean", "array", "object"
-- `description` (str): Parameter description for the AI
-- `required` (bool): Whether parameter is required (default: False)
-- `enum` (Optional[List[str]]): List of allowed values for validation
+- `$name` (Str): Parameter name
+- `$param_type` (Str): JSON-schema type: "string", "number", "boolean", "array", "object"
+- `$description` (Str): Parameter description for the AI
+- `required` (Bool): Whether the parameter is required (default: false)
+- `enum` (ArrayRef[Str]): List of allowed values for validation
 
 **Usage:**
-```python
+```perl
 # Required string parameter
-data_map.parameter('location', 'string', 'City name or ZIP code', required=True)
+$data_map->parameter( 'location', 'string', 'City name or ZIP code', required => 1 );
 
 # Optional number parameter
-data_map.parameter('days', 'number', 'Number of forecast days', required=False)
+$data_map->parameter( 'days', 'number', 'Number of forecast days' );
 
 # Enum parameter with allowed values
-data_map.parameter('units', 'string', 'Temperature units', 
-                  enum=['celsius', 'fahrenheit'], required=False)
+$data_map->parameter( 'units', 'string', 'Temperature units',
+    enum => [ 'celsius', 'fahrenheit' ] );
 
 # Boolean parameter
-data_map.parameter('include_alerts', 'boolean', 'Include weather alerts', required=False)
+$data_map->parameter( 'include_alerts', 'boolean', 'Include weather alerts' );
 
 # Array parameter
-data_map.parameter('categories', 'array', 'Search categories to include')
+$data_map->parameter( 'categories', 'array', 'Search categories to include' );
 ```
 
 ### API Integration Methods
 
 #### HTTP Webhook Configuration
 
-##### `webhook(method: str, url: str, headers: Optional[Dict[str, str]] = None, form_param: Optional[str] = None, input_args_as_params: bool = False, require_args: Optional[List[str]] = None) -> DataMap`
-Configure an HTTP API call.
+##### `webhook($method, $url, %opts)`
+Configure an HTTP API call. `$method` and `$url` are positional; the rest are named. Returns `$self` for chaining.
 
 **Parameters:**
-- `method` (str): HTTP method: "GET", "POST", "PUT", "DELETE", "PATCH"
-- `url` (str): API endpoint URL (supports `${variable}` substitution)
-- `headers` (Optional[Dict[str, str]]): HTTP headers to send
-- `form_param` (Optional[str]): Send JSON body as single form parameter with this name
-- `input_args_as_params` (bool): Merge function arguments into URL parameters (default: False)
-- `require_args` (Optional[List[str]]): Only execute if these arguments are present
+- `$method` (Str): HTTP method: "GET", "POST", "PUT", "DELETE", "PATCH"
+- `$url` (Str): API endpoint URL (supports `${variable}` substitution)
+- `headers` (HashRef): HTTP headers to send
+- `form_param` (Str): Send the JSON body as a single form parameter with this name
+- `input_args_as_params` (Bool): Merge function arguments into URL parameters (default: false)
+- `require_args` (ArrayRef[Str]): Only execute if these arguments are present
 
 **Variable Substitution in URLs:**
 - `${args.parameter_name}`: Function argument values
@@ -2278,110 +2147,109 @@ Configure an HTTP API call.
 - `${meta_data.call_id}`: Call and function metadata
 
 **Usage:**
-```python
+```perl
 # Simple GET request with parameter substitution
-data_map.webhook('GET', 'https://api.weather.com/v1/current?key=API_KEY&q=${args.location}')
+$data_map->webhook( 'GET', 'https://api.weather.com/v1/current?key=API_KEY&q=${args.location}' );
 
 # POST request with authentication headers
-data_map.webhook(
-    'POST', 
+$data_map->webhook(
+    'POST',
     'https://api.company.com/search',
-    headers={
-        'Authorization': 'Bearer YOUR_TOKEN',
-        'Content-Type': 'application/json'
-    }
-)
+    headers => {
+        Authorization  => 'Bearer YOUR_TOKEN',
+        'Content-Type' => 'application/json',
+    },
+);
 
 # Webhook that requires specific arguments
-data_map.webhook(
+$data_map->webhook(
     'GET',
     'https://api.service.com/data?id=${args.customer_id}',
-    require_args=['customer_id']
-)
+    require_args => ['customer_id'],
+);
 
 # Use global data for call-related info (NOT credentials)
-data_map.webhook(
+$data_map->webhook(
     'GET',
     'https://api.service.com/customer/${global_data.customer_id}/orders',
-    headers={'Authorization': 'Bearer YOUR_API_TOKEN'}  # Use static credentials
-)
+    headers => { Authorization => 'Bearer YOUR_API_TOKEN' },   # Use static credentials
+);
 ```
 
-##### `body(data: Dict[str, Any]) -> DataMap`
-Set the JSON body for POST/PUT requests.
+##### `body($data)`
+Set the JSON body for POST/PUT requests. Returns `$self` for chaining.
 
 **Parameters:**
-- `data` (Dict[str, Any]): JSON body data (supports `${variable}` substitution)
+- `$data` (HashRef): JSON body data (supports `${variable}` substitution)
 
 **Usage:**
-```python
+```perl
 # Static body with parameter substitution
-data_map.body({
-    'query': '${args.search_term}',
-    'limit': 5,
-    'filters': {
-        'category': '${args.category}',
-        'active': True
-    }
-})
+$data_map->body({
+    query   => '${args.search_term}',
+    limit   => 5,
+    filters => {
+        category => '${args.category}',
+        active   => JSON::true,
+    },
+});
 
 # Body with call-related data (NOT sensitive info)
-data_map.body({
-    'customer_id': '${global_data.customer_id}',
-    'request_id': '${meta_data.call_id}',
-    'search': '${args.query}'
-})
+$data_map->body({
+    customer_id => '${global_data.customer_id}',
+    request_id  => '${meta_data.call_id}',
+    search      => '${args.query}',
+});
 ```
 
-##### `params(data: Dict[str, Any]) -> DataMap`
-Set URL query parameters.
+##### `params($data)`
+Set URL query parameters. Returns `$self` for chaining.
 
 **Parameters:**
-- `data` (Dict[str, Any]): Query parameters (supports `${variable}` substitution)
+- `$data` (HashRef): Query parameters (supports `${variable}` substitution)
 
 **Usage:**
-```python
+```perl
 # URL parameters with substitution
-data_map.params({
-    'api_key': 'YOUR_API_KEY',
-    'q': '${args.location}',
-    'units': '${args.units}',
-    'lang': 'en'
-})
+$data_map->params({
+    api_key => 'YOUR_API_KEY',
+    q       => '${args.location}',
+    units   => '${args.units}',
+    lang    => 'en',
+});
 ```
 
 #### Multiple Webhooks and Fallbacks
 
 DataMap supports multiple webhook configurations for fallback scenarios:
 
-```python
+```perl
 # Primary API with fallback
-data_map = (DataMap('search_with_fallback')
-    .purpose('Search with multiple API fallbacks')
-    .parameter('query', 'string', 'Search query', required=True)
-    
+my $data_map = SignalWire::DataMap->new('search_with_fallback')
+    ->purpose('Search with multiple API fallbacks')
+    ->parameter( 'query', 'string', 'Search query', required => 1 )
+
     # Primary API
-    .webhook('GET', 'https://api.primary.com/search?q=${args.query}')
-    .output(SwaigFunctionResult('Primary result: ${response.title}'))
-    
+    ->webhook( 'GET', 'https://api.primary.com/search?q=${args.query}' )
+    ->output( SignalWire::SWAIG::FunctionResult->new('Primary result: ${response.title}') )
+
     # Fallback API
-    .webhook('GET', 'https://api.fallback.com/search?q=${args.query}')
-    .output(SwaigFunctionResult('Fallback result: ${response.title}'))
-    
+    ->webhook( 'GET', 'https://api.fallback.com/search?q=${args.query}' )
+    ->output( SignalWire::SWAIG::FunctionResult->new('Fallback result: ${response.title}') )
+
     # Final fallback if all APIs fail
-    .fallback_output(SwaigFunctionResult('Sorry, all search services are currently unavailable'))
-)
+    ->fallback_output( SignalWire::SWAIG::FunctionResult->new('Sorry, all search services are currently unavailable') );
 ```
 
 ### Response Processing
 
 #### Basic Output
 
-##### `output(result: SwaigFunctionResult) -> DataMap`
-Set the response template for successful API calls.
+##### `output($result)`
+Set the response template for successful API calls. Returns `$self` for chaining.
 
 **Parameters:**
-- `result` (SwaigFunctionResult): Response template with variable substitution
+- `$result` (FunctionResult): Response template with variable substitution
 
 **Variable Substitution in Outputs:**
 - `${response.field}`: API response fields
@@ -2391,119 +2259,111 @@ Set the response template for successful API calls.
 - `${global_data.key}`: Call-wide data store (user info, call state)
 
 **Usage:**
-```python
+```perl
 # Simple response template
-data_map.output(SwaigFunctionResult('Weather in ${args.location}: ${response.current.condition.text}, ${response.current.temp_f}°F'))
+$data_map->output(
+    SignalWire::SWAIG::FunctionResult->new(
+        'Weather in ${args.location}: ${response.current.condition.text}, ${response.current.temp_f}F' )
+);
 
 # Response with actions
-data_map.output(
-    SwaigFunctionResult('Found ${response.total_results} results')
-    .update_global_data({'last_search': '${args.query}'})
-    .add_action('play', 'search_complete.mp3')
-)
+$data_map->output(
+    SignalWire::SWAIG::FunctionResult->new('Found ${response.total_results} results')
+        ->update_global_data({ last_search => '${args.query}' })
+        ->add_action( 'play', 'search_complete.mp3' )
+);
 
 # Complex response with nested data
-data_map.output(
-    SwaigFunctionResult('Order ${response.order.id} status: ${response.order.status}. Estimated delivery: ${response.order.delivery.estimated_date}')
-)
+$data_map->output(
+    SignalWire::SWAIG::FunctionResult->new(
+        'Order ${response.order.id} status: ${response.order.status}. Estimated delivery: ${response.order.delivery.estimated_date}' )
+);
 ```
 
-##### `fallback_output(result: SwaigFunctionResult) -> DataMap`
-Set the response when all webhooks fail.
+##### `fallback_output($result)`
+Set the response used when all webhooks fail. Returns `$self` for chaining.
 
 **Parameters:**
-- `result` (SwaigFunctionResult): Fallback response
+- `$result` (FunctionResult): Fallback response
 
 **Usage:**
-```python
-data_map.fallback_output(
-    SwaigFunctionResult('Sorry, the service is temporarily unavailable. Please try again later.')
-    .add_action('play', 'service_unavailable.mp3')
-)
+```perl
+$data_map->fallback_output(
+    SignalWire::SWAIG::FunctionResult->new('Sorry, the service is temporarily unavailable. Please try again later.')
+        ->add_action( 'play', 'service_unavailable.mp3' )
+);
 ```
 
 #### Array Processing
 
-##### `foreach(foreach_config: Union[str, Dict[str, Any]]) -> DataMap`
-Process array responses by iterating over elements.
+##### `foreach($foreach_config)`
+Process array responses by iterating over elements. In Perl, `foreach` takes a hashref that must include `input_key` (the array field in the response), `output_key` (the accumulator name referenced in the output template), and `append` (the per-element template). An optional `max` limits how many elements are processed. Must be called after a `webhook`. Returns `$self` for chaining.
 
 **Parameters:**
-- `foreach_config` (Union[str, Dict]): Array path or configuration object
+- `$foreach_config` (HashRef): Configuration with `input_key`, `output_key`, `append`, and optional `max`
 
-**Simple Array Processing:**
-```python
-# Process array of search results
-data_map = (DataMap('search_docs')
-    .webhook('GET', 'https://api.docs.com/search?q=${args.query}')
-    .foreach('${response.results}')  # Iterate over results array
-    .output(SwaigFunctionResult('Found: ${foreach.title} - ${foreach.summary}'))
-)
+**Array Processing:**
+```perl
+# Process an array of search results
+my $data_map = SignalWire::DataMap->new('search_docs')
+    ->webhook( 'GET', 'https://api.docs.com/search?q=${args.query}' )
+    ->foreach({
+        input_key  => 'results',
+        output_key => 'formatted',
+        max        => 3,   # process only the first 3 items
+        append     => '${this.title} - ${this.summary}\n',
+    })
+    ->output( SignalWire::SWAIG::FunctionResult->new('Found: ${formatted}') );
 ```
 
-**Advanced Array Processing:**
-```python
-# Complex foreach configuration
-data_map.foreach({
-    'array': '${response.items}',
-    'limit': 3,  # Process only first 3 items
-    'filter': {
-        'field': 'status',
-        'value': 'active'
-    }
-})
-```
-
-**Foreach Variable Access:**
-- `${foreach.field}`: Current array element field
-- `${foreach.nested.field}`: Nested fields in current element
-- `${foreach_index}`: Current iteration index (0-based)
-- `${foreach_count}`: Total number of items being processed
+**Foreach Template Variable Access:**
+- `${this.field}`: Current array element field
+- `${this.nested.field}`: Nested fields in the current element
 
 ### Pattern-Based Processing
 
 #### Expression Matching
 
-##### `expression(test_value: str, pattern: Union[str, Pattern], output: SwaigFunctionResult, nomatch_output: Optional[SwaigFunctionResult] = None) -> DataMap`
-Add pattern-based responses without API calls.
+##### `expression($test_value, $pattern, $output, %opts)`
+Add pattern-based responses without API calls. `$test_value`, `$pattern`, and `$output` are positional; `nomatch_output` is named. Returns `$self` for chaining.
 
 **Parameters:**
-- `test_value` (str): Template string to test against pattern
-- `pattern` (Union[str, Pattern]): Regex pattern or compiled Pattern object
-- `output` (SwaigFunctionResult): Response when pattern matches
-- `nomatch_output` (Optional[SwaigFunctionResult]): Response when pattern doesn't match
+- `$test_value` (Str): Template string to test against the pattern
+- `$pattern` (Str | Regexp): Regex pattern string or a compiled `qr//`
+- `$output` (FunctionResult): Response when the pattern matches
+- `nomatch_output` (FunctionResult): Response when the pattern doesn't match
 
 **Usage:**
-```python
+```perl
 # Command-based responses
-control_map = (DataMap('file_control')
-    .purpose('Control file playback')
-    .parameter('command', 'string', 'Playback command', required=True)
-    .parameter('filename', 'string', 'File to control')
-    
+my $control_map = SignalWire::DataMap->new('file_control')
+    ->purpose('Control file playback')
+    ->parameter( 'command',  'string', 'Playback command', required => 1 )
+    ->parameter( 'filename', 'string', 'File to control' )
+
     # Start commands
-    .expression(
-        '${args.command}', 
-        r'start|play|begin',
-        SwaigFunctionResult('Starting playback')
-        .add_action('start_playback', {'file': '${args.filename}'})
+    ->expression(
+        '${args.command}',
+        'start|play|begin',
+        SignalWire::SWAIG::FunctionResult->new('Starting playback')
+            ->add_action( 'start_playback', { file => '${args.filename}' } )
     )
-    
+
     # Stop commands
-    .expression(
+    ->expression(
         '${args.command}',
-        r'stop|pause|halt',
-        SwaigFunctionResult('Stopping playback')
-        .add_action('stop_playback', True)
+        'stop|pause|halt',
+        SignalWire::SWAIG::FunctionResult->new('Stopping playback')
+            ->add_action( 'stop_playback', JSON::true )
     )
-    
+
     # Volume commands
-    .expression(
+    ->expression(
         '${args.command}',
-        r'volume (\d+)',
-        SwaigFunctionResult('Setting volume to ${match.1}')
-        .add_action('set_volume', '${match.1}')
-    )
-)
+        'volume (\d+)',
+        SignalWire::SWAIG::FunctionResult->new('Setting volume to ${match.1}')
+            ->add_action( 'set_volume', '${match.1}' )
+    );
 ```
 
 **Pattern Matching Variables:**
@@ -2513,240 +2373,248 @@ control_map = (DataMap('file_control')
 
 ### Error Handling
 
-##### `error_keys(keys: List[str]) -> DataMap`
-Specify response fields that indicate errors.
+##### `error_keys($keys)`
+Specify response fields that indicate errors. Returns `$self` for chaining.
 
 **Parameters:**
-- `keys` (List[str]): List of field names that indicate API errors
+- `$keys` (ArrayRef[Str]): List of field names that indicate API errors
 
 **Usage:**
-```python
+```perl
 # Treat these response fields as errors
-data_map.error_keys(['error', 'error_message', 'status_code'])
+$data_map->error_keys([ 'error', 'error_message', 'status_code' ]);
 
-# If API returns {"error": "Not found"}, DataMap will treat this as an error
+# If the API returns { error => 'Not found' }, DataMap treats this as an error
 ```
 
-##### `global_error_keys(keys: List[str]) -> DataMap`
-Set global error keys for all webhooks in this DataMap.
+##### `global_error_keys($keys)`
+Set global error keys for all webhooks in this DataMap. Returns `$self` for chaining.
 
 **Parameters:**
-- `keys` (List[str]): Global error field names
+- `$keys` (ArrayRef[Str]): Global error field names
 
 **Usage:**
-```python
-data_map.global_error_keys(['error', 'message', 'code'])
+```perl
+$data_map->global_error_keys([ 'error', 'message', 'code' ]);
 ```
 
 ### Advanced Configuration
 
-##### `webhook_expressions(expressions: List[Dict[str, Any]]) -> DataMap`
-Add expression-based webhook selection.
+##### `webhook_expressions($expressions)`
+Add expression-based webhook selection. Returns `$self` for chaining.
 
 **Parameters:**
-- `expressions` (List[Dict[str, Any]]): List of expression configurations
+- `$expressions` (ArrayRef[HashRef]): List of expression configurations
 
 **Usage:**
-```python
+```perl
 # Different APIs based on input
-data_map.webhook_expressions([
+$data_map->webhook_expressions([
     {
-        'test': '${args.type}',
-        'pattern': 'weather',
-        'webhook': {
-            'method': 'GET',
-            'url': 'https://weather-api.com/current?q=${args.location}'
-        }
+        test    => '${args.type}',
+        pattern => 'weather',
+        webhook => {
+            method => 'GET',
+            url    => 'https://weather-api.com/current?q=${args.location}',
+        },
     },
     {
-        'test': '${args.type}',
-        'pattern': 'news',
-        'webhook': {
-            'method': 'GET', 
-            'url': 'https://news-api.com/search?q=${args.query}'
-        }
-    }
-])
+        test    => '${args.type}',
+        pattern => 'news',
+        webhook => {
+            method => 'GET',
+            url    => 'https://news-api.com/search?q=${args.query}',
+        },
+    },
+]);
 ```
 
 ### Complete DataMap Examples
 
 #### Simple Weather API
 
-```python
-weather_tool = (DataMap('get_weather')
-    .purpose('Get current weather information')
-    .parameter('location', 'string', 'City name or ZIP code', required=True)
-    .parameter('units', 'string', 'Temperature units', enum=['celsius', 'fahrenheit'])
-    .webhook('GET', 'https://api.weather.com/v1/current?key=API_KEY&q=${args.location}&units=${args.units}')
-    .output(SwaigFunctionResult('Weather in ${args.location}: ${response.current.condition.text}, ${response.current.temp_f}°F'))
-    .error_keys(['error'])
-)
+```perl
+my $weather_tool = SignalWire::DataMap->new('get_weather')
+    ->purpose('Get current weather information')
+    ->parameter( 'location', 'string', 'City name or ZIP code', required => 1 )
+    ->parameter( 'units', 'string', 'Temperature units', enum => [ 'celsius', 'fahrenheit' ] )
+    ->webhook( 'GET', 'https://api.weather.com/v1/current?key=API_KEY&q=${args.location}&units=${args.units}' )
+    ->output(
+        SignalWire::SWAIG::FunctionResult->new(
+            'Weather in ${args.location}: ${response.current.condition.text}, ${response.current.temp_f}F' )
+    )
+    ->error_keys(['error']);
 
-# Register with agent
-agent.register_swaig_function(weather_tool.to_swaig_function())
+# Register with the agent
+$agent->register_swaig_function( $weather_tool->to_swaig_function );
 ```
 
 #### Search with Array Processing
 
-```python
-search_tool = (DataMap('search_knowledge')
-    .purpose('Search company knowledge base')
-    .parameter('query', 'string', 'Search query', required=True)
-    .parameter('category', 'string', 'Search category', enum=['docs', 'faq', 'policies'])
-    .webhook(
-        'POST', 
+```perl
+my $search_tool = SignalWire::DataMap->new('search_knowledge')
+    ->purpose('Search company knowledge base')
+    ->parameter( 'query', 'string', 'Search query', required => 1 )
+    ->parameter( 'category', 'string', 'Search category', enum => [ 'docs', 'faq', 'policies' ] )
+    ->webhook(
+        'POST',
         'https://api.company.com/search',
-        headers={'Authorization': 'Bearer TOKEN'}
+        headers => { Authorization => 'Bearer TOKEN' },
     )
-    .body({
-        'query': '${args.query}',
-        'category': '${args.category}',
-        'limit': 5
+    ->body({
+        query    => '${args.query}',
+        category => '${args.category}',
+        limit    => 5,
     })
-    .foreach('${response.results}')
-    .output(SwaigFunctionResult('Found: ${foreach.title} - ${foreach.summary}'))
-    .fallback_output(SwaigFunctionResult('Search service is temporarily unavailable'))
-)
+    ->foreach({
+        input_key  => 'results',
+        output_key => 'formatted',
+        append     => '${this.title} - ${this.summary}\n',
+    })
+    ->output( SignalWire::SWAIG::FunctionResult->new('Found: ${formatted}') )
+    ->fallback_output( SignalWire::SWAIG::FunctionResult->new('Search service is temporarily unavailable') );
 ```
 
 #### Command Processing (No API)
 
-```python
-control_tool = (DataMap('system_control')
-    .purpose('Control system functions')
-    .parameter('action', 'string', 'Action to perform', required=True)
-    .parameter('target', 'string', 'Target for the action')
-    
+```perl
+my $control_tool = SignalWire::DataMap->new('system_control')
+    ->purpose('Control system functions')
+    ->parameter( 'action', 'string', 'Action to perform', required => 1 )
+    ->parameter( 'target', 'string', 'Target for the action' )
+
     # Restart commands
-    .expression(
+    ->expression(
         '${args.action}',
-        r'restart|reboot',
-        SwaigFunctionResult('Restarting ${args.target}')
-        .add_action('restart_service', {'service': '${args.target}'})
+        'restart|reboot',
+        SignalWire::SWAIG::FunctionResult->new('Restarting ${args.target}')
+            ->add_action( 'restart_service', { service => '${args.target}' } )
     )
-    
+
     # Status commands
-    .expression(
+    ->expression(
         '${args.action}',
-        r'status|check',
-        SwaigFunctionResult('Checking status of ${args.target}')
-        .add_action('check_status', {'service': '${args.target}'})
+        'status|check',
+        SignalWire::SWAIG::FunctionResult->new('Checking status of ${args.target}')
+            ->add_action( 'check_status', { service => '${args.target}' } )
     )
-    
+
     # Default for unrecognized commands
-    .expression(
+    ->expression(
         '${args.action}',
-        r'.*',
-        SwaigFunctionResult('Unknown command: ${args.action}'),
-        nomatch_output=SwaigFunctionResult('Please specify a valid action')
-    )
-)
+        '.*',
+        SignalWire::SWAIG::FunctionResult->new('Unknown command: ${args.action}'),
+        nomatch_output => SignalWire::SWAIG::FunctionResult->new('Please specify a valid action'),
+    );
 ```
 
 ### Conversion and Registration
 
-##### `to_swaig_function() -> Dict[str, Any]`
-Convert the DataMap to a SWAIG function dictionary for registration.
+##### `to_swaig_function()`
+Convert the DataMap to a SWAIG function hashref for registration.
 
 **Returns:**
-- Dict[str, Any]: Complete SWAIG function definition
+- HashRef: Complete SWAIG function definition
 
 **Usage:**
-```python
-# Build DataMap
-weather_map = DataMap('get_weather').purpose('Get weather').parameter('location', 'string', 'City', required=True)
+```perl
+# Build the DataMap
+my $weather_map = SignalWire::DataMap->new('get_weather')
+    ->purpose('Get weather')
+    ->parameter( 'location', 'string', 'City', required => 1 );
 
-# Convert to SWAIG function and register
-swaig_function = weather_map.to_swaig_function()
-agent.register_swaig_function(swaig_function)
+# Convert to a SWAIG function and register
+my $swaig_function = $weather_map->to_swaig_function;
+$agent->register_swaig_function($swaig_function);
 ```
 
 ### Convenience Functions
 
-The SDK provides helper functions for common DataMap patterns:
+The `SignalWire::DataMap` package provides helper functions for common DataMap patterns. They are called as class methods (`SignalWire::DataMap::create_simple_api_tool(...)`).
 
-##### `create_simple_api_tool(name: str, url: str, response_template: str, parameters: Optional[Dict[str, Dict]] = None, method: str = "GET", headers: Optional[Dict[str, str]] = None, body: Optional[Dict[str, Any]] = None, error_keys: Optional[List[str]] = None) -> DataMap`
+##### `create_simple_api_tool(%opts)`
 
-Create a simple API integration tool.
+Create a simple API-integration tool. Arguments are named.
 
 **Parameters:**
-- `name` (str): Function name
-- `url` (str): API endpoint URL
-- `response_template` (str): Response template string
-- `parameters` (Optional[Dict[str, Dict]]): Parameter definitions
-- `method` (str): HTTP method (default: "GET")
-- `headers` (Optional[Dict[str, str]]): HTTP headers
-- `body` (Optional[Dict[str, Any]]): Request body
-- `error_keys` (Optional[List[str]]): Error field names
+- `name` (Str): Function name
+- `url` (Str): API endpoint URL
+- `response_template` (Str): Response template string
+- `parameters` (HashRef): Parameter definitions
+- `method` (Str): HTTP method (default: "GET")
+- `headers` (HashRef): HTTP headers
+- `body` (HashRef): Request body
+- `error_keys` (ArrayRef[Str]): Error field names
 
 **Usage:**
-```python
-from signalwire_agents.core.data_map import create_simple_api_tool
+```perl
+use SignalWire::DataMap;
 
-weather = create_simple_api_tool(
-    name='get_weather',
-    url='https://api.weather.com/v1/current?key=API_KEY&q=${location}',
-    response_template='Weather in ${location}: ${response.current.condition.text}',
-    parameters={
-        'location': {
-            'type': 'string', 
-            'description': 'City name', 
-            'required': True
-        }
-    }
-)
+my $weather = SignalWire::DataMap::create_simple_api_tool(
+    name              => 'get_weather',
+    url               => 'https://api.weather.com/v1/current?key=API_KEY&q=${location}',
+    response_template => 'Weather in ${location}: ${response.current.condition.text}',
+    parameters        => {
+        location => {
+            type        => 'string',
+            description => 'City name',
+            required    => 1,
+        },
+    },
+);
 
-agent.register_swaig_function(weather.to_swaig_function())
+$agent->register_swaig_function( $weather->to_swaig_function );
 ```
 
-##### `create_expression_tool(name: str, patterns: Dict[str, Tuple[str, SwaigFunctionResult]], parameters: Optional[Dict[str, Dict]] = None) -> DataMap`
+##### `create_expression_tool(%opts)`
 
-Create a pattern-based tool without API calls.
+Create a pattern-based tool without API calls. Arguments are named. `patterns` is a hashref mapping a test-value template to `[ $pattern, $function_result ]`.
 
 **Parameters:**
-- `name` (str): Function name
-- `patterns` (Dict[str, Tuple[str, SwaigFunctionResult]]): Pattern mappings
-- `parameters` (Optional[Dict[str, Dict]]): Parameter definitions
+- `name` (Str): Function name
+- `patterns` (HashRef): Test-value => `[ pattern, FunctionResult ]` mappings
+- `parameters` (HashRef): Parameter definitions
 
 **Usage:**
-```python
-from signalwire_agents.core.data_map import create_expression_tool
+```perl
+use SignalWire::DataMap;
+use SignalWire::SWAIG::FunctionResult;
 
-file_control = create_expression_tool(
-    name='file_control',
-    patterns={
-        r'start.*': ('${args.command}', SwaigFunctionResult().add_action('start_playback', True)),
-        r'stop.*': ('${args.command}', SwaigFunctionResult().add_action('stop_playback', True))
+my $file_control = SignalWire::DataMap::create_expression_tool(
+    name     => 'file_control',
+    patterns => {
+        '${args.command}' => [
+            'start.*',
+            SignalWire::SWAIG::FunctionResult->new->add_action( 'start_playback', JSON::true ),
+        ],
     },
-    parameters={
-        'command': {
-            'type': 'string',
-            'description': 'Playback command',
-            'required': True
-        }
-    }
-)
+    parameters => {
+        command => {
+            type        => 'string',
+            description => 'Playback command',
+            required    => 1,
+        },
+    },
+);
 
-agent.register_swaig_function(file_control.to_swaig_function())
+$agent->register_swaig_function( $file_control->to_swaig_function );
 ```
 
 ### Method Chaining
 
-All DataMap methods return `self`, enabling fluent method chaining:
+All DataMap methods return `$self`, enabling fluent method chaining:
 
-```python
-complete_tool = (DataMap('comprehensive_search')
-    .purpose('Comprehensive search with fallbacks')
-    .parameter('query', 'string', 'Search query', required=True)
-    .parameter('category', 'string', 'Search category', enum=['all', 'docs', 'faq'])
-    .webhook('GET', 'https://primary-api.com/search?q=${args.query}&cat=${args.category}')
-    .output(SwaigFunctionResult('Primary: ${response.title}'))
-    .webhook('GET', 'https://backup-api.com/search?q=${args.query}')
-    .output(SwaigFunctionResult('Backup: ${response.title}'))
-    .fallback_output(SwaigFunctionResult('All search services unavailable'))
-    .error_keys(['error', 'message'])
-)
+```perl
+my $complete_tool = SignalWire::DataMap->new('comprehensive_search')
+    ->purpose('Comprehensive search with fallbacks')
+    ->parameter( 'query', 'string', 'Search query', required => 1 )
+    ->parameter( 'category', 'string', 'Search category', enum => [ 'all', 'docs', 'faq' ] )
+    ->webhook( 'GET', 'https://primary-api.com/search?q=${args.query}&cat=${args.category}' )
+    ->output( SignalWire::SWAIG::FunctionResult->new('Primary: ${response.title}') )
+    ->webhook( 'GET', 'https://backup-api.com/search?q=${args.query}' )
+    ->output( SignalWire::SWAIG::FunctionResult->new('Backup: ${response.title}') )
+    ->fallback_output( SignalWire::SWAIG::FunctionResult->new('All search services unavailable') )
+    ->error_keys([ 'error', 'message' ]);
 ```
 
 This concludes Part 3 of the API reference covering the DataMap class. The document will continue with Context System and other components in subsequent parts. 
@@ -2759,77 +2627,53 @@ The Context System enhances traditional prompt-based agents by adding structured
 
 ### ContextBuilder Class
 
-The `ContextBuilder` is accessed via `agent.define_contexts()` and provides the main interface for creating structured workflows.
+The `ContextBuilder` is accessed via `$agent->define_contexts` and provides the main interface for creating structured workflows.
 
 #### Getting Started
 
-```python
+```perl
 # Access the context builder
-contexts = agent.define_contexts()
+my $contexts = $agent->define_contexts;
 
 # Create contexts and steps
-contexts.add_context("greeting") \
-    .add_step("welcome") \
-    .set_text("Welcome! How can I help you today?") \
-    .set_step_criteria("User has stated their need") \
-    .set_valid_steps(["next"])
+$contexts->add_context('greeting')
+    ->add_step('welcome')
+    ->set_text('Welcome! How can I help you today?')
+    ->set_step_criteria('User has stated their need')
+    ->set_valid_steps(['menu']);
 ```
 
-##### `add_context(name: str) -> Context`
+##### `add_context($name)`
 Create a new context in the workflow.
 
 **Parameters:**
-- `name` (str): Unique context name
+- `$name` (Str): Unique context name
 
 **Returns:**
 - Context: Context object for method chaining
 
 **Usage:**
-```python
+```perl
 # Create multiple contexts
-greeting_context = contexts.add_context("greeting")
-main_menu_context = contexts.add_context("main_menu")
-support_context = contexts.add_context("support")
+my $greeting_context  = $contexts->add_context('greeting');
+my $main_menu_context = $contexts->add_context('main_menu');
+my $support_context   = $contexts->add_context('support');
 ```
 
 ### Context Class
 
-The Context class represents a conversation context containing multiple steps with enhanced features:
+The Context object represents a conversation context containing multiple steps with enhanced features. All setters return the Context for method chaining:
 
-```python
-class Context:
-    def add_step(self, name: str) -> Step
-        """Create a new step in this context"""
-    
-    def set_valid_contexts(self, contexts: List[str]) -> Context
-        """Set which contexts can be accessed from this context"""
-        
-    # Context entry parameters (for context switching behavior)
-    def set_post_prompt(self, post_prompt: str) -> Context
-        """Override agent's post prompt when this context is active"""
-    
-    def set_system_prompt(self, system_prompt: str) -> Context
-        """Trigger context switch with new system instructions (makes this a Context Switch Context)"""
-        
-    def set_consolidate(self, consolidate: bool) -> Context
-        """Whether to consolidate conversation history when entering this context"""
-        
-    def set_full_reset(self, full_reset: bool) -> Context
-        """Whether to do complete system prompt replacement vs injection"""
-        
-    def set_user_prompt(self, user_prompt: str) -> Context
-        """User message to inject when entering this context for AI context"""
-    
-    # Context prompts (guidance for all steps in context)
-    def set_prompt(self, prompt: str) -> Context
-        """Set simple string prompt that applies to all steps in this context"""
-        
-    def add_section(self, title: str, body: str) -> Context
-        """Add POM-style section to context prompt"""
-        
-    def add_bullets(self, title: str, bullets: List[str]) -> Context
-        """Add POM-style bullet section to context prompt"""
-```
+- `add_step($name)` — Create a new step in this context (returns a Step).
+- `set_valid_contexts($contexts)` — Set which contexts can be accessed from this context (arrayref of names).
+- `set_post_prompt($post_prompt)` — Override the agent's post-prompt when this context is active.
+- `set_system_prompt($system_prompt)` — Trigger a context switch with new system instructions (makes this a Context Switch Context).
+- `set_consolidate($bool)` — Whether to consolidate conversation history when entering this context.
+- `set_full_reset($bool)` — Whether to do complete system-prompt replacement vs injection.
+- `set_user_prompt($user_prompt)` — User message to inject when entering this context.
+- `set_prompt($prompt)` — Set a simple string prompt that applies to all steps in this context.
+- `add_section($title, $body)` — Add a POM-style section to the context prompt.
+- `add_bullets($title, $bullets)` — Add a POM-style bullet section to the context prompt (arrayref of bullets).
 
 **Context Types:**
 
@@ -2840,24 +2684,24 @@ class Context:
 
 #### Usage Examples
 
-```python
+```perl
 # Workflow container context (just organizes steps)
-main_context = contexts.add_context("main")
-main_context.set_prompt("Follow standard customer service protocols")
+my $main_context = $contexts->add_context('main');
+$main_context->set_prompt('Follow standard customer service protocols');
 
-# Context switch context (changes AI behavior)  
-billing_context = contexts.add_context("billing")
-billing_context.set_system_prompt("You are now a billing specialist") \
-    .set_consolidate(True) \
-    .set_user_prompt("Customer needs billing assistance") \
-    .add_section("Department", "Billing Department") \
-    .add_bullets("Services", ["Account inquiries", "Payments", "Refunds"])
+# Context switch context (changes AI behavior)
+my $billing_context = $contexts->add_context('billing');
+$billing_context->set_system_prompt('You are now a billing specialist')
+    ->set_consolidate(1)
+    ->set_user_prompt('Customer needs billing assistance')
+    ->add_section( 'Department', 'Billing Department' )
+    ->add_bullets( 'Services', [ 'Account inquiries', 'Payments', 'Refunds' ] );
 
 # Full reset context (complete conversation reset)
-manager_context = contexts.add_context("manager") 
-manager_context.set_system_prompt("You are a senior manager") \
-    .set_full_reset(True) \
-    .set_consolidate(True)
+my $manager_context = $contexts->add_context('manager');
+$manager_context->set_system_prompt('You are a senior manager')
+    ->set_full_reset(1)
+    ->set_consolidate(1);
 ```
 
 ---
@@ -2876,18 +2720,18 @@ Provides current date and time information.
 - `format` (Optional[str]): Custom date/time format string
 
 **Usage:**
-```python
+```perl
 # Basic datetime skill
-agent.add_skill("datetime")
+$agent->add_skill('datetime');
 
 # With timezone
-agent.add_skill("datetime", {"timezone": "America/New_York"})
+$agent->add_skill('datetime', { timezone => 'America/New_York' });
 
 # With custom format
-agent.add_skill("datetime", {
-    "timezone": "UTC",
-    "format": "%Y-%m-%d %H:%M:%S %Z"
-})
+$agent->add_skill('datetime', {
+    timezone => 'UTC',
+    format   => '%Y-%m-%d %H:%M:%S %Z',
+});
 ```
 
 #### `math` Skill
@@ -2898,12 +2742,12 @@ Safe mathematical expression evaluation.
 - `max_expression_length` (Optional[int]): Maximum expression length (default: 100)
 
 **Usage:**
-```python
+```perl
 # Basic math skill
-agent.add_skill("math")
+$agent->add_skill('math');
 
 # With custom precision
-agent.add_skill("math", {"precision": 4})
+$agent->add_skill('math', { precision => 4 });
 ```
 
 #### `web_search` Skill
@@ -2918,28 +2762,28 @@ Google Custom Search API integration with web scraping.
 - `no_results_message` (Optional[str]): Custom message when no results found
 
 **Usage:**
-```python
+```perl
 # Basic web search
-agent.add_skill("web_search", {
-    "api_key": "your-google-api-key",
-    "search_engine_id": "your-search-engine-id"
-})
+$agent->add_skill('web_search', {
+    api_key          => 'your-google-api-key',
+    search_engine_id => 'your-search-engine-id',
+});
 
 # Multiple search instances
-agent.add_skill("web_search", {
-    "api_key": "your-api-key",
-    "search_engine_id": "general-engine-id",
-    "tool_name": "search_general",
-    "num_results": 5
-})
+$agent->add_skill('web_search', {
+    api_key          => 'your-api-key',
+    search_engine_id => 'general-engine-id',
+    tool_name        => 'search_general',
+    num_results      => 5,
+});
 
-agent.add_skill("web_search", {
-    "api_key": "your-api-key",
-    "search_engine_id": "news-engine-id",
-    "tool_name": "search_news",
-    "num_results": 3,
-    "delay": 0.5
-})
+$agent->add_skill('web_search', {
+    api_key          => 'your-api-key',
+    search_engine_id => 'news-engine-id',
+    tool_name        => 'search_news',
+    num_results      => 3,
+    delay            => 0.5,
+});
 ```
 
 #### `datasphere` Skill
@@ -2955,31 +2799,31 @@ SignalWire DataSphere knowledge search integration.
 - `tags` (Optional[List[str]]): Filter by document tags
 
 **Usage:**
-```python
+```perl
 # Basic DataSphere search
-agent.add_skill("datasphere", {
-    "space_name": "my-space",
-    "project_id": "my-project",
-    "token": "my-token"
-})
+$agent->add_skill('datasphere', {
+    space_name => 'my-space',
+    project_id => 'my-project',
+    token      => 'my-token',
+});
 
 # Multiple DataSphere instances
-agent.add_skill("datasphere", {
-    "space_name": "my-space",
-    "project_id": "my-project",
-    "token": "my-token",
-    "document_id": "drinks-menu",
-    "tool_name": "search_drinks",
-    "count": 5
-})
+$agent->add_skill('datasphere', {
+    space_name  => 'my-space',
+    project_id  => 'my-project',
+    token       => 'my-token',
+    document_id => 'drinks-menu',
+    tool_name   => 'search_drinks',
+    count       => 5,
+});
 
-agent.add_skill("datasphere", {
-    "space_name": "my-space",
-    "project_id": "my-project", 
-    "token": "my-token",
-    "tool_name": "search_policies",
-    "tags": ["HR", "Policies"]
-})
+$agent->add_skill('datasphere', {
+    space_name => 'my-space',
+    project_id => 'my-project',
+    token      => 'my-token',
+    tool_name  => 'search_policies',
+    tags       => [ 'HR', 'Policies' ],
+});
 ```
 
 #### `native_vector_search` Skill
@@ -2992,169 +2836,191 @@ Local document search with vector similarity and keyword search.
 - `similarity_threshold` (Optional[float]): Minimum similarity score 0.0-1.0 (default: 0.0). Higher values are stricter, lower values are more permissive. Typical range: 0.2-0.4 for all-MiniLM-L6-v2, 0.3-0.5 for all-mpnet-base-v2
 
 **Usage:**
-```python
+```perl
 # Basic local search
-agent.add_skill("native_vector_search", {
-    "index_path": "./knowledge.swsearch"
-})
+$agent->add_skill('native_vector_search', {
+    index_path => './knowledge.swsearch',
+});
 
 # With custom settings
-agent.add_skill("native_vector_search", {
-    "index_path": "./docs.swsearch",
-    "tool_name": "search_docs",
-    "max_results": 10,
-    "similarity_threshold": 0.25
-})
+$agent->add_skill('native_vector_search', {
+    index_path           => './docs.swsearch',
+    tool_name            => 'search_docs',
+    max_results          => 10,
+    similarity_threshold => 0.25,
+});
 ```
 
 ### Creating Custom Skills
 
 #### Skill Structure
 
-Create a new skill by extending `SkillBase`:
+Create a new skill by extending `SignalWire::Skills::SkillBase` (a Moo package). Override `setup` and `register_tools`, and optionally `get_hints`, `get_global_data`, and `get_prompt_sections`. Register the class with the skill registry so it can be added by name.
 
-```python
-from signalwire_agents.core.skill_base import SkillBase
-from signalwire_agents.core.data_map import DataMap
-from signalwire_agents.core.function_result import SwaigFunctionResult
+```perl
+package SignalWire::Skills::Builtin::CustomSkill;
+use Moo;
+use SignalWire::DataMap;
+use SignalWire::SWAIG::FunctionResult;
+extends 'SignalWire::Skills::SkillBase';
 
-class CustomSkill(SkillBase):
-    SKILL_NAME = "custom_skill"
-    SKILL_DESCRIPTION = "Description of what this skill does"
-    SKILL_VERSION = "1.0.0"
-    REQUIRED_PACKAGES = ["requests"]  # Python packages needed
-    REQUIRED_ENV_VARS = ["API_KEY"]   # Environment variables needed
-    
-    def setup(self) -> bool:
-        """Validate and store configuration"""
-        if not self.params.get("api_key"):
-            self.logger.error("api_key parameter is required")
-            return False
-        
-        self.api_key = self.params["api_key"]
-        return True
-    
-    def register_tools(self) -> None:
-        """Register skill functions"""
-        # DataMap-based tool
-        tool = (DataMap("custom_function")
-            .description("Custom API integration")
-            .parameter("query", "string", "Search query", required=True)
-            .webhook("GET", f"https://api.example.com/search?key={self.api_key}&q=${{args.query}}")
-            .output(SwaigFunctionResult("Found: ${{response.title}}"))
-        )
-        
-        self.agent.register_swaig_function(tool.to_swaig_function())
-    
-    def get_hints(self) -> List[str]:
-        """Speech recognition hints"""
-        return ["custom search", "find information"]
-    
-    def get_global_data(self) -> Dict[str, Any]:
-        """Global data for DataMap"""
-        return {"skill_version": self.SKILL_VERSION}
-    
-    def get_prompt_sections(self) -> List[Dict[str, Any]]:
-        """Prompt sections to add"""
-        return [{
-            "title": "Custom Search Capability",
-            "body": "You can search our custom database for information.",
-            "bullets": ["Use the custom_function to search", "Results are real-time"]
-        }]
+use SignalWire::Skills::SkillRegistry;
+SignalWire::Skills::SkillRegistry->register_skill( 'custom_skill', __PACKAGE__ );
+
+has '+skill_name'        => ( default => sub { 'custom_skill' } );
+has '+skill_description' => ( default => sub { 'Description of what this skill does' } );
+has '+skill_version'     => ( default => sub { '1.0.0' } );
+has '+required_packages' => ( default => sub { [] } );       # Perl modules needed
+has '+required_env_vars' => ( default => sub { ['API_KEY'] } );
+
+sub setup {
+    my ($self) = @_;
+    # Validate and store configuration
+    unless ( $self->params->{api_key} ) {
+        warn "api_key parameter is required\n";
+        return 0;
+    }
+    return 1;
+}
+
+sub register_tools {
+    my ($self) = @_;
+    my $api_key = $self->params->{api_key};
+
+    # DataMap-based tool
+    my $tool = SignalWire::DataMap->new('custom_function')
+        ->description('Custom API integration')
+        ->parameter( 'query', 'string', 'Search query', required => 1 )
+        ->webhook( 'GET', "https://api.example.com/search?key=$api_key&q=\${args.query}" )
+        ->output( SignalWire::SWAIG::FunctionResult->new('Found: ${response.title}') );
+
+    return $self->agent->register_swaig_function( $tool->to_swaig_function );
+}
+
+sub get_hints {
+    my ($self) = @_;
+    return [ 'custom search', 'find information' ];
+}
+
+sub get_global_data {
+    my ($self) = @_;
+    return { skill_version => $self->skill_version };
+}
+
+sub get_prompt_sections {
+    my ($self) = @_;
+    return [{
+        title   => 'Custom Search Capability',
+        body    => 'You can search our custom database for information.',
+        bullets => [ 'Use the custom_function to search', 'Results are real-time' ],
+    }];
+}
+
+1;
 ```
 
 #### Skill Registration
 
-Skills are automatically discovered from the `signalwire_agents/skills/` directory. To register a custom skill:
+Built-in skills live under `lib/SignalWire/Skills/Builtin/` and register themselves with `SignalWire::Skills::SkillRegistry->register_skill($name, __PACKAGE__)` at load time. To add a custom skill:
 
-1. Create directory: `signalwire_agents/skills/your_skill/`
-2. Add `__init__.py`, `skill.py`, and `README.md`
-3. Implement your skill class in `skill.py`
-4. The skill will be automatically available
+1. Create a package under `lib/SignalWire/Skills/Builtin/` (or your own namespace).
+2. Extend `SignalWire::Skills::SkillBase` and implement `setup` and `register_tools`.
+3. Call `SignalWire::Skills::SkillRegistry->register_skill('your_skill', __PACKAGE__)`.
+4. The skill is then available via `$agent->add_skill('your_skill')`.
 
 ---
 
 ## Utility Classes
 
-### SWAIGFunction Class
+### SignalWire::SWAIG::SWAIGFunction Class
 
-Represents a SWAIG function definition with metadata and validation.
+Represents a SWAIG function definition with metadata and validation. In most cases you register tools with `$self->define_tool(...)` rather than constructing this directly.
 
 #### Constructor
 
-```python
-SWAIGFunction(
-    function: str,
-    description: str,
-    parameters: Dict[str, Any],
-    **kwargs
-)
+```perl
+SignalWire::SWAIG::SWAIGFunction->new(
+    name        => $name,
+    description => $description,
+    parameters  => $parameters,   # JSON-schema hashref
+    handler     => sub { my ( $args, $raw_data ) = @_; ... },
+    # optional: secure, fillers, required, webhook_url, and extra SWAIG fields
+);
 ```
 
 **Parameters:**
-- `function` (str): Function name
-- `description` (str): Function description
-- `parameters` (Dict[str, Any]): JSON schema for parameters
-- `**kwargs`: Additional SWAIG properties
+- `name` (Str): Function name (required)
+- `description` (Str): Function description (required)
+- `parameters` (HashRef): JSON schema for parameters
+- `handler` (CodeRef): Sub to execute when the function is called (required)
+- `secure` (Bool): Require a security token (default: false)
+- `fillers` (HashRef): Language-specific filler phrases
+- Any additional `key => value` pairs are stored as extra SWAIG fields
 
 #### Usage
 
-```python
-from signalwire_agents.core.swaig_function import SWAIGFunction
+```perl
+use SignalWire::SWAIG::SWAIGFunction;
+use SignalWire::SWAIG::FunctionResult;
 
-# Create SWAIG function
-swaig_func = SWAIGFunction(
-    function="get_weather",
-    description="Get current weather",
-    parameters={
-        "type": "object",
-        "properties": {
-            "location": {"type": "string", "description": "City name"}
+# Create a SWAIG function
+my $swaig_func = SignalWire::SWAIG::SWAIGFunction->new(
+    name        => 'get_weather',
+    description => 'Get current weather',
+    parameters  => {
+        type       => 'object',
+        properties => {
+            location => { type => 'string', description => 'City name' },
         },
-        "required": ["location"]
+        required => ['location'],
     },
-    secure=True,
-    fillers={"en-US": ["Checking weather..."]}
-)
-
-# Register with agent
-agent.register_swaig_function(swaig_func.to_dict())
+    secure  => 1,
+    fillers => { 'en-US' => ['Checking weather...'] },
+    handler => sub {
+        my ( $args, $raw_data ) = @_;
+        return SignalWire::SWAIG::FunctionResult->new('Sunny');
+    },
+);
 ```
 
-### SWMLService Class
+### SignalWire::SWML::Service Class
 
-Base class providing SWML document generation and HTTP service capabilities. `AgentBase` extends this class.
+Base class providing SWML document generation and HTTP service capabilities. `SignalWire::Agent::AgentBase` extends this class.
 
 #### Key Methods
 
-##### `get_swml_document() -> Dict[str, Any]`
+##### `render_swml()`
 Generate the complete SWML document for the service.
 
-##### `handle_request(request_data: Dict[str, Any]) -> Dict[str, Any]`
-Handle incoming HTTP requests and generate appropriate responses.
+##### `handle_request($request_data)`
+Handle an incoming HTTP request and generate the appropriate response.
 
 ### Dynamic Configuration
 
-The dynamic configuration callback receives the agent instance directly, allowing you to configure it based on request data.
+The dynamic-configuration callback receives the agent instance directly, allowing you to configure it based on request data. The callback is an anonymous sub receiving `($query_params, $headers, $body, $agent)`.
 
 **Usage:**
-```python
-def dynamic_config(query_params, body_params, headers, agent):
-    # Configure based on request
-    if query_params.get("lang") == "es":
-        agent.add_language("Spanish", "es-ES", "nova.luna")
-    
-    # Customer-specific configuration
-    customer_id = headers.get("X-Customer-ID")
-    if customer_id:
-        agent.set_global_data({"customer_id": customer_id})
-        agent.prompt_add_section("Customer Context", f"You are helping customer {customer_id}")
-    
-    # Add skills dynamically
-    if query_params.get("enable_search") == "true":
-        agent.add_skill("web_search", {"provider": "google"})
+```perl
+$agent->set_dynamic_config_callback( sub {
+    my ( $query_params, $body_params, $headers, $agent ) = @_;
 
-agent.set_dynamic_config_callback(dynamic_config)
+    # Configure based on the request
+    if ( ( $query_params->{lang} // '' ) eq 'es' ) {
+        $agent->add_language( name => 'Spanish', code => 'es-ES', voice => 'nova.luna' );
+    }
+
+    # Customer-specific configuration
+    my $customer_id = $headers->{'X-Customer-ID'};
+    if ($customer_id) {
+        $agent->set_global_data({ customer_id => $customer_id });
+        $agent->prompt_add_section( 'Customer Context', "You are helping customer $customer_id" );
+    }
+
+    # Add skills dynamically
+    if ( ( $query_params->{enable_search} // '' ) eq 'true' ) {
+        $agent->add_skill( 'web_search', { provider => 'google' } );
+    }
+});
 ```
 
 ---
@@ -3185,20 +3051,18 @@ The SDK supports various environment variables for configuration:
 
 ### Usage
 
-```python
-import os
-
+```perl
 # Set environment variables
-os.environ["SWML_BASIC_AUTH_USER"] = "admin"
-os.environ["SWML_BASIC_AUTH_PASSWORD"] = "secret"
-os.environ["GOOGLE_SEARCH_API_KEY"] = "your-api-key"
+$ENV{SWML_BASIC_AUTH_USER}     = 'admin';
+$ENV{SWML_BASIC_AUTH_PASSWORD} = 'secret';
+$ENV{GOOGLE_SEARCH_API_KEY}    = 'your-api-key';
 
-# Agent will automatically use these
-agent = AgentBase("My Agent")
-agent.add_skill("web_search", {
-    "search_engine_id": "your-engine-id"
-    # api_key will be read from environment
-})
+# The agent will automatically use these
+my $agent = SignalWire::Agent::AgentBase->new( name => 'My Agent' );
+$agent->add_skill('web_search', {
+    search_engine_id => 'your-engine-id',
+    # api_key will be read from the environment
+});
 ```
 
 ---
@@ -3207,136 +3071,156 @@ agent.add_skill("web_search", {
 
 Here's a comprehensive example using multiple SDK components:
 
-```python
-from signalwire_agents import AgentBase, SwaigFunctionResult, DataMap
+```perl
+package ComprehensiveAgent;
+use Moo;
+use SignalWire::DataMap;
+use SignalWire::SWAIG::FunctionResult;
+extends 'SignalWire::Agent::AgentBase';
 
-class ComprehensiveAgent(AgentBase):
-    def __init__(self):
-        super().__init__(
-            name="Comprehensive Agent",
-            auto_answer=True,
-            record_call=True
-        )
-        
-        # Configure voice and language
-        self.add_language("English", "en-US", "rime.spore",
-                         speech_fillers=["Let me check...", "One moment..."])
-        
-        # Add speech recognition hints
-        self.add_hints(["SignalWire", "customer service", "technical support"])
-        
-        # Configure AI parameters
-        self.set_params({
-            "ai_model": "gpt-4.1-nano",
-            "end_of_speech_timeout": 800,
-            "temperature": 0.7
-        })
-        
-        # Add skills
-        self.add_skill("datetime")
-        self.add_skill("math")
-        self.add_skill("web_search", {
-            "api_key": "your-google-api-key",
-            "search_engine_id": "your-engine-id",
-            "num_results": 3
-        })
-        
-        # Set up structured workflow
-        self._setup_contexts()
-        
-        # Add custom tools
-        self._register_custom_tools()
-        
-        # Set global data
-        self.set_global_data({
-            "company_name": "Acme Corp",
-            "support_hours": "9 AM - 5 PM EST",
-            "version": "2.0"
-        })
-    
-    def _setup_contexts(self):
-        """Set up structured workflow contexts"""
-        contexts = self.define_contexts()
-        
-        # Greeting context
-        greeting = contexts.add_context("greeting")
-        greeting.add_step("welcome") \
-            .set_text("Hello! Welcome to Acme Corp support. How can I help you today?") \
-            .set_step_criteria("Customer has explained their issue") \
-            .set_valid_steps(["next"])
-        
-        greeting.add_step("categorize") \
-            .add_section("Current Task", "Categorize the customer's request") \
-            .add_bullets("Categories", [
-                "Technical issue - use diagnostic tools",
-                "Billing question - transfer to billing",
-                "General inquiry - handle directly"
-            ]) \
-            .set_functions(["transfer_to_billing", "run_diagnostics"]) \
-            .set_step_criteria("Request categorized and action taken")
-        
-        # Technical support context
-        tech = contexts.add_context("technical_support")
-        tech.add_step("diagnose") \
-            .set_text("Let me run some diagnostics to identify the issue.") \
-            .set_functions(["run_diagnostics", "check_system_status"]) \
-            .set_step_criteria("Diagnostics completed") \
-            .set_valid_steps(["resolve"])
-        
-        tech.add_step("resolve") \
-            .set_text("Based on the diagnostics, here's how we'll fix this.") \
-            .set_functions(["apply_fix", "schedule_technician"]) \
-            .set_step_criteria("Issue resolved or escalated")
-    
-    def _register_custom_tools(self):
-        """Register custom DataMap tools"""
-        
-        # Customer lookup tool
-        lookup_tool = (DataMap("lookup_customer")
-            .description("Look up customer information")
-            .parameter("customer_id", "string", "Customer ID", required=True)
-            .webhook("GET", "https://api.company.com/customers/${args.customer_id}",
-                    headers={"Authorization": "Bearer YOUR_TOKEN"})
-            .output(SwaigFunctionResult("Customer: ${response.name}, Status: ${response.status}"))
-            .error_keys(["error"])
-        )
-        
-        self.register_swaig_function(lookup_tool.to_swaig_function())
-        
-        # System control tool
-        control_tool = (DataMap("system_control")
-            .description("Control system functions")
-            .parameter("action", "string", "Action to perform", required=True)
-            .parameter("target", "string", "Target system")
-            .expression("${args.action}", r"restart|reboot",
-                       SwaigFunctionResult("Restarting ${args.target}")
-                       .add_action("restart_system", {"target": "${args.target}"}))
-            .expression("${args.action}", r"status|check",
-                       SwaigFunctionResult("Checking ${args.target} status")
-                       .add_action("check_status", {"target": "${args.target}"}))
-        )
-        
-        self.register_swaig_function(control_tool.to_swaig_function())
-    
-    @AgentBase.tool(
-        description="Transfer call to billing department",
-        parameters={"type": "object", "properties": {}}
-    )
-    def transfer_to_billing(self, args, raw_data):
-        """Transfer to billing with state tracking"""
-        return (SwaigFunctionResult("Transferring you to our billing department")
-                .update_global_data({"last_action": "transfer_to_billing"})
-                .connect("billing@company.com", final=False))
-    
-    def on_summary(self, summary, raw_data):
-        """Handle conversation summaries"""
-        print(f"Conversation completed: {summary}")
-        # Could save to database, send notifications, etc.
+sub BUILD {
+    my ($self) = @_;
+
+    # Configure voice and language
+    $self->add_language(
+        name           => 'English',
+        code           => 'en-US',
+        voice          => 'rime.spore',
+        speech_fillers => [ 'Let me check...', 'One moment...' ],
+    );
+
+    # Add speech recognition hints
+    $self->add_hints([ 'SignalWire', 'customer service', 'technical support' ]);
+
+    # Configure AI parameters
+    $self->set_params({
+        ai_model              => 'gpt-4.1-nano',
+        end_of_speech_timeout => 800,
+        temperature           => 0.7,
+    });
+
+    # Add skills
+    $self->add_skill('datetime');
+    $self->add_skill('math');
+    $self->add_skill('web_search', {
+        api_key          => 'your-google-api-key',
+        search_engine_id => 'your-engine-id',
+        num_results      => 3,
+    });
+
+    # Set up structured workflow
+    $self->_setup_contexts;
+
+    # Add custom tools
+    $self->_register_custom_tools;
+
+    # Register a class-method tool
+    $self->define_tool(
+        name        => 'transfer_to_billing',
+        description => 'Transfer call to billing department',
+        parameters  => { type => 'object', properties => {} },
+        handler     => sub {
+            my ( $args, $raw_data ) = @_;
+            return SignalWire::SWAIG::FunctionResult->new('Transferring you to our billing department')
+                ->update_global_data({ last_action => 'transfer_to_billing' })
+                ->connect( 'billing@company.com', final => 0 );
+        },
+    );
+
+    # Handle conversation summaries
+    $self->on_summary( sub {
+        my ( $summary, $raw_data ) = @_;
+        require Data::Dumper;
+        print "Conversation completed: " . Data::Dumper::Dumper($summary);
+        # Could save to a database, send notifications, etc.
+    });
+
+    # Set global data
+    $self->set_global_data({
+        company_name  => 'Acme Corp',
+        support_hours => '9 AM - 5 PM EST',
+        version       => '2.0',
+    });
+}
+
+sub _setup_contexts {
+    my ($self) = @_;
+    my $contexts = $self->define_contexts;
+
+    # Greeting context
+    my $greeting = $contexts->add_context('greeting');
+    $greeting->add_step('welcome')
+        ->set_text('Hello! Welcome to Acme Corp support. How can I help you today?')
+        ->set_step_criteria('Customer has explained their issue')
+        ->set_valid_steps(['categorize']);
+
+    $greeting->add_step('categorize')
+        ->add_section( 'Current Task', "Categorize the customer's request" )
+        ->add_bullets( 'Categories', [
+            'Technical issue - use diagnostic tools',
+            'Billing question - transfer to billing',
+            'General inquiry - handle directly',
+        ])
+        ->set_functions([ 'transfer_to_billing', 'run_diagnostics' ])
+        ->set_step_criteria('Request categorized and action taken');
+
+    # Technical support context
+    my $tech = $contexts->add_context('technical_support');
+    $tech->add_step('diagnose')
+        ->set_text('Let me run some diagnostics to identify the issue.')
+        ->set_functions([ 'run_diagnostics', 'check_system_status' ])
+        ->set_step_criteria('Diagnostics completed')
+        ->set_valid_steps(['resolve']);
+
+    $tech->add_step('resolve')
+        ->set_text("Based on the diagnostics, here's how we'll fix this.")
+        ->set_functions([ 'apply_fix', 'schedule_technician' ])
+        ->set_step_criteria('Issue resolved or escalated');
+
+    return $self;
+}
+
+sub _register_custom_tools {
+    my ($self) = @_;
+
+    # Customer lookup tool
+    my $lookup_tool = SignalWire::DataMap->new('lookup_customer')
+        ->description('Look up customer information')
+        ->parameter( 'customer_id', 'string', 'Customer ID', required => 1 )
+        ->webhook( 'GET', 'https://api.company.com/customers/${args.customer_id}',
+            headers => { Authorization => 'Bearer YOUR_TOKEN' } )
+        ->output( SignalWire::SWAIG::FunctionResult->new('Customer: ${response.name}, Status: ${response.status}') )
+        ->error_keys(['error']);
+
+    $self->register_swaig_function( $lookup_tool->to_swaig_function );
+
+    # System control tool
+    my $control_tool = SignalWire::DataMap->new('system_control')
+        ->description('Control system functions')
+        ->parameter( 'action', 'string', 'Action to perform', required => 1 )
+        ->parameter( 'target', 'string', 'Target system' )
+        ->expression( '${args.action}', 'restart|reboot',
+            SignalWire::SWAIG::FunctionResult->new('Restarting ${args.target}')
+                ->add_action( 'restart_system', { target => '${args.target}' } ) )
+        ->expression( '${args.action}', 'status|check',
+            SignalWire::SWAIG::FunctionResult->new('Checking ${args.target} status')
+                ->add_action( 'check_status', { target => '${args.target}' } ) );
+
+    $self->register_swaig_function( $control_tool->to_swaig_function );
+
+    return $self;
+}
+
+1;
 
 # Run the agent
-if __name__ == "__main__":
-    agent = ComprehensiveAgent()
-    agent.run()
+package main;
+my $agent = ComprehensiveAgent->new(
+    name        => 'Comprehensive Agent',
+    auto_answer => 1,
+    record_call => 1,
+);
+$agent->run;
 ```
 
 This concludes the complete API reference for the SignalWire AI Agents SDK. The SDK provides a comprehensive framework for building sophisticated AI agents with modular capabilities, structured workflows, persistent state, and deployment across multiple environments.

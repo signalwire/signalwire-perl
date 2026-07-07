@@ -33,30 +33,31 @@ WebService is designed to serve static files with configurable security features
 
 ## Installation
 
-WebService is included in the core SignalWire AI Agents SDK:
+WebService is included in the core SignalWire AI Agents SDK. Install the SDK's
+dependencies from the repo root:
 
 ```bash
-pip install signalwire-agents
+cpanm --installdeps .
 ```
 
 ## Quick Start
 
-```python
-from signalwire_agents import WebService
+```perl
+use SignalWire::Web::WebService;
 
 # Create a service to serve files
-service = WebService(
-    port=8002,
-    directories={
-        "/docs": "./documentation",
-        "/assets": "./static/assets"
-    }
-)
+my $service = SignalWire::Web::WebService->new(
+    port        => 8002,
+    directories => {
+        '/docs'   => './documentation',
+        '/assets' => './static/assets',
+    },
+);
 
-# Start the service
-service.start()
+# Start the service (non-blocking; returns the bound port)
+$service->start;
 # Service available at http://localhost:8002
-# Basic Auth: dev:w00t (auto-generated)
+# Basic Auth from SWML_BASIC_AUTH_USER / SWML_BASIC_AUTH_PASSWORD, if set
 ```
 
 ## Configuration
@@ -65,20 +66,20 @@ WebService can be configured through multiple methods (in order of priority):
 
 ### 1. Constructor Parameters
 
-```python
-service = WebService(
-    port=8002,                          # Port to bind to
-    directories={                       # URL path to directory mappings
-        "/docs": "./documentation",
-        "/assets": "./static"
+```perl
+my $service = SignalWire::Web::WebService->new(
+    port        => 8002,                    # Port to bind to
+    directories => {                        # URL path to directory mappings
+        '/docs'   => './documentation',
+        '/assets' => './static',
     },
-    basic_auth=("admin", "secret"),    # Custom authentication
-    enable_directory_browsing=True,     # Allow directory listings
-    allowed_extensions=['.html', '.css', '.js'],  # Whitelist extensions
-    blocked_extensions=['.env', '.key'],          # Blacklist extensions
-    max_file_size=100 * 1024 * 1024,   # Max file size (100MB)
-    enable_cors=True                    # Enable CORS headers
-)
+    basic_auth                => [ 'admin', 'secret' ],  # Custom authentication ([user, pass])
+    enable_directory_browsing => 1,                      # Allow directory listings
+    allowed_extensions        => [ '.html', '.css', '.js' ],  # Whitelist extensions
+    blocked_extensions        => [ '.env', '.key' ],         # Blacklist extensions
+    max_file_size             => 100 * 1024 * 1024,          # Max file size (100MB)
+    enable_cors               => 1,                          # Enable CORS headers
+);
 ```
 
 ### 2. Environment Variables
@@ -86,7 +87,7 @@ service = WebService(
 ```bash
 # Basic authentication
 export SWML_BASIC_AUTH_USER="admin"
-export SWML_BASIC_AUTH_PASS="secretpassword"
+export SWML_BASIC_AUTH_PASSWORD="secretpassword"
 
 # SSL/HTTPS configuration
 export SWML_SSL_ENABLED=true
@@ -100,7 +101,8 @@ export SWML_CORS_ORIGINS="https://app.example.com"
 
 ### 3. Configuration File
 
-Create a `web.json` or `swml_web.json` file:
+You can keep service settings in a `web.json` (or `swml_web.json`) file and load
+it yourself — read the JSON and pass the values to the constructor. The shape:
 
 ```json
 {
@@ -136,10 +138,9 @@ Create a `web.json` or `swml_web.json` file:
 
 WebService implements HTTP Basic Authentication. Credentials can be set via:
 
-1. **Constructor**: `basic_auth=("username", "password")`
-2. **Environment**: `SWML_BASIC_AUTH_USER` and `SWML_BASIC_AUTH_PASS`
-3. **Config file**: `security.basic_auth` section
-4. **Auto-generated**: If not specified, generates random credentials
+1. **Constructor**: `basic_auth => [ 'username', 'password' ]`
+2. **Environment**: `SWML_BASIC_AUTH_USER` and `SWML_BASIC_AUTH_PASSWORD`
+3. **None**: If neither the constructor arg nor the environment variables are set, no authentication is required
 
 ### File Security
 
@@ -151,7 +152,7 @@ WebService implements HTTP Basic Authentication. Credentials can be set via:
 
 #### Path Traversal Protection
 WebService prevents access outside designated directories:
-```python
+```text
 # These attempts will be blocked:
 # GET /docs/../../../etc/passwd
 # GET /docs/./././../config.json
@@ -159,17 +160,15 @@ WebService prevents access outside designated directories:
 
 #### File Size Limits
 Default maximum file size is 100MB. Configure with:
-```python
-service = WebService(max_file_size=50 * 1024 * 1024)  # 50MB
+```perl
+my $service = SignalWire::Web::WebService->new(max_file_size => 50 * 1024 * 1024);  # 50MB
 ```
 
 ### Security Headers
 
-Automatically adds security headers to all responses:
+Automatically adds security headers to all file responses:
 - `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `X-XSS-Protection: 1; mode=block`
-- `Strict-Transport-Security` (when HTTPS is enabled)
+- `X-Frame-Options: SAMEORIGIN`
 
 ## HTTPS/SSL Support
 
@@ -193,13 +192,14 @@ MIIEvQIBADANBgkqhkiG9w0BAQE...
 
 ### Method 2: Direct Parameters
 
-```python
-service = WebService(directories={"/docs": "./docs"})
-service.start(
-    ssl_cert="/path/to/cert.pem",
-    ssl_key="/path/to/key.pem"
-)
-# Service available at https://localhost:8002
+`start` accepts `ssl_cert` and `ssl_key` for API parity with the reference:
+
+```perl
+my $service = SignalWire::Web::WebService->new(directories => { '/docs' => './docs' });
+$service->start(
+    ssl_cert => '/path/to/cert.pem',
+    ssl_key  => '/path/to/key.pem',
+);
 ```
 
 ### Method 3: Configuration File
@@ -230,27 +230,9 @@ export SWML_SSL_KEY="key.pem"
 
 ## API Endpoints
 
-### GET /health
-Health check endpoint (no authentication required)
-
-**Response:**
-```json
-{
-    "status": "healthy",
-    "directories": ["/docs", "/assets"],
-    "ssl_enabled": false,
-    "auth_required": true,
-    "directory_browsing": true
-}
-```
-
-### GET /
-Root endpoint showing available directories
-
-**Response:** HTML page listing all mounted directories
-
 ### GET /{route}/{file_path}
-Serve files from mounted directories
+Serve files from mounted directories. Any request that does not match a
+configured route prefix returns `404 File not found`.
 
 **Parameters:**
 - `route`: The mounted directory route (e.g., `/docs`)
@@ -265,17 +247,17 @@ Serve files from mounted directories
 
 ### Basic File Serving
 
-```python
-from signalwire_agents import WebService
+```perl
+use SignalWire::Web::WebService;
 
 # Serve documentation
-service = WebService(
-    directories={
-        "/docs": "./documentation",
-        "/api": "./api-specs"
-    }
-)
-service.start()
+my $service = SignalWire::Web::WebService->new(
+    directories => {
+        '/docs' => './documentation',
+        '/api'  => './api-specs',
+    },
+);
+$service->start;
 
 # Files accessible at:
 # http://localhost:8002/docs/index.html
@@ -284,90 +266,90 @@ service.start()
 
 ### With Directory Browsing
 
-```python
-service = WebService(
-    directories={"/files": "./public"},
-    enable_directory_browsing=True  # Allow browsing directories
-)
-service.start()
+```perl
+my $service = SignalWire::Web::WebService->new(
+    directories               => { '/files' => './public' },
+    enable_directory_browsing => 1,   # Allow browsing directories
+);
+$service->start;
 
 # Browse files at: http://localhost:8002/files/
 ```
 
 ### Restricted File Types
 
-```python
+```perl
 # Only serve web assets
-service = WebService(
-    directories={"/web": "./www"},
-    allowed_extensions=['.html', '.css', '.js', '.png', '.jpg', '.woff2'],
-    enable_directory_browsing=False
-)
+my $service = SignalWire::Web::WebService->new(
+    directories               => { '/web' => './www' },
+    allowed_extensions        => [ '.html', '.css', '.js', '.png', '.jpg', '.woff2' ],
+    enable_directory_browsing => 0,
+);
 ```
 
 ### Dynamic Directory Management
 
-```python
-service = WebService()
+```perl
+my $service = SignalWire::Web::WebService->new;
 
 # Add directories after initialization
-service.add_directory("/docs", "./documentation")
-service.add_directory("/reports", "./generated/reports")
+$service->add_directory('/docs', './documentation');
+$service->add_directory('/reports', './generated/reports');
 
 # Remove a directory
-service.remove_directory("/reports")
+$service->remove_directory('/reports');
 
-service.start()
+$service->start;
 ```
 
 ### With Custom Authentication
 
-```python
-service = WebService(
-    directories={"/private": "./sensitive-docs"},
-    basic_auth=("admin", "super-secret-password")
-)
-service.start()
+```perl
+my $service = SignalWire::Web::WebService->new(
+    directories => { '/private' => './sensitive-docs' },
+    basic_auth  => [ 'admin', 'super-secret-password' ],
+);
+$service->start;
 ```
 
 ### HTTPS with Let's Encrypt
 
-```python
+```perl
 # Assuming you have Let's Encrypt certificates
-service = WebService(
-    directories={"/secure": "./secure-files"}
-)
-service.start(
-    ssl_cert="/etc/letsencrypt/live/example.com/fullchain.pem",
-    ssl_key="/etc/letsencrypt/live/example.com/privkey.pem"
-)
-# Service available at https://example.com:8002
+my $service = SignalWire::Web::WebService->new(
+    directories => { '/secure' => './secure-files' },
+);
+$service->start(
+    ssl_cert => '/etc/letsencrypt/live/example.com/fullchain.pem',
+    ssl_key  => '/etc/letsencrypt/live/example.com/privkey.pem',
+);
 ```
 
 ### Multi-Environment Configuration
 
-```python
-import os
-
+```perl
 # Development vs Production
-if os.getenv("ENVIRONMENT") == "production":
-    service = WebService(
-        port=443,
-        directories={"/": "./dist"},
-        enable_directory_browsing=False
-    )
-    service.start(
-        host="0.0.0.0",
-        ssl_cert="/etc/ssl/certs/production.crt",
-        ssl_key="/etc/ssl/private/production.key"
-    )
-else:
-    service = WebService(
-        port=8002,
-        directories={"/": "./src"},
-        enable_directory_browsing=True
-    )
-    service.start()
+my $service;
+if ( ( $ENV{ENVIRONMENT} // '' ) eq 'production' ) {
+    $service = SignalWire::Web::WebService->new(
+        port                      => 443,
+        directories               => { '/' => './dist' },
+        enable_directory_browsing => 0,
+    );
+    $service->start(
+        host     => '0.0.0.0',
+        ssl_cert => '/etc/ssl/certs/production.crt',
+        ssl_key  => '/etc/ssl/private/production.key',
+    );
+}
+else {
+    $service = SignalWire::Web::WebService->new(
+        port                      => 8002,
+        directories               => { '/' => './src' },
+        enable_directory_browsing => 1,
+    );
+    $service->start;
+}
 ```
 
 ## Deployment Patterns
@@ -376,72 +358,71 @@ else:
 
 Run WebService as a dedicated static file server:
 
-```python
-# web_server.py
-from signalwire_agents import WebService
+```perl
+# web_server.pl
+use SignalWire::Web::WebService;
 
-if __name__ == "__main__":
-    service = WebService(
-        port=8002,
-        directories={
-            "/docs": "/var/www/docs",
-            "/assets": "/var/www/assets",
-            "/downloads": "/var/www/downloads"
-        }
-    )
-    service.start()
+my $service = SignalWire::Web::WebService->new(
+    port        => 8002,
+    directories => {
+        '/docs'      => '/var/www/docs',
+        '/assets'    => '/var/www/assets',
+        '/downloads' => '/var/www/downloads',
+    },
+);
+$service->start( block => 1 );   # block => 1 runs in the foreground
 ```
 
 ### Alongside AI Agents
 
 Run WebService alongside your AI agents on different ports:
 
-```python
-# main.py
-from signalwire_agents import AgentBase, WebService
-import threading
+`start` is non-blocking by default (it forks a background child and returns
+the bound port), so no explicit thread is required — start the web service,
+then run the agent in the foreground:
 
-# Start WebService in background
-def run_web_service():
-    web = WebService(
-        port=8002,
-        directories={"/docs": "./agent-docs"}
-    )
-    web.start()
+```perl
+# main.pl
+use SignalWire::Agent::AgentBase;
+use SignalWire::Web::WebService;
 
-# Start web service thread
-web_thread = threading.Thread(target=run_web_service, daemon=True)
-web_thread.start()
+# Start WebService in the background (non-blocking fork)
+my $web = SignalWire::Web::WebService->new(
+    port        => 8002,
+    directories => { '/docs' => './agent-docs' },
+);
+$web->start;
 
-# Run your agent
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="My Agent")
-
-agent = MyAgent()
-agent.serve(port=3000)  # Agent on port 3000, WebService on 8002
+# Run your agent in the foreground
+my $agent = SignalWire::Agent::AgentBase->new( name => 'My Agent' );
+$agent->serve( port => 3000 );   # Agent on port 3000, WebService on 8002
 ```
 
 ### Docker Deployment
 
 ```dockerfile
-FROM python:3.9-slim
+FROM perl:5.38-slim
 
 WORKDIR /app
 
-# Install SDK
-RUN pip install signalwire-agents
+# Install SDK dependencies
+COPY cpanfile /app/cpanfile
+RUN cpanm --installdeps .
 
-# Copy static files
+# Copy the SDK and static files
+COPY ./lib /app/lib
 COPY ./static /app/static
-COPY ./web_config.json /app/web_config.json
+COPY ./web_server.pl /app/web_server.pl
 
 # Expose port
 EXPOSE 8002
 
-# Run WebService
-CMD ["python", "-c", "from signalwire_agents import WebService; WebService(config_file='web_config.json').start()"]
+# Run WebService in the foreground
+CMD ["perl", "-Ilib", "web_server.pl"]
 ```
+
+Where `web_server.pl` is the standalone script shown above (with
+`$service->start( block => 1 )`).
 
 ### Systemd Service
 
@@ -458,7 +439,7 @@ User=www-data
 WorkingDirectory=/opt/signalwire
 Environment="SWML_SSL_CERT=/etc/ssl/certs/server.crt"
 Environment="SWML_SSL_KEY=/etc/ssl/private/server.key"
-ExecStart=/usr/bin/python3 -c "from signalwire_agents import WebService; WebService(directories={'/': '/var/www/html'}).start()"
+ExecStart=/usr/bin/perl -Ilib /opt/signalwire/web_server.pl
 Restart=always
 
 [Install]
@@ -527,18 +508,17 @@ server {
 
 ### Common Issues
 
-**Issue: "FastAPI not available"**
+**Issue: "Can't locate HTTP/Server/PSGI.pm"**
 ```bash
-# Install FastAPI and uvicorn
-pip install fastapi uvicorn
+# Install the PSGI server dependency
+cpanm Plack HTTP::Server::PSGI
 ```
 
 **Issue: SSL certificate errors**
-```python
+```perl
 # Check certificate paths
-import os
-print(os.path.exists("/path/to/cert.pem"))  # Should be True
-print(os.path.exists("/path/to/key.pem"))   # Should be True
+print( ( -e '/path/to/cert.pem' ) ? "cert present\n" : "cert MISSING\n" );
+print( ( -e '/path/to/key.pem' )  ? "key present\n"  : "key MISSING\n" );
 ```
 
 **Issue: Permission denied**
@@ -548,128 +528,137 @@ chmod -R 755 /path/to/static/files
 ```
 
 **Issue: Directory not found**
-```python
+```perl
 # Use absolute paths
-import os
-service = WebService(
-    directories={
-        "/docs": os.path.abspath("./documentation")
-    }
-)
+use Cwd qw(abs_path);
+my $service = SignalWire::Web::WebService->new(
+    directories => {
+        '/docs' => abs_path('./documentation'),
+    },
+);
 ```
 
-### Debug Logging
-
-Enable debug logging to troubleshoot issues:
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
-service = WebService(directories={"/test": "./test"})
-service.start()
-```
+Note: `add_directory` dies if the target path is not an existing directory,
+so prefer it (over the `directories` constructor arg, which is not validated)
+when you want an early, explicit failure for a missing path.
 
 ## API Reference
 
 ### WebService Class
 
-```python
-class WebService:
-    def __init__(self,
-                 port: int = 8002,
-                 directories: Dict[str, str] = None,
-                 basic_auth: Optional[Tuple[str, str]] = None,
-                 config_file: Optional[str] = None,
-                 enable_directory_browsing: bool = False,
-                 allowed_extensions: Optional[list] = None,
-                 blocked_extensions: Optional[list] = None,
-                 max_file_size: int = 100 * 1024 * 1024,
-                 enable_cors: bool = True)
+```perl
+my $service = SignalWire::Web::WebService->new(
+    port                      => 8002,           # default 8002
+    directories               => {},             # URL path => local directory
+    basic_auth                => [ $user, $pass ],   # or omit for no auth
+    enable_directory_browsing => 0,              # default 0 (false)
+    allowed_extensions        => undef,          # arrayref, or undef for all
+    blocked_extensions        => [ '.env', ... ],
+    max_file_size             => 100 * 1024 * 1024,  # default 100MB
+    enable_cors               => 1,              # default 1 (true)
+);
 ```
 
 #### Parameters
 - `port`: Port to bind to (default: 8002)
-- `directories`: Dictionary mapping URL paths to local directories
-- `basic_auth`: Tuple of (username, password) for authentication
-- `config_file`: Path to JSON configuration file
-- `enable_directory_browsing`: Allow directory listing (default: False)
-- `allowed_extensions`: List of allowed file extensions
-- `blocked_extensions`: List of blocked file extensions
+- `directories`: Hashref mapping URL paths to local directories
+- `basic_auth`: `[ username, password ]` arrayref for authentication
+- `enable_directory_browsing`: Allow directory listing (default: false)
+- `allowed_extensions`: Arrayref of allowed file extensions (undef = all)
+- `blocked_extensions`: Arrayref of blocked file extensions
 - `max_file_size`: Maximum file size in bytes (default: 100MB)
-- `enable_cors`: Enable CORS headers (default: True)
+- `enable_cors`: Enable CORS headers (default: true)
 
 #### Methods
 
-##### start()
-```python
-def start(self,
-          host: str = "0.0.0.0",
-          port: Optional[int] = None,
-          ssl_cert: Optional[str] = None,
-          ssl_key: Optional[str] = None)
+##### start(%opts)
+```perl
+$service->start(
+    host     => '127.0.0.1',   # default 127.0.0.1
+    port     => undef,         # defaults to the constructed port; 0 = ephemeral
+    ssl_cert => undef,         # accepted for parity
+    ssl_key  => undef,
+    block    => 0,             # 1 = run in the foreground
+);
 ```
-Start the web service.
+Start the web service. Non-blocking by default (forks a background child and
+returns the bound port); pass `block => 1` to run in the foreground.
 
-##### add_directory()
-```python
-def add_directory(self, route: str, directory: str) -> None
+##### stop
+```perl
+$service->stop;
 ```
-Add a new directory to serve.
+Stop the service and reap the background child. Safe to call when not running.
 
-##### remove_directory()
-```python
-def remove_directory(self, route: str) -> None
+##### add_directory($route, $directory)
+```perl
+$service->add_directory($route, $directory);
 ```
-Remove a directory from being served.
+Add a new directory to serve (dies if `$directory` is not an existing directory).
+
+##### remove_directory($route)
+```perl
+$service->remove_directory($route);
+```
+Remove a directory from being served (no-op when absent).
+
+##### psgi_app
+```perl
+my $app = $service->psgi_app;
+```
+Return the PSGI coderef, for mounting the service in your own Plack stack.
 
 ## Integration with SignalWire Agents
 
 WebService complements AI agents by providing static file serving:
 
-```python
-from signalwire_agents import AgentBase, WebService
+```perl
+package DocumentationAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
+use SignalWire::SWAIG::FunctionResult;
 
-class DocumentationAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="Documentation Assistant")
-        
-        # Reference documentation served by WebService
-        self.prompt_add_section(
-            "Documentation",
-            "User documentation is available at https://example.com:8002/docs/"
-        )
-    
-        @self.tool(
-            "get_doc_link",
-            description="Get link to a documentation page",
-            parameters={
-                "doc_name": {"type": "string", "description": "Name of the documentation page"}
-            }
-        )
-        def get_doc_link(self, args, raw_data):
-            doc_name = args.get('doc_name')
-            return SwaigFunctionResult(
-                f"Documentation available at: https://example.com:8002/docs/{doc_name}.html"
-            )
+sub BUILD {
+    my ($self) = @_;
 
-# Run both services
-if __name__ == "__main__":
-    # Start WebService for documentation
-    web = WebService(
-        port=8002,
-        directories={"/docs": "./documentation"}
-    )
-    
-    # Start agent
-    agent = DocumentationAgent()
-    
-    # Run in threads or separate processes
-    import threading
-    web_thread = threading.Thread(target=web.start, daemon=True)
-    web_thread.start()
-    
-    agent.serve(port=3000)
+    # Reference documentation served by WebService
+    $self->prompt_add_section(
+        'Documentation',
+        'User documentation is available at https://example.com:8002/docs/',
+    );
+
+    $self->define_tool(
+        name        => 'get_doc_link',
+        description => 'Get link to a documentation page',
+        parameters  => {
+            type       => 'object',
+            properties => {
+                doc_name => { type => 'string', description => 'Name of the documentation page' },
+            },
+        },
+        handler => sub {
+            my ($args, $raw_data) = @_;
+            my $doc_name = $args->{doc_name};
+            return SignalWire::SWAIG::FunctionResult->new(
+                "Documentation available at: https://example.com:8002/docs/$doc_name.html"
+            );
+        },
+    );
+}
+
+package main;
+use SignalWire::Web::WebService;
+
+# Start WebService for documentation (non-blocking background child)
+my $web = SignalWire::Web::WebService->new(
+    port        => 8002,
+    directories => { '/docs' => './documentation' },
+);
+$web->start;
+
+# Run the agent in the foreground
+my $agent = DocumentationAgent->new( name => 'Documentation Assistant' );
+$agent->serve( port => 3000 );
 ```
 
 ## Summary
