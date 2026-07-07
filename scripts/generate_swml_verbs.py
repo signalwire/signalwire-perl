@@ -164,10 +164,15 @@ SWML_HEADER = (
 )
 
 
-def _emit_class(pl_name: str, properties: dict, source_desc: str) -> str:
+def _emit_class(pl_name: str, properties: dict, source_desc: str,
+                schema_name: str, psdk: Path) -> str:
     """Emit one method-less Moo data package for an object/config schema. The
     surface records only the class name; `has` accessors are not `sub` decls, so
-    the class stays method-less on both enumerators."""
+    the class stays method-less on both enumerators.
+
+    The SDK-surface overlay (x-sdk-overlay.yaml) is consulted by (wire key, SPEC
+    schema name = `schema_name`, e.g. `AIParams`): hidden -> dropped from the
+    surface (still wire), deprecated -> emitted but flagged with a comment."""
     pkg = f"SignalWire::SWML::Generated::{pl_name}"
     desc = f"Generated SWML verb config type {pl_name!r} ({source_desc})."
     out = SWML_HEADER.format(desc=desc)
@@ -179,12 +184,16 @@ def _emit_class(pl_name: str, properties: dict, source_desc: str) -> str:
     out += "# wire key; no methods (the reference records this as a method-less type).\n"
     used: set[str] = set()
     for wire_key in properties:
+        if GR.overlay_hidden(psdk, wire_key, schema_name):
+            continue  # hidden: drop from the SDK surface entirely (still wire).
         attr = GR.perl_attr_name(wire_key)
         while attr in used:
             attr += "_"
         used.add(attr)
         if attr != wire_key:
             out += f"# wire key: {wire_key}\n"
+        if GR.overlay_deprecated(psdk, wire_key, schema_name):
+            out += f"# deprecated: {wire_key}\n"
         out += GR.perl_has_decl(attr) + "\n"
     out += "\n1;\n"
     return out
@@ -207,7 +216,8 @@ def build_outputs(psdk: Path) -> dict:
             continue
         emitted_names.add(pl_name)
         outs[f"{pl_name}.pm"] = _emit_class(
-            pl_name, node.get("properties") or {}, f"$defs schema {raw_name!r}")
+            pl_name, node.get("properties") or {}, f"$defs schema {raw_name!r}",
+            raw_name, psdk)
 
     # 2. One <Verb>Config data class per SWMLMethod.anyOf verb whose inner schema
     #    is an inline object / oneOf union (flattened union of variant props).
@@ -238,7 +248,8 @@ def build_outputs(psdk: Path) -> dict:
                 continue
             emitted_names.add(pl_name)
             outs[f"{pl_name}.pm"] = _emit_class(
-                pl_name, props, f"flattened SWMLMethod verb {verb!r} config")
+                pl_name, props, f"flattened SWMLMethod verb {verb!r} config",
+                cfg_name, psdk)
 
     # §5 format backstop: tidy every generated .pm so GEN-FRESH and the FMT
     # gate both pass (perltidy aligns consecutive `has` declarations, which a

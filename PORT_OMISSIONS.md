@@ -86,3 +86,28 @@ signalwire.relay.client.RelayClient.__del__: impossible: Python finalizer dunder
 signalwire.relay.message.Message.__repr__: impossible: Python object-repr dunder; Perl provides the equivalent via a to_string method where user-facing, but the __repr__ FORM has no Perl analog on this data carrier (TS/PHP omit identically)
 signalwire.rest._base.FabricResourcePUT: impossible: the Perl generated FabricResource base collapses the reference's CrudWithAddresses -> FabricResource(PATCH) / FabricResourcePUT(PUT) marker split into a single base carrying list_addresses; the PUT-vs-PATCH verb is baked per-resource via _update_method in each generated class's BUILDARGS, so there is no separate method-less PUT marker class to emit (a generated-layout limit the TS/PHP generators hit identically)
 
+
+
+# ---------------------------------------------------------------------------
+# NOTE — AIParams fields dropped via porting-sdk/rest-apis/x-sdk-overlay.yaml
+# ---------------------------------------------------------------------------
+# The following 5 fields of the spec schema AIParams (schema.json $defs/AIParams
+# and components/schemas/AIParams in the calling + fabric REST specs) are HIDDEN
+# from the SDK surface by the single authoritative overlay x-sdk-overlay.yaml —
+# still accepted on the wire, dropped from the generated Perl AIParams data
+# packages (REST Types/Calling, Types/Fabric, and SWML/Generated):
+#   - audible_debug
+#   - audible_latency
+#   - verbose_logs
+#   - enable_accounting
+#   - cache_mode
+# Reason: hidden via x-sdk-overlay.yaml: server-internal AI param, dropped from
+# SDK surface per overlay policy (approved).
+#
+# These are NOT ledgered as diff_port_surface.py symbol lines: the surface oracle
+# records AIParams as a method-less TYPE (class name only) and does not track its
+# field members, so field-level hides never surface as SURFACE-DIFF omissions
+# (the gate passes clean). This note is documentation only; the checker skips
+# every '#'-prefixed line. languages_enabled is NOT dropped — it is emitted and
+# marked '# deprecated:' per the overlay's deprecated list, so it is not recorded
+# here either.

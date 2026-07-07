@@ -93,6 +93,60 @@ def repo_root() -> Path:
 
 
 # ---------------------------------------------------------------------------
+# SDK-surface policy overlay (rest-apis/x-sdk-overlay.yaml — the single source).
+# ---------------------------------------------------------------------------
+# The overlay is the ONE authoritative place that says which spec fields the SDKs
+# hide (dropped from the surface entirely; still on the wire) or deprecate (emitted
+# but flagged). It is a policy overlay, NOT markup in the (often vendored) specs, so
+# the same field is governed once and applied wherever it surfaces — schema.json
+# $defs/AIParams AND the calling/fabric REST projections of it. generate_swml_verbs.py
+# imports this module as GR and reuses these helpers so the two generators never
+# diverge on the hide/deprecate rule.
+#
+# MATCHING: each rule is (field, scope-or-None). scope=None -> matches in every
+# schema; scope="<SchemaName>" -> matches ONLY inside the SPEC schema of that name —
+# the $defs / components.schemas KEY as it appears in the spec, NOT the Perl class
+# name this generator later emits. So the emit sites pass the raw spec schema name.
+_overlay_cache: "dict[str, set] | None" = None
+
+
+def _load_overlay(psdk: Path) -> "dict[str, set]":
+    global _overlay_cache
+    if _overlay_cache is None:
+        def rules(key: str, data: dict) -> set:
+            out: set = set()
+            for entry in data.get(key) or []:
+                if isinstance(entry, dict) and entry.get("field"):
+                    out.add((entry["field"], entry.get("scope")))
+            return out
+        data = {}
+        path = psdk / "rest-apis" / "x-sdk-overlay.yaml"
+        if path.is_file():
+            data = yaml.safe_load(path.read_text()) or {}
+        _overlay_cache = {"hidden": rules("hidden", data), "deprecated": rules("deprecated", data)}
+    return _overlay_cache
+
+
+def _overlay_match(rules: set, field: str, schema_name: str | None) -> bool:
+    # A rule matches when its field equals `field` AND (it is unscoped OR its scope
+    # equals the containing SPEC schema name). `schema_name` is the schema's name as
+    # it appears in the spec (the $defs / components.schemas key) — NOT the Perl class
+    # name — so the scope value is identical across all ports.
+    for rf, scope in rules:
+        if rf == field and (scope is None or scope == schema_name):
+            return True
+    return False
+
+
+def overlay_hidden(psdk: Path, field: str, schema_name: str | None = None) -> bool:
+    return _overlay_match(_load_overlay(psdk)["hidden"], field, schema_name)
+
+
+def overlay_deprecated(psdk: Path, field: str, schema_name: str | None = None) -> bool:
+    return _overlay_match(_load_overlay(psdk)["deprecated"], field, schema_name)
+
+
+# ---------------------------------------------------------------------------
 # Base loading (x-sdk-bases; §2).
 # ---------------------------------------------------------------------------
 
@@ -1157,8 +1211,13 @@ TYPES_HEADER = (
 )
 
 
-def emit_type_class(sub: str, raw_name: str, node: dict, ns_key: str) -> str:
-    """Emit one method-less Moo data package for an object schema."""
+def emit_type_class(sub: str, raw_name: str, node: dict, ns_key: str, psdk: Path) -> str:
+    """Emit one method-less Moo data package for an object schema.
+
+    The SDK-surface overlay (x-sdk-overlay.yaml) is consulted by (wire key, SPEC
+    schema name = raw_name): a hidden field is DROPPED from the surface entirely
+    (still on the wire), a deprecated field is emitted but flagged with a comment
+    marker (a `has` reader stays method-less on the surface enumerator)."""
     pl_name = type_name(raw_name)
     pkg = f"SignalWire::REST::Namespaces::Generated::Types::{sub}::{pl_name}"
     desc = (f"Generated REST wire type {pl_name!r} from the {ns_key!r} spec "
@@ -1173,12 +1232,18 @@ def emit_type_class(sub: str, raw_name: str, node: dict, ns_key: str) -> str:
     props = node.get("properties") or {}
     used: set[str] = set()
     for wire_key in props:
+        # SDK-surface policy from the single overlay, matched on the SPEC schema
+        # name (raw_name), NOT the Perl class name.
+        if overlay_hidden(psdk, wire_key, raw_name):
+            continue  # hidden: drop from the SDK surface entirely (still wire).
         attr = perl_attr_name(wire_key)
         while attr in used:
             attr += "_"
         used.add(attr)
         if attr != wire_key:
             out += f"# wire key: {wire_key}\n"
+        if overlay_deprecated(psdk, wire_key, raw_name):
+            out += f"# deprecated: {wire_key}\n"
         out += perl_has_decl(attr) + "\n"
     out += "\n1;\n"
     return out
@@ -1243,7 +1308,7 @@ def emit_types(psdk: Path, outs: dict) -> None:
                 pl_name = type_name(raw_name)
                 fn = f"Types/{sub}/{pl_name}.pm"
                 if fn not in outs:
-                    outs[fn] = emit_type_class(sub, raw_name, node, ns_key)
+                    outs[fn] = emit_type_class(sub, raw_name, node, ns_key, psdk)
 
 
 # ---------------------------------------------------------------------------
