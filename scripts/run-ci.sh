@@ -20,7 +20,9 @@
 #   HARD ordering is data-dependency ONLY:
 #     * DRIFT reads port_signatures.json that SIGNATURES writes → deps=SIGNATURES.
 #     * SURFACE-FRESH + SURFACE-DIFF regenerate port_surface.json in place (and
-#       restore it), DOC-AUDIT reads it → all three share res=surface.
+#       restore it), DOC-AUDIT reads it, FMT rewrites lib/**/*.pm in place, and TEST
+#       loads lib/ + reads port_surface.json → all five share res=surface (the
+#       working-tree-mutation group) so no reader ever sees a half-written file.
 #   The shared _env.sh env (PERL5LIB / PATH / PERLTIDY) is exported before the gates
 #   are registered, so every scheduler worker subshell inherits it.
 #   Per-gate PASS/FAIL + the FAILED_GATES tally preserved exactly; each gate's output
@@ -99,6 +101,24 @@ echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
 pick_free_port() {
     python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
+}
+
+# ARTIFACT-DENY (Day-one) — no porting-process artifact may ship inside the PUBLISHED
+# package. MANIFEST is the authoritative published listing: `make manifest` regenerates
+# it modulo MANIFEST.SKIP (which already excludes port_*.json, PORT_*.md, CHECKLIST.md,
+# audit_coverage*, tidy.err, .sw-tmp/, etc.), so feeding MANIFEST to --listing checks the
+# REAL shipped set (not the git-ls-files proxy). Restore the committed MANIFEST after —
+# `make manifest` rewrites it and would otherwise dirty the tree.
+dayone_artifact_deny() {
+    perl Makefile.PL >/dev/null 2>&1 || { echo "Makefile.PL failed" >&2; return 1; }
+    make manifest >/dev/null 2>&1 || { echo "make manifest failed" >&2; return 1; }
+    python3 "$PORTING_SDK_DIR/scripts/artifact_deny.py" --port perl --listing - <MANIFEST
+    local rc=$?
+    # Restore the committed MANIFEST and sweep the ExtUtils::MakeMaker byproducts
+    # (all .gitignore'd, but leave no scratch behind per the repo cleanup rule).
+    git checkout -- MANIFEST 2>/dev/null || true
+    rm -f MANIFEST.bak MYMETA.json MYMETA.yml Makefile Makefile.old pm_to_blib
+    return $rc
 }
 
 # SURFACE-FRESH — Layer B (the symbol-level surface) is NOT gated by DRIFT (Layer A
@@ -219,7 +239,16 @@ sched_gate GEN-FRESH-SWAIG desc="generate_swaig_payloads.py --check (generated S
 sched_gate GEN-FRESH-TESTS desc="generate_rest_tests.py --check (generated REST wire-test suite matches route-registry × spec oracle)" \
     -- python3 scripts/generate_rest_tests.py --check
 
-sched_gate TEST defer=1 desc="run-tests.sh (prove -Ilib -It/lib -r t/)" \
+# TEST joins res=surface — the working-tree-mutation group. FMT rewrites lib/**/*.pm
+# in place via `perltidy -b` when run locally; SURFACE-FRESH / SURFACE-DIFF rewrite
+# port_surface.json in place then `git checkout --` restore it. TEST `perl -c`-compiles
+# every bundled example and loads every SDK module for its 130+ test files, and
+# t/53/t/54 additionally read port_surface.json — so overlapping TEST with a gate
+# mid-rewrite makes a module/surface file load a transient/half-written copy and fail
+# nondeterministically (the moving `example parses:` / surface-audit failures). Sharing
+# the surface resource serializes TEST against those mutators; it still overlaps every
+# read-only gate (LINT, the differs, generators-in-check-mode).
+sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t/)" \
     -- bash scripts/run-tests.sh
 
 sched_gate SIGNATURES desc="regenerate port_signatures.json" \
@@ -279,7 +308,11 @@ sched_gate BEHAVIORAL-WIRE-RELAY desc="diff_port_wire_relay vs python oracle (La
         --port perl --python-sdk "$PYTHON_SDK_DIR" \
         --dump-cmd "perl -Ilib bin/wire-relay-dump.pl 2>/dev/null"
 
-sched_gate FMT defer=1 desc="run-format.sh (local: apply; CI: --check)" \
+# FMT joins res=surface: run locally (no CI) it rewrites lib/**/*.pm in place via
+# `perltidy -b`, which a concurrent TEST (`perl -c` / module load) or surface-enumerator
+# (loads lib/) would otherwise read mid-write. Under CI (--check) it's read-only, but the
+# label is harmless there and keeps local and CI scheduling identical.
+sched_gate FMT defer=1 res=surface desc="run-format.sh (local: apply; CI: --check)" \
     -- bash scripts/run-format.sh ${CI:+--check}
 
 sched_gate LINT defer=1 desc="run-lint.sh (perlcritic severity 4, zero findings)" \
@@ -310,6 +343,24 @@ sched_gate SWAIG-CLI desc="swaig-test shared mini-contract (verbs/serverless-rej
 sched_gate SWAIG-COVERAGE desc="every engine SWAIG action emittable by FunctionResult (or allowlisted)" \
     -- python3 "$PORTING_SDK_DIR/scripts/swaig_coverage.py" --check \
         --emission "$PORT_ROOT/lib/SignalWire/SWAIG/FunctionResult.pm"
+
+sched_gate DOC-LANG-PURITY res=dayone desc="no python-verbatim docs in a non-python port" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_lang_purity.py" --port perl --repo .
+
+sched_gate DOC-LINKS res=dayone desc="every relative markdown link resolves to a tracked file" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_links.py" --port perl --repo .
+
+sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at repo root (allowlist ROOT_HYGIENE_ALLOW.md)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/root_hygiene.py" --port perl --repo .
+
+sched_gate IGNORE-LEDGER-VERIFY res=dayone desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md" \
+    -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port perl --repo .
+
+sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
+    -- python3 "$PORTING_SDK_DIR/scripts/meta_consistent.py" --port perl --repo .
+
+sched_gate ARTIFACT-DENY res=dayone desc="no porting artifacts in the PUBLISHED package (authoritative listing)" \
+    --fn dayone_artifact_deny
 
 sched_run
 rc=$?
