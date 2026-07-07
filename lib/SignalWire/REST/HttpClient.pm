@@ -7,6 +7,29 @@ use HTTP::Tiny;
 use JSON         qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
+# Derive the outbound User-Agent from the distribution $VERSION -- the single
+# source of truth in lib/SignalWire.pm (also what Makefile.PL's VERSION_FROM
+# reads) -- so it can never go stale against the released version. We resolve
+# the version WITHOUT loading the full SignalWire framework tree: if the top
+# module is already loaded we read its $VERSION, otherwise we parse it from the
+# on-disk module file (the same way ExtUtils::MakeMaker's VERSION_FROM does),
+# and fall back to '0' if neither is available.
+sub _sdk_version {
+    return $SignalWire::VERSION if defined $SignalWire::VERSION;
+    ( my $rel = 'SignalWire.pm' ) =~ s{::}{/}g;
+    for my $dir (@INC) {
+        next if ref $dir;
+        my $file = "$dir/$rel";
+        next unless -f $file;
+        require ExtUtils::MakeMaker;
+        my $v = eval { MM->parse_version($file) };
+        return $v if defined $v && $v ne 'undef';
+    }
+    return '0';
+}
+
+my $USER_AGENT = 'signalwire-perl/' . _sdk_version();
+
 has 'project'      => ( is => 'ro', required => 1 );
 has 'token'        => ( is => 'ro', required => 1 );
 has 'host'         => ( is => 'ro', required => 1 );
@@ -36,7 +59,7 @@ sub _build_base_url {
 sub _build__ua {
     my ($self) = @_;
     return HTTP::Tiny->new(
-        agent           => 'signalwire-agents-perl-rest/1.0',
+        agent           => $USER_AGENT,
         default_headers => {
             'Content-Type'  => 'application/json',
             'Accept'        => 'application/json',
