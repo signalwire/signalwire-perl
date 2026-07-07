@@ -5,6 +5,7 @@ use Test::More;
 use JSON qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 use File::Spec;
+use CompileCheck ();
 
 # ============================================================
 # 1. swaig-test script exists and is executable
@@ -133,8 +134,9 @@ subtest 'swaig-test integration with live agent' => sub {
 # 6. Script compiles cleanly
 # ============================================================
 subtest 'swaig-test compiles' => sub {
-    my $output = `PERL5LIB="lib:\$PERL5LIB" $^X -c bin/swaig-test 2>&1`;
-    like($output, qr/syntax OK/, 'bin/swaig-test compiles without errors');
+    CompileCheck::compile_ok(
+        qq{PERL5LIB="lib:\$PERL5LIB" $^X -c bin/swaig-test 2>&1},
+        'bin/swaig-test compiles without errors');
 };
 
 done_testing;

@@ -12,6 +12,7 @@ use Test::More;
 use FindBin ();
 use File::Spec ();
 use JSON ();
+use CompileCheck ();
 
 my $REPO = File::Spec->rel2abs(File::Spec->catdir($FindBin::Bin, '..'));
 my $SCRIPT = File::Spec->catfile($REPO, 'scripts', 'enumerate_surface.pl');
@@ -19,8 +20,9 @@ my $SCRIPT = File::Spec->catfile($REPO, 'scripts', 'enumerate_surface.pl');
 ok(-f $SCRIPT, 'enumerator script present');
 
 # Syntax-check the enumerator without running it.
-my $syntax = `perl -I$REPO/lib -c $SCRIPT 2>&1`;
-like($syntax, qr/syntax OK/, 'enumerator parses cleanly');
+CompileCheck::compile_ok(
+    qq{perl -I$REPO/lib -c $SCRIPT 2>&1},
+    'enumerator parses cleanly');
 
 # Run it, capture JSON on stdout.
 my $out = `perl -I$REPO/lib $SCRIPT --stdout 2>/dev/null`;

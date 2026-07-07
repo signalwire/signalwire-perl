@@ -13,6 +13,7 @@ use warnings;
 use Test::More;
 use FindBin ();
 use File::Spec ();
+use CompileCheck ();
 
 my $REPO = File::Spec->rel2abs(File::Spec->catdir($FindBin::Bin, '..'));
 my $IGNORE = File::Spec->catfile($REPO, 'DOC_AUDIT_IGNORE.md');
@@ -69,8 +70,9 @@ for my $dir (@example_dirs) {
     for my $name (@pls) {
         my $path = File::Spec->catfile($dir, $name);
         my $rel = File::Spec->abs2rel($path, $REPO);
-        my $out = `perl -I$REPO/lib -c "$path" 2>&1`;
-        like($out, qr/syntax OK/, "example parses: $rel");
+        CompileCheck::compile_ok(
+            qq{perl -I$REPO/lib -c "$path" 2>&1},
+            "example parses: $rel");
         $checked++;
     }
 }
