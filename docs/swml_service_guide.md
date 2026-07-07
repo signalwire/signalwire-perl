@@ -462,6 +462,7 @@ my $user = SignalWire::SWML::Service->extract_sip_username($request_body);
 ```perl
 package VoicemailService;
 use Moo;
+use JSON ();
 extends 'SignalWire::SWML::Service';
 
 sub BUILD {
@@ -513,6 +514,7 @@ my $app = $service->to_psgi_app;
 ```perl
 package CallRouterService;
 use Moo;
+use JSON ();
 extends 'SignalWire::SWML::Service';
 
 sub on_swml_request {

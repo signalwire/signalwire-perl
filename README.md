@@ -175,6 +175,8 @@ my $client = SignalWire::REST::RestClient->new(
 );
 
 $client->fabric->ai_agents->create(name => 'Support Bot', prompt => { text => 'You are helpful.' });
+
+my $call_id = 'call-id-from-a-prior-request';
 $client->calling->play($call_id, play => [{ type => 'tts', text => 'Hello!' }]);
 $client->phone_numbers->search(area_code => '512');
 $client->datasphere->documents->search(query_string => 'billing policy');

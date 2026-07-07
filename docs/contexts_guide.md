@@ -645,6 +645,7 @@ Each question has a `type` that controls the JSON schema of the `answer` paramet
 
 When `confirm => 1`, the AI must read the answer back to the caller and get explicit confirmation before submitting:
 
+<!-- snippet: no-compile method-chain continuation fragment (leading arrow, no invocant) -->
 ```perl
 ->add_gather_question(
     key      => 'last_name',
@@ -665,6 +666,7 @@ How it works:
 
 Each question can have additional instructions and specific functions made available:
 
+<!-- snippet: no-compile method-chain continuation fragment (leading arrow, no invocant) -->
 ```perl
 ->add_gather_question(
     key       => 'home_airport',

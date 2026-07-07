@@ -188,6 +188,7 @@ $client->unreceive(['old-context']);
 `RELAY error: ...` message when the server returns an error. Wrap calls in
 `eval` to handle failures:
 
+<!-- snippet: no-compile illustrative fragment with a list-literal yada-yada elision -->
 ```perl
 my $result = eval { $call->play(media => [ ... ]) };
 if (my $err = $@) {

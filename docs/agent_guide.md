@@ -111,6 +111,7 @@ The SignalWire AI Agent SDK provides a `run()` method that automatically detects
 
 ### Deployment with `run()`
 
+<!-- snippet: no-compile references MyAgent, a reader-defined example package with no module file -->
 ```perl
 use lib 'lib';
 use MyAgent;

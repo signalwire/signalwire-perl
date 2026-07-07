@@ -546,6 +546,7 @@ when you want an early, explicit failure for a missing path.
 
 ### WebService Class
 
+<!-- snippet: no-compile illustrative constructor args with a list-literal yada-yada elision -->
 ```perl
 my $service = SignalWire::Web::WebService->new(
     port                      => 8002,           # default 8002

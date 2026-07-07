@@ -424,6 +424,7 @@ The SDK is designed to be highly extensible:
    ```
 
 9. **Custom Skills**: Create reusable skill modules
+   <!-- snippet: no-compile illustrative fragment with a define_tool(...) yada-yada elision -->
    ```perl
    package MyCustomSkill;
    use Moo;

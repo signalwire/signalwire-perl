@@ -99,6 +99,7 @@ sub register_tools {
 
 Register individual skill classes programmatically:
 
+<!-- snippet: no-compile references My::Skills::Weather, a reader-defined example package with no module file -->
 ```perl
 use SignalWire;
 use SignalWire::Agent::AgentBase;
@@ -208,6 +209,7 @@ sub setup {
 Support multiple instances of your skill by enabling
 `supports_multiple_instances` and giving each instance a distinct `tool_name`:
 
+<!-- snippet: no-compile class-body fragment (Moo has-modifier and method, no package/use Moo scaffold) -->
 ```perl
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
@@ -276,6 +278,7 @@ sub setup {
 
 Test your skills before distribution:
 
+<!-- snippet: no-compile references My::Skills::Weather, a reader-defined example package with no module file -->
 ```perl
 use Test::More;
 use SignalWire;
