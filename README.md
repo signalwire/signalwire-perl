@@ -43,6 +43,7 @@ cpanm SignalWire
 
 Each agent is a self-contained microservice that generates [SWML](docs/swml_service_guide.md) (SignalWire Markup Language) and handles [SWAIG](docs/swaig_reference.md) (SignalWire AI Gateway) tool calls. The SignalWire platform runs the entire AI pipeline (STT, LLM, TTS) -- your agent just defines the behavior.
 
+<!-- include: examples/quickstart_agent.pl#construct -->
 ```perl
 use strict;
 use warnings;
@@ -56,22 +57,22 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/agent',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->prompt_add_section('Role', 'You are a helpful assistant.');
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->prompt_add_section( 'Role', 'You are a helpful assistant.' );
 
 $agent->define_tool(
     name        => 'get_time',
     description => 'Get the current time',
     parameters  => {},
     handler     => sub {
-        my ($args, $raw_data) = @_;
+        my ( $args, $raw_data ) = @_;
         return SignalWire::SWAIG::FunctionResult->new(
-            response => 'The time is ' . strftime('%H:%M:%S', localtime),
-        );
+            response => 'The time is ' . strftime( '%H:%M:%S', localtime ) );
     },
 );
 
 $agent->run;
+
 ```
 
 Test locally without running a server:
@@ -123,6 +124,7 @@ See [examples/README.md](examples/README.md) for the full list organized by cate
 
 Real-time call control and messaging over WebSocket. The RELAY client connects to SignalWire via the Blade protocol and gives you imperative control over live phone calls and SMS/MMS.
 
+<!-- include: relay/examples/quickstart_relay.pl#construct -->
 ```perl
 use strict;
 use warnings;
@@ -135,19 +137,21 @@ my $client = SignalWire::Relay::Client->new(
     contexts => ['default'],
 );
 
-$client->on_call(sub {
-    my ($call) = @_;
-    $call->answer;
-    my $action = $call->play(
-        media => [{ type => 'tts', params => { text => 'Welcome!' } }],
-    );
-    $action->wait;
-    $call->hangup;
-});
+$client->on_call(
+    sub {
+        my ($call) = @_;
+        $call->answer;
+        my $action =
+            $call->play( media => [ { type => 'tts', params => { text => 'Welcome!' } } ] );
+        $action->wait;
+        $call->hangup;
+    }
+);
 
 $client->connect_ws or die "Connection failed\n";
 $client->authenticate;
 $client->run;
+
 ```
 
 - 57+ calling methods (play, record, collect, detect, tap, stream, AI, conferencing, and more)
@@ -163,6 +167,7 @@ See the **[RELAY documentation](relay/README.md)** for the full guide, API refer
 
 Synchronous REST client for managing SignalWire resources and controlling calls over HTTP. No WebSocket required.
 
+<!-- include: rest/examples/quickstart_rest.pl#construct -->
 ```perl
 use strict;
 use warnings;
@@ -174,12 +179,16 @@ my $client = SignalWire::REST::RestClient->new(
     host    => $ENV{SIGNALWIRE_SPACE},
 );
 
-$client->fabric->ai_agents->create(name => 'Support Bot', prompt => { text => 'You are helpful.' });
+$client->fabric->ai_agents->create(
+    name   => 'Support Bot',
+    prompt => { text => 'You are helpful.' }
+);
 
 my $call_id = 'call-id-from-a-prior-request';
-$client->calling->play($call_id, play => [{ type => 'tts', text => 'Hello!' }]);
-$client->phone_numbers->search(area_code => '512');
-$client->datasphere->documents->search(query_string => 'billing policy');
+$client->calling->play( $call_id, play => [ { type => 'tts', text => 'Hello!' } ] );
+$client->phone_numbers->search( area_code => '512' );
+$client->datasphere->documents->search( query_string => 'billing policy' );
+
 ```
 
 - 21 namespaced API surfaces: Fabric (16 resource types), Calling (40 commands), Video, Datasphere, Compat (Twilio-compatible), Phone Numbers, SIP, Queues, Recordings, and more
