@@ -67,6 +67,18 @@ sub pick ( $frag, @keys ) {
     return { map { $_ => $frag->{$_} } @keys };
 }
 
+# swaig_field mirrors the oracle's SWAIG-function filter (diff_port_swml
+# build_oracle): given the ai.SWAIG.functions LIST, find the entry whose
+# `function` matches $fn, then return that entry's $field.
+sub swaig_field ( $frag, $fn, $field ) {
+    return undef unless ref $frag eq 'ARRAY';
+    for my $f (@$frag) {
+        next unless ref $f eq 'HASH';
+        return $f->{$field} if defined $f->{function} && $f->{function} eq $fn;
+    }
+    return undef;
+}
+
 sub render ($a) {
     return $a->render_swml();
 }
@@ -131,6 +143,29 @@ sub main {
         my $a = new_agent();
         $a->add_pronunciation( replace => 'SW', with => 'SignalWire', ignore_case => JSON::true );
         $out{swml_add_pronunciation} = extract( render($a), 'ai.pronounce' );
+    }
+
+    # swml_define_tool_complete_schema: define_tool given a COMPLETE
+    # {type,properties,required} schema must render ai.SWAIG.functions[?
+    # function=lookup].parameters as that schema FLAT (pass-through), NOT
+    # double-wrapped in another {type:object, properties:{...}} layer. Mirrors
+    # python swaig_function._ensure_parameter_structure (returns the schema as-is
+    # when type+properties are already present).
+    {
+        my $a      = new_agent();
+        my $schema = {
+            type       => 'object',
+            properties => { q => { type => 'string' } },
+            required   => ['q'],
+        };
+        $a->define_tool(
+            name        => 'lookup',
+            description => 'Look up a thing',
+            parameters  => $schema,
+            handler     => sub { return; },
+        );
+        $out{swml_define_tool_complete_schema} =
+            swaig_field( extract( render($a), 'ai.SWAIG.functions' ), 'lookup', 'parameters' );
     }
 
     print JSON->new->canonical->encode( \%out ), "\n";

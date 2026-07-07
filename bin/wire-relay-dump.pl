@@ -82,7 +82,17 @@ my $CID  = 'ctl-123';
         return { code => '200' };
     }
 
-    sub last_frame ($self) { return $self->frames->[-1]; }
+    # last_frame observes the CLIENT-SEND boundary: it returns the most recent
+    # frame that actually reached execute(). If a verb built a frame but never
+    # transmitted (never called $client->execute), frames is empty and we return
+    # the oracle's sentinel so the case FAILS — mirroring diff_port_wire_relay's
+    # {"_no_frame_transmitted": True}. (Perl Call verbs all funnel through
+    # $client->execute, so this sentinel never fires here — it enforces the
+    # invariant, not the current behavior.)
+    sub last_frame ($self) {
+        my $f = $self->frames->[-1];
+        return defined $f ? $f : { _no_frame_transmitted => JSON::true };
+    }
     sub clear_frames ($self) { $self->frames( [] ); return; }
 }
 
