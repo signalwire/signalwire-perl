@@ -105,7 +105,7 @@ SignalWire::Logging::LogLevel - log levels as a typed closed set
     use SignalWire::Logging::LogLevel qw(DEBUG);
 
     my $log = SignalWire::Logging->new( level => DEBUG );  # imported constant
-    SignalWire::Logging->new( level => 'debug' );          # string (parity)
+    SignalWire::Logging->new( level => 'debug' );          # plain string still works
     $ENV{SIGNALWIRE_LOG_LEVEL} = SignalWire::Logging::LogLevel::WARN();
 
     # Membership / ordering helpers:
@@ -122,9 +122,8 @@ C<%LEVELS> table and emits from C<debug>/C<info>/C<warn>/C<error>.
 The constants B<are> the canonical level strings, so nothing about
 L<SignalWire::Logging> changes: the C<level> attribute, the
 C<SIGNALWIRE_LOG_LEVEL> env var, and the level methods all still take /
-emit plain strings. That keeps parity with the Python reference (stdlib
-C<logging> level names) and leaves any custom threshold string working
-exactly as before.
+emit plain strings. The level names match Python's stdlib C<logging>
+names, and any custom threshold string keeps working exactly as before.
 
 This buys a single source of truth for the four levels (otherwise they
 live only inside the C<%LEVELS> table), plus editor autocomplete and the

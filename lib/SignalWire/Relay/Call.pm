@@ -668,8 +668,8 @@ called by the client).
 
 =head2 Typed state
 
-C<state> remains the canonical bare-string accessor (Python parity). These
-add the L<SignalWire::Relay::CallState>-backed view:
+C<state> remains the canonical bare-string accessor. These add the
+L<SignalWire::Relay::CallState>-backed view:
 
 =over 4
 

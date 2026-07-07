@@ -25,7 +25,7 @@ package SignalWire::Skills::SkillName;
 #     use SignalWire::Skills::SkillName qw(DATETIME);
 #     $agent->add_skill( DATETIME );                  # imported constant
 #     $agent->add_skill( SignalWire::Skills::SkillName::DATETIME() );  # FQ
-#     $agent->add_skill( 'datetime' );                # string (Python parity)
+#     $agent->add_skill( 'datetime' );                # plain wire string still works
 #     $agent->add_skill( 'my_custom_skill' );         # open set: custom skill
 #
 # The names are exported on request (Exporter), so callers can pull just the
@@ -125,7 +125,7 @@ SignalWire::Skills::SkillName - built-in skill names as a typed closed set
     use SignalWire::Skills::SkillName qw(DATETIME);
 
     $agent->add_skill( DATETIME );          # imported constant
-    $agent->add_skill( 'datetime' );        # string (Python parity)
+    $agent->add_skill( 'datetime' );        # plain wire string still works
     $agent->add_skill( 'my_custom_skill' ); # open set: custom skill
 
     # Membership / iteration helpers:
@@ -142,9 +142,9 @@ C<SignalWire::Skills::Builtin::*> module.
 
 The constants B<are> the canonical wire strings, so nothing about
 C<< AgentBase->add_skill >> / C<remove_skill> / C<has_skill> changes: they
-still take a string. That keeps parity with the Python reference (a bare
-C<str>) and leaves custom / third-party skill names working automatically
-— an unknown string is simply not in this set.
+still take a string. Any bare skill-name string is still accepted, so
+custom / third-party skill names keep working automatically — an unknown
+string is simply not in this set.
 
 This buys a single source of truth for the built-in names (otherwise they
 live only inside C<SkillRegistry::_load_all_builtins> and the test suite),

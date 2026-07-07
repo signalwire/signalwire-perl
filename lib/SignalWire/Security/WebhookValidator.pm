@@ -367,8 +367,7 @@ SignalWire::Security::WebhookValidator - Verify SignalWire webhook signatures
 
 =head1 DESCRIPTION
 
-Implements both signature schemes from
-F<porting-sdk/webhooks.md>:
+Implements both of SignalWire's webhook signature schemes:
 
 =over
 

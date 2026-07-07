@@ -301,10 +301,10 @@ SignalWire::Core::AuthHandler - unified multi-method authentication handler
 
     my $info = $handler->get_auth_info;
 
-    # PSGI middleware (parity name: flask_decorator)
+    # PSGI middleware (also aliased as flask_decorator)
     my $guarded = $handler->plack_middleware($app);
 
-    # PSGI dependency (parity name: get_fastapi_dependency)
+    # PSGI dependency (also aliased as get_fastapi_dependency)
     my $dep = $handler->plack_dependency( optional => 1 );
     my $result = $dep->($psgi_env);   # { authenticated => 0|1, method => ... }
 
@@ -319,8 +319,8 @@ Python's C<flask_decorator> and C<get_fastapi_dependency> are framework-bound
 (Flask / FastAPI). Perl uses PSGI/Plack as its standard web interface, so the
 analogs are C<plack_middleware> (a PSGI app wrapper enforcing a 401) and
 C<plack_dependency> (a PSGI-env callable returning an auth result); the
-Python parity names C<flask_decorator> and C<get_fastapi_dependency> are
-provided as thin wrappers.
+names C<flask_decorator> and C<get_fastapi_dependency> are also provided as
+thin wrappers for callers migrating from the Python SDK.
 
 =head1 METHODS
 

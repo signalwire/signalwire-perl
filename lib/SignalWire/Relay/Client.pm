@@ -993,7 +993,7 @@ bare list.
 
 L<SignalWire::Relay::Call>, L<SignalWire::Relay::Message>,
 L<SignalWire::Relay::Event>, L<SignalWire::Relay::Constants>, and the
-RELAY protocol guide in F<porting-sdk/RELAY_IMPLEMENTATION_GUIDE.md>.
+SignalWire RELAY protocol documentation.
 
 =head1 LICENSE
 

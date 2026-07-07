@@ -446,8 +446,8 @@ C<$route> (dies if it is not an existing directory).
 =item * C<remove_directory($route)> — stop serving C<$route> (no-op when absent).
 
 =item * C<start(%opts)> — start the server; returns the bound port
-(non-blocking). Accepts C<host>, C<port>, and C<ssl_cert> / C<ssl_key>
-(for parity), and C<block>.
+(non-blocking). Accepts C<host>, C<port>, C<ssl_cert> / C<ssl_key>, and
+C<block>.
 
 =item * C<stop> — stop the server and reap the background child.
 

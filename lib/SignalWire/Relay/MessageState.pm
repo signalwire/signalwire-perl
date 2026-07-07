@@ -118,7 +118,7 @@ SignalWire::Relay::MessageState - RELAY message-delivery states as a typed close
 
     # Named constants and bare wire strings are interchangeable:
     $msg->state eq DELIVERED;     # constant
-    $msg->state eq 'delivered';   # string (Python parity)
+    $msg->state eq 'delivered';   # plain wire string still works
 
     # Membership / terminality (false on unknown — never dies):
     SignalWire::Relay::MessageState->is_state('sent');            # 1
@@ -138,8 +138,8 @@ event's C<message_state> field.
 
 The constants B<are> the canonical wire strings, so nothing about
 C<< SignalWire::Relay::Message->state >> changes: it still reads and writes
-a plain string. That keeps parity with the Python reference (bare C<str>)
-and leaves forward-compatible server states working.
+a plain string. Any bare state string is still accepted, so
+forward-compatible server states keep working.
 
 Grounded in the Python reference's C<relay/constants.py>
 (C<MESSAGE_STATE_*> / C<MESSAGE_TERMINAL_STATES>) and the port's

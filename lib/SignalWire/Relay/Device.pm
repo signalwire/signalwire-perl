@@ -125,7 +125,7 @@ This class types the B<shape> of that hashref so callers can build one with
 a constructor and named accessors instead of hand-assembling a nested map.
 L</to_hash> yields the byte-identical wire hashref the raw form produced, so
 a C<Device> is a drop-in replacement wherever a device hashref is accepted —
-the existing relay verbs are unchanged (additive, parity-preserving).
+the existing relay verbs are unchanged (purely additive).
 
 Grounded in C<relay-protocol/calling.connect.params.json> and
 C<calling.dial.params.json>, where each device is

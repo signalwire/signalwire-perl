@@ -275,8 +275,7 @@ SWML C<ai> verb.
 C<name>, C<handler>, and C<description> are required. C<parameters>,
 C<secure>, C<fillers>, C<wait_file>, C<wait_file_loops>, C<webhook_url>,
 C<required>, and C<is_typed_handler> are optional. Any additional keyword is
-collected into C<extra_swaig_fields> and merged into the C<to_swaig> output
-(Python C<**extra_swaig_fields> parity).
+collected into C<extra_swaig_fields> and merged into the C<to_swaig> output.
 
 =head1 METHODS
 

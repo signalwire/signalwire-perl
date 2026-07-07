@@ -113,7 +113,7 @@ SignalWire::Relay::CallState - RELAY call-lifecycle states as a typed closed set
 
     # Named constants and bare wire strings are interchangeable:
     $call->state eq ANSWERED;     # constant
-    $call->state eq 'answered';   # string (Python parity)
+    $call->state eq 'answered';   # plain wire string still works
 
     # Membership / terminality (false on unknown — never dies):
     SignalWire::Relay::CallState->is_state('ringing');        # 1
@@ -131,8 +131,8 @@ the server sends in the C<calling.call.state> event's C<call_state> field.
 
 The constants B<are> the canonical wire strings, so nothing about
 C<< SignalWire::Relay::Call->state >> changes: it still reads and writes a
-plain string. That keeps parity with the Python reference (bare C<str>) and
-leaves forward-compatible server states working — an unknown string is
+plain string. Any bare state string is still accepted, so
+forward-compatible server states keep working — an unknown string is
 simply not in this set.
 
 Grounded in the Python reference's C<relay/constants.py>
