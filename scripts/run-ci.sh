@@ -362,6 +362,27 @@ sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
 sched_gate ARTIFACT-DENY res=dayone desc="no porting artifacts in the PUBLISHED package (authoritative listing)" \
     --fn dayone_artifact_deny
 
+# ---- expansion gates (Tier 5, now BLOCKING — backlog burned + allowlists approved) ---
+# Wired the same way as the Day-one gates above: single approvable
+# `python3 "$PORTING_SDK_DIR/scripts/<gate>.py" --port perl --repo .` prefix, NO
+# --report-only. Each was verified to exit 0 enforcing before wiring.
+#   * ROUTE-COLLISION is NOT wired for perl: route_collision.py has no default
+#     registry command for perl and, fed perl's route_registry.pl, currently flags
+#     2 ROUTE-SPLIT findings (call_flows/conference_rooms list_addresses, singular-
+#     vs-plural fabric path) with no human-approved ROUTE_COLLISION_ALLOW.md — a
+#     real disposition, held for a follow-up, not silenced here.
+sched_gate GEN-TYPE-DEGENERACY res=dayone desc="no degenerate generated typed aliases (allowlist GEN_TYPE_DEGENERACY_ALLOW.md)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/gen_type_degeneracy.py" --port perl --repo .
+
+sched_gate PUBLIC-JARGON res=dayone desc="no porting/internal jargon leaked into the public surface" \
+    -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port perl --repo .
+
+sched_gate GEN-IDIOM res=dayone desc="generated code is not lint-excluded (holds to the same idiom bar)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/gen_idiom.py" --port perl --repo .
+
+sched_gate RELEASE-FRESH res=dayone desc="publish workflow runs the gates before publishing (publish.yml gated)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/release_fresh.py" --port perl --repo .
+
 sched_run
 rc=$?
 if [ "$rc" -eq 0 ]; then
