@@ -157,3 +157,17 @@ parse_options: Plack::Runner method called by SWML standalone examples
 sleep: Perl built-in (and the SWML `sleep` verb the auto-vivified example illustrates) — appears in `sleep(...)` syntax inside an example
 new: Perl/Moo constructor — appears in 148+ ClassName->new(...) call sites in docs and examples; not a port symbol to resolve
 not_a_real_verb: intentional placeholder in swml_service_guide.md demonstrating that an unknown verb name dies ("Can't locate method ...") — not a port API
+
+## Perl stdlib / CPAN module functions + doc placeholder (2026-07-08)
+
+<!--
+  Pre-existing DOC-AUDIT flags (present on the parent commit, before the AI-params
+  change); all are standard Perl module functions or a doc placeholder, none an SDK method.
+-->
+
+Dumper: Data::Dumper::Dumper — core Perl debug serializer (api_reference example)
+blessed: Scalar::Util::blessed — core ref-type check (skills_audit_harness)
+decode_json: JSON::PP/JSON::XS decode_json — standard JSON module function
+encode_json: JSON::PP/JSON::XS encode_json — standard JSON module function
+uri_escape: URI::Escape::uri_escape — standard URI-encoding CPAN function
+VERB: `$self->VERB($section, $config)` doc placeholder for any SWML verb name (swml_service_guide.md), not a literal method
