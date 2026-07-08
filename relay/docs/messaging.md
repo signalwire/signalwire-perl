@@ -191,7 +191,7 @@ my $client = SignalWire::Relay::Client->new(
 $client->on_call(sub {
     my ($call) = @_;
     $call->answer;
-    $call->play(media => [ { type => 'tts', params => { text => 'Hello!' } } ]);
+    $call->play(play => [ { type => 'tts', params => { text => 'Hello!' } } ]);
     $call->hangup;
 });
 

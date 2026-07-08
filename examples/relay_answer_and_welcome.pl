@@ -28,7 +28,7 @@ $client->on_call(sub {
 
     # Play a welcome message
     my $action = $call->play(
-        media => [{
+        play => [{
             type   => 'tts',
             params => { text => 'Hello! This is a demo of the RELAY client in Perl.' },
         }],
@@ -37,7 +37,7 @@ $client->on_call(sub {
 
     # Say goodbye
     my $bye = $call->play(
-        media => [{
+        play => [{
             type   => 'tts',
             params => { text => 'Thank you for testing. Goodbye!' },
         }],

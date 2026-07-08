@@ -31,7 +31,7 @@ sub safe {
 # 1. Search for available phone numbers
 print "Searching available numbers...\n";
 my $available = safe('Search', sub {
-    $client->phone_numbers->search(area_code => '512', max_results => 3);
+    $client->phone_numbers->search(areacode => '512', max_results => 3);
 });
 if ($available) {
     for my $num (@{ $available->{data} // [] }) {

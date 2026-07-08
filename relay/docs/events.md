@@ -47,7 +47,7 @@ until the operation completes and returns the terminal event:
 
 ```perl
 my $action = $call->play(
-    media => [ { type => 'tts', params => { text => 'Hello' } } ],
+    play => [ { type => 'tts', params => { text => 'Hello' } } ],
 );
 my $event = $action->wait(timeout => 30);
 # $event is the terminal SignalWire::Relay::Event

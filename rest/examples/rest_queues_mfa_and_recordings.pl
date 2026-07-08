@@ -106,7 +106,7 @@ my $request_id;
 safe('MFA SMS', sub {
     my $sms_result = $client->mfa->sms(
         to           => '+15551234567',
-        from_        => '+15559876543',
+        from         => '+15559876543',
         message      => 'Your code is {{code}}',
         token_length => 6,
     );
@@ -119,7 +119,7 @@ print "\nSending MFA voice code...\n";
 safe('MFA call', sub {
     my $voice_result = $client->mfa->call(
         to           => '+15551234567',
-        from_        => '+15559876543',
+        from         => '+15559876543',
         message      => 'Your verification code is {{code}}',
         token_length => 6,
     );

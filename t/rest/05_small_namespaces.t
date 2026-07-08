@@ -178,11 +178,12 @@ subtest 'TestImportedNumbers' => sub {
 subtest 'TestMfa' => sub {
     subtest 'call' => sub {
         my $client = MockTest::client();
-        # Note Python's `from_=` becomes plain `from_` here; from is reserved
-        # in some languages but Perl is fine with from_.
+        # The wire field is `from` (MfaRequest schema). Python needs the
+        # `from_` escape for its keyword; Perl hash keys don't, so callers
+        # pass the wire name directly.
         my $body = $client->mfa->call(
             to       => '+15551234567',
-            from_    => '+15559876543',
+            from     => '+15559876543',
             message  => 'Your code is {code}',
         );
         is(ref $body, 'HASH', 'response is a hashref');
@@ -192,7 +193,7 @@ subtest 'TestMfa' => sub {
         is($j->{path},   '/api/relay/rest/mfa/call', 'path matches');
         my $sent = $j->{body} || {};
         is($sent->{to},      '+15551234567',          'to forwarded');
-        is($sent->{from_},   '+15559876543',          'from_ forwarded');
+        is($sent->{from},    '+15559876543',          'from forwarded');
         is($sent->{message}, 'Your code is {code}',    'message forwarded');
     };
 };

@@ -29,8 +29,8 @@ $client->fabric->ai_agents->create(
 );
 
 my $call_id = 'call-id-from-a-prior-request';
-$client->calling->play( $call_id, play => [ { type => 'tts', text => 'Hello!' } ] );
-$client->phone_numbers->search( area_code => '512' );
+$client->calling->play( $call_id, play => [ { type => 'tts', params => { text => 'Hello!' } } ] );
+$client->phone_numbers->search( areacode => '512' );
 $client->datasphere->documents->search( query_string => 'billing policy' );
 
 # endregion: construct
