@@ -58,12 +58,24 @@ sub is_done ($self) {
     return $self->completed;
 }
 
-# Blocking wait using select() polling loop
+# Blocking wait: PUMP the event loop until the action completes or the
+# deadline passes. The completion flag only flips when a frame is read and
+# dispatched, and dispatch happens inside the client's _read_once — so a bare
+# sleep here would never see the completing event and the documented pattern
+# (answer; play; $action->wait) would hang the full timeout and return undef.
+# _read_once select()s with its own 0.1s timeout, so this both waits and
+# advances the loop. (Fallback sleep only when no client is attached — e.g. a
+# detached/unit-constructed action — so it never hot-spins.)
 sub wait ( $self, %opts ) {
     my $timeout = $opts{timeout} || 30;
     my $start   = time();
+    my $client  = $self->_client;
     while ( !$self->completed && ( time() - $start ) < $timeout ) {
-        Time::HiRes::sleep(0.1);    # poll every 100ms
+        if ($client) {
+            $client->_read_once;
+        } else {
+            Time::HiRes::sleep(0.1);
+        }
     }
     return $self->result;
 }

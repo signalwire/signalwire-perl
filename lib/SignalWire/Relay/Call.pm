@@ -233,9 +233,19 @@ sub wait_for ( $self, %opts ) {
     };
     $self->on($listener);
 
-    my $start = time();
+    # PUMP the event loop while waiting: the listener only fires when a frame
+    # is read and dispatched (inside the client's _read_once), so a bare sleep
+    # here would never capture the awaited event and wait_for would hang the
+    # full timeout, returning undef. _read_once select()s with its own 0.1s
+    # timeout. (Fallback sleep only when no client is attached.)
+    my $client = $self->_client;
+    my $start  = time();
     while ( !defined $captured && ( time() - $start ) < $timeout ) {
-        Time::HiRes::sleep(0.05);
+        if ($client) {
+            $client->_read_once;
+        } else {
+            Time::HiRes::sleep(0.05);
+        }
     }
     return $captured;
 }
