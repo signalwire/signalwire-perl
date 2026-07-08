@@ -35,7 +35,7 @@ sub safe {
 print "Dialing outbound call...\n";
 my $call = safe('Dial', sub {
     $client->calling->dial(
-        from_ => '+15559876543',
+        from  => '+15559876543',
         to    => '+15551234567',
         url   => 'https://example.com/call-handler',
     );
@@ -47,7 +47,7 @@ print "  Call initiated: $call_id\n";
 print "\nPlaying TTS on call...\n";
 safe('Play', sub {
     $client->calling->play($call_id,
-        play => [{ type => 'tts', text => 'Welcome to SignalWire.' }]);
+        play => [{ type => 'tts', params => { text => 'Welcome to SignalWire.' } }]);
 });
 
 # 3. Pause, resume, adjust volume, stop playback

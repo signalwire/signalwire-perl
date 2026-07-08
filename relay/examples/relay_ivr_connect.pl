@@ -39,7 +39,7 @@ $client->on_call(sub {
 
     # Play greeting and collect a single digit
     my $collect_action = $call->play_and_collect(
-        media => [
+        play => [
             tts('Welcome to SignalWire!'),
             tts('Press 1 for sales. Press 2 for support. Press 0 to speak with an agent.'),
         ],
@@ -68,21 +68,21 @@ $client->on_call(sub {
     if ($result_type eq 'digit' && $digits eq '1') {
         # Sales
         my $action = $call->play(
-            media => [tts('Thank you for your interest! A sales representative will be with you shortly.')],
+            play => [tts('Thank you for your interest! A sales representative will be with you shortly.')],
         );
         $action->wait;
     }
     elsif ($result_type eq 'digit' && $digits eq '2') {
         # Support
         my $action = $call->play(
-            media => [tts('Please hold while we connect you to our support team.')],
+            play => [tts('Please hold while we connect you to our support team.')],
         );
         $action->wait;
     }
     elsif ($result_type eq 'digit' && $digits eq '0') {
         # Connect to live agent
         my $action = $call->play(
-            media => [tts('Connecting you to an agent now. Please hold.')],
+            play => [tts('Connecting you to an agent now. Please hold.')],
         );
         $action->wait;
 
@@ -111,7 +111,7 @@ $client->on_call(sub {
     else {
         # No input or invalid
         my $action = $call->play(
-            media => [tts("We didn't receive a valid selection.")],
+            play => [tts("We didn't receive a valid selection.")],
         );
         $action->wait;
     }

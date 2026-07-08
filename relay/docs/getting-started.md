@@ -56,7 +56,7 @@ $client->on_call(sub {
     my ($call) = @_;
     $call->answer;
     my $action = $call->play(
-        media => [ { type => 'tts', params => { text => 'Hello!' } } ],
+        play => [ { type => 'tts', params => { text => 'Hello!' } } ],
     );
     $action->wait;
     $call->hangup;
@@ -134,7 +134,7 @@ my $call = $client->dial(
 );
 
 my $action = $call->play(
-    media => [ { type => 'tts', params => { text => 'This is an outbound call.' } } ],
+    play => [ { type => 'tts', params => { text => 'This is an outbound call.' } } ],
 );
 $action->wait;
 $call->hangup;

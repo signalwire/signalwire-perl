@@ -10,7 +10,7 @@ my $numbers = $client->phone_numbers->list;
 $numbers    = $client->phone_numbers->list(name => 'Main');
 
 # Search available numbers to purchase
-my $available = $client->phone_numbers->search(area_code => '512', number_type => 'local');
+my $available = $client->phone_numbers->search(areacode => '512', number_type => 'local');
 
 # Purchase a number
 my $number = $client->phone_numbers->create(number => '+15551234567');

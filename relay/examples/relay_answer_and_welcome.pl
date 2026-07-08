@@ -24,7 +24,7 @@ $client->on_call(sub {
     $call->answer;
 
     my $action = $call->play(
-        media => [{ type => 'tts', params => { text => 'Welcome to SignalWire!' } }],
+        play => [{ type => 'tts', params => { text => 'Welcome to SignalWire!' } }],
     );
     $action->wait;
 

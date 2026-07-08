@@ -190,7 +190,7 @@ $client->unreceive(['old-context']);
 
 <!-- snippet: no-compile illustrative fragment with a list-literal yada-yada elision -->
 ```perl
-my $result = eval { $call->play(media => [ ... ]) };
+my $result = eval { $call->play(play => [ ... ]) };
 if (my $err = $@) {
     warn "play failed: $err";
 }

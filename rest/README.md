@@ -21,11 +21,11 @@ my $agent = $client->fabric->ai_agents->create(
 );
 
 # Search for a phone number
-my $results = $client->phone_numbers->search(area_code => '512');
+my $results = $client->phone_numbers->search(areacode => '512');
 
 # Place a call via REST
 $client->calling->dial(
-    from_ => '+15559876543',
+    from  => '+15559876543',
     to    => '+15551234567',
     url   => 'https://example.com/call-handler',
 );

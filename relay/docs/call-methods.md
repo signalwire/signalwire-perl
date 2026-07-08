@@ -33,7 +33,7 @@ You choose how to handle completion.
 
 ```perl
 my $action = $call->play(
-    media => [ { type => 'tts', params => { text => 'Hello' } } ],
+    play => [ { type => 'tts', params => { text => 'Hello' } } ],
 );
 $action->wait;   # blocks until playback finishes
 # execution continues only after play is done
@@ -43,7 +43,7 @@ $action->wait;   # blocks until playback finishes
 
 ```perl
 my $action = $call->play(
-    media => [ { type => 'tts', params => { text => 'Hello' } } ],
+    play => [ { type => 'tts', params => { text => 'Hello' } } ],
 );
 # don't call $action->wait — continue immediately while audio plays
 $call->send_digits(digits => '1234');
@@ -58,7 +58,7 @@ if ($action->is_done) {
 
 ```perl
 my $action = $call->play(
-    media        => [ { type => 'tts', params => { text => 'Hello' } } ],
+    play         => [ { type => 'tts', params => { text => 'Hello' } } ],
     on_completed => sub {
         my ($a) = @_;
         print "Done in state: ", $a->state, "\n";
@@ -115,7 +115,7 @@ $call->pass;
 
 ## Audio Playback
 
-### `play(media => [...], %opts)`
+### `play(play => [...], %opts)`
 
 Play audio. Returns a Play action with `stop`, `pause`, `resume`,
 `volume($vol)`, and `wait`.
@@ -123,23 +123,23 @@ Play audio. Returns a Play action with `stop`, `pause`, `resume`,
 ```perl
 # TTS
 my $action = $call->play(
-    media => [ { type => 'tts', params => { text => 'Hello!' } } ],
+    play => [ { type => 'tts', params => { text => 'Hello!' } } ],
 );
 $action->wait;
 
 # Audio file
 $call->play(
-    media => [ { type => 'audio', params => { url => 'https://example.com/sound.mp3' } } ],
+    play => [ { type => 'audio', params => { url => 'https://example.com/sound.mp3' } } ],
 );
 
 # Silence
 $call->play(
-    media => [ { type => 'silence', params => { duration => 2 } } ],
+    play => [ { type => 'silence', params => { duration => 2 } } ],
 );
 
 # Ringtone
 $call->play(
-    media => [ { type => 'ringtone', params => { name => 'us' } } ],
+    play => [ { type => 'ringtone', params => { name => 'us' } } ],
 );
 
 # Control playback

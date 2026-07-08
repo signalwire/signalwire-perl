@@ -71,7 +71,7 @@ Play audio, TTS, silence, or ringtone.
 
 ```perl
 $client->calling->play($call_id,
-    play   => [{ type => 'tts', text => 'Hello!' }],
+    play   => [{ type => 'tts', params => { text => 'Hello!' } }],
     volume => 5.0,
 );
 ```

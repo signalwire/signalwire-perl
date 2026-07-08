@@ -108,12 +108,12 @@ subtest 'update uses PUT' => sub {
 
 subtest 'search -> /search' => sub {
     my ($pn, $http) = make_pn();
-    $pn->search(area_code => '512');
+    $pn->search(areacode => '512');
     my @calls = @{ $http->calls };
     is(scalar @calls, 1, 'one call');
     is($calls[0]{method}, 'GET',            'GET');
     is($calls[0]{path},   "$BASE/search",   'path');
-    is_deeply($calls[0]{params}, { area_code => '512' }, 'params');
+    is_deeply($calls[0]{params}, { areacode => '512' }, 'params');
 };
 
 # ============================================================

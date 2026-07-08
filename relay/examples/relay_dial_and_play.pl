@@ -49,7 +49,7 @@ print "Call answered -- playing TTS\n";
 
 # Play TTS
 my $play_action = $call->play(
-    media => [{ type => 'tts', params => { text => 'Welcome to SignalWire' } }],
+    play => [{ type => 'tts', params => { text => 'Welcome to SignalWire' } }],
 );
 
 # Wait for playback to finish
