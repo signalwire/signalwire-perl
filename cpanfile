@@ -30,6 +30,12 @@ on 'test' => sub {
 #   cpanm --installdeps --with-develop .
 # (CI installs them so the FMT gate's `perltidy` resolves).
 on 'develop' => sub {
-    requires 'Perl::Tidy';
+    # Perl::Tidy is PINNED: its default vertical-alignment heuristics change
+    # between releases (20260705 aligns interior `cmp`/`//` where 20260204 did
+    # not), so an unpinned formatter makes the FMT gate non-deterministic —
+    # local and CI on different releases disagree on --assert-tidy for the SAME
+    # source. Pin so run-format.sh --check is reproducible everywhere. Bump
+    # deliberately, then reformat the tree in the same commit.
+    requires 'Perl::Tidy', '== 20260705';
     requires 'Perl::Critic';
 };

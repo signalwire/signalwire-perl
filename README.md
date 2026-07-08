@@ -43,6 +43,7 @@ cpanm SignalWire
 
 Each agent is a self-contained microservice that generates [SWML](docs/swml_service_guide.md) (SignalWire Markup Language) and handles [SWAIG](docs/swaig_reference.md) (SignalWire AI Gateway) tool calls. The SignalWire platform runs the entire AI pipeline (STT, LLM, TTS) -- your agent just defines the behavior.
 
+<!-- include: examples/quickstart_agent.pl#construct -->
 ```perl
 use strict;
 use warnings;
@@ -56,22 +57,22 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/agent',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->prompt_add_section('Role', 'You are a helpful assistant.');
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->prompt_add_section( 'Role', 'You are a helpful assistant.' );
 
 $agent->define_tool(
     name        => 'get_time',
     description => 'Get the current time',
     parameters  => {},
     handler     => sub {
-        my ($args, $raw_data) = @_;
+        my ( $args, $raw_data ) = @_;
         return SignalWire::SWAIG::FunctionResult->new(
-            response => 'The time is ' . strftime('%H:%M:%S', localtime),
-        );
+            response => 'The time is ' . strftime( '%H:%M:%S', localtime ) );
     },
 );
 
 $agent->run;
+
 ```
 
 Test locally without running a server:
@@ -113,7 +114,7 @@ The [`examples/`](examples/) directory contains 50+ working examples:
 | [session_and_state_demo.pl](examples/session_and_state_demo.pl) | on_summary, global data, post-prompt summaries |
 | [multi_agent_server.pl](examples/multi_agent_server.pl) | Multiple agents on one server |
 | [lambda_agent.pl](examples/lambda_agent.pl) | AWS Lambda deployment |
-| [comprehensive_dynamic.pl](examples/comprehensive_dynamic.pl) | Per-request dynamic configuration, multi-tenant routing |
+| [comprehensive_dynamic.pl](examples/comprehensive_dynamic_agent.pl) | Per-request dynamic configuration, multi-tenant routing |
 
 See [examples/README.md](examples/README.md) for the full list organized by category.
 
@@ -123,6 +124,7 @@ See [examples/README.md](examples/README.md) for the full list organized by cate
 
 Real-time call control and messaging over WebSocket. The RELAY client connects to SignalWire via the Blade protocol and gives you imperative control over live phone calls and SMS/MMS.
 
+<!-- include: relay/examples/quickstart_relay.pl#construct -->
 ```perl
 use strict;
 use warnings;
@@ -135,19 +137,21 @@ my $client = SignalWire::Relay::Client->new(
     contexts => ['default'],
 );
 
-$client->on_call(sub {
-    my ($call) = @_;
-    $call->answer;
-    my $action = $call->play(
-        media => [{ type => 'tts', params => { text => 'Welcome!' } }],
-    );
-    $action->wait;
-    $call->hangup;
-});
+$client->on_call(
+    sub {
+        my ($call) = @_;
+        $call->answer;
+        my $action =
+            $call->play( media => [ { type => 'tts', params => { text => 'Welcome!' } } ] );
+        $action->wait;
+        $call->hangup;
+    }
+);
 
 $client->connect_ws or die "Connection failed\n";
 $client->authenticate;
 $client->run;
+
 ```
 
 - 57+ calling methods (play, record, collect, detect, tap, stream, AI, conferencing, and more)
@@ -163,6 +167,7 @@ See the **[RELAY documentation](relay/README.md)** for the full guide, API refer
 
 Synchronous REST client for managing SignalWire resources and controlling calls over HTTP. No WebSocket required.
 
+<!-- include: rest/examples/quickstart_rest.pl#construct -->
 ```perl
 use strict;
 use warnings;
@@ -174,10 +179,16 @@ my $client = SignalWire::REST::RestClient->new(
     host    => $ENV{SIGNALWIRE_SPACE},
 );
 
-$client->fabric->ai_agents->create(name => 'Support Bot', prompt => { text => 'You are helpful.' });
-$client->calling->play($call_id, play => [{ type => 'tts', text => 'Hello!' }]);
-$client->phone_numbers->search(area_code => '512');
-$client->datasphere->documents->search(query_string => 'billing policy');
+$client->fabric->ai_agents->create(
+    name   => 'Support Bot',
+    prompt => { text => 'You are helpful.' }
+);
+
+my $call_id = 'call-id-from-a-prior-request';
+$client->calling->play( $call_id, play => [ { type => 'tts', text => 'Hello!' } ] );
+$client->phone_numbers->search( area_code => '512' );
+$client->datasphere->documents->search( query_string => 'billing policy' );
+
 ```
 
 - 21 namespaced API surfaces: Fabric (16 resource types), Calling (40 commands), Video, Datasphere, Compat (Twilio-compatible), Phone Numbers, SIP, Queues, Recordings, and more
@@ -227,7 +238,6 @@ Guides are also available in the [`docs/`](docs/) directory:
 
 - [Skills System](docs/skills_system.md) -- built-in skills and the modular framework
 - [Third-Party Skills](docs/third_party_skills.md) -- creating and publishing custom skills
-- [MCP Gateway](docs/mcp_gateway_reference.md) -- Model Context Protocol integration
 
 ### Deployment
 
@@ -258,21 +268,33 @@ Guides are also available in the [`docs/`](docs/) directory:
 | `SIGNALWIRE_LOG_LEVEL` | All | Logging level (`debug`, `info`, `warn`, `error`) |
 | `SIGNALWIRE_LOG_MODE` | All | Set to `off` to suppress all logging |
 
-## Testing
+## Testing, linting, and formatting
+
+Three canonical scripts under `scripts/` are the single entry point for testing,
+linting, and formatting. Each **self-bootstraps its tool environment** (perltidy,
+perlcritic, and the local::lib runtime deps) and runs from **any directory** — no
+`PERL5LIB` / `PATH` setup required from the caller.
 
 ```bash
-# Install dependencies
-cpanm --installdeps .
+# Install dependencies (first time only)
+cpanm --with-develop --installdeps .
 
 # Run the full test suite
-prove -lv t/
+bash scripts/run-tests.sh
 
-# Run a single test
-prove -lv t/06_agent.t
+# Run a subset (any prove target passes straight through)
+bash scripts/run-tests.sh t/06_agent.t
 
-# Coverage
-cover -test -report html
+# Lint (perlcritic severity 4, zero findings)
+bash scripts/run-lint.sh
+
+# Format the tree in place (perltidy)
+bash scripts/run-format.sh
+# ...or verify-only, no writes (the CI FMT gate)
+bash scripts/run-format.sh --check
 ```
+
+All of the above also run as gates inside `bash scripts/run-ci.sh`.
 
 ## License
 

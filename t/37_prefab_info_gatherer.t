@@ -54,9 +54,20 @@ subtest 'tool execution' => sub {
     ok(defined $start, 'start_questions returns result');
     like($start->response, qr/name/, 'returns first question');
 
+    # submit_answer for the (single) question: with one question the answer
+    # completes the set. The answer is recorded in a set_global_data action,
+    # not echoed back in the response text (state machine, not an echo stub).
     my $answer = $a->on_function_call('submit_answer', { answer => 'John' }, {});
     ok(defined $answer, 'submit_answer returns result');
-    like($answer->response, qr/John/, 'response includes answer');
+    like($answer->response, qr/all questions have been answered/i, 'completion message');
+    my ($gd_action) = grep { exists $_->{set_global_data} } @{ $answer->action };
+    ok(defined $gd_action, 'submit_answer emits a set_global_data action');
+    is($gd_action->{set_global_data}{question_index}, 1, 'question_index advanced');
+    is_deeply(
+        $gd_action->{set_global_data}{answers},
+        [ { key_name => 'name', answer => 'John' } ],
+        'answer recorded in global_data with its key_name',
+    );
 };
 
 subtest 'render_swml' => sub {

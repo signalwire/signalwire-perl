@@ -12,6 +12,26 @@ has 'event_type' => ( is => 'ro', default => sub { '' } );
 has 'timestamp'  => ( is => 'ro', default => sub { 0 } );
 has 'params'     => ( is => 'ro', default => sub { {} } );
 
+# Class-method constructor from a raw ``{event_type, params}`` payload hashref.
+# Mirrors the Python reference's RelayEvent.from_payload / every subclass's
+# from_payload: build an instance of the invoking class, copying the payload's
+# ``params`` fields up into the typed attributes (Moo ignores unknown keys, so
+# a forward-compatible server shape is never rejected). Inherited by every
+# typed subclass, so ``PlayEvent->from_payload($payload)`` yields a populated
+# ::CallPlay-equivalent — the cross-language surface records from_payload on
+# each event class.
+sub from_payload ( $class, $payload = undef ) {
+    $payload //= {};
+    my $event_type = $payload->{event_type} // '';
+    my $params     = $payload->{params}     // {};
+    my %args       = ( event_type => $event_type, params => $params );
+    $args{timestamp} = $params->{timestamp} if defined $params->{timestamp};
+    for my $key ( keys %$params ) {
+        $args{$key} = $params->{$key};
+    }
+    return $class->new(%args);
+}
+
 # --- Subclasses for each event type ---
 
 # Call state change: created, ringing, answered, ending, ended
@@ -22,6 +42,7 @@ has 'call_id'    => ( is => 'ro', default => sub { '' } );
 has 'node_id'    => ( is => 'ro', default => sub { '' } );
 has 'tag'        => ( is => 'ro', default => sub { '' } );
 has 'call_state' => ( is => 'ro', default => sub { '' } );
+has 'direction'  => ( is => 'ro', default => sub { '' } ); # Python parity: CallStateEvent.direction
 has 'device'     => ( is => 'ro', default => sub { {} } );
 has 'end_reason' => ( is => 'ro', default => sub { '' } );
 has 'peer'       => ( is => 'ro', default => sub { {} } );
@@ -74,6 +95,7 @@ has 'state'      => ( is => 'ro', default => sub { '' } );
 # Record state
 package SignalWire::Relay::Event::CallRecord;
 use Moo;
+use feature 'signatures';
 extends 'SignalWire::Relay::Event';
 has 'call_id'    => ( is => 'ro', default => sub { '' } );
 has 'node_id'    => ( is => 'ro', default => sub { '' } );
@@ -84,6 +106,19 @@ has 'duration'   => ( is => 'ro', default => sub { 0 } );
 has 'size'       => ( is => 'ro', default => sub { 0 } );
 has 'record'     => ( is => 'ro', default => sub { {} } );
 
+# Python parity: RecordEvent.from_payload resolves url/duration/size from the
+# nested ``record`` object first, falling back to the flat params — the wire
+# sends the finished-recording metadata under params.record{}.
+sub from_payload ( $class, $payload = undef ) {
+    my $self = $class->SUPER::from_payload($payload);
+    my $p    = ( $payload && ref $payload->{params} eq 'HASH' ) ? $payload->{params} : {};
+    my $rec  = ref $p->{record} eq 'HASH'                       ? $p->{record}       : {};
+    $self->{url}      = $rec->{url}      // $p->{url}      // '';
+    $self->{duration} = $rec->{duration} // $p->{duration} // 0;
+    $self->{size}     = $rec->{size}     // $p->{size}     // 0;
+    return $self;
+}
+
 # Collect result
 package SignalWire::Relay::Event::CallCollect;
 use Moo;
@@ -91,7 +126,13 @@ extends 'SignalWire::Relay::Event';
 has 'call_id'    => ( is => 'ro', default => sub { '' } );
 has 'node_id'    => ( is => 'ro', default => sub { '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
+has 'state'      => ( is => 'ro', default => sub { '' } );    # Python parity: CollectEvent.state
 has 'result'     => ( is => 'ro', default => sub { {} } );
+
+# Python parity: CollectEvent.final is Optional[bool] defaulting to None (NOT
+# false) — the base from_payload copies params.final up verbatim, so it stays
+# undef when the wire omits it.
+has 'final' => ( is => 'ro', default => sub { undef } );
 
 # Detect result
 package SignalWire::Relay::Event::CallDetect;
@@ -182,6 +223,46 @@ has 'call_id'    => ( is => 'ro', default => sub { '' } );
 has 'node_id'    => ( is => 'ro', default => sub { '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 
+# Denoise state change (calling.call.denoise)
+package SignalWire::Relay::Event::CallDenoise;
+use Moo;
+extends 'SignalWire::Relay::Event';
+has 'denoised' => ( is => 'ro', default => sub { 0 } );
+
+# Echo state change (calling.call.echo)
+package SignalWire::Relay::Event::CallEcho;
+use Moo;
+extends 'SignalWire::Relay::Event';
+has 'state' => ( is => 'ro', default => sub { '' } );
+
+# Hold/unhold state change (calling.call.hold)
+package SignalWire::Relay::Event::CallHold;
+use Moo;
+extends 'SignalWire::Relay::Event';
+has 'state' => ( is => 'ro', default => sub { '' } );
+
+# Queue state change (calling.call.queue)
+package SignalWire::Relay::Event::CallQueue;
+use Moo;
+use feature 'signatures';
+extends 'SignalWire::Relay::Event';
+has 'control_id' => ( is => 'ro', default => sub { '' } );
+has 'status'     => ( is => 'ro', default => sub { '' } );
+has 'position'   => ( is => 'ro', default => sub { 0 } );
+has 'size'       => ( is => 'ro', default => sub { 0 } );
+has 'queue_id'   => ( is => 'ro', default => sub { '' } );
+has 'queue_name' => ( is => 'ro', default => sub { '' } );
+
+# Python parity: QueueEvent.from_payload RENAMES params.id -> queue_id and
+# params.name -> queue_name (the wire uses the bare id/name keys).
+sub from_payload ( $class, $payload = undef ) {
+    my $self = $class->SUPER::from_payload($payload);
+    my $p    = ( $payload && ref $payload->{params} eq 'HASH' ) ? $payload->{params} : {};
+    $self->{queue_id}   = $p->{id}   // '';
+    $self->{queue_name} = $p->{name} // '';
+    return $self;
+}
+
 # Inbound message
 package SignalWire::Relay::Event::MessageReceive;
 use Moo;
@@ -246,6 +327,10 @@ my %EVENT_CLASS_MAP = (
     'calling.call.pay'               => 'SignalWire::Relay::Event::CallPay',
     'calling.call.send_digits'       => 'SignalWire::Relay::Event::CallSendDigits',
     'calling.call.refer'             => 'SignalWire::Relay::Event::CallRefer',
+    'calling.call.denoise'           => 'SignalWire::Relay::Event::CallDenoise',
+    'calling.call.echo'              => 'SignalWire::Relay::Event::CallEcho',
+    'calling.call.hold'              => 'SignalWire::Relay::Event::CallHold',
+    'calling.call.queue'             => 'SignalWire::Relay::Event::CallQueue',
     'calling.conference'             => 'SignalWire::Relay::Event::Conference',
     'calling.call.ai'                => 'SignalWire::Relay::Event::CallAI',
     'messaging.receive'              => 'SignalWire::Relay::Event::MessageReceive',
@@ -257,30 +342,13 @@ my %EVENT_CLASS_MAP = (
 sub parse_event ( $class_or_self, $event_type, $params = undef ) {
     $params //= {};
 
-    my $event_class = $EVENT_CLASS_MAP{$event_type};
-    unless ($event_class) {
+    my $event_class = $EVENT_CLASS_MAP{$event_type} // 'SignalWire::Relay::Event';
 
-        # Return base event for unknown types
-        return SignalWire::Relay::Event->new(
-            event_type => $event_type,
-            params     => $params,
-        );
-    }
-
-    # Build constructor args from event params
-    my %args = (
-        event_type => $event_type,
-        params     => $params,
-    );
-
-    # Copy known fields from params into top-level attributes
-    for my $key ( keys %$params ) {
-
-        # Moo will silently ignore unknown attrs, so we just pass everything
-        $args{$key} = $params->{$key};
-    }
-
-    return $event_class->new(%args);
+    # Python parity: parse_event dispatches to the typed class's from_payload so
+    # its per-class renames/fallbacks apply (e.g. QueueEvent queue_id<-id,
+    # RecordEvent url<-record.url). Reconstruct the {event_type, params}
+    # payload the from_payload constructors expect.
+    return $event_class->from_payload( { event_type => $event_type, params => $params } );
 }
 
 1;

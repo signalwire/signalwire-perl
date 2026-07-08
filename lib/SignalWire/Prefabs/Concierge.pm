@@ -92,11 +92,103 @@ sub BUILD {
         },
         handler => sub {
             my ( $a, $raw ) = @_;
-            require SignalWire::SWAIG::FunctionResult;
-            return SignalWire::SWAIG::FunctionResult->new(
-                response => "Checking availability for $a->{service} at ${\$self->venue_name}", );
+            return $self->check_availability( $a, $raw );
         },
     );
+
+    # Register get_directions tool
+    $self->define_tool(
+        name        => 'get_directions',
+        description => 'Get directions to an amenity or location within the venue',
+        parameters  => {
+            type       => 'object',
+            properties => {
+                location => { type => 'string', description => 'Amenity or location name' },
+            },
+            required => ['location'],
+        },
+        handler => sub {
+            my ( $a, $raw ) = @_;
+            return $self->get_directions( $a, $raw );
+        },
+    );
+    return;
+}
+
+# Tool: check_availability — Python parity
+# (signalwire.prefabs.concierge.ConciergeAgent.check_availability).
+#
+# Simulated booking lookup: confirms availability when the requested
+# service is one of the venue's offered services, otherwise lists the
+# available services.
+sub check_availability {
+    my ( $self, $args, $raw_data ) = @_;
+    require SignalWire::SWAIG::FunctionResult;
+
+    my $service  = lc( $args->{service} // '' );
+    my @services = @{ $self->services };
+
+    unless ( grep { lc($_) eq $service } @services ) {
+        my $list = join( ', ', @services );
+        return SignalWire::SWAIG::FunctionResult->new(
+            response => "I'm sorry, we don't offer $service at ${\$self->venue_name}. "
+                . "Our available services are: $list." );
+    }
+
+    my $date = $args->{date} // '';
+    my $time = $args->{time} // '';
+    return SignalWire::SWAIG::FunctionResult->new(
+        response => "Yes, $service is available on $date at $time. "
+            . 'Would you like to make a reservation?' );
+}
+
+# Tool: get_directions — Python parity
+# (signalwire.prefabs.concierge.ConciergeAgent.get_directions).
+#
+# Returns directions to an amenity when that amenity declares a
+# "location" detail, otherwise points the caller at the front desk.
+sub get_directions {
+    my ( $self, $args, $raw_data ) = @_;
+    require SignalWire::SWAIG::FunctionResult;
+
+    my $location  = lc( $args->{location} // '' );
+    my $amenities = $self->amenities;
+
+    my ($key) = grep { lc($_) eq $location } keys %$amenities;
+    my $info = defined $key ? $amenities->{$key} : undef;
+
+    unless ( ref $info eq 'HASH' && defined $info->{location} ) {
+        return SignalWire::SWAIG::FunctionResult->new(
+            response => "I don't have specific directions to $location. "
+                . 'You can ask our staff at the front desk for assistance.' );
+    }
+
+    my $where = $info->{location};
+    return SignalWire::SWAIG::FunctionResult->new(
+        response => "The $location is located at $where. "
+            . "From the main entrance, follow the signs to $where." );
+}
+
+# Lifecycle hook: on_summary — Python parity
+# (signalwire.prefabs.concierge.ConciergeAgent.on_summary).
+#
+# Processes the post-prompt interaction summary. Structured (hashref)
+# summaries are logged as pretty JSON; anything else is logged as-is.
+# Subclasses may override to persist or forward the interaction.
+sub on_summary {
+    my ( $self, $summary, $raw_data ) = @_;
+    return if !defined $summary;
+
+    my $ok = eval {
+        if ( ref $summary eq 'HASH' ) {
+            print 'Concierge interaction summary: '
+                . JSON->new->canonical->pretty->encode($summary);
+        } else {
+            print "Concierge interaction summary: $summary\n";
+        }
+        1;
+    };
+    print "Error processing summary: $@" if !$ok;
     return;
 }
 

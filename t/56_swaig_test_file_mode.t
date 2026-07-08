@@ -67,4 +67,34 @@ subtest 'unknown --file path errors cleanly' => sub {
     like($out, qr/does not exist|no such/i, 'errors on missing file');
 };
 
+# --parse-only validates the invocation's arguments and exits WITHOUT loading
+# the agent or hitting the network (prints exactly `parse OK`, exit 0). It is
+# position-independent -- recognized whether it precedes or trails an --exec.
+subtest '--parse-only validates without loading the agent' => sub {
+    # Trailing --parse-only, real example file: parse OK / exit 0, no tool listing.
+    my $out = run_cli('--file', $standalone, '--list-tools', '--parse-only');
+    is($? >> 8, 0, 'trailing --parse-only exits 0');
+    like($out, qr/^parse OK\s*$/, 'prints exactly "parse OK"');
+    unlike($out, qr/Found \d+ SWAIG function|lookup_competitor/,
+        'did NOT load the agent (no tool listing)');
+
+    # Leading --parse-only, position-independent, trailing an --exec + --param.
+    my $out2 = run_cli('--parse-only', '--file', $standalone,
+        '--exec', 'lookup_competitor', '--param', 'competitor=ACME');
+    is($? >> 8, 0, 'leading --parse-only trailing --exec exits 0');
+    like($out2, qr/^parse OK\s*$/, 'position-independent: prints "parse OK"');
+    unlike($out2, qr/ACME/, 'did NOT execute the handler');
+
+    # --dry-run alias, against an unreachable --url: instant, no network.
+    my $out3 = run_cli('--dry-run', '--url',
+        'http://user:pass@10.255.255.1:9/route', '--exec', 'foo', '--param', 'bar=1');
+    is($? >> 8, 0, '--dry-run alias exits 0');
+    like($out3, qr/^parse OK\s*$/, '--dry-run is an alias for --parse-only');
+
+    # Invalid invocation under --parse-only exits 2 and does NOT print parse OK.
+    my $bad = run_cli('--parse-only', '--url', 'http://user:pass@localhost:9999/');
+    is($? >> 8, 2, 'invalid args under --parse-only exit 2');
+    unlike($bad, qr/^parse OK\s*$/m, 'no "parse OK" success line on the error path');
+};
+
 done_testing;

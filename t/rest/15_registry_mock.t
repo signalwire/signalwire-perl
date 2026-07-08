@@ -54,10 +54,13 @@ subtest 'TestRegistryBrands' => sub {
 
     subtest 'test_create_campaign_posts_to_brand_subpath' => sub {
         my $client = MockTest::client();
+        # create_campaign takes a union request body as a single positional arg.
         my $body = $client->registry->brands->create_campaign(
             'brand-2',
-            usecase     => 'LOW_VOLUME',
-            description => 'MFA',
+            {
+                usecase     => 'LOW_VOLUME',
+                description => 'MFA',
+            },
         );
         is(ref $body, 'HASH', 'expected hashref');
 

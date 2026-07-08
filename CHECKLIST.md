@@ -8,7 +8,7 @@ preserved verbatim so completed work has a place to be checked off.
 
 **Target Language:** Perl
 **Start Date:** 2025-03-20
-**Python SDK Reference:** /home/devuser/src/signalwire-python (the source of truth)
+**Python SDK Reference:** the sibling `signalwire-python` checkout (the source of truth)
 
 ---
 
@@ -224,7 +224,7 @@ Agents completing this checklist have historically left gaps by treating ambiguo
 
 ### Phone-number binding (required — see phone-binding.md)
 
-Routing an inbound phone number to an SWML webhook, cXML app, AI agent, call flow, etc. is configured on the **phone number**, not on the Fabric resource. See [phone-binding.md](phone-binding.md) for the full model. Every port must ship:
+Routing an inbound phone number to an SWML webhook, cXML app, AI agent, call flow, etc. is configured on the **phone number**, not on the Fabric resource. See [phone-binding.md](rest/docs/phone-binding.md) for the full model. Every port must ship:
 
 - [ ] `PhoneCallHandler` enum / constants with all 11 wire values (`relay_script`, `laml_webhooks`, `laml_application`, `ai_agent`, `call_flow`, `relay_application`, `relay_topic`, `relay_context`, `relay_connector`, `video_room`, `dialogflow`). Name chosen to avoid colliding with the RELAY client's `CallHandler` / `on_call_handler` callback type already present in 5 of 7 ports.
 - [ ] Typed helpers on `phone_numbers`, each a one-liner wrapping `phone_numbers.update` with the right `call_handler` value and companion field:

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The SignalWire AI Agents SDK provides a Python framework for building, deploying, and managing AI agents as microservices. These agents are self-contained web applications that expose HTTP endpoints to interact with the SignalWire platform. The SDK simplifies the creation of custom AI agents by handling common functionality like HTTP routing, prompt management, and tool execution.
+The SignalWire AI Agents SDK provides a Perl framework for building, deploying, and managing AI agents as microservices. These agents are self-contained web applications that expose HTTP endpoints to interact with the SignalWire platform. The SDK simplifies the creation of custom AI agents by handling common functionality like HTTP routing, prompt management, and tool execution.
 
 ## Core Components
 
@@ -34,7 +34,7 @@ The SDK is built around a clear class hierarchy:
    - Handler registry for function execution
 
 4. **HTTP Routing**
-   - FastAPI-based web service
+   - Plack/PSGI-based web service
    - Endpoint routing for SWML, SWAIG, and other services
    - Custom routing callbacks for dynamic endpoint handling
    - SIP request routing for voice applications
@@ -82,20 +82,19 @@ DataMap tools follow a pipeline execution model on the SignalWire server:
 ### Core Components
 
 1. **Builder Pattern**: Fluent interface for constructing data_map configurations
-   ```python
-   tool = (DataMap('function_name')
-       .description('Function purpose')
-       .parameter('param', 'string', 'Description', required=True)
-       .webhook('GET', 'https://api.example.com/endpoint')
-       .output(SwaigFunctionResult('Response template'))
-   )
+   ```perl
+   my $tool = SignalWire::DataMap->new('function_name')
+       ->description('Function purpose')
+       ->parameter('param', 'string', 'Description', required => 1)
+       ->webhook('GET', 'https://api.example.com/endpoint')
+       ->output(SignalWire::SWAIG::FunctionResult->new('Response template'));
    ```
 
 2. **Processing Pipeline**: Ordered execution with early termination
    - **Expressions**: Pattern matching against arguments
    - **Webhooks**: HTTP API calls with variable substitution
    - **Foreach**: Array iteration for response processing
-   - **Output**: Final response generation using SwaigFunctionResult
+   - **Output**: Final response generation using `SignalWire::SWAIG::FunctionResult`
 
 3. **Variable Expansion**: Dynamic substitution using `${variable}` syntax
    - Function arguments: `${args.parameter_name}`
@@ -109,28 +108,27 @@ DataMap tools follow a pipeline execution model on the SignalWire server:
 The system supports different tool patterns:
 
 1. **API Integration Tools**: Direct REST API calls
-   ```python
-   weather_tool = (DataMap('get_weather')
-       .webhook('GET', 'https://api.weather.com/v1/current?q=${location}')
-       .output(SwaigFunctionResult('Weather: ${response.current.condition}'))
-   )
+   ```perl
+   my $weather_tool = SignalWire::DataMap->new('get_weather')
+       ->webhook('GET', 'https://api.weather.com/v1/current?q=${location}')
+       ->output(SignalWire::SWAIG::FunctionResult->new('Weather: ${response.current.condition}'));
    ```
 
 2. **Expression-Based Tools**: Pattern matching without API calls
-   ```python
-   control_tool = (DataMap('file_control')
-       .expression(r'start.*', SwaigFunctionResult().add_action('start', True))
-       .expression(r'stop.*', SwaigFunctionResult().add_action('stop', True))
-   )
+   ```perl
+   my $control_tool = SignalWire::DataMap->new('file_control')
+       ->expression('${args.command}', qr/start.*/,
+           SignalWire::SWAIG::FunctionResult->new->add_action('start', JSON::true))
+       ->expression('${args.command}', qr/stop.*/,
+           SignalWire::SWAIG::FunctionResult->new->add_action('stop', JSON::true));
    ```
 
 3. **Array Processing Tools**: Handle list responses
-   ```python
-   search_tool = (DataMap('search_docs')
-       .webhook('GET', 'https://api.docs.com/search')
-       .foreach('${response.results}')
-       .output(SwaigFunctionResult('Found: ${foreach.title}'))
-   )
+   ```perl
+   my $search_tool = SignalWire::DataMap->new('search_docs')
+       ->webhook('GET', 'https://api.docs.com/search')
+       ->foreach('${response.results}')
+       ->output(SignalWire::SWAIG::FunctionResult->new('Found: ${foreach.title}'));
    ```
 
 ### Integration with Agent Architecture
@@ -268,25 +266,31 @@ The skills system follows a three-layer architecture:
 
 Skills support configurable parameters for customization:
 
-```python
+```perl
 # Default behavior
-agent.add_skill("web_search")
+$agent->add_skill('web_search');
 
 # Custom configuration
-agent.add_skill("web_search", {
-    "num_results": 3,
-    "delay": 0.5
-})
+$agent->add_skill('web_search', {
+    num_results => 3,
+    delay       => 0.5,
+});
 ```
 
-Parameters are passed to the skill constructor and accessible via `self.params`:
+Parameters are passed to the skill and accessible via `$self->params`:
 
-```python
-class WebSearchSkill(SkillBase):
-    def setup(self) -> bool:
-        self.num_results = self.params.get('num_results', 1)
-        self.delay = self.params.get('delay', 0)
-        # Configure behavior based on parameters
+```perl
+package WebSearchSkill;
+use Moo;
+extends 'SignalWire::Skills::SkillBase';
+
+sub setup {
+    my ($self) = @_;
+    $self->{num_results} = $self->params->{num_results} // 1;
+    $self->{delay}       = $self->params->{delay}       // 0;
+    # Configure behavior based on parameters
+    return 1;
+}
 ```
 
 ### Error Handling
@@ -341,90 +345,109 @@ The SDK implements a multi-layer security model:
 The SDK is designed to be highly extensible:
 
 1. **Custom Agents**: Extend AgentBase to create specialized agents
-   ```python
-   class CustomAgent(AgentBase):
-       def __init__(self):
-           super().__init__(name="custom", route="/custom")
+   ```perl
+   package CustomAgent;
+   use Moo;
+   extends 'SignalWire::Agent::AgentBase';
+   # Construct with:  CustomAgent->new(name => 'custom', route => '/custom');
    ```
 
-2. **Tool Registration**: Add new tools using the decorator pattern
-   ```python
-   @AgentBase.tool(
-       name="tool_name", 
-       description="Tool description",
-       parameters={...},
-       secure=True
-   )
-   def my_tool(self, args, raw_data):
-       # Tool implementation
+2. **Tool Registration**: Add new tools with `define_tool`
+   ```perl
+   $self->define_tool(
+       name        => 'tool_name',
+       description => 'Tool description',
+       parameters  => { type => 'object', properties => {} },
+       secure      => 1,
+       handler     => sub {
+           my ($args, $raw_data) = @_;
+           # Tool implementation
+       },
+   );
    ```
 
 3. **Prompt Customization**: Add sections, hints, languages
-   ```python
-   agent.add_language(name="English", code="en-US", voice="elevenlabs.josh")
-   agent.add_hints(["SignalWire", "SWML", "SWAIG"])
+   ```perl
+   $agent->add_language(name => 'English', code => 'en-US', voice => 'elevenlabs.josh');
+   $agent->add_hints([ 'SignalWire', 'SWML', 'SWAIG' ]);
    ```
 
 4. **Session Management**: The SDK includes session management for secure function calls
 
 5. **Request Handling**: Override request handling methods
-   ```python
-   def on_swml_request(self, request_data):
+   ```perl
+   sub on_swml_request {
+       my ($self, $request_data, $callback_path, $request) = @_;
        # Custom request handling
+   }
    ```
 
 6. **Custom Prefabs**: Create reusable agent patterns
-   ```python
-   class MyCustomPrefab(AgentBase):
-       def __init__(self, config_param1, config_param2, **kwargs):
-           super().__init__(**kwargs)
-           # Configure the agent based on parameters
-           self.prompt_add_section("Personality", body=f"Customized based on: {config_param1}")
+   ```perl
+   package MyCustomPrefab;
+   use Moo;
+   extends 'SignalWire::Agent::AgentBase';
+
+   has config_param1 => ( is => 'ro' );
+
+   sub BUILD {
+       my ($self) = @_;
+       # Configure the agent based on parameters
+       $self->prompt_add_section('Personality',
+           'Customized based on: ' . $self->config_param1);
+   }
    ```
 
 7. **Dynamic Configuration**: Per-request agent configuration for flexible behavior
-   ```python
-   def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+   ```perl
+   $self->set_dynamic_config_callback(sub {
+       my ($query_params, $body_params, $headers, $agent) = @_;
        # Configure agent differently based on request data
-       # agent is the actual AgentBase instance
-       tier = query_params.get('tier', 'standard')
-       agent.set_params({"end_of_speech_timeout": 300 if tier == 'premium' else 500})
-   
-   self.set_dynamic_config_callback(self.configure_agent_dynamically)
+       # $agent is the actual AgentBase instance
+       my $tier = $query_params->{tier} // 'standard';
+       $agent->set_params({ end_of_speech_timeout => $tier eq 'premium' ? 300 : 500 });
+   });
    ```
 
 8. **Skills Integration**: Add capabilities with one-liner calls
-   ```python
+   ```perl
    # Add built-in skills
-   agent.add_skill("web_search")
-   agent.add_skill("datetime")
-   agent.add_skill("math")
-   
+   $agent->add_skill('web_search');
+   $agent->add_skill('datetime');
+   $agent->add_skill('math');
+
    # Configure skills with parameters
-   agent.add_skill("web_search", {
-       "num_results": 3,
-       "delay": 0.5
-   })
+   $agent->add_skill('web_search', {
+       num_results => 3,
+       delay       => 0.5,
+   });
    ```
 
 9. **Custom Skills**: Create reusable skill modules
-   ```python
-   from signalwire_agents.core.skill_base import SkillBase
-   
-   class MyCustomSkill(SkillBase):
-       SKILL_NAME = "my_skill"
-       SKILL_DESCRIPTION = "A custom skill"
-       REQUIRED_PACKAGES = ["requests"]
-       REQUIRED_ENV_VARS = ["API_KEY"]
-       
-       def setup(self) -> bool:
-           # Initialize the skill
-           return True
-           
-       def register_tools(self) -> None:
-           # Register tools with the agent using the wrapper method
-           # This automatically includes swaig_fields
-           self.define_tool(...)
+   <!-- snippet: no-compile illustrative fragment with a define_tool(...) yada-yada elision -->
+   ```perl
+   package MyCustomSkill;
+   use Moo;
+   extends 'SignalWire::Skills::SkillBase';
+
+   SignalWire::Skills::SkillRegistry->register_skill('my_skill', __PACKAGE__);
+
+   has '+skill_name'        => ( default => sub { 'my_skill' } );
+   has '+skill_description' => ( default => sub { 'A custom skill' } );
+   has '+required_packages' => ( default => sub { ['HTTP::Tiny'] } );
+   has '+required_env_vars' => ( default => sub { ['API_KEY'] } );
+
+   sub setup {
+       my ($self) = @_;
+       # Initialize the skill
+       return 1;
+   }
+
+   sub register_tools {
+       my ($self) = @_;
+       # Register tools with the agent (define_tool includes swaig_fields)
+       $self->define_tool(...);
+   }
    ```
 
 ### Dynamic Configuration
@@ -617,22 +640,24 @@ Dynamic configuration integrates with other SDK components:
 
 The system includes robust error handling:
 
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    try:
+```perl
+$self->set_dynamic_config_callback(sub {
+    my ($query_params, $body_params, $headers, $agent) = @_;
+    eval {
         # Primary configuration logic
-        # agent is the actual AgentBase instance
-        tier = query_params.get('tier', 'standard')
-        if tier == 'premium':
-            agent.set_params({"end_of_speech_timeout": 300})
-            agent.add_hints(["premium support", "priority handling"])
-    except ConfigurationError as e:
-        # Log error and apply safe defaults
-        self.log.error("dynamic_config_error", error=str(e))
-        # Agent retains its base configuration
-    except Exception as e:
-        # Catch-all - agent continues with existing configuration
-        self.log.error("dynamic_config_critical", error=str(e))
+        # $agent is the actual AgentBase instance
+        my $tier = $query_params->{tier} // 'standard';
+        if ($tier eq 'premium') {
+            $agent->set_params({ end_of_speech_timeout => 300 });
+            $agent->add_hints([ 'premium support', 'priority handling' ]);
+        }
+        1;
+    } or do {
+        # Log error and apply safe defaults; the agent retains its base
+        # configuration when the callback dies.
+        warn "dynamic_config_error: $@";
+    };
+});
 ```
 
 #### Migration Strategy
@@ -684,45 +709,51 @@ Users can create their own prefab agents by extending `AgentBase` or any existin
 Key steps for creating custom prefabs:
 
 1. **Extend the base class**:
-   ```python
-   class MyCustomPrefab(AgentBase):
-       def __init__(self, custom_param, **kwargs):
-           super().__init__(**kwargs)
-           self._custom_param = custom_param
+   ```perl
+   package MyCustomPrefab;
+   use Moo;
+   extends 'SignalWire::Agent::AgentBase';
+
+   has custom_param => ( is => 'ro' );
    ```
 
-2. **Configure defaults**:
-   ```python
-   # Set standard prompt sections
-   self.prompt_add_section("Personality", body="I am a specialized agent for...")
-   self.prompt_add_section("Goal", body="Help users with...")
-   
-   # Add default tools
-   self.register_default_tools()
+2. **Configure defaults** (in `BUILD`):
+   ```perl
+   sub BUILD {
+       my ($self) = @_;
+       # Set standard prompt sections
+       $self->prompt_add_section('Personality', 'I am a specialized agent for...');
+       $self->prompt_add_section('Goal', 'Help users with...');
+
+       # Register specialized tools here (see next step)
+   }
    ```
 
-3. **Add specialized tools**:
-   ```python
-   @AgentBase.tool(
-       name="specialized_function", 
-       description="Do something specialized",
-       parameters={...}
-   )
-   def specialized_function(self, args, raw_data):
-       # Implementation
-       return SwaigFunctionResult("Function result")
+3. **Add specialized tools** (inside `BUILD`):
+   ```perl
+   $self->define_tool(
+       name        => 'specialized_function',
+       description => 'Do something specialized',
+       parameters  => { type => 'object', properties => {} },
+       handler     => sub {
+           my ($args, $raw_data) = @_;
+           # Implementation
+           return SignalWire::SWAIG::FunctionResult->new('Function result');
+       },
+   );
    ```
 
 4. **Create a factory method** (optional):
-   ```python
-   @classmethod
-   def create(cls, config_dict, **kwargs):
-       """Create an instance from a configuration dictionary"""
-       return cls(
-           custom_param=config_dict.get("custom_param", "default"),
-           name=config_dict.get("name", "custom_prefab"),
-           **kwargs
-       )
+   ```perl
+   sub create {
+       my ($class, $config, %kwargs) = @_;
+       # Create an instance from a configuration hashref
+       return $class->new(
+           custom_param => $config->{custom_param} // 'default',
+           name         => $config->{name}         // 'custom_prefab',
+           %kwargs,
+       );
+   }
    ```
 
 ### Prefab Customization Points
@@ -992,25 +1023,31 @@ Functions are defined with:
 - Security settings
 
 Example:
-```python
-@AgentBase.tool(
-    name="get_weather",
-    description="Get the current weather for a location",
-    parameters={
-        "location": {
-            "type": "string",
-            "description": "The city or location to get weather for"
-        }
-    }
-)
-def get_weather(self, args, raw_data):
-    location = args.get("location", "Unknown location")
-    return SwaigFunctionResult(f"It's sunny and 72°F in {location}.")
+```perl
+$self->define_tool(
+    name        => 'get_weather',
+    description => 'Get the current weather for a location',
+    parameters  => {
+        type       => 'object',
+        properties => {
+            location => {
+                type        => 'string',
+                description => 'The city or location to get weather for',
+            },
+        },
+    },
+    handler => sub {
+        my ($args, $raw_data) = @_;
+        my $location = $args->{location} // 'Unknown location';
+        return SignalWire::SWAIG::FunctionResult->new(
+            "It's sunny and 72\x{b0}F in $location." );
+    },
+);
 ```
 
 ### HTTP Routing
 
-The SDK uses FastAPI for routing with these key endpoints:
+The SDK uses Plack/PSGI for routing with these key endpoints:
 
 - **/** (GET/POST): Main endpoint that returns the SWML document
 - **/swaig/** (POST): Endpoint for executing SWAIG functions
@@ -1030,11 +1067,12 @@ The SDK supports multiple deployment models:
 
 1. **Standalone Mode**
    - Single agent on dedicated port
-   - Direct invocation via `agent.run()` (auto-detects deployment mode)
+   - Direct invocation via `$agent->run` (auto-detects deployment mode)
 
 2. **Multi-Agent Mode**
    - Multiple agents on same server with different routes
-   - `app.include_router(agent.as_router(), prefix=agent.route)`
+   - `SignalWire::Server::AgentServer->new(...)` with `$server->register($agent, $route)`
+   - Or mount an agent's PSGI app (`$agent->psgi_app`) in your own Plack stack
 
 3. **Reverse Proxy Integration**
    - Set `SWML_PROXY_URL_BASE` for proper webhook URL generation
@@ -1042,7 +1080,7 @@ The SDK supports multiple deployment models:
 
 4. **Direct HTTPS Mode**
    - Configure with SSL certificates
-   - `agent.serve(ssl_cert="cert.pem", ssl_key="key.pem")`
+   - `$agent->serve(ssl_cert => 'cert.pem', ssl_key => 'key.pem')`
 
 ## Best Practices
 
@@ -1089,7 +1127,7 @@ Schema definitions are loaded from the `schema.json` file, which provides the co
 
 ## Logging
 
-The SDK uses structlog for structured logging with JSON output format. Key events logged include:
+The SDK provides structured logging (via `SignalWire::Logging`) with JSON output format. Key events logged include:
 - Service initialization
 - Request handling
 - Function execution

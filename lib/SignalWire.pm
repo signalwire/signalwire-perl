@@ -104,6 +104,16 @@ sub add_skill_directory {
     return _singleton_registry()->add_skill_directory($path);
 }
 
+# List all available skills with metadata.
+#
+# Mirrors Python's ``signalwire.list_skills()`` (and ruby's top-level
+# list_skills) — the lighter summary of every registered skill. Delegates
+# to the SkillRegistry, the same source as list_skills_with_params.
+sub list_skills {
+    require SignalWire::Skills::SkillRegistry;
+    return SignalWire::Skills::SkillRegistry->list_skills;
+}
+
 # Get complete schema for all available skills.
 #
 # Mirrors Python's ``signalwire.list_skills_with_params()``. Returns a

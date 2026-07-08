@@ -10,22 +10,44 @@ The Perl SDK uses Moo for object orientation, Plack/PSGI for HTTP serving, and J
 
 ## Development Commands
 
-### Testing
+### Testing, linting, formatting -- use the canonical scripts
+
+Three scripts under `scripts/` are the SINGLE, canonical entry point for testing,
+linting, and formatting. Do NOT call `prove` / `perlcritic` / `perltidy`
+directly. Each script **self-bootstraps its tool environment** (via
+`scripts/_env.sh`: prepends the `~/perl5` local::lib to `PERL5LIB` so perltidy can
+locate `Perl::Tidy` and the test suite finds Plack/Protocol::WebSocket; prepends
+`~/perl5/bin` to `PATH`; pins `PERLTIDY`) and therefore **runs from ANY directory
+with ANY shell setup** -- no `PERL5LIB=...` prefix needed.
+
 ```bash
-# Run all tests
-PERL5LIB="lib:t/lib" prove -r t/
+# Run all tests (prove -Ilib -It/lib -r t/)
+bash scripts/run-tests.sh
 
-# Run specific test files
-PERL5LIB="lib" prove t/unit/core/agent_base.t
+# Run a subset -- any prove target (file / dir / glob) passes straight through
+bash scripts/run-tests.sh t/unit/core/agent_base.t
 
-# Run with verbose output
-PERL5LIB="lib" prove -v t/
+# Lint (perlcritic severity 4, zero findings)
+bash scripts/run-lint.sh
 
-# Syntax check a single file
-PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c lib/SignalWire/Agent/AgentBase.pm
+# Format the tree in place (perltidy)
+bash scripts/run-format.sh
+# ...or verify-only, no writes -- this is the CI FMT gate
+bash scripts/run-format.sh --check
+```
+
+These same three scripts are the FMT / LINT / TEST gates inside
+`bash scripts/run-ci.sh`. `scripts/_env.sh` is also what makes the code
+generators' perltidy backstop work from any CWD -- e.g.
+`python3 scripts/generate_rest.py --check` (the GEN-FRESH gate) needs it because
+`scripts/_perltidy_gen.py` shells out to perltidy.
+
+```bash
+# Syntax check a single file (the scripts above are preferred; this is a spot check)
+perl -Ilib -c lib/SignalWire/Agent/AgentBase.pm
 
 # Syntax check an example
-PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib -c examples/simple_agent.pl
+perl -Ilib -c examples/simple_agent.pl
 ```
 
 ### Installation and Setup
@@ -38,12 +60,14 @@ cpanm Moo JSON Plack HTTP::Tiny MIME::Base64 Digest::SHA IO::Socket::SSL Protoco
 ```
 
 ### Environment
-```bash
-# Always use this when running Perl commands in this repo
-export PERL5LIB="/home/devuser/perl5/lib/perl5"
+The `scripts/run-*.sh` entry points above set up `PERL5LIB` / `PATH` for you (via
+`scripts/_env.sh`) -- prefer them. If you must invoke a raw `perl` command, source
+the same bootstrap first so the local::lib (`~/perl5` by convention) is on `@INC`:
 
-# Or prefix commands
-PERL5LIB="/home/devuser/perl5/lib/perl5" perl -Ilib script.pl
+```bash
+# Source the shared bootstrap (idempotent), then run perl from anywhere
+source scripts/_env.sh
+perl -Ilib script.pl
 ```
 
 ## Architecture Overview
@@ -185,7 +209,8 @@ my $agent   = $client->fabric->ai_agents->create(name => 'Bot', prompt => { text
 
 ### Testing Architecture
 - **Tests** in `t/` organized by component
-- **Test runner**: `prove` with PERL5LIB set to include `lib`
+- **Test runner**: `bash scripts/run-tests.sh` (wraps `prove -Ilib -It/lib -r t/`,
+  self-bootstrapping `PERL5LIB` via `scripts/_env.sh`)
 - **Syntax checks**: `perl -Ilib -c file.pm` for modules, `perl -Ilib -c file.pl` for scripts
 
 ### Deployment Patterns

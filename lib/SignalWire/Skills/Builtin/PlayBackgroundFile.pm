@@ -13,7 +13,10 @@ has '+supports_multiple_instances' => ( default => sub { 1 } );
 
 sub setup { return 1 }
 
-sub register_tools {
+# Python parity: get_tools returns the raw SWAIG tool DEFINITION hash(es)
+# (the DataMap tool the skill provides). register_tools builds on top of
+# this by registering each returned tool with the agent.
+sub get_tools {
     my ($self)    = @_;
     my $tool_name = $self->params->{tool_name} // 'play_background_file';
     my $files     = $self->params->{files}     // [];
@@ -24,8 +27,8 @@ sub register_tools {
         push @actions, "start_$f->{key}" if $f->{key};
     }
 
-    # DataMap-style registration with expressions
-    return $self->agent->register_swaig_function(
+    # DataMap-style tool definition with expressions
+    return [
         {
             function    => $tool_name,
             description => "Control background file playback for $tool_name",
@@ -53,7 +56,16 @@ sub register_tools {
                 ],
             },
         }
-    );
+    ];
+}
+
+sub register_tools {
+    my ($self) = @_;
+    my $result;
+    for my $tool ( @{ $self->get_tools } ) {
+        $result = $self->agent->register_swaig_function($tool);
+    }
+    return $result;
 }
 
 sub get_parameter_schema {

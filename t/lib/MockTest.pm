@@ -320,7 +320,7 @@ __END__
 
 =head1 NAME
 
-MockTest - test helper for the porting-sdk mock_signalwire HTTP server.
+MockTest - test helper for the shared mock_signalwire HTTP server.
 
 =head1 SYNOPSIS
 

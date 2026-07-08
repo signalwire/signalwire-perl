@@ -14,7 +14,7 @@ my $client = SignalWire::REST::RestClient->new(
 # ============================================================
 subtest 'calling namespace' => sub {
     my $c = $client->calling;
-    isa_ok($c, 'SignalWire::REST::Namespaces::Calling');
+    isa_ok($c, 'SignalWire::REST::Namespaces::Generated::Calling');
     is($c->_base_path, '/api/calling/calls', 'base path');
 };
 
@@ -23,7 +23,7 @@ subtest 'calling namespace' => sub {
 # ============================================================
 subtest 'call control methods' => sub {
     my $c = $client->calling;
-    my @methods = qw(dial update_call end transfer disconnect);
+    my @methods = qw(dial update end transfer disconnect);
     for my $m (@methods) {
         ok($c->can($m), "has $m");
     }

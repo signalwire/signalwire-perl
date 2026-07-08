@@ -4,7 +4,7 @@
 
 SWML (SignalWire Markup Language) is a JSON document format that defines how an agent behaves during a call -- 30+ verbs, an AI verb with dozens of parameters, SWAIG (SignalWire AI Gateway) function definitions with JSON Schema, post-prompt URLs, webhook authentication, language arrays, pronunciation rules, hints, global data, contexts, steps, gather configs. Writing it by hand means constructing deeply nested JSON, manually building authenticated webhook URLs, hand-coding parameter schemas, and deploying separate webhook servers for your tools. Every agent becomes a bespoke JSON engineering project.
 
-The SDK eliminates all of this. You write Python. The SDK generates correct SWML, serves it over HTTP, and handles its own webhook callbacks -- all in one process, deployable to any platform.
+The SDK eliminates all of this. You write Perl. The SDK generates correct SWML, serves it over HTTP, and handles its own webhook callbacks -- all in one process, deployable to any platform.
 
 ---
 
@@ -26,25 +26,36 @@ Call ends → SignalWire POSTs analytics to agent's /post_prompt/ endpoint
 
 The agent auto-detects its own public URL -- including behind ngrok, load balancers, API Gateway, or any reverse proxy (via `X-Forwarded-Host`, `Forwarded` header, or `SWML_PROXY_URL_BASE` env var). It embeds Basic Auth credentials directly into the webhook URLs. It generates per-call security tokens for each function. The developer writes none of this:
 
-```python
-from signalwire_agents import AgentBase
+```perl
+package WeatherAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
+use SignalWire::SWAIG::FunctionResult;
 
-class WeatherAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="weather", route="/weather")
-        self.prompt_add_section("Role", body="You help with weather.")
+sub BUILD {
+    my ($self) = @_;
+    $self->prompt_add_section('Role', 'You help with weather.');
 
-    @AgentBase.tool(name="get_weather", description="Get weather",
-                    parameters={"type": "object",
-                                "properties": {"city": {"type": "string"}},
-                                "required": ["city"]})
-    def get_weather(self, args, raw_data):
-        city = args["city"]
-        # ... fetch weather ...
-        return SwaigFunctionResult(f"72°F and sunny in {city}")
+    $self->define_tool(
+        name        => 'get_weather',
+        description => 'Get weather',
+        parameters  => {
+            type       => 'object',
+            properties => { city => { type => 'string' } },
+            required   => ['city'],
+        },
+        handler => sub {
+            my ($args, $raw_data) = @_;
+            my $city = $args->{city};
+            # ... fetch weather ...
+            return SignalWire::SWAIG::FunctionResult->new("72\x{b0}F and sunny in $city");
+        },
+    );
+}
 
-agent = WeatherAgent()
-agent.run()
+package main;
+my $agent = WeatherAgent->new( name => 'weather', route => '/weather' );
+$agent->run;
 ```
 
 That's a complete agent: HTTP server, SWML generation, authenticated webhook routing, function execution, and response formatting. The generated SWML contains the full AI configuration, function schemas, and webhook URLs pointing back to the running process -- all computed automatically.
@@ -55,13 +66,15 @@ That's a complete agent: HTTP server, SWML generation, authenticated webhook rou
 
 Raw SWML prompts are flat strings. The SDK provides structured prompt building:
 
-```python
-agent.prompt_add_section("Role", body="You are a travel booking assistant.")
-agent.prompt_add_section("Rules",
-    bullets=["Never make up flight information",
-             "Always confirm before booking",
-             "Use the search tool for real data"])
-agent.prompt_add_section("Personality", body="Friendly but professional.")
+```perl
+$agent->prompt_add_section('Role', 'You are a travel booking assistant.');
+$agent->prompt_add_section('Rules', '',
+    bullets => [
+        'Never make up flight information',
+        'Always confirm before booking',
+        'Use the search tool for real data',
+    ]);
+$agent->prompt_add_section('Personality', 'Friendly but professional.');
 ```
 
 POM sections are rendered by the platform into a format the LLM understands with proper hierarchy. You can add subsections, append to existing sections, check if sections exist, and compose prompts programmatically -- including from skills that inject their own sections.
@@ -70,59 +83,70 @@ POM sections are rendered by the platform into a format the LLM understands with
 
 ## Tools: Three Ways
 
-### 1. Decorated Functions (Local Execution)
+### 1. Defined Functions (Local Execution)
 
-```python
-@AgentBase.tool(name="lookup_order", description="Look up an order",
-                parameters={"type": "object",
-                            "properties": {"order_id": {"type": "string"}},
-                            "required": ["order_id"]})
-def lookup_order(self, args, raw_data):
-    order = db.get(args["order_id"])
-    result = SwaigFunctionResult(f"Order {order.id}: {order.status}")
-    result.add_action("set_global_data", {"current_order": order.to_dict()})
-    return result
+```perl
+$self->define_tool(
+    name        => 'lookup_order',
+    description => 'Look up an order',
+    parameters  => {
+        type       => 'object',
+        properties => { order_id => { type => 'string' } },
+        required   => ['order_id'],
+    },
+    handler => sub {
+        my ($args, $raw_data) = @_;
+        my $order  = $db->get( $args->{order_id} );
+        my $result = SignalWire::SWAIG::FunctionResult->new(
+            "Order $order->{id}: $order->{status}" );
+        $result->add_action( 'set_global_data', { current_order => $order } );
+        return $result;
+    },
+);
 ```
 
 The SDK converts this into a SWAIG function definition with JSON Schema parameters, creates a secure webhook URL, routes inbound POST requests to the handler, parses arguments, and formats the response -- including the 20+ SWAIG actions (transfer, hold, context_switch, toggle_functions, etc.) that tools can return.
 
-Decorated functions also support **type-hinted parameters** -- skip the JSON Schema and let the SDK infer it from Python type hints:
+Each tool is registered with an explicit `parameters` JSON Schema and an
+anonymous-sub `handler`. A tool with no parameters uses an empty schema:
 
-```python
-@AgentBase.tool(name="lookup_order")
-def lookup_order(self, order_id: str):
-    """Look up an order by ID.
-
-    Args:
-        order_id: The order identifier
-    """
-    order = db.get(order_id)
-    return SwaigFunctionResult(f"Order {order.id}: {order.status}")
+```perl
+$self->define_tool(
+    name        => 'lookup_order',
+    description => 'Look up an order by ID',
+    parameters  => { type => 'object', properties => {} },
+    handler     => sub {
+        my ($args, $raw_data) = @_;
+        my $order = $db->get( $args->{order_id} );
+        return SignalWire::SWAIG::FunctionResult->new(
+            "Order $order->{id}: $order->{status}" );
+    },
+);
 ```
-
-The SDK infers the parameter schema, required fields, and description from the function signature and docstring. Explicit `parameters=` always takes precedence.
 
 ### 2. DataMap (Server-Side Execution)
 
-```python
-data_map = (DataMap("check_stock")
-    .purpose("Check product stock levels")
-    .parameter("sku", "string", "Product SKU", required=True)
-    .webhook("GET", "https://api.warehouse.com/stock/${args.sku}")
-    .output(SwaigFunctionResult("Stock for ${args.sku}: ${response.quantity} units"))
-    .fallback_output(SwaigFunctionResult("Could not check stock right now")))
+```perl
+use SignalWire::DataMap;
 
-agent.register_swaig_function(data_map.to_swaig_function())
+my $data_map = SignalWire::DataMap->new('check_stock')
+    ->purpose('Check product stock levels')
+    ->parameter('sku', 'string', 'Product SKU', required => 1)
+    ->webhook('GET', 'https://api.warehouse.com/stock/${args.sku}')
+    ->output(SignalWire::SWAIG::FunctionResult->new('Stock for ${args.sku}: ${response.quantity} units'))
+    ->fallback_output(SignalWire::SWAIG::FunctionResult->new('Could not check stock right now'));
+
+$agent->register_swaig_function( $data_map->to_swaig_function );
 ```
 
 DataMap tools execute on SignalWire's servers -- no webhook needed. The SDK generates the `data_map` structure in the SWML with variable expansion (`${args.*}`, `${response.*}`, `${global_data.*}`), foreach iteration, expression matching, and error handling. Your agent never receives the callback; SignalWire handles the entire API call.
 
 ### 3. Skills (Packaged Integrations)
 
-```python
-agent.add_skill("web_search", {"api_key": "...", "engine_id": "..."})
-agent.add_skill("datetime")
-agent.add_skill("math")
+```perl
+$agent->add_skill('web_search', { api_key => '...', search_engine_id => '...' });
+$agent->add_skill('datetime');
+$agent->add_skill('math');
 ```
 
 One line. The skill auto-registers its tools, injects prompt sections, adds speech hints, and validates dependencies. No manual wiring.
@@ -133,17 +157,17 @@ One line. The skill auto-registers its tools, injects prompt sections, adds spee
 
 Skills are self-contained modules that package tools, prompts, hints, and configuration into a single `add_skill()` call. Each skill:
 
-- Inherits from `SkillBase` with required `setup()` and `register_tools()` methods
-- Declares `REQUIRED_PACKAGES` and `REQUIRED_ENV_VARS` for dependency validation
-- Calls `self.define_tool()` to register SWAIG functions
-- Can inject prompt sections via `get_prompt_sections()`
-- Can provide speech hints via `get_hints()`
-- Can contribute global data via `get_global_data()`
-- Supports multiple instances with different configs (e.g., two `web_search` skills with different engines)
+- Inherits from `SignalWire::Skills::SkillBase` with required `setup` and `register_tools` methods
+- Declares `required_packages` and `required_env_vars` for dependency validation
+- Calls `$self->define_tool(...)` to register SWAIG functions
+- Can inject prompt sections via `get_prompt_sections`
+- Can provide speech hints via `get_hints`
+- Can contribute global data via `get_global_data`
+- Supports multiple instances with different configs (e.g., two `web_search` skills with different engines) via `supports_multiple_instances`
 
-**Built-in skills:** `datetime`, `math`, `web_search`, `wikipedia_search`, `weather_api`, `google_maps`, `datasphere`, `datasphere_serverless`, `native_vector_search`, `spider`, `mcp_gateway`, `swml_transfer`, `play_background_file`, `info_gatherer`, `api_ninjas_trivia`, `joke`, `claude_skills`.
+**Built-in skills:** `datetime`, `math`, `web_search`, `wikipedia_search`, `weather_api`, `google_maps`, `datasphere`, `datasphere_serverless`, `native_vector_search`, `spider`, `swml_transfer`, `play_background_file`, `info_gatherer`, `api_ninjas_trivia`, `joke`, `claude_skills`, `custom_skills`.
 
-The elegance is composability: skills don't know about each other, but they all register cleanly into the same agent. A single agent can combine web search, datetime, a custom booking tool, and a DataMap stock checker -- all declared in `__init__`, all generating correct SWML with proper function definitions, all routed to the right handler.
+The elegance is composability: skills don't know about each other, but they all register cleanly into the same agent. A single agent can combine web search, datetime, a custom booking tool, and a DataMap stock checker -- all declared in `BUILD`, all generating correct SWML with proper function definitions, all routed to the right handler.
 
 ---
 
@@ -151,26 +175,26 @@ The elegance is composability: skills don't know about each other, but they all 
 
 The contexts/steps system lets you define structured workflows declaratively. Instead of hoping the LLM follows instructions about conversation flow, you mechanically enforce it:
 
-```python
-ctx = agent.define_contexts()
+```perl
+my $ctx = $agent->define_contexts;
 
-greeting = ctx.add_context("default")
-step1 = greeting.add_step("welcome")
-step1.set_text("Greet the user and ask how you can help.")
-step1.set_valid_steps(["collect_info"])
-step1.set_functions(["check_hours"])  # Only this tool available here
+my $greeting = $ctx->add_context('default');
+my $step1    = $greeting->add_step('welcome');
+$step1->set_text('Greet the user and ask how you can help.');
+$step1->set_valid_steps(['collect_info']);
+$step1->set_functions(['check_hours']);   # Only this tool available here
 
-step2 = greeting.add_step("collect_info")
-step2.set_text("Collect the user's name and email.")
-step2.set_step_criteria("User has provided both name and email")
-step2.set_gather_info("user_profile")
-step2.add_gather_question("name", "What is your name?", type="string")
-step2.add_gather_question("email", "What is your email?", type="string", confirm=True)
-step2.set_valid_steps(["confirm"])
+my $step2 = $greeting->add_step('collect_info');
+$step2->set_text("Collect the user's name and email.");
+$step2->set_step_criteria('User has provided both name and email');
+$step2->set_gather_info(output_key => 'user_profile');
+$step2->add_gather_question('name',  'What is your name?',  type => 'string');
+$step2->add_gather_question('email', 'What is your email?', type => 'string', confirm => 1);
+$step2->set_valid_steps(['confirm']);
 
-step3 = greeting.add_step("confirm")
-step3.set_text("Confirm the information and say goodbye.")
-step3.set_functions("none")  # No tools -- just confirm and end
+my $step3 = $greeting->add_step('confirm');
+$step3->set_text('Confirm the information and say goodbye.');
+$step3->set_functions('none');   # No tools -- just confirm and end
 ```
 
 This generates SWML with a complete contexts/steps structure. The platform enforces navigation rules, restricts which functions are available at each step, collects structured data with typed questions and confirmation, and tracks transitions with trigger attribution in the enriched call_log. The LLM can't skip steps, can't call restricted tools, and can't navigate to disallowed contexts -- not because it was told not to, but because the mechanisms don't exist in its world. This is PGI (Programmatically Governed Inference) in practice.
@@ -199,18 +223,18 @@ PGI is enforced through four layers of constraint, each operating independently.
 
 ### PGI in Practice: Blackjack
 
-```python
-betting = ctx.add_step("betting")
-betting.set_functions(["place_bet"])
-betting.set_valid_steps(["playing"])
+```perl
+my $betting = $ctx->add_step('betting');
+$betting->set_functions(['place_bet']);
+$betting->set_valid_steps(['playing']);
 
-playing = ctx.add_step("playing")
-playing.set_functions(["hit", "stand", "double_down"])
-playing.set_valid_steps(["hand_complete"])
+my $playing = $ctx->add_step('playing');
+$playing->set_functions([ 'hit', 'stand', 'double_down' ]);
+$playing->set_valid_steps(['hand_complete']);
 
-lost = ctx.add_step("you_lost")
-lost.set_functions([])
-lost.set_valid_steps([])
+my $lost = $ctx->add_step('you_lost');
+$lost->set_functions([]);
+$lost->set_valid_steps([]);
 ```
 
 During the betting step, the model can only call `place_bet`. It cannot deal cards, draw cards, or resolve hands because those functions are not in its schema. When the tool handler transitions to the playing step, `place_bet` disappears and `hit`, `stand`, `double_down` appear. The model's capabilities change not because it was told to behave differently, but because the available operations were mechanically replaced.
@@ -219,22 +243,23 @@ The `you_lost` step has zero functions and zero valid transitions. The game is o
 
 The tool handler demonstrates execution authority -- the model has no idea a step change is about to happen:
 
-```python
-def handle_hit(args, raw_data):
-    game = raw_data["global_data"]["game_state"]
-    card = game["deck"].pop()
-    game["player_hand"].append(card)
-    score = calculate_hand(game["player_hand"])
+```perl
+sub handle_hit {
+    my ($args, $raw_data) = @_;
+    my $game  = $raw_data->{global_data}{game_state};
+    my $card  = pop @{ $game->{deck} };
+    push @{ $game->{player_hand} }, $card;
+    my $score = calculate_hand( $game->{player_hand} );
 
-    result = SwaigFunctionResult(
-        f"You drew {format_card(card)}. Your total is {score}."
-    )
-    result.update_global_data({"game_state": game})
+    my $result = SignalWire::SWAIG::FunctionResult->new(
+        "You drew " . format_card($card) . ". Your total is $score."
+    );
+    $result->update_global_data({ game_state => $game });
 
-    if score > 21:
-        result.swml_change_step("you_lost")
+    $result->swml_change_step('you_lost') if $score > 21;
 
-    return result
+    return $result;
+}
 ```
 
 The model speaks the result. The platform changes the step. The model's world changes without its participation.
@@ -257,16 +282,16 @@ The SDK's contexts/steps/function restrictions are the primitives that make PGI 
 
 ## Deployment: One `run()` Call
 
-```python
-agent = MyAgent()
-agent.run()
+```perl
+my $agent = MyAgent->new;
+$agent->run;
 ```
 
 That single call auto-detects the environment and does the right thing:
 
 | Environment | Detection | What Happens |
 |-------------|-----------|--------------|
-| **Standalone** | Default | Starts uvicorn HTTP server with FastAPI |
+| **Standalone** | Default | Starts a Plack/PSGI HTTP server |
 | **AWS Lambda** | Lambda context object | Returns Lambda-formatted response |
 | **Google Cloud Functions** | GCF environment markers | Returns Flask-compatible response |
 | **Azure Functions** | Azure context object | Returns Azure HttpResponse |
@@ -275,23 +300,23 @@ That single call auto-detects the environment and does the right thing:
 Each mode handles authentication differently (HTTP Basic Auth, API Gateway authorizers, function-level auth), constructs webhook URLs using the correct public endpoint (Lambda function URL, GCF URL, Azure app URL), and formats request/response bodies per platform. You write one agent, deploy it anywhere.
 
 For standalone mode, the SDK provides:
-- Kubernetes health (`/health`) and readiness (`/ready`) probes
-- SSL/TLS support via `SWML_SSL_ENABLED`, `SWML_SSL_CERT`, `SWML_SSL_KEY`
+- Kubernetes health (`/health`) and readiness (`/ready`) probes (no auth)
+- SSL/TLS support via `SWML_SSL_ENABLED`, `SWML_SSL_CERT_PATH`, `SWML_SSL_KEY_PATH`
+  (or an explicit `ssl_cert` / `ssl_key` pair passed to `serve`/`run`)
 - CORS configuration
-- Debug endpoint (`/debug`) for inspection
 
 ---
 
 ## Multi-Agent Hosting
 
-```python
-from signalwire_agents import AgentServer
+```perl
+use SignalWire::Server::AgentServer;
 
-server = AgentServer(host="0.0.0.0", port=3000)
-server.register(SalesAgent(), "/sales")
-server.register(SupportAgent(), "/support")
-server.register(TriageAgent(), "/triage")
-server.run()
+my $server = SignalWire::Server::AgentServer->new( host => '0.0.0.0', port => 3000 );
+$server->register( SalesAgent->new,   '/sales' );
+$server->register( SupportAgent->new, '/support' );
+$server->register( TriageAgent->new,  '/triage' );
+$server->run;
 ```
 
 One process, multiple agents, route-based dispatch. Each agent gets its own SWML endpoint and SWAIG callback routing. SIP routing can map usernames to specific agents.
@@ -300,16 +325,18 @@ One process, multiple agents, route-based dispatch. Each agent gets its own SWML
 
 ## Dynamic Configuration and Multi-Tenancy
 
-```python
-def tenant_config(query_params, body_params, headers, agent):
-    tenant = headers.get("X-Tenant-ID", "default")
-    config = load_tenant_config(tenant)
-    agent.prompt_add_section("Company", body=config["company_info"])
-    agent.set_global_data({"tenant_id": tenant, "tier": config["tier"]})
-    if config["tier"] == "premium":
-        agent.add_skill("advanced_search")
+```perl
+$agent->set_dynamic_config_callback(sub {
+    my ($query_params, $body_params, $headers, $agent) = @_;
 
-agent.set_dynamic_config_callback(tenant_config)
+    my $tenant = $headers->{'x-tenant-id'} // 'default';
+    my $config = load_tenant_config($tenant);
+    $agent->prompt_add_section('Company', $config->{company_info});
+    $agent->set_global_data({ tenant_id => $tenant, tier => $config->{tier} });
+    if ($config->{tier} eq 'premium') {
+        $agent->add_skill('advanced_search');
+    }
+});
 ```
 
 Each inbound request creates an **ephemeral copy** of the agent. The callback customizes it per-request -- different prompts, skills, global data, languages, tools. The original agent is unchanged. This enables multi-tenancy from a single deployment: one agent instance serves hundreds of tenants with tailored behavior.
@@ -318,23 +345,31 @@ Each inbound request creates an **ephemeral copy** of the agent. The callback cu
 
 ## Search System
 
-The SDK includes a complete hybrid search engine for local knowledge bases:
+The SDK includes a hybrid search engine for local knowledge bases, exposed
+through the `native_vector_search` skill. It reads a self-contained
+`.swsearch` index file (or connects to a remote search server), and can
+auto-build the index from a source directory on first use.
 
-**Building indexes:**
-```bash
-sw-search ./docs --output knowledge.swsearch
-sw-search ./docs ./examples --file-types md,txt,py --chunking-strategy sentence
-sw-search validate ./knowledge.swsearch
-sw-search search ./knowledge.swsearch "how do I configure SSL?"
+**In agents** (local mode, auto-building the index if it is missing):
+```perl
+$agent->add_skill('native_vector_search', {
+    tool_name   => 'search_docs',
+    description  => 'Search product documentation',
+    index_file  => 'knowledge.swsearch',
+    build_index => 1,
+    source_dir  => './docs',
+    file_types  => [ 'md', 'txt' ],
+    count       => 5,
+});
 ```
 
-**In agents:**
-```python
-agent.add_skill("native_vector_search", {
-    "index_path": "knowledge.swsearch",
-    "tool_name": "search_docs",
-    "description": "Search product documentation"
-})
+**Remote mode** (connecting to a running search server):
+```perl
+$agent->add_skill('native_vector_search', {
+    tool_name  => 'search_docs',
+    remote_url => 'http://localhost:8001',
+    index_name => 'default',
+});
 ```
 
 The search system supports:
@@ -343,7 +378,7 @@ The search system supports:
 - **Embedding models:** mini (384d, fast), base (768d), large
 - **Hybrid search:** Vector similarity + keyword matching + filename search + metadata search
 - **Backends:** SQLite (`.swsearch` files for local/serverless) or PostgreSQL (pgvector for production)
-- **Installation tiers:** `search-queryonly` (~400MB, query only), `search` (~500MB, basic), `search-full` (~600MB, document processing), `search-all` (~700MB, everything)
+- **Dependencies:** the search backend's Perl modules are declared in the `cpanfile`; `cpanm --installdeps .` pulls them in
 
 The `.swsearch` format is a self-contained SQLite database with embeddings, chunks, and metadata -- deploy it alongside your agent to Lambda or any serverless platform.
 
@@ -353,23 +388,28 @@ The `.swsearch` format is a self-contained SQLite database with embeddings, chun
 
 Production-ready patterns for common use cases:
 
-```python
-from signalwire_agents.prefabs import InfoGathererAgent, ReceptionistAgent
+```perl
+use SignalWire::Prefabs::InfoGatherer;
+use SignalWire::Prefabs::Receptionist;
 
 # Collect structured data
-agent = InfoGathererAgent(questions=[
-    {"key_name": "name", "question_text": "What is your name?"},
-    {"key_name": "issue", "question_text": "Describe your issue", "confirm": True}
-])
+my $gatherer = SignalWire::Prefabs::InfoGatherer->new(
+    questions => [
+        { key_name => 'name',  question_text => 'What is your name?' },
+        { key_name => 'issue', question_text => 'Describe your issue', confirm => 1 },
+    ],
+);
 
 # Route calls to departments
-agent = ReceptionistAgent(departments=[
-    {"name": "Sales", "number": "+15551234567", "description": "Product inquiries"},
-    {"name": "Support", "number": "+15559876543", "description": "Technical help"}
-])
+my $receptionist = SignalWire::Prefabs::Receptionist->new(
+    departments => [
+        { name => 'Sales',   number => '+15551234567', description => 'Product inquiries' },
+        { name => 'Support', number => '+15559876543', description => 'Technical help' },
+    ],
+);
 ```
 
-Five prefabs: **InfoGatherer**, **Survey**, **Receptionist**, **FAQ**, **Concierge**. Each generates complete SWML with appropriate prompts, tools, and workflows. You instantiate, customize, deploy.
+Five prefabs: **InfoGatherer**, **Survey**, **Receptionist**, **FAQBot**, **Concierge**. Each generates complete SWML with appropriate prompts, tools, and workflows. You instantiate, customize, deploy.
 
 ---
 
@@ -377,39 +417,46 @@ Five prefabs: **InfoGatherer**, **Survey**, **Receptionist**, **FAQ**, **Concier
 
 Everything the platform supports, the SDK exposes as methods:
 
-```python
+```perl
 # LLM tuning
-agent.set_prompt_llm_params(temperature=0.3, top_p=0.9, barge_confidence=0.7)
+$agent->set_prompt_llm_params(temperature => 0.3, top_p => 0.9, barge_confidence => 0.7);
 
 # Multi-language
-agent.add_language("Spanish", "es", "google.es-ES-Neural2-A",
-                   speech_fillers=["Un momento..."], function_fillers=["Buscando..."])
+$agent->add_language(
+    name             => 'Spanish',
+    code             => 'es-ES',
+    voice            => 'google.es-ES-Neural2-A',
+    speech_fillers   => ['Un momento...'],
+    function_fillers => ['Buscando...'],
+);
 
 # Speech recognition
-agent.add_hints(["SignalWire", "SWML", "SWAIG"])
-agent.add_pronunciation("SignalWire", "Signal Wire")
+$agent->add_hints([ 'SignalWire', 'SWML', 'SWAIG' ]);
+$agent->add_pronunciation('SignalWire', 'Signal Wire');
 
 # Vision, thinking, inner dialog
-agent.set_params({"enable_vision": True, "vision_model": "gpt-4o"})
-agent.set_params({"enable_thinking": True, "thinking_model": "o4-mini"})
+$agent->set_params({ enable_vision => JSON::true, vision_model => 'gpt-4o' });
+$agent->set_params({ enable_thinking => JSON::true, thinking_model => 'o4-mini' });
 
 # Interruption control
-agent.set_params({
-    "barge_match_string": "^(stop|cancel|nevermind)$",
-    "barge_min_words": 2,
-    "barge_confidence": 0.8
-})
+$agent->set_params({
+    barge_match_string => '^(stop|cancel|nevermind)$',
+    barge_min_words    => 2,
+    barge_confidence   => 0.8,
+});
 
 # Native functions with custom fillers
-agent.set_native_functions(["check_time", "wait_for_user"])
-agent.add_internal_filler("check_time", "en", ["Let me check the time..."])
+$agent->set_native_functions([ 'check_time', 'wait_for_user' ]);
+$agent->add_internal_filler('check_time', 'en', [ 'Let me check the time...' ]);
 
-# Call recording
-agent.enable_record_call(format="wav", stereo=True)
+# Call recording (set on the agent constructor or via the attributes)
+$agent->record_call(1);
+$agent->record_format('wav');
+$agent->record_stereo(1);
 
 # Call flow verbs
-agent.add_pre_answer_verb("play", {"url": "ringback.wav"})
-agent.add_post_ai_verb("hangup", {})
+$agent->add_pre_answer_verb('play', { url => 'ringback.wav' });
+$agent->add_post_ai_verb('hangup', {});
 ```
 
 Each of these would require understanding and manually constructing the correct SWML JSON structure. The SDK provides named methods with proper defaults.
@@ -421,21 +468,18 @@ Each of these would require understanding and manually constructing the correct 
 Test without deploying:
 
 ```bash
-# List available tools
-swaig-test my_agent.py --list-tools
+# List available tools (file mode: load the agent script in-process)
+swaig-test --file my_agent.pl --list-tools
 
-# Execute a specific tool
-swaig-test my_agent.py --exec get_weather --city "San Francisco"
+# Execute a specific tool with a parameter
+swaig-test --file my_agent.pl --exec get_weather --param city="San Francisco"
 
 # Dump generated SWML for inspection
-swaig-test my_agent.py --dump-swml
+swaig-test --file my_agent.pl --dump-swml
 
-# Test with serverless environment simulation
-swaig-test my_agent.py --simulate-serverless lambda --dump-swml
-
-# Multi-agent: select by route or class
-swaig-test multi_agent.py --route /support --list-tools
-swaig-test multi_agent.py --agent-class SalesAgent --exec check_inventory
+# URL mode: test a running agent over HTTP (auth embedded in the URL)
+swaig-test --url http://user:pass@localhost:3000/ --list-tools
+swaig-test --url http://user:pass@localhost:3000/ --exec get_weather --param city="San Francisco"
 ```
 
 ---
@@ -458,10 +502,10 @@ The SDK handles auth automatically:
 |-----------|-------------|----------|
 | SWML document | Hand-craft JSON | Auto-generated from Python |
 | Webhook server | Build and deploy separately | Built into the agent process |
-| URL routing | Manual FastAPI/Flask setup | Automatic route registration |
+| URL routing | Manual Plack/PSGI setup | Automatic route registration |
 | Auth tokens | Manual JWT/token system | Auto-generated per call/function |
 | Proxy detection | Parse headers yourself | Automatic (ngrok, LB, CDN) |
-| Tool schemas | Write JSON Schema by hand | `@tool` decorator or `define_tool()` |
+| Tool schemas | Write JSON Schema by hand | `define_tool()` |
 | Serverless deploy | Platform-specific handler code | `agent.run()` auto-detects |
 | Multi-language | Manually construct language arrays | `add_language()` one-liner |
 | State machine | Manually build contexts JSON | Fluent `define_contexts()` API |
@@ -474,4 +518,4 @@ The SDK handles auth automatically:
 | Call recording | Manual SWML verb insertion | `enable_record_call()` |
 | SSL/TLS | Manual cert configuration | Env var driven |
 
-The SDK turns what would be a multi-file infrastructure project into a single Python class. The SWML is correct by construction. The webhooks route themselves. The auth is automatic. The deployment is universal. The developer focuses on what the agent should *do*, not how to wire it together.
+The SDK turns what would be a multi-file infrastructure project into a single Perl class. The SWML is correct by construction. The webhooks route themselves. The auth is automatic. The deployment is universal. The developer focuses on what the agent should *do*, not how to wire it together.

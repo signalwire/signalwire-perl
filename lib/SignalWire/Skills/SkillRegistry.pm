@@ -5,6 +5,7 @@ package SignalWire::Skills::SkillRegistry;
 
 use strict;
 use warnings;
+use File::Spec ();
 
 # Global registry mapping skill name -> class name
 my %REGISTRY;
@@ -53,6 +54,60 @@ sub list_skills {
     return [ sort keys %REGISTRY ];
 }
 
+# Get a skill CLASS (package name) by name, loading on demand. Mirrors
+# Python's SkillRegistry.get_skill_class(name) — the class-returning
+# companion to get_factory (which is the Perl-idiom factory accessor).
+# Returns the package name or undef if unknown.
+sub get_skill_class {
+    my ( $class, $skill_name ) = @_;
+    return $class->get_factory($skill_name);
+}
+
+# Ensure built-in skills are registered and return their names. Mirrors
+# Python's SkillRegistry.discover_skills (a no-op there since skills load
+# on-demand); Perl ships built-ins explicitly, so this guarantees they're
+# registered (idempotent) and returns the registered skill names.
+sub discover_skills {
+    my ($class) = @_;
+    $class->_load_all_builtins;
+    return [ sort keys %REGISTRY ];
+}
+
+# List all skill sources and the skills available from each. Mirrors
+# Python's SkillRegistry.list_all_skill_sources: a hashref keyed by source
+# type. Perl has no Python-style entry_points, so that bucket is empty;
+# ``registered`` holds any skill registered outside the shipped built-ins.
+sub list_all_skill_sources {
+    my ($class) = @_;
+    $class->_load_all_builtins;
+    my @builtins = qw(
+        api_ninjas_trivia claude_skills custom_skills datasphere
+        datasphere_serverless datetime google_maps info_gatherer joke math
+        native_vector_search play_background_file spider swml_transfer
+        weather_api web_search wikipedia_search
+    );
+    my %is_builtin = map  { $_ => 1 } @builtins;
+    my @registered = grep { !$is_builtin{$_} } sort keys %REGISTRY;
+    return {
+        'built-in'       => [ sort @builtins ],
+        'external_paths' => [ map { _skill_dirs_under($_) } @EXTERNAL_PATHS ],
+        'entry_points'   => [],
+        'registered'     => \@registered,
+    };
+}
+
+# Skill subdirectory names found directly under $path (each is a candidate
+# external skill source). Non-existent / unreadable paths yield nothing.
+sub _skill_dirs_under {
+    my ($path) = @_;
+    return () unless defined $path && -d $path;
+    opendir( my $dh, $path ) or return ();
+    my @dirs = grep { $_ !~ /^\./ && -d File::Spec->catdir( $path, $_ ) } readdir($dh);
+    closedir $dh;
+    my @sorted = sort @dirs;
+    return @sorted;
+}
+
 # Get complete schema for all registered skills.
 #
 # Mirrors Python's ``SkillRegistry.get_all_skills_schema()`` — returns a
@@ -99,8 +154,8 @@ sub _load_all_builtins {
     my ($class) = @_;
     my @names = qw(
         api_ninjas_trivia claude_skills datasphere datasphere_serverless
-        datetime google_maps info_gatherer joke math mcp_gateway
-        native_vector_search play_background_file spider swml_transfer
+        datetime google_maps info_gatherer joke math native_vector_search
+        play_background_file spider swml_transfer
         weather_api web_search wikipedia_search custom_skills
     );
     for my $name (@names) {
@@ -130,13 +185,26 @@ sub clear_registry {
 # validate the path, die with an "X: <path>" message (Perl's analog of
 # raising ValueError) when the path doesn't exist or isn't a directory,
 # and de-duplicate entries in the external paths list.
+# Add a load-path to search for skills AND return the file-based skills
+# (SKILL.md dirs) discovered under it. Validates the load-path (dies loud on
+# a missing / non-directory path — the Perl analog of Python raising
+# ValueError), de-duplicates the external-paths list, then walks the path
+# with the SHARED SignalWire::Skills::SkillDiscovery walker (the same one the
+# claude_skills builtin uses — one implementation, two callers) and returns
+# the parsed SKILL.md skills. In list context the discovered skills are
+# returned; this is the framework-level load-path discovery (#75). Parity
+# surface with Python's add_skill_directory (which validates + registers the
+# path); the SKILL.md file discovery is the interpreted-port extension.
 sub add_skill_directory {
     my ( $class, $path ) = @_;
     die "Skill directory does not exist: $path\n" unless -e $path;
     die "Path is not a directory: $path\n"        unless -d $path;
-    return if grep { $_ eq $path } @EXTERNAL_PATHS;
-    push @EXTERNAL_PATHS, $path;
-    return;
+    unless ( grep { $_ eq $path } @EXTERNAL_PATHS ) {
+        push @EXTERNAL_PATHS, $path;
+    }
+
+    require SignalWire::Skills::SkillDiscovery;
+    return SignalWire::Skills::SkillDiscovery::discover_skills($path);
 }
 
 # Returns the registered external skill directories.

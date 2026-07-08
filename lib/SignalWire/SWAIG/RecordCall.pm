@@ -148,8 +148,7 @@ sets into a single source of truth so the accepted values are
 discoverable and autocompletable instead of living only inside the C<die>
 strings. The constants B<are> the canonical wire strings, so
 C<record_call>'s signature is unchanged — it still takes plain
-C<< format => ... >> / C<< direction => ... >> strings, preserving Python
-parity.
+C<< format => ... >> / C<< direction => ... >> strings.
 
 The record C<direction> here is the write-side record-channel selector.
 It is unrelated to the read-only inbound/outbound C<direction> field on

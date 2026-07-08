@@ -26,6 +26,22 @@ use Scalar::Util qw(blessed);
 
 my $VERSION = '1.0.0';
 
+# --- Detect --parse-only / --dry-run FIRST and strip it from @ARGV. ---
+# It is detected before Getopt::Long runs and stripped because a --parse-only
+# trailing an `--exec NAME` (the position the DOC-CLI gate appends it) must be
+# recognized regardless of where it appears in the argument list. Stripping it
+# here makes the flag position-independent -- it works whether it precedes or
+# follows --exec. Under --parse-only we validate the argument shape and exit
+# WITHOUT loading the agent or touching the network; a bad invocation exits 2
+# (matching the Python reference contract). See docs/cli_guide.md.
+my $parse_only = grep { $_ eq '--parse-only' || $_ eq '--dry-run' } @ARGV;
+## no critic (Variables::RequireLocalizedPunctuationVars)
+# Intentionally rewrite the process-wide @ARGV (not a localized copy): the
+# stripped list is what Getopt::Long parses below, so the change must persist
+# for the rest of the program.
+@ARGV = grep { $_ ne '--parse-only' && $_ ne '--dry-run' } @ARGV;
+## use critic
+
 # --- Parse CLI options ---
 my ( $url, $file, $dump_swml, $list_tools, $exec_name, @params, $raw, $verbose, $help );
 
@@ -58,6 +74,15 @@ if ( $url && $file ) {
 unless ( $dump_swml || $list_tools || $exec_name ) {
     print STDERR "Error: one of --dump-swml, --list-tools, or --exec NAME is required\n\n";
     usage_exit(1);
+}
+
+# --- Parse-only / dry-run: all argument validation above has succeeded. Report
+# success and exit WITHOUT loading the agent, touching the filesystem, or hitting
+# the network. (usage_exit already exited non-zero -- 2 under --parse-only -- on
+# any bad flag or invalid combination above.) ---
+if ($parse_only) {
+    print "parse OK\n";
+    exit 0;
 }
 
 # --- File mode: load Perl script in-process and walk runtime tool registry ---
@@ -483,6 +508,10 @@ sub http_post {
 sub usage_exit {
     my ($code) = @_;
     $code //= 1;
+
+    # Under --parse-only, a bad invocation exits 2 (the Python reference's
+    # usage-error code); a successful --help (code 0) is left untouched.
+    $code = 2 if $parse_only && $code != 0;
     print STDERR <<'USAGE';
 swaig-test - CLI tool for testing SWAIG agent endpoints
 
@@ -501,6 +530,8 @@ Options:
   --param key=value   Parameter for --exec (repeatable)
   --raw               Output compact JSON (no pretty-printing)
   --verbose           Show request/response details on stderr
+  --parse-only        Validate arguments and exit without running the agent
+  --dry-run           (alias for --parse-only; prints 'parse OK')
   --help, -h          Show this help message
 
 Examples:

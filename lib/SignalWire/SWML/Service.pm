@@ -45,6 +45,38 @@ has 'document' => (
     default => sub { SignalWire::SWML::Document->new() },
 );
 
+# Specialized SWML verb handlers keyed by verb name (register_verb_handler).
+has 'verb_handlers' => (
+    is      => 'rw',
+    default => sub { {} },
+);
+
+# Strict-schema-validation flag (full_validation_enabled).
+has 'full_validation' => (
+    is      => 'rw',
+    default => sub { 0 },
+);
+
+# External base URL override for webhook URLs behind a proxy
+# (manual_set_proxy_url / SWML_PROXY_URL_BASE).
+has 'proxy_url_base' => (
+    is      => 'rw',
+    default => sub { $ENV{SWML_PROXY_URL_BASE} // '' },
+);
+
+# Set while serve() is running; cleared by stop().
+has '_server_running' => (
+    is      => 'rw',
+    default => sub { 0 },
+);
+
+# Toggled by enable_debug_routes(); when true the service exposes its
+# debug endpoints (Python WebMixin debug-route parity).
+has '_debug_routes_enabled' => (
+    is      => 'rw',
+    default => sub { 0 },
+);
+
 # SWAIG tool registry — lifted from AgentBase so any Service (sidecar,
 # non-agent verb host) can register and dispatch SWAIG functions.
 has 'tools' => (
@@ -84,7 +116,11 @@ has 'verb_registry' => (
         # uses AUTOLOAD against the schema for verb lookup; this hashref
         # mirrors Python's VerbHandlerRegistry surface (handlers indexed
         # by verb name) so callers can introspect / extend it.
-        return { handlers => {} };
+        #
+        # Python parity: VerbHandlerRegistry.__init__ pre-registers the
+        # AIVerbHandler under verb name "ai" (swml_handler.py). Ship the same
+        # default handler so a fresh registry already knows the "ai" verb.
+        return { handlers => { ai => { verb => 'ai' } } };
     },
 );
 
@@ -296,6 +332,22 @@ sub _json_response {
     return [ $status, \@headers, [$body] ];
 }
 
+# Append the standard security headers to an existing PSGI response's header
+# list in place (skipping Content-Type, which the caller already set). Used by
+# to_psgi_app to layer security headers onto the handle_request-marshalled
+# response, since Service has no wrapping middleware the way AgentBase does.
+sub _add_security_headers {
+    my ($res) = @_;
+    return unless ref $res eq 'ARRAY' && ref $res->[1] eq 'ARRAY';
+    my @sec = _security_headers();
+    while (@sec) {
+        my ( $k, $v ) = splice @sec, 0, 2;
+        next if $k eq 'Content-Type';
+        push @{ $res->[1] }, $k => $v;
+    }
+    return;
+}
+
 sub _read_body {
     my ($env) = @_;
     my $input = $env->{'psgi.input'};
@@ -330,7 +382,17 @@ sub to_psgi_app {
         my $is_swaig_route = ( $path eq "$route/swaig" );
         my $is_post_prompt = ( $path eq "$route/post_prompt" );
 
-        if ( $is_swml_route || $is_swaig_route || $is_post_prompt ) {
+        # The MAIN SWML route delegates its auth/routing/render DECISION to the
+        # decomposed handle_request core (401 auth, 307 routing-callback
+        # redirect, 200 render) — so the served path can no longer skip the
+        # routing-callback 307 the way the old inline _handle_swml_request did.
+        if ($is_swml_route) {
+            my $res = $self->_serve_main_via_handle_request($env);
+            _add_security_headers($res);
+            return $res;
+        }
+
+        if ( $is_swaig_route || $is_post_prompt ) {
 
             # Require basic auth for protected routes
             unless ( $self->_check_basic_auth($env) ) {
@@ -344,9 +406,7 @@ sub to_psgi_app {
                 ];
             }
 
-            if ($is_swml_route) {
-                return $self->_handle_swml_request($env);
-            } elsif ($is_swaig_route) {
+            if ($is_swaig_route) {
                 return $self->_handle_swaig_request($env);
             } elsif ($is_post_prompt) {
                 return $self->_handle_post_prompt($env);
@@ -355,6 +415,192 @@ sub to_psgi_app {
 
         return _json_response( 404, { error => 'Not found' } );
     };
+}
+
+# ------------------------------------------------------------------
+# handle_request — the framework-free request-dispatch core.
+#
+# Python parity: SWMLService.handle_request(method, url, headers, body)
+# -> (status, response_headers, body_string). This is the primitive
+# dispatch surface the SDK ports share (the same one dotnet ships as
+# HandleRequest and Python's FastAPI _handle_request delegates to). It
+# performs basic-auth, the routing-callback check, and on_request
+# modification over plain primitives instead of a PSGI $env, returning a
+# ($status, \%headers, $body_string) triple. The PSGI app (to_psgi_app)
+# is a thin adapter that marshals $env into these primitives and the
+# triple back into a PSGI response.
+#
+#   $method  HTTP method string ("GET"/"POST")
+#   $url     full request URL (used for callback-path derivation + proxy)
+#   $headers hashref of request headers (plain, lower/any-case)
+#   $body    already-parsed JSON body hashref for POST, or undef
+#
+# Returns the list ($status, $headers_hashref, $body_string). For a 200
+# it is the SWML JSON document; for a routing redirect it is 307 with a
+# Location header and an empty body; for an auth failure it is 401 with a
+# WWW-Authenticate: Basic header and a JSON error body.
+sub handle_request {
+    my ( $self, $method, $url, $headers, $body ) = @_;
+    $headers //= {};
+    $body    //= {};
+    my $callback_path = $self->_callback_path_for_url($url);
+
+    # Auth (over the plain headers hashref).
+    unless ( $self->_check_basic_auth_headers($headers) ) {
+        return (
+            401,
+            { 'WWW-Authenticate' => 'Basic' },
+            JSON::encode_json( { error => 'Unauthorized' } ),
+        );
+    }
+
+    # Routing callback: (body, headers) -> route | undef. Only for a POST
+    # with a non-empty parsed body targeting a registered callback path.
+    if (   $method eq 'POST'
+        && ref $body eq 'HASH'
+        && %$body
+        && defined $callback_path
+        && $self->routing_callbacks->{$callback_path} )
+    {
+        my $cb    = $self->routing_callbacks->{$callback_path};
+        my $route = eval { $cb->( $body, $headers ) };
+        if ($@) {
+            $self->log->error( "error_in_routing_callback", error => "$@" );
+        } elsif ( defined $route ) {
+
+            # 307 preserves the POST method + body on the redirect.
+            return ( 307, { 'Location' => $route }, '' );
+        }
+    }
+
+    # Subclass modification hook.
+    my $modifications = $self->on_request( $body, $callback_path );
+    if ( $modifications && ref $modifications eq 'HASH' ) {
+        my $document = $self->get_document;
+        for my $key ( keys %$modifications ) {
+            $document->{$key} = $modifications->{$key} if exists $document->{$key};
+        }
+        return ( 200, {}, JSON::encode_json($document) );
+    }
+
+    return ( 200, {}, $self->render_document );
+}
+
+# ------------------------------------------------------------------
+# _serve_main_via_handle_request — the thin PSGI adapter for the MAIN SWML
+# endpoint. Extracts (method, url, headers, body) from the PSGI $env, calls
+# the decomposed handle_request core (which owns the auth-401 / routing-307 /
+# render-200 DECISION), and marshals the returned (status, \%headers, body)
+# triple back into a PSGI [status, \@headers, [body]] response — INCLUDING the
+# 307 Location redirect and the 401 WWW-Authenticate.
+#
+# Both serve paths (Service->to_psgi_app and AgentBase->_build_psgi_app) route
+# the main route through this so the served path can no longer diverge from
+# handle_request (it previously rendered a 200 SWML even when a routing
+# callback wanted a 307). php/rust/dotnet share this same "framework adapter
+# delegates to handle_request" shape.
+sub _serve_main_via_handle_request {
+    my ( $self, $env ) = @_;
+
+    my ( $method, $url, $headers, $body ) = $self->_psgi_primitives($env);
+    my ( $status, $resp_headers, $resp_body ) =
+        $self->handle_request( $method, $url, $headers, $body );
+
+    return _marshal_handle_request_psgi( $status, $resp_headers, $resp_body );
+}
+
+# Extract the (method, url, headers, body) primitives handle_request wants
+# from a PSGI $env. Headers are recovered from the CGI-style HTTP_* keys back
+# to their header-name form (so _check_basic_auth_headers and the routing
+# callback's second arg see Authorization / X-Trace / forwarding headers), and
+# the POST body is buffered and JSON-parsed into the hashref handle_request
+# expects.
+sub _psgi_primitives {
+    my ( $self, $env ) = @_;
+
+    my $method = $env->{REQUEST_METHOD} // 'GET';
+    my $path   = $env->{PATH_INFO}      // '/';
+    my $query  = $env->{QUERY_STRING};
+    my $url    = $path;
+    $url .= "?$query" if defined $query && length $query;
+
+    my %headers;
+    for my $k ( keys %$env ) {
+        if ( $k =~ /^HTTP_(.+)$/ ) {
+            ( my $name = $1 ) =~ s/_/-/g;
+            $name = join '-', map { ucfirst lc } split /-/, $name;
+            $headers{$name} = $env->{$k};
+        }
+    }
+    $headers{'Content-Type'}   = $env->{CONTENT_TYPE}   if defined $env->{CONTENT_TYPE};
+    $headers{'Content-Length'} = $env->{CONTENT_LENGTH} if defined $env->{CONTENT_LENGTH};
+
+    my $body;
+    if ( $method eq 'POST' || $method eq 'PUT' ) {
+        my $raw = _read_body($env);
+        if ( defined $raw && length $raw ) {
+            $body = eval { JSON::decode_json($raw) };
+            $body = undef unless ref $body eq 'HASH';
+        }
+    }
+
+    return ( $method, $url, \%headers, $body );
+}
+
+# Marshal a handle_request (status, \%headers, $body_string) triple into a PSGI
+# [status, \@headers, [body]] response. Content-Type defaults to
+# application/json; the handle_request headers (Location for the 307,
+# WWW-Authenticate for the 401) are passed through. Security headers are added
+# by each serve path's own layer (AgentBase's middleware / Service's wrap
+# below), not baked in here, so they aren't emitted twice.
+sub _marshal_handle_request_psgi {
+    my ( $status, $headers, $body ) = @_;
+    $headers //= {};
+    $body    //= '';
+
+    my @out = ( 'Content-Type' => 'application/json' );
+    for my $k ( sort keys %$headers ) {
+        push @out, $k => $headers->{$k};
+    }
+    return [ $status, \@out, [$body] ];
+}
+
+# Derive the registered routing-callback path (if any) that $url targets.
+# The PSGI path already normalizes the route; here we recover the
+# equivalent by matching the URL's path against the registered callbacks.
+sub _callback_path_for_url {
+    my ( $self, $url ) = @_;
+    return unless %{ $self->routing_callbacks };
+    my $path = defined $url ? $url : '';
+    $path =~ s{^[a-z][a-z0-9+.\-]*://[^/]+}{}i;    # strip scheme+authority
+    $path =~ s{\?.*$}{};                           # strip query
+    my $trimmed = $path;
+    $trimmed =~ s{^/+}{};
+    $trimmed =~ s{/+$}{};
+    my $normalized = length $trimmed ? "/$trimmed" : $path;
+    $normalized =~ s{/+$}{} unless $normalized eq '/';
+
+    for my $cb_path ( keys %{ $self->routing_callbacks } ) {
+        return $cb_path
+            if $normalized eq $cb_path
+            || ( length $cb_path && $normalized =~ /\Q$cb_path\E$/ );
+    }
+    return;
+}
+
+# Basic-auth check over a plain headers hashref (the handle_request
+# primitive analog of _check_basic_auth, which reads a PSGI $env). Accepts
+# either an ``Authorization`` or CGI-style ``HTTP_AUTHORIZATION`` key.
+sub _check_basic_auth_headers {
+    my ( $self, $headers ) = @_;
+    my $auth = $headers->{Authorization} // $headers->{authorization}
+        // $headers->{HTTP_AUTHORIZATION} // '';
+    return 0 unless $auth =~ /^Basic\s+(.+)$/i;
+    my $decoded = MIME::Base64::decode_base64($1);
+    my ( $user, $pass ) = split( /:/, $decoded, 2 );
+    return 0 unless defined $user && defined $pass;
+    return _timing_safe_compare( $user, $self->basic_auth_user )
+        && _timing_safe_compare( $pass, $self->basic_auth_password );
 }
 
 sub _handle_swml_request {
@@ -375,6 +621,178 @@ sub render_main_swml {
 sub render_swml {
     my ( $self, $env ) = @_;
     return $self->render_main_swml($env);
+}
+
+# ------------------------------------------------------------------
+# Document manipulation (Python parity: SWMLService document methods).
+# Perl composes a SWML::Document; these expose the reference's
+# SWMLService-level document API directly on the service, delegating to
+# the composed document. Verb/section adds target the ``main`` section
+# unless a section is named (matching the Python reference, whose
+# add_verb/add_section operate on ``sections.main``).
+# ------------------------------------------------------------------
+
+# reset_document — replace the working document with a fresh empty one.
+sub reset_document {
+    my ($self) = @_;
+    $self->document( SignalWire::SWML::Document->new() );
+    return;
+}
+
+# add_verb(verb_name, config) — append a verb to the main section. A
+# specialized verb handler (register_verb_handler) validates when present;
+# otherwise schema validation applies. Returns true on success, false when
+# config is not a hashref (and not the sleep integer special-case).
+sub add_verb {
+    my ( $self, $verb_name, $config ) = @_;
+    if ( $verb_name eq 'sleep' && defined $config && !ref $config ) {
+        $self->document->add_verb( 'main', $verb_name, int($config) );
+        return 1;
+    }
+    return 0 unless defined $config && ref $config eq 'HASH';
+    if ( my $handler = $self->verb_handlers->{$verb_name} ) {
+        my ( $ok, $errors ) = $handler->validate_config($config);
+        die "SWML verb '$verb_name' validation failed: @{ $errors // [] }\n" unless $ok;
+    }
+    $self->document->add_verb( 'main', $verb_name, $config );
+    return 1;
+}
+
+# add_section(section_name) — create a new named section. Returns false if
+# it already exists, true if created.
+sub add_section {
+    my ( $self, $section_name ) = @_;
+    return 0 if $self->document->has_section($section_name);
+    $self->document->add_section($section_name);
+    return 1;
+}
+
+# add_verb_to_section(section_name, verb_name, config) — append a verb to a
+# named section (creating the section if absent).
+sub add_verb_to_section {
+    my ( $self, $section_name, $verb_name, $config ) = @_;
+    if ( $verb_name eq 'sleep' && defined $config && !ref $config ) {
+        $self->document->add_verb( $section_name, $verb_name, int($config) );
+        return 1;
+    }
+    return 0 unless defined $config && ref $config eq 'HASH';
+    $self->document->add_verb( $section_name, $verb_name, $config );
+    return 1;
+}
+
+# get_document — the current document as a plain hashref (parity with
+# SWMLService.get_document, which returns the document dict).
+sub get_document {
+    my ($self) = @_;
+    return $self->document->to_hash;
+}
+
+# render_document — the current document serialized to a JSON string.
+sub render_document {
+    my ($self) = @_;
+    return $self->document->to_json;
+}
+
+# register_verb_handler(handler) — install a specialized verb handler; its
+# get_verb_name() names the verb it validates/builds (parity with
+# SWMLService.register_verb_handler).
+sub register_verb_handler {
+    my ( $self, $handler ) = @_;
+    my $name = $handler->get_verb_name;
+    $self->verb_handlers->{$name} = $handler;
+
+    # Python parity: VerbHandlerRegistry.register_handler indexes the handler
+    # by verb name under _handlers. Mirror the registration into the
+    # introspectable verb_registry (which ships pre-loaded with the "ai"
+    # handler — see the verb_registry default) so the registry reflects both.
+    $self->verb_registry->{handlers}{$name} = $handler;
+    return;
+}
+
+# full_validation_enabled — whether strict schema validation is on. Perl
+# validates opportunistically; the flag defaults off and is honored by
+# add_verb when a schema is available.
+sub full_validation_enabled {
+    my ($self) = @_;
+    return $self->full_validation ? 1 : 0;
+}
+
+# manual_set_proxy_url(url) — override the external base URL used when
+# building webhook URLs behind a reverse proxy (parity with
+# SWMLService.manual_set_proxy_url / SWML_PROXY_URL_BASE).
+sub manual_set_proxy_url {
+    my ( $self, $proxy_url ) = @_;
+    $proxy_url =~ s{/+$}{} if defined $proxy_url;
+    $self->proxy_url_base($proxy_url);
+    return;
+}
+
+# as_router — the PSGI app coderef that mounts this service (parity with
+# SWMLService.as_router, which returns a FastAPI APIRouter). Perl's routable
+# unit is the PSGI app.
+sub as_router {
+    my ($self) = @_;
+    return $self->to_psgi_app;
+}
+
+# get_app — return the PSGI application for this service (deployment
+# adapters mount this). Mirrors Python WebMixin.get_app, which returns
+# the FastAPI app; the Perl analogue is the PSGI coderef from
+# to_psgi_app.
+sub get_app {
+    my ($self) = @_;
+    return $self->to_psgi_app;
+}
+
+# enable_debug_routes — turn on the service's debug endpoints. Mirrors
+# WebMixin.enable_debug_routes. Returns $self for chaining.
+sub enable_debug_routes {
+    my ($self) = @_;
+    $self->_debug_routes_enabled(1);
+    return $self;
+}
+
+# setup_graceful_shutdown — install SIGTERM/SIGINT handlers that stop the
+# running server (Kubernetes-friendly). Mirrors
+# WebMixin.setup_graceful_shutdown. Returns $self for chaining; a
+# platform that cannot trap a given signal is ignored quietly.
+sub setup_graceful_shutdown {
+    my ($self) = @_;
+    for my $sig (qw(TERM INT)) {
+        eval {
+            ## no critic (Variables::RequireLocalizedPunctuationVars)
+            # Intentionally a PERSISTENT process-wide signal handler (not a
+            # localized one) — graceful shutdown must survive past this scope.
+            $SIG{$sig} = sub {
+                $self->_logger->info("shutdown_signal_received signal=$sig")
+                    if $self->_logger;
+                $self->stop;
+            };
+            1;
+        };
+    }
+    return $self;
+}
+
+# serve(host, port) — start a blocking Plack HTTP server for this service.
+# Parity with SWMLService.serve(host, port).
+sub serve {
+    my ( $self, %opts ) = @_;
+    my $host = $opts{host} // $self->host;
+    my $port = $opts{port} // $self->port;
+    require Plack::Runner;
+    my $runner = Plack::Runner->new;
+    $runner->parse_options( '--host', $host, '--port', $port );
+    $self->_server_running(1);
+    $runner->run( $self->to_psgi_app );
+    return;
+}
+
+# stop — signal the running server to stop (parity with SWMLService.stop).
+sub stop {
+    my ($self) = @_;
+    $self->_server_running(0);
+    return;
 }
 
 # Customization hook called when SWML is requested. Default delegates to
@@ -526,6 +944,15 @@ sub handle_additional_route {
 # Register a routing callback at a given sub-path under the service route.
 sub register_routing_callback {
     my ( $self, $path, $cb ) = @_;
+
+    # Normalize the path for consistent lookup (Python parity:
+    # SWMLService.register_routing_callback -> path.rstrip("/") then ensure a
+    # leading "/"). Without this, "/sip/" and "voice" register under
+    # non-canonical keys and never match an incoming request path.
+    $path = '' unless defined $path;
+    $path =~ s{/+$}{};
+    $path = "/$path" unless $path =~ m{^/};
+
     $self->routing_callbacks->{$path} = $cb;
     return $self;
 }

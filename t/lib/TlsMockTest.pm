@@ -313,7 +313,7 @@ TlsMockTest - shared TLS capability-test support for signalwire-perl.
 
 =head1 DESCRIPTION
 
-Spawns the porting-sdk shared mocks in C<--tls> mode on dedicated ports and
+Spawns the shared mock servers in C<--tls> mode on dedicated ports and
 wires CA trust via C<SSL_CERT_FILE> pointing at the throwaway test CA, so the
 real Perl SDK clients (RELAY over wss://, REST over https://) and the SDK's own
 HTTPS server can be exercised over genuinely-verified TLS — no transport mocks,

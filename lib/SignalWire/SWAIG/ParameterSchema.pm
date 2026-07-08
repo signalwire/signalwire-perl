@@ -418,9 +418,8 @@ property was marked required, just as hand-written schemas omit it).
 
 It is a B<convenience over the same wire output, not a new format>. The
 untyped-hashref path into C<define_tool> is unchanged and still accepted, so
-Python parity and every existing caller keep working; the builder is purely
-additive (see F<PORT_ADDITIONS.md>). This is the Perl realisation of the
-cross-port Tier-2 flagship idiom: a typed SWAIG tool-parameter builder.
+every existing caller keeps working; the builder is purely additive. It is a
+typed, chainable builder for SWAIG tool parameters.
 
 =head2 Property kinds
 

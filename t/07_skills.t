@@ -9,17 +9,17 @@ use_ok('SignalWire::Skills::SkillRegistry');
 use_ok('SignalWire::Agent::AgentBase');
 
 # ============================================================
-# 1. SkillRegistry - list all 18 skills
+# 1. SkillRegistry - list all 17 skills
 # ============================================================
-subtest 'registry lists 18 skills' => sub {
+subtest 'registry lists 17 skills' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 18, '18 built-in skills registered');
+    is(scalar @$skills, 17, '17 built-in skills registered');
 
     my @expected = sort qw(
         api_ninjas_trivia claude_skills datasphere datasphere_serverless
-        datetime google_maps info_gatherer joke math mcp_gateway
-        native_vector_search play_background_file spider swml_transfer
+        datetime google_maps info_gatherer joke math native_vector_search
+        play_background_file spider swml_transfer
         weather_api web_search wikipedia_search custom_skills
     );
     is_deeply($skills, \@expected, 'all expected skills present');
@@ -264,14 +264,27 @@ subtest 'manager merges prompt sections' => sub {
 };
 
 # ============================================================
-# 20. All 18 skills instantiate
+# 20. All 17 skills instantiate
 # ============================================================
-subtest 'all 18 skills instantiate' => sub {
+subtest 'all 17 skills instantiate' => sub {
+    # Let the network-only skill's SSRF guard accept a test URL.
+    local $ENV{SWML_ALLOW_PRIVATE_URLS} = '1';
+
     my @skill_names = qw(
         api_ninjas_trivia claude_skills datasphere datasphere_serverless
-        datetime google_maps info_gatherer joke math mcp_gateway
-        native_vector_search play_background_file spider swml_transfer
+        datetime google_maps info_gatherer joke math native_vector_search
+        play_background_file spider swml_transfer
         weather_api web_search wikipedia_search custom_skills
+    );
+
+    # Skills whose setup() requires mandatory config get it here.
+    # claude_skills needs an existing skills_path (real SKILL.md discovery);
+    # an empty temp dir is a valid (empty) skill set.
+    require File::Temp;
+    my $claude_dir = File::Temp::tempdir( CLEANUP => 1 );
+    my %params_for = (
+        native_vector_search => { remote_url => 'http://search.example.test:8001' },
+        claude_skills        => { skills_path => $claude_dir },
     );
 
     for my $name (@skill_names) {
@@ -279,7 +292,8 @@ subtest 'all 18 skills instantiate' => sub {
         my $factory = SignalWire::Skills::SkillRegistry->get_factory($name);
         ok(defined $factory, "$name: factory found");
 
-        my $skill = eval { $factory->new(agent => $agent, params => {}) };
+        my $params = $params_for{$name} // {};
+        my $skill = eval { $factory->new(agent => $agent, params => $params) };
         ok(defined $skill, "$name: instantiated") or diag($@);
         is($skill->skill_name, $name, "$name: correct skill_name");
 

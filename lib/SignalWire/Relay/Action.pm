@@ -121,15 +121,23 @@ extends 'SignalWire::Relay::Action';
 
 sub _stop_method { return 'calling.play.stop' }
 
-sub pause ($self) {
-    return $self->_execute_subcommand('calling.play.pause');
+sub pause ( $self, $behavior = undef ) {
+    my $client = $self->_client;
+    return unless $client;
+    my $params = {
+        node_id    => $self->node_id,
+        call_id    => $self->call_id,
+        control_id => $self->control_id,
+    };
+    $params->{behavior} = $behavior if defined $behavior;
+    return $client->execute( 'calling.play.pause', $params );
 }
 
 sub resume ($self) {
     return $self->_execute_subcommand('calling.play.resume');
 }
 
-sub volume ( $self, $vol ) {
+sub volume ( $self, $volume ) {
     my $client = $self->_client;
     return unless $client;
     return $client->execute(
@@ -138,7 +146,7 @@ sub volume ( $self, $vol ) {
             node_id    => $self->node_id,
             call_id    => $self->call_id,
             control_id => $self->control_id,
-            volume     => $vol,
+            volume     => $volume,
         }
     );
 }
@@ -205,6 +213,39 @@ extends 'SignalWire::Relay::Action';
 # calling.collect.stop. The standalone collect uses StandaloneCollect
 # below.
 sub _stop_method { return 'calling.play_and_collect.stop' }
+
+# play_and_collect wraps an embedded play, so the collect action exposes the
+# same play controls (pause/resume/volume) the reference projects onto
+# CollectAction — they act on the embedded play leg.
+sub pause ( $self, $behavior = undef ) {
+    my $client = $self->_client;
+    return unless $client;
+    my $params = {
+        node_id    => $self->node_id,
+        call_id    => $self->call_id,
+        control_id => $self->control_id,
+    };
+    $params->{behavior} = $behavior if defined $behavior;
+    return $client->execute( 'calling.play_and_collect.pause', $params );
+}
+
+sub resume ($self) {
+    return $self->_execute_subcommand('calling.play_and_collect.resume');
+}
+
+sub volume ( $self, $volume ) {
+    my $client = $self->_client;
+    return unless $client;
+    return $client->execute(
+        'calling.play_and_collect.volume',
+        {
+            node_id    => $self->node_id,
+            call_id    => $self->call_id,
+            control_id => $self->control_id,
+            volume     => $volume,
+        }
+    );
+}
 
 sub start_input_timers ($self) {
     return $self->_execute_subcommand('calling.collect.start_input_timers');
@@ -371,8 +412,10 @@ C<url> / C<duration> / C<size> result accessors.
 =item * B<::Detect> — C<detect_result>; resolves on the first
 C<params.detect> payload.
 
-=item * B<::Collect> / B<::StandaloneCollect> — C<start_input_timers>,
-C<collect_result>; filters stray C<calling.call.play> events.
+=item * B<::Collect> — C<pause(behavior =E<gt> ...)>, C<resume>,
+C<volume($vol)> (act on the embedded play leg of play_and_collect),
+C<start_input_timers>, C<collect_result>; filters stray
+C<calling.call.play> events. B<::StandaloneCollect> inherits these.
 
 =item * B<::Fax> — C<fax_result>; stop verb depends on C<_fax_type>.
 

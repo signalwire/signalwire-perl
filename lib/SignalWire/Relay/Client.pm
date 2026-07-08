@@ -11,7 +11,12 @@ use Time::HiRes ();
 use JSON qw(encode_json decode_json);
 use IO::Socket::INET;
 use IO::Socket::SSL;
-use Protocol::WebSocket::Client;
+
+# Protocol::WebSocket::Client (a SEPARATE CPAN dist from Protocol::WebSocket) is
+# the live WebSocket transport, needed ONLY when a socket is actually opened in
+# connect_ws. It is loaded lazily there (require, not a compile-time use) so
+# code paths that never connect — pure frame capture / event decoding — don't
+# drag in the transport dependency.
 use SignalWire::Relay::Constants qw(
     PROTOCOL_VERSION
     CALL_TERMINAL_STATES
@@ -191,6 +196,7 @@ sub connect_ws ($self) {
         }
     }
 
+    require Protocol::WebSocket::Client;
     my $ws = Protocol::WebSocket::Client->new( url => $url );
 
     $ws->on(
@@ -303,10 +309,11 @@ sub execute ( $self, $method, $params = undef ) {
 
     my $id = _generate_uuid();
 
-    # Add protocol to params (except for signalwire.connect itself)
-    if ( $method ne 'signalwire.connect' && $self->protocol ) {
-        $params->{protocol} = $self->protocol;
-    }
+    # Python parity: RelayClient._send_request sends params VERBATIM — the
+    # server-assigned protocol is echoed only on the signalwire.connect
+    # handshake (see authenticate), NOT injected into every calling.*/messaging.*
+    # frame. Injecting it here produced a phantom ``protocol`` key on every wire
+    # frame that the reference never emits.
 
     my $request = {
         jsonrpc => '2.0',
@@ -448,8 +455,9 @@ sub dial ( $self, %opts ) {
     my $on_completed = delete $opts{on_completed};
 
     my %params = ( tag => $tag );
-    $params{devices}              = $opts{devices} if $opts{devices};
-    $params{region}               = $opts{region}  if $opts{region};
+    $params{devices}              = $opts{devices}      if $opts{devices};
+    $params{region}               = $opts{region}       if $opts{region};
+    $params{max_duration}         = $opts{max_duration} if $opts{max_duration};
     $params{max_price_per_minute} = $opts{max_price_per_minute}
         if exists $opts{max_price_per_minute};
 
@@ -865,6 +873,37 @@ sub run ($self) {
     return;
 }
 
+# --- RelayError ---
+#
+# Error returned by the RELAY server. Mirrors the Python reference's
+# RelayError(code, message): a small exception object carrying the numeric
+# server error code and its human message, stringifying as
+# "RELAY error <code>: <message>". Thrown by RPC helpers when the server
+# rejects a request; catchable via eval { ... } / ref($@).
+package SignalWire::Relay::Client::RelayError;
+use strict;
+use warnings;
+use feature 'signatures';
+no warnings 'experimental::signatures';
+
+use overload
+    '""'     => sub { $_[0]->{_string} },
+    fallback => 1;
+
+sub new ( $class, %args ) {
+    my $code    = $args{code}    // 0;
+    my $message = $args{message} // '';
+    my $self    = {
+        code    => $code,
+        message => $message,
+        _string => "RELAY error $code: $message",
+    };
+    return bless $self, $class;
+}
+
+sub code    ($self) { return $self->{code} }
+sub message ($self) { return $self->{message} }
+
 1;
 
 __END__
@@ -954,7 +993,7 @@ bare list.
 
 L<SignalWire::Relay::Call>, L<SignalWire::Relay::Message>,
 L<SignalWire::Relay::Event>, L<SignalWire::Relay::Constants>, and the
-RELAY protocol guide in F<porting-sdk/RELAY_IMPLEMENTATION_GUIDE.md>.
+SignalWire RELAY protocol documentation.
 
 =head1 LICENSE
 

@@ -4,12 +4,13 @@ Symbols the Perl port ships that have no Python-reference equivalent.
 One line per symbol: `<fully.qualified.symbol>: <one-sentence rationale>`.
 Checked by `scripts/diff_port_surface.py` against `python_surface.json`.
 
-See also: PORT_OMISSIONS.md for Python-reference symbols we deliberately skip.
+See also: PORT_OMISSIONS.md for Python-reference symbols the port does not implement.
 
 ---
 
 signalwire.agent_server.AgentServer.list_agents: port-only accessor: Perl convention surfaces a list-style getter where Python uses a generator or direct attribute access
 signalwire.agent_server.AgentServer.psgi_app: port-only: Perl ports use Plack/PSGI; psgi_app returns a coderef any Plack handler consumes
+signalwire.agents.bedrock.BedrockAgent.render_swml: port-only public alias: BedrockAgent overrides the public render_swml (Perl's user-facing SWML dump) to swap the ai verb for amazon_bedrock; Python keeps this internal as _render_swml (mirrors AgentBase.render_swml addition)
 signalwire.core.agent_base.AgentBase.create_tool_token: prompt_mixin_lifted: Perl rolls up StateMixin / SessionManager onto AgentBase so callers don't reach into a sub-object — mirrors the documented tool_mixin_lifted pattern
 signalwire.core.agent_base.AgentBase.get_contexts: prompt_mixin_lifted: Perl AgentBase exposes a get_contexts() accessor for the contexts list; Python uses PromptMixin.contexts (attribute access)
 signalwire.core.agent_base.AgentBase.get_post_prompt: prompt_mixin_lifted: Perl rolls up PromptMixin onto AgentBase; Python keeps these on PromptMixin (mirrors tool_mixin_lifted pattern)
@@ -125,7 +126,7 @@ signalwire.relay.message_state.MessageState.is_state: tier3-typed-state port-onl
 signalwire.relay.message_state.MessageState.is_terminal: tier3-typed-state port-only: MessageState->is_terminal($v) — terminal set {delivered,undelivered,failed}; false (never dies) on undef/in-flight/received/unknown (see MessageState).
 signalwire.relay.message_state.MessageState.states: tier3-typed-state port-only: MessageState->states is the ordered arrayref of message-delivery states (see MessageState).
 signalwire.rest._pagination.PaginatedIterator.all: port-only: drains the iterator into a list (Perl idiom for `list(iter)`); Python uses `list(it)` directly
-signalwire.rest.call_handler.PhoneCallHandler.values: port-only: authoritative list accessor for the enum; Python uses the enum class directly
+signalwire.rest.namespaces.relay_rest_types_generated.PhoneCallHandler.values: port-only: authoritative list accessor for the call_handler enum; Python uses the type/enum class directly (the REST-generated oracle houses PhoneCallHandler as a relay-rest generated type)
 signalwire.rest.namespaces.calling.CallingNamespace.update_call: port-only helper for updating an in-flight call; Python clients use client.calls(sid).update()
 signalwire.rest.namespaces.fabric.AddressesResource: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
 signalwire.rest.namespaces.fabric.AddressesResource.get: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
@@ -148,6 +149,8 @@ signalwire.utils.schema_utils.SchemaUtils.get_verb_names: port-only: Perl Schema
 signalwire.utils.schema_utils.SchemaUtils.has_verb: port-only: Perl SchemaUtils exposes verb-introspection helpers (get_verb, get_verb_names, has_verb, verb_count, instance); Python keeps these internal
 signalwire.utils.schema_utils.SchemaUtils.instance: port-only: Perl SchemaUtils exposes verb-introspection helpers (get_verb, get_verb_names, has_verb, verb_count, instance); Python keeps these internal
 signalwire.utils.schema_utils.SchemaUtils.verb_count: port-only: Perl SchemaUtils exposes verb-introspection helpers (get_verb, get_verb_names, has_verb, verb_count, instance); Python keeps these internal
+signalwire.web.web_service.WebService.file_allowed: port-only public helper: Perl exposes the size+extension filter as a callable predicate (Ruby's file_allowed?); Python keeps it private as _is_file_allowed
+signalwire.web.web_service.WebService.psgi_app: port-only: Perl ports use Plack/PSGI; WebService.psgi_app returns the static-file-serving coderef any Plack handler consumes; Python builds a FastAPI app internally
 signalwire.rest._base.CrudResource.delete_resource: perl-idiom port-only: Perl reserves the bareword ``delete`` for the built-in hash operator, so the canonical method is ``delete_resource``; the Python parity alias ``delete`` is also exposed
 signalwire.rest._base.HttpClient.delete_request: perl-idiom port-only: Perl reserves the bareword ``delete`` for the built-in hash operator, so HttpClient exposes ``delete_request``; the Python parity alias ``delete`` is also exposed
 signalwire.rest.namespaces.compat.CompatPhoneNumbers.delete_number: perl-idiom port-only: Compat resource keeps the domain-named ``delete_number`` alongside the Python-parity ``delete`` alias
@@ -161,3 +164,25 @@ signalwire.rest.namespaces.registry.RegistryNumbers.delete_number: perl-idiom po
 signalwire.rest.namespaces.video.VideoRoomRecordings.delete_recording: perl-idiom port-only: VideoRoomRecordings keeps the domain-named ``delete_recording`` alongside the Python-parity ``delete`` alias
 signalwire.rest.namespaces.video.VideoStreams.delete_stream: perl-idiom port-only: VideoStreams keeps the domain-named ``delete_stream`` alongside the Python-parity ``delete`` alias
 signalwire.core.security.webhook_middleware.wrap: perl-idiom port-only: Plack middleware wrap() instance method (Plack convention) — Python uses make_webhook_validation_dependency factory function instead
+
+# --- item H/I surface-align additions ---
+
+# AuthHandler Plack analogs of Python's Flask/FastAPI-bound methods. Perl's
+# standard web interface is PSGI/Plack; plack_middleware/plack_dependency are
+# the direct analogs (same shape as Ruby's rack_* additions). The parity names
+# flask_decorator/get_fastapi_dependency are also present (real impls).
+signalwire.core.auth_handler.AuthHandler.plack_middleware: port-only: PSGI/Plack analog of the Flask decorator; wraps a PSGI app and 401s unauthenticated requests (Python's web binding is Flask/FastAPI)
+signalwire.core.auth_handler.AuthHandler.plack_dependency: port-only: PSGI/Plack analog of the FastAPI dependency; a PSGI-env callable returning the auth decision (Python's web binding is FastAPI)
+
+# RelayError typed accessors. Python's RelayError exposes code/message as plain
+# attributes (only __init__ on the surface); Perl exposes them as explicit
+# read accessors (same idiom as the RecordAction url/duration/size accessors).
+signalwire.relay.client.RelayError.code: port-only: Perl RelayError exposes code as an explicit accessor; Python uses attribute-style access
+signalwire.relay.client.RelayError.message: port-only: Perl RelayError exposes message as an explicit accessor; Python uses attribute-style access
+
+# from_payload on the Perl-only RELAY events. from_payload is inherited from the
+# base Event and projected onto every event class; the three Perl-only events
+# (already PORT_ADDITIONS as classes) therefore also carry it.
+signalwire.relay.event.AuthorizationStateEvent.from_payload: port-only: from_payload inherited from the base Event onto the Perl-only AuthorizationStateEvent
+signalwire.relay.event.CallDisconnectEvent.from_payload: port-only: from_payload inherited from the base Event onto the Perl-only CallDisconnectEvent
+signalwire.relay.event.DisconnectEvent.from_payload: port-only: from_payload inherited from the base Event onto the Perl-only DisconnectEvent

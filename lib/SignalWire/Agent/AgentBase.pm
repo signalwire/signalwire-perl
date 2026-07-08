@@ -51,6 +51,7 @@ has pom_sections => ( is => 'rw', default => sub { [] } );
 has hints            => ( is => 'rw', default => sub { [] } );
 has pattern_hints    => ( is => 'rw', default => sub { [] } );
 has languages        => ( is => 'rw', default => sub { [] } );
+has multilingual     => ( is => 'rw', default => sub { undef } );
 has pronunciations   => ( is => 'rw', default => sub { [] } );
 has params           => ( is => 'rw', default => sub { {} } );
 has global_data      => ( is => 'rw', default => sub { {} } );
@@ -70,6 +71,12 @@ has pre_answer_verbs  => ( is => 'rw', default => sub { [] } );
 has post_answer_verbs => ( is => 'rw', default => sub { [] } );
 has post_ai_verbs     => ( is => 'rw', default => sub { [] } );
 has answer_config     => ( is => 'rw', default => sub { {} } );
+
+# SIP routing (Python parity: AgentBase SIP username mapping).
+has sip_routing_enabled => ( is => 'rw', default => sub { 0 } );
+has sip_auto_map        => ( is => 'rw', default => sub { 1 } );
+has sip_path            => ( is => 'rw', default => sub { '/sip' } );
+has sip_usernames       => ( is => 'rw', default => sub { [] } );
 
 # Context system (lazy)
 has context_builder => (
@@ -191,10 +198,12 @@ sub set_post_prompt {
 
 sub prompt_add_section {
     my ( $self, $title, $body, %opts ) = @_;
-    my $section = {
-        title => $title,
-        body  => $body // '',
-    };
+    my $section = { title => $title };
+
+    # Python parity: signalwire.pom Section.to_dict emits ``body`` only when
+    # it is non-empty (``if self.body``). Mirror that here so a bullets-only
+    # section renders without a spurious ``body => ""`` key.
+    $section->{body}    = $body          if defined $body && length $body;
     $section->{bullets} = $opts{bullets} if $opts{bullets};
     push @{ $self->pom_sections }, $section;
     return $self;
@@ -457,9 +466,41 @@ sub add_hints {
     return $self;
 }
 
+# Add a complex pattern-matching hint. Perl hashref-kwargs idiom of
+# Python's add_pattern_hint(hint, pattern, replace, ignore_case=False):
+# the caller passes a hashref carrying { hint, pattern, replace,
+# ignore_case }. A STRUCTURED hint dict (not a bare string) is appended
+# to pattern_hints and flows into the rendered SWML ``ai.hints`` list,
+# byte-parity with Python's ``self._hints.append({...})``. Matches
+# Python's guard: only appended when hint, pattern, AND replace are all
+# truthy; ignore_case defaults to false.
 sub add_pattern_hint {
-    my ( $self, $pattern ) = @_;
-    push @{ $self->pattern_hints }, $pattern;
+    my ( $self, $args ) = @_;
+    $args = {} unless defined $args && ref($args) eq 'HASH';
+
+    my $hint    = $args->{hint};
+    my $pattern = $args->{pattern};
+    my $replace = $args->{replace};
+    my $ignore_case =
+        exists $args->{ignore_case}
+        ? ( $args->{ignore_case} ? JSON::true : JSON::false )
+        : JSON::false;
+
+    if (   defined $hint
+        && length $hint
+        && defined $pattern
+        && length $pattern
+        && defined $replace
+        && length $replace )
+    {
+        push @{ $self->pattern_hints },
+            {
+            hint        => $hint,
+            pattern     => $pattern,
+            replace     => $replace,
+            ignore_case => $ignore_case,
+            };
+    }
     return $self;
 }
 
@@ -484,6 +525,21 @@ sub add_language {
 sub set_languages {
     my ( $self, $langs ) = @_;
     $self->languages($langs);
+    return $self;
+}
+
+# Configure ASR-driven multilingual mode (Mode B). Emits a top-level
+# ``multilingual`` object on the AI verb: the recognizer runs in
+# code-switching mode and the agent answers in whatever language the caller
+# actually spoke. Mutually exclusive with set_languages() — when both are
+# set the server prefers ``multilingual`` and ignores ``languages``. Mirrors
+# AIConfigMixin.set_multilingual: an empty/non-hash config is a no-op so the
+# rendered SWML is unchanged. Returns $self for chaining.
+sub set_multilingual {
+    my ( $self, $config ) = @_;
+    if ( defined $config && ref($config) eq 'HASH' && %$config ) {
+        $self->multilingual($config);
+    }
     return $self;
 }
 
@@ -756,6 +812,128 @@ sub add_post_answer_verb {
 sub add_post_ai_verb {
     my ( $self, $verb_name, $verb_config ) = @_;
     push @{ $self->post_ai_verbs }, { $verb_name => $verb_config };
+    return $self;
+}
+
+# get_name — this agent's name (Python parity: AgentBase.get_name).
+sub get_name {
+    my ($self) = @_;
+    return $self->name;
+}
+
+# add_answer_verb(config) — set the auto-answer verb configuration used when
+# the agent picks up (Python parity: AgentBase.add_answer_verb).
+sub add_answer_verb {
+    my ( $self, $config ) = @_;
+    $self->answer_config( $config // {} );
+    return $self;
+}
+
+# enable_sip_routing(auto_map => 1, path => '/sip') — turn on SIP username
+# routing for this agent (Python parity: AgentBase.enable_sip_routing).
+sub enable_sip_routing {
+    my ( $self, %opts ) = @_;
+    $self->sip_routing_enabled(1);
+    $self->sip_auto_map( exists $opts{auto_map} ? $opts{auto_map} : 1 );
+    my $path = $opts{path} // '/sip';
+    $self->sip_path($path);
+
+    # Register a routing callback at the SIP path so the served /sip endpoint
+    # actually consults the SIP username mapping (Python parity:
+    # enable_sip_routing calls register_routing_callback(sip_routing_callback,
+    # path=path)). The callback extracts the SIP username from the request body;
+    # if it is registered with this agent it is handled here (return undef → the
+    # agent renders its own SWML), otherwise it delegates to the SIP-routing hook
+    # (on_sip_request) which may return a redirect URL for a username routed to a
+    # different agent.
+    $self->register_routing_callback(
+        $path,
+        sub {
+            my ( $body, $headers ) = @_;
+            return $self->_sip_routing_callback( $body, $headers );
+        },
+    );
+
+    $self->auto_map_sip_usernames if $self->sip_auto_map;
+    return $self;
+}
+
+# _sip_routing_callback(body, headers) — the framework-free routing callback
+# registered at the SIP path. Extracts the SIP username from the body; if it is
+# registered with THIS agent, returns undef (this agent handles the request and
+# renders its SWML). If it is not registered here, delegates to the
+# _on_sip_request hook, which a subclass may override to return a redirect URL
+# for the agent that owns that username. Python parity: the inner
+# sip_routing_callback closure created by AgentBase.enable_sip_routing (a
+# closure there, an underscore-private method here — off the public surface).
+sub _sip_routing_callback {
+    my ( $self, $body, $headers ) = @_;
+    my $sip_username = $self->extract_sip_username($body);
+    return unless defined $sip_username && length $sip_username;
+
+    $self->_logger->info("sip_username_extracted username=$sip_username");
+
+    if ( grep { lc($_) eq lc($sip_username) } @{ $self->sip_usernames } ) {
+        $self->_logger->info("sip_username_matched username=$sip_username");
+
+        # Registered with this agent — handled here, no redirect.
+        return;
+    }
+
+    $self->_logger->info("sip_username_not_matched username=$sip_username");
+    return $self->_on_sip_request( $sip_username, $body, $headers );
+}
+
+# _on_sip_request(username, body, headers) — extension hook invoked when a SIP
+# username is NOT registered with this agent. The base returns undef (no
+# redirect; routing continues / this agent renders). A multi-agent router
+# (AgentServer) or a subclass overrides this to return the URL of the agent that
+# owns the username. Internal hook (underscore-private) — not part of the
+# Python public surface.
+sub _on_sip_request {
+    my ( $self, $username, $body, $headers ) = @_;
+    return;
+}
+
+# register_sip_username(username) — register a SIP username that routes to
+# this agent (Python parity: AgentBase.register_sip_username). Deduplicated.
+sub register_sip_username {
+    my ( $self, $username ) = @_;
+    return $self unless defined $username && length $username;
+
+    # Python parity: AgentBase.register_sip_username does
+    # ``self._sip_usernames.add(sip_username.lower())`` — the store is a
+    # LOWER-CASED set, so "Bob"/"BOB"/"bob" collapse to one entry. Without
+    # the case-fold the same username registered in different casings would
+    # accumulate duplicate routes.
+    $username = lc $username;
+    push @{ $self->sip_usernames }, $username
+        unless grep { $_ eq $username } @{ $self->sip_usernames };
+    return $self;
+}
+
+# auto_map_sip_usernames — derive SIP usernames from the agent name and
+# route (lower-cased, stripped to [a-z0-9_]) plus a no-vowels variant of the
+# name, registering each. Deduplicated (Python parity).
+sub auto_map_sip_usernames {
+    my ($self) = @_;
+    my $sanitize = sub {
+        my $v = lc( $_[0] // '' );
+        $v =~ s/[^a-z0-9_]//g;
+        return $v;
+    };
+    my $clean_name = $sanitize->( $self->name );
+    $self->register_sip_username($clean_name) if length $clean_name;
+
+    my $clean_route = $sanitize->( $self->route );
+    $self->register_sip_username($clean_route)
+        if length $clean_route && $clean_route ne $clean_name;
+
+    if ( length $clean_name > 3 ) {
+        ( my $no_vowels = $clean_name ) =~ s/[aeiou]//g;
+        $self->register_sip_username($no_vowels)
+            if length $no_vowels && $no_vowels ne $clean_name;
+    }
     return $self;
 }
 
@@ -1290,6 +1468,14 @@ sub _build_ai_verb {
     # Languages
     $ai{languages} = $self->languages if @{ $self->languages };
 
+    # ASR-driven multilingual mode (set_multilingual): emit the top-level
+    # ``multilingual`` object on the AI verb. Mutually exclusive with
+    # ``languages`` — the server prefers ``multilingual`` when both present.
+    {
+        my $ml = $self->multilingual;
+        $ai{multilingual} = $ml if defined $ml && ref($ml) eq 'HASH' && %$ml;
+    }
+
     # Pronunciations
     $ai{pronounce} = $self->pronunciations if @{ $self->pronunciations };
 
@@ -1357,6 +1543,132 @@ sub psgi_app {
     return $self->_build_psgi_app;
 }
 
+# handle_request — the framework-free request-dispatch core for AgentBase.
+#
+# Python parity: AgentBase.handle_request overrides SWMLService.handle_request
+# so the primitive dispatch surface renders SWML via AgentBase's render_swml
+# (mirroring the FastAPI _handle_root_request path) instead of the base
+# render_document. Performs proxy detection, basic-auth, the routing-callback
+# check, and on_swml_request modification over plain primitives, returning a
+# ($status, \%headers, $body_string) triple with the 401-auth and 307-redirect
+# behavior preserved.
+#
+#   $method  HTTP method string ("GET"/"POST")
+#   $url     full request URL (callback-path derivation + proxy detection)
+#   $headers hashref of request headers
+#   $body    already-parsed JSON body hashref for POST, or undef
+sub handle_request {
+    my ( $self, $method, $url, $headers, $body ) = @_;
+    $headers //= {};
+    $body    //= {};
+    my $callback_path = $self->_callback_path_for_url($url);
+
+    # Auth (over the plain headers hashref; inherited from SWMLService).
+    unless ( $self->_check_basic_auth_headers($headers) ) {
+        return (
+            401,
+            { 'WWW-Authenticate' => 'Basic' },
+            encode_json( { error => 'Unauthorized' } ),
+        );
+    }
+
+    # A synthetic PSGI-style env so render_swml's proxy detection sees the
+    # request's forwarding headers (the primitive analog of the $env the
+    # PSGI path passes).
+    my $request_env = $self->_env_from_primitives( $url, $headers );
+
+    # call_id from the parsed body (POST); routing callback: (body, headers).
+    if ( $method eq 'POST' && ref $body eq 'HASH' && %$body ) {
+        if ( defined $callback_path
+            && $self->routing_callbacks->{$callback_path} )
+        {
+            my $cb    = $self->routing_callbacks->{$callback_path};
+            my $route = eval { $cb->( $body, $headers ) };
+            if ($@) {
+                $self->log->error( "error_in_routing_callback", error => "$@" );
+            } elsif ( defined $route ) {
+                return ( 307, { 'Location' => $route }, '' );
+            }
+        }
+    }
+
+    # Per-request dynamic configuration (multi-tenancy): clone this agent and
+    # let the callback mutate the clone, then render off the clone — so the
+    # served path (which routes through handle_request) keeps the same dynamic
+    # config behavior the old inline _handle_swml had.
+    my $agent = $self;
+    if ( $self->dynamic_config_callback ) {
+        $agent = $self->_clone_for_request;
+        my $query_params = _query_params_from_url($url);
+        my $body_params  = ( ref $body eq 'HASH' ) ? $body : {};
+        my $lc_headers   = {};
+        for my $k ( keys %$headers ) {
+            $lc_headers->{ lc $k } = $headers->{$k};
+        }
+        eval {
+            $self->dynamic_config_callback->( $query_params, $body_params, $lc_headers, $agent );
+            1;
+        } or do {
+            $self->log->error( "error_in_dynamic_config", error => "$@" );
+        };
+    }
+
+    # Subclass request-modification hook (on_swml_request); the primitive
+    # path passes undef for the FastAPI-Request third arg.
+    my $modifications = eval { $agent->on_swml_request( $body, $callback_path, undef ) };
+    if ($@) {
+        $self->log->error( "error_in_request_modifier", error => "$@" );
+        $modifications = undef;
+    }
+
+    my $swml = $agent->render_swml($request_env);
+    if ( $modifications && ref $modifications eq 'HASH' ) {
+        $swml = { %$swml, %$modifications };
+    }
+    return ( 200, {}, encode_json($swml) );
+}
+
+# Parse the query string of a request URL into a plain hashref (last value
+# wins for repeated keys). Used to feed dynamic_config_callback the same
+# query-parameter view the PSGI path derived from $req->query_parameters.
+sub _query_params_from_url {
+    my ($url) = @_;
+    my %params;
+    return \%params unless defined $url && $url =~ /\?(.*)$/;
+    my $qs = $1;
+    for my $pair ( split /[&;]/, $qs ) {
+        next unless length $pair;
+        my ( $k, $v ) = split /=/, $pair, 2;
+        next unless defined $k && length $k;
+        $v //= '';
+        for ( $k, $v ) {
+            tr/+/ /;
+            s/%([0-9A-Fa-f]{2})/chr hex $1/ge;
+        }
+        $params{$k} = $v;
+    }
+    return \%params;
+}
+
+# Build a synthetic PSGI env from handle_request's (url, headers) so the
+# proxy-URL detection in render_swml/_detect_proxy_url works off the same
+# forwarding headers the PSGI path would carry.
+sub _env_from_primitives {
+    my ( $self, $url, $headers ) = @_;
+    my %env;
+    for my $k ( keys %$headers ) {
+        my $cgi = uc $k;
+        $cgi =~ s/-/_/g;
+        $env{"HTTP_$cgi"} = $headers->{$k}
+            unless $cgi =~ /^HTTP_/;    # already CGI-cased
+        $env{$k} = $headers->{$k} if $k =~ /^HTTP_/;
+    }
+    if ( defined $url && $url =~ m{^([a-z][a-z0-9+.\-]*)://}i ) {
+        $env{'psgi.url_scheme'} = lc $1;
+    }
+    return \%env;
+}
+
 sub _build_psgi_app {
     my ($self) = @_;
     require Plack::Request;
@@ -1403,7 +1715,32 @@ sub _build_psgi_app {
             $is_main = 1;
         }
 
-        if ( $is_main || $is_swaig || $is_post_prompt ) {
+        # The MAIN SWML route delegates its auth/routing/render DECISION to the
+        # decomposed handle_request core (401 auth, 307 routing-callback
+        # redirect, 200 render) so the served path can no longer skip the
+        # routing-callback 307 the old inline _handle_swml did. swaig /
+        # post_prompt keep the inline auth + handler below.
+        if ( $is_main && ( $req->method eq 'GET' || $req->method eq 'POST' ) ) {
+            return $agent->_serve_main_via_handle_request($env);
+        }
+
+        # A request to a registered routing-callback path (e.g. the SIP path
+        # from enable_sip_routing) also flows through handle_request, so the
+        # stored callback is actually consulted at its served endpoint — a 307
+        # redirect (routed elsewhere) or the agent's own SWML (handled here).
+        # Without this, a /sip mapping would be stored-but-unconsulted (the
+        # dispatch would fall through to the 404 below). Matches on the path via
+        # the same _callback_path_for_url the routing dispatch uses.
+        if (   !$is_swaig
+            && !$is_post_prompt
+            && !$is_mcp
+            && ( $req->method eq 'GET' || $req->method eq 'POST' )
+            && defined $agent->_callback_path_for_url($path) )
+        {
+            return $agent->_serve_main_via_handle_request($env);
+        }
+
+        if ( $is_swaig || $is_post_prompt ) {
             my $auth_ok = $agent->_check_auth($env);
             unless ($auth_ok) {
                 return [
@@ -1418,9 +1755,7 @@ sub _build_psgi_app {
         }
 
         # Route dispatch
-        if ( $is_main && ( $req->method eq 'GET' || $req->method eq 'POST' ) ) {
-            return $agent->_handle_swml( $env, $req );
-        } elsif ( $is_swaig && $req->method eq 'POST' ) {
+        if ( $is_swaig && $req->method eq 'POST' ) {
             return $agent->_handle_swaig( $env, $req );
         } elsif ( $is_post_prompt && $req->method eq 'POST' ) {
             return $agent->_handle_post_prompt( $env, $req );
@@ -1743,6 +2078,249 @@ sub _clone_for_request {
 sub run {
     my ( $self, %opts ) = @_;
     return $self->serve(%opts);
+}
+
+# handle_serverless_request — dispatch a request in a serverless
+# environment (CGI / Lambda / Cloud Functions).
+#
+# Python parity: ServerlessMixin.handle_serverless_request(event, context,
+# mode). Ruby parity: routes through the same PSGI/rack app the HTTP
+# server uses. When mode is not given it is auto-detected via
+# get_execution_mode(). In 'lambda' mode a Lambda-proxy response hashref
+# ({ statusCode, headers, body }) is returned; in 'cgi' mode the rendered
+# body string is returned; any other mode falls through to run().
+sub handle_serverless_request {
+    my ( $self, %opts ) = @_;
+    my $event   = $opts{event};
+    my $context = $opts{context};
+
+    require SignalWire::Core::LoggingConfig;
+    my $mode = $opts{mode} // SignalWire::Core::LoggingConfig::get_execution_mode();
+
+    if ( $mode eq 'lambda' ) {
+        return $self->_run_serverless_lambda($event);
+    } elsif ( $mode eq 'cgi' ) {
+        return $self->_run_serverless_cgi;
+    } elsif ( $mode eq 'google_cloud_function' || $mode eq 'gcf' ) {
+        return $self->_run_serverless_gcf($event);
+    } elsif ( $mode eq 'azure_function' || $mode eq 'azure' ) {
+        return $self->_run_serverless_azure($event);
+    }
+
+    return $self->run( host => $opts{host}, port => $opts{port} );
+}
+
+# Build a minimal PSGI env for a serverless/CGI invocation.
+sub _serverless_psgi_env {
+    my ( $self, %args ) = @_;
+    my $body = $args{body} // '';
+    my $input;
+    open $input, '<', \$body or ( $input = undef );
+    return {
+        PATH_INFO      => $args{path}   // '/',
+        REQUEST_METHOD => $args{method} // 'GET',
+        QUERY_STRING   => $args{query}  // '',
+        'psgi.input'   => $input,
+        'psgi.errors'  => \*STDERR,
+    };
+}
+
+# Lambda: dispatch the event DIRECTLY (Python parity:
+# ServerlessMixin.handle_serverless_request, mode "lambda") — this does NOT
+# route through the PSGI/framework app. It (1) enforces Basic auth and returns a
+# 401 challenge when it fails, (2) strips rawPath and dispatches "/swaig"
+# (function named in the body) or a path-named function to the SWAIG executor,
+# and (3) falls back to rendering the SWML document at the root. Each success is
+# a {statusCode:200, headers:{Content-Type:application/json}, body:<json>}
+# Lambda-proxy response.
+sub _run_serverless_lambda {
+    my ( $self, $event ) = @_;
+
+    # Auth challenge (Python: _check_lambda_auth -> _send_lambda_auth_challenge).
+    unless ( $self->_check_lambda_auth($event) ) {
+        return {
+            statusCode => 401,
+            headers    => { 'WWW-Authenticate' => 'Basic', 'Content-Type' => 'application/json' },
+            body       => JSON::encode_json( { error => 'Unauthorized' } ),
+        };
+    }
+
+    # No event at all -> root SWML.
+    return $self->_lambda_swml_response unless $event && ref $event eq 'HASH';
+
+    # HTTP API v2 uses rawPath; REST API v1 uses pathParameters.proxy.
+    my $path = $event->{rawPath} // '';
+    $path =~ s{^/+}{};
+    $path =~ s{/+$}{};
+    if ( $path eq '' && ref $event->{pathParameters} eq 'HASH' ) {
+        $path = $event->{pathParameters}{proxy} // '';
+    }
+
+    # Parse the request body for the function name + arguments.
+    my ( $function_name, $args, $call_id, $raw_data ) = ( undef, {}, undef, undef );
+    my $body_content = $event->{body};
+    if ( defined $body_content && length $body_content ) {
+        eval {
+            $raw_data = ref $body_content ? $body_content : JSON::decode_json($body_content);
+            if ( ref $raw_data eq 'HASH' ) {
+                $call_id       = $raw_data->{call_id};
+                $function_name = $raw_data->{function};
+                if ( ref $raw_data->{argument} eq 'HASH' ) {
+                    my $parsed = $raw_data->{argument}{parsed};
+                    if ( ref $parsed eq 'ARRAY' && @$parsed ) {
+                        $args = $parsed->[0];
+                    } elsif ( defined $raw_data->{argument}{raw} ) {
+                        my $decoded = eval { JSON::decode_json( $raw_data->{argument}{raw} ) };
+                        $args = $decoded if ref $decoded eq 'HASH';
+                    }
+                }
+            }
+            1;
+        };    # best-effort parse; empty args on failure (Python parity)
+    }
+
+    # /swaig endpoint with the function named in the body.
+    if (   ( $path eq 'swaig' || $path eq 'swaig/' )
+        && defined $function_name
+        && length $function_name )
+    {
+        return $self->_lambda_swaig_response( $function_name, $args, $call_id, $raw_data );
+    }
+
+    # Path-based function routing (e.g. /say_hello).
+    if ( length $path && $path ne 'swaig' && $path ne 'swaig/' ) {
+        return $self->_lambda_swaig_response( $path, $args, $call_id, $raw_data );
+    }
+
+    # Root path (or /swaig without a function) -> SWML.
+    return $self->_lambda_swml_response;
+}
+
+# _check_lambda_auth — Basic-auth gate for lambda mode (Python parity:
+# ServerlessMixin._check_lambda_auth). Reads the event's headers hashref
+# (case-insensitively) and compares against the agent's configured credentials.
+sub _check_lambda_auth {
+    my ( $self, $event ) = @_;
+    my $headers = ( $event && ref $event->{headers} eq 'HASH' ) ? $event->{headers} : {};
+    return $self->_check_basic_auth_headers($headers) ? 1 : 0;
+}
+
+# _lambda_swaig_response — execute a SWAIG function and shape the 200 response.
+sub _lambda_swaig_response {
+    my ( $self, $function_name, $args, $call_id, $raw_data ) = @_;
+    $args //= {};
+    my $result = $self->on_function_call( $function_name, $args, $raw_data );
+
+    my $result_hash;
+    if ( ref $result eq 'HASH' ) {
+        $result_hash = $result;
+    } elsif ( Scalar::Util::blessed($result) && $result->can('to_hash') ) {
+        $result_hash = $result->to_hash;
+    } else {
+        $result_hash = { response => defined $result ? "$result" : '' };
+    }
+    return {
+        statusCode => 200,
+        headers    => { 'Content-Type' => 'application/json' },
+        body       => JSON::encode_json($result_hash),
+    };
+}
+
+# _lambda_swml_response — render the SWML document as the 200 root response.
+sub _lambda_swml_response {
+    my ($self) = @_;
+    my $doc = $self->render_swml;
+    return {
+        statusCode => 200,
+        headers    => { 'Content-Type' => 'application/json' },
+        body       => ref $doc ? JSON::encode_json($doc) : $doc,
+    };
+}
+
+# CGI: run PATH_INFO through the PSGI app and return the body string.
+sub _run_serverless_cgi {
+    my ($self) = @_;
+    my $body   = '';
+    my $len    = $ENV{CONTENT_LENGTH};
+    if ( defined $len && $len =~ /^\d+$/ && $len > 0 ) {
+        local $/;
+        read( STDIN, $body, $len );
+    }
+
+    my $env = $self->_serverless_psgi_env(
+        path   => $ENV{PATH_INFO}      // '/',
+        method => $ENV{REQUEST_METHOD} // 'GET',
+        query  => $ENV{QUERY_STRING}   // '',
+        body   => $body,
+    );
+
+    my ( undef, undef, $response_body ) = @{ $self->psgi_app->($env) };
+    return _join_psgi_body($response_body);
+}
+
+# Google Cloud Function: an event carries method/path/body (a Flask-request
+# analog); run it through the PSGI app and shape a { status, headers, body }
+# response hashref. Python parity: ServerlessMixin.
+# _handle_google_cloud_function_request. php parity: Adapter::handleGcf.
+sub _run_serverless_gcf {
+    my ( $self, $event ) = @_;
+    $event //= {};
+
+    my $path = $event->{path} // $event->{rawPath} // '/';
+    $path =~ s{\?.*$}{};    # strip any query string from the path
+    my $method = uc( $event->{method} // $event->{httpMethod} // 'GET' );
+
+    my $env = $self->_serverless_psgi_env(
+        path   => $path,
+        method => $method,
+        query  => $event->{query} // '',
+        body   => $event->{body}  // '',
+    );
+
+    my ( $status, $headers, $response_body ) = @{ $self->psgi_app->($env) };
+    return {
+        status  => int($status),
+        headers => { @{ $headers // [] } },
+        body    => _join_psgi_body($response_body),
+    };
+}
+
+# Azure Function: an event carries a request URL + method/body; parse the path
+# out of the URL, run it through the PSGI app, and shape a { status, headers,
+# body } response hashref. Python parity:
+# ServerlessMixin._handle_azure_function_request. php parity:
+# Adapter::handleAzure.
+sub _run_serverless_azure {
+    my ( $self, $event ) = @_;
+    $event //= {};
+
+    my $url = $event->{url} // $event->{Url} // $event->{path} // '/';
+    ( my $path = $url ) =~ s{^[a-z][a-z0-9+.\-]*://[^/]+}{}i;    # strip scheme+authority
+    $path =~ s{\?.*$}{};                                         # strip query
+    $path = '/' unless length $path;
+    my $method = uc( $event->{method} // $event->{Method} // $event->{httpMethod} // 'GET' );
+    my $body   = $event->{body} // $event->{Body} // '';
+
+    my $env = $self->_serverless_psgi_env(
+        path   => $path,
+        method => $method,
+        query  => '',
+        body   => $body,
+    );
+
+    my ( $status, $headers, $response_body ) = @{ $self->psgi_app->($env) };
+    return {
+        status  => int($status),
+        headers => { @{ $headers // [] } },
+        body    => _join_psgi_body($response_body),
+    };
+}
+
+sub _join_psgi_body {
+    my ($body) = @_;
+    return '' unless defined $body;
+    return join( '', @$body ) if ref $body eq 'ARRAY';
+    return "$body";
 }
 
 sub serve {

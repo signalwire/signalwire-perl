@@ -26,7 +26,7 @@ subtest 'SignalWire::RestClient builds client from kwargs' => sub {
     isa_ok($client, 'SignalWire::REST::RestClient');
     ok(defined $client->fabric, 'fabric namespace wired');
     ok(defined $client->calling, 'calling namespace wired');
-    ok(defined $client->compat, 'compat namespace wired');
+    ok(defined $client->project, 'project namespace wired');
 };
 
 subtest 'SignalWire::RestClient builds client from positional args' => sub {

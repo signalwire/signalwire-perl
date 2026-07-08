@@ -60,19 +60,67 @@ sub BUILD {
         },
         handler => sub {
             my ( $a, $raw ) = @_;
-            require SignalWire::SWAIG::FunctionResult;
-            my $dept_name = $a->{department} // '';
-            for my $dept (@$departments) {
-                if ( lc( $dept->{name} ) eq lc($dept_name) ) {
-                    my $result = SignalWire::SWAIG::FunctionResult->new(
-                        response => "Transferring to $dept_name", );
-                    return $result;
-                }
-            }
-            return SignalWire::SWAIG::FunctionResult->new(
-                response => "Department '$dept_name' not found", );
+            return $self->_transfer_to_department( $a, $raw );
         },
     );
+    return;
+}
+
+# Tool handler: transfer_to_department — actually CONNECT the caller to the
+# department's phone number. Python parity (prefabs/receptionist.py
+# _transfer_call_handler): look up the department (from the live global_data,
+# falling back to construction departments), then attach a real connect()
+# action (final => 1, a permanent transfer) so the call is transferred — not
+# just an acknowledgement string. A stub that returns text with no connect()
+# never transfers the call.
+sub _transfer_to_department {
+    my ( $self, $args, $raw_data ) = @_;
+    require SignalWire::SWAIG::FunctionResult;
+
+    my $dept_name = $args->{department} // '';
+
+    my $gdata =
+        ( ref $raw_data eq 'HASH' && ref $raw_data->{global_data} eq 'HASH' )
+        ? $raw_data->{global_data}
+        : $self->global_data;
+    my $departments =
+        ( ref $gdata eq 'HASH' && ref $gdata->{departments} eq 'ARRAY' )
+        ? $gdata->{departments}
+        : $self->departments;
+
+    my $department;
+    for my $dept (@$departments) {
+        if ( lc( $dept->{name} ) eq lc($dept_name) ) {
+            $department = $dept;
+            last;
+        }
+    }
+
+    unless ($department) {
+        return SignalWire::SWAIG::FunctionResult->new(
+            response => "Sorry, I couldn't find the $dept_name department." );
+    }
+
+    my $transfer_number = $department->{number} // '';
+
+    my $result = SignalWire::SWAIG::FunctionResult->new(
+        response => "I'll transfer you to our $dept_name department now. Thank you for calling!",
+        post_process => 1,
+    );
+
+    # final => 1: a permanent transfer (call exits the agent).
+    $result->connect( $transfer_number, final => 1 );
+    return $result;
+}
+
+# Lifecycle hook: on_summary — Python parity
+# (signalwire.prefabs.receptionist.ReceptionistAgent.on_summary).
+#
+# No-op extension point: the base receptionist does not process the
+# transfer summary. Subclasses override this to handle the summary
+# (mirrors Python's ``def on_summary(...): pass``).
+sub on_summary {
+    my ( $self, $summary, $raw_data ) = @_;
     return;
 }
 

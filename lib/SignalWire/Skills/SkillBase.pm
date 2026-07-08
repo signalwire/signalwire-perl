@@ -117,6 +117,62 @@ sub get_instance_key ($self) {
     return $base;
 }
 
+# Read this skill instance's namespaced data out of a raw_data hashref.
+#
+# Python parity: ``SkillBase.get_skill_data(raw_data)`` — reads
+# ``raw_data["global_data"][namespace]`` and returns it (or an empty
+# hashref when absent). raw_data is the per-call data a SWAIG handler
+# receives; global_data is its agent-state bucket.
+sub get_skill_data ( $self, $raw_data ) {
+    $raw_data //= {};
+    my $global_data = $raw_data->{global_data} // {};
+    return $global_data->{ $self->_skill_namespace } // {};
+}
+
+# Write this skill instance's namespaced data into a FunctionResult.
+#
+# Python parity: ``SkillBase.update_skill_data(result, data)`` — wraps
+# data under the skill namespace and calls result.update_global_data.
+# Returns result so callers can chain.
+sub update_skill_data ( $self, $result, $data ) {
+    $result->update_global_data( { $self->_skill_namespace => $data } );
+    return $result;
+}
+
+# Check that every required package is loadable.
+#
+# Python parity: ``SkillBase.validate_packages`` (Python imports the
+# module; Perl ``require``s it). Returns false (0) when any entry of
+# required_packages can't be required, otherwise true (1). A successful
+# require leaves the module loaded — matching importlib.import_module.
+sub validate_packages ($self) {
+    my @missing = grep { !_require_package($_) } @{ $self->required_packages };
+    return 1 unless @missing;
+    return 0;
+}
+
+# require a single package by name; true on success, false on failure.
+sub _require_package ($package) {
+    my $ok = eval {
+        ( my $file = $package ) =~ s{::}{/}g;
+        my $path = "$file.pm";
+        require $path;    # require a path STRING (avoids stringy bareword eval)
+        1;
+    };
+    return $ok ? 1 : 0;
+}
+
+# Namespaced key for this skill instance's global_data slice.
+#
+# Python parity: ``SkillBase._get_skill_namespace`` — uses the ``prefix``
+# param when present (``"skill:<prefix>"``), otherwise falls back to the
+# instance key (``"skill:<instance_key>"``).
+sub _skill_namespace ($self) {
+    my $prefix = $self->params->{prefix};
+    return "skill:$prefix" if defined $prefix && length "$prefix";
+    return 'skill:' . $self->get_instance_key;
+}
+
 1;
 
 __END__

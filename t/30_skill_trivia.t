@@ -39,6 +39,28 @@ subtest 'custom tool_name and categories' => sub {
     is_deeply($enum, ['music', 'sportsleisure'], 'custom categories');
 };
 
+subtest 'get_tools returns raw tool definitions' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'trivia_gt');
+    my $skill = $factory->new(agent => $agent, params => {
+        tool_name => 'quiz',
+        api_key   => 'k',
+        categories => ['music', 'geography'],
+    });
+    my $tools = $skill->get_tools;
+    is(ref $tools, 'ARRAY', 'returns arrayref');
+    is(scalar @$tools, 1, 'one tool definition');
+    is($tools->[0]{function}, 'quiz', 'function name');
+    is_deeply($tools->[0]{parameters}{properties}{category}{enum},
+        ['music', 'geography'], 'enum categories');
+    ok(exists $tools->[0]{data_map}{webhooks}, 'has data_map webhooks');
+    is($tools->[0]{data_map}{webhooks}[0]{headers}{'X-Api-Key'}, 'k', 'api key header');
+    # register_tools consumes get_tools -> same wire shape reaches the agent
+    $skill->register_tools;
+    is_deeply($agent->tools->{quiz}{parameters}{properties}{category}{enum},
+        $tools->[0]{parameters}{properties}{category}{enum},
+        'register_tools registers the get_tools definition');
+};
+
 subtest 'instance key with tool_name' => sub {
     my $agent = SignalWire::Agent::AgentBase->new(name => 'trivia_key');
     my $skill = $factory->new(agent => $agent, params => { tool_name => 'my_trivia' });

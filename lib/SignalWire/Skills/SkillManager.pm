@@ -105,4 +105,23 @@ sub has_skill {
     return exists $self->loaded_skills->{$key} ? 1 : 0;
 }
 
+# Get a loaded skill instance by identifier (instance key), or undef.
+#
+# Python parity: ``SkillManager.get_skill(skill_identifier)`` — returns
+# the loaded SkillBase instance when present, otherwise undef.
+sub get_skill {
+    my ( $self, $skill_identifier ) = @_;
+    return $self->loaded_skills->{$skill_identifier};
+}
+
+# List instance keys of currently-loaded skills.
+#
+# Python parity: ``SkillManager.list_loaded_skills()`` — the keys of the
+# loaded_skills map (distinct from the registry's list of available
+# skills).
+sub list_loaded_skills {
+    my ($self) = @_;
+    return [ keys %{ $self->loaded_skills } ];
+}
+
 1;

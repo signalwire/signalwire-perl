@@ -17,7 +17,6 @@ docs/configuration.md
 docs/contexts_guide.md
 docs/datamap_guide.md
 docs/llm_parameters.md
-docs/mcp_gateway_reference.md
 docs/mcp_integration.md
 docs/MIGRATION-2.0.md
 docs/sdk_features.md
@@ -64,8 +63,6 @@ examples/lambda_agent.pl
 examples/llm_params.pl
 examples/llm_params_demo.pl
 examples/mcp_agent.pl
-examples/mcp_gateway.pl
-examples/mcp_gateway_demo.pl
 examples/multi_agent_server.pl
 examples/multi_endpoint.pl
 examples/multi_endpoint_agent.pl
@@ -155,8 +152,6 @@ lib/SignalWire/Agents/Skills/Builtin/GoogleMaps.pm
 lib/SignalWire/Agents/Skills/Builtin/InfoGatherer.pm
 lib/SignalWire/Agents/Skills/Builtin/Joke.pm
 lib/SignalWire/Agents/Skills/Builtin/Math.pm
-lib/SignalWire/Agents/Skills/Builtin/McpGateway.pm
-lib/SignalWire/Agents/Skills/Builtin/NativeVectorSearch.pm
 lib/SignalWire/Agents/Skills/Builtin/PlayBackgroundFile.pm
 lib/SignalWire/Agents/Skills/Builtin/Spider.pm
 lib/SignalWire/Agents/Skills/Builtin/SwmlTransfer.pm
@@ -221,8 +216,6 @@ lib/SignalWire/Skills/Builtin/GoogleMaps.pm
 lib/SignalWire/Skills/Builtin/InfoGatherer.pm
 lib/SignalWire/Skills/Builtin/Joke.pm
 lib/SignalWire/Skills/Builtin/Math.pm
-lib/SignalWire/Skills/Builtin/McpGateway.pm
-lib/SignalWire/Skills/Builtin/NativeVectorSearch.pm
 lib/SignalWire/Skills/Builtin/PlayBackgroundFile.pm
 lib/SignalWire/Skills/Builtin/Spider.pm
 lib/SignalWire/Skills/Builtin/SwmlTransfer.pm

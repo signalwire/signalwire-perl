@@ -202,7 +202,7 @@ set, reproducing the Python reference's exact C<ValueError> messages
 module hoists those literal sets into a single source of truth so the
 accepted values are discoverable and autocompletable. The constants B<are>
 the canonical wire strings, so C<join_conference>'s signature is
-unchanged, preserving Python parity.
+unchanged — it still accepts the plain wire strings directly.
 
 The constant B<names> use shouting identifiers (C<ON_ENTER>); the
 B<values> are the camelCase wire strings the SWML verb expects

@@ -5,7 +5,8 @@ use Moo;
 
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-use Carp ();
+use Carp        ();
+use Time::HiRes ();
 
 use SignalWire::Relay::Action;
 use SignalWire::Relay::Constants qw(CALL_TERMINAL_STATES ACTION_TERMINAL_STATES);
@@ -182,6 +183,95 @@ sub current_state ($self) {
 # unknown/forward-compat state.
 sub is_terminal ($self) {
     return SignalWire::Relay::CallState->is_terminal( $self->state );
+}
+
+# --- Blocking state waits (parity with Python Call.wait_for*) ---
+#
+# The Perl RELAY client is thread/loop-driven and updates ->state from
+# dispatch_event as `calling.call.state` frames arrive. These helpers block
+# (polling, like Action->wait) until the call reaches a target lifecycle
+# state, returning immediately if the call is already at or past it. States
+# are ordered created < ringing < answered < ending < ended; a call already
+# at/past the target resolves with a synthetic state event (mirrors Python's
+# Call._wait_for_state short-circuit).
+
+my @_CALL_STATE_ORDER = qw(created ringing answered ending ended);
+
+sub _state_rank ( $self, $state ) {
+    for my $i ( 0 .. $#_CALL_STATE_ORDER ) {
+        return $i if $_CALL_STATE_ORDER[$i] eq ( $state // '' );
+    }
+    return -1;
+}
+
+sub _synthetic_state_event ($self) {
+    require SignalWire::Relay::Event;
+    return SignalWire::Relay::Event::CallState->new(
+        event_type => 'calling.call.state',
+        call_state => $self->state,
+        params     => { call_state => $self->state },
+    );
+}
+
+# wait_for(event_type => $type, predicate => sub, timeout => $secs)
+# Block until the first matching event arrives (or the timeout elapses),
+# returning the event (or undef on timeout). For state events the predicate
+# is evaluated against the live ->state as dispatch_event updates it; a
+# one-shot listener captures non-state events. Mirrors Python
+# Call.wait_for(event_type, predicate=None, timeout=None).
+sub wait_for ( $self, %opts ) {
+    my $event_type = $opts{event_type} // '';
+    my $predicate  = $opts{predicate};
+    my $timeout    = $opts{timeout} // 30;
+
+    my $captured;
+    my $listener = sub ( $call, $event ) {
+        return if defined $captured;
+        return unless ( $event->event_type // '' ) eq $event_type;
+        return if $predicate && !$predicate->($event);
+        $captured = $event;
+    };
+    $self->on($listener);
+
+    my $start = time();
+    while ( !defined $captured && ( time() - $start ) < $timeout ) {
+        Time::HiRes::sleep(0.05);
+    }
+    return $captured;
+}
+
+sub _wait_for_state ( $self, $target, $timeout ) {
+    return $self->_synthetic_state_event
+        if $self->_state_rank( $self->state ) >= $self->_state_rank($target);
+    return $self->wait_for(
+        event_type => 'calling.call.state',
+        predicate  => sub ($e) {
+            my $s = $e->can('call_state') ? $e->call_state : '';
+            return defined $s && $s eq $target;
+        },
+        timeout => $timeout,
+    );
+}
+
+sub wait_for_answered ( $self, %opts ) {
+    return $self->_wait_for_state( 'answered', $opts{timeout} // 30 );
+}
+
+sub wait_for_ringing ( $self, %opts ) {
+    return $self->_wait_for_state( 'ringing', $opts{timeout} // 30 );
+}
+
+sub wait_for_ending ( $self, %opts ) {
+    return $self->_wait_for_state( 'ending', $opts{timeout} // 30 );
+}
+
+sub wait_for_ended ( $self, %opts ) {
+    return $self->_wait_for_state( 'ended', $opts{timeout} // 30 );
+}
+
+# Human-readable representation (parity with Python Call.__repr__).
+sub to_string ($self) {
+    return sprintf( 'Call(call_id=%s, state=%s)', $self->call_id // '', $self->state // '', );
 }
 
 # Resolve all pending actions (e.g., on call ended or call-gone)
@@ -578,8 +668,8 @@ called by the client).
 
 =head2 Typed state
 
-C<state> remains the canonical bare-string accessor (Python parity). These
-add the L<SignalWire::Relay::CallState>-backed view:
+C<state> remains the canonical bare-string accessor. These add the
+L<SignalWire::Relay::CallState>-backed view:
 
 =over 4
 

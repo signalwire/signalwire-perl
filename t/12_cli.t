@@ -5,6 +5,7 @@ use Test::More;
 use JSON qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 use File::Spec;
+use CompileCheck ();
 
 # ============================================================
 # 1. swaig-test script exists and is executable
@@ -130,11 +131,33 @@ subtest 'swaig-test integration with live agent' => sub {
 };
 
 # ============================================================
+# 5b. --parse-only validates args and exits without touching the network
+# ============================================================
+subtest 'swaig-test --parse-only' => sub {
+    # Valid invocation against an UNREACHABLE url: must be instant + print
+    # exactly "parse OK" + exit 0 (proves it never loads the agent / hits net).
+    my $ok = `PERL5LIB="lib:\$PERL5LIB" $^X bin/swaig-test --parse-only --url http://user:pass\@10.255.255.1:9/route --list-tools 2>&1`;
+    is($? >> 8, 0, 'valid --parse-only exits 0');
+    like($ok, qr/^parse OK\s*$/, 'prints exactly "parse OK"');
+
+    # Position-independent: --parse-only trailing an --exec still recognized.
+    my $trail = `PERL5LIB="lib:\$PERL5LIB" $^X bin/swaig-test --url http://user:pass\@10.255.255.1:9/route --exec foo --param bar=1 --parse-only 2>&1`;
+    is($? >> 8, 0, 'trailing --parse-only exits 0');
+    like($trail, qr/^parse OK\s*$/, 'position-independent parse OK');
+
+    # Invalid invocation exits 2 and does NOT print parse OK.
+    my $bad = `PERL5LIB="lib:\$PERL5LIB" $^X bin/swaig-test --parse-only --url http://user:pass\@localhost:9999/ 2>&1`;
+    is($? >> 8, 2, 'invalid --parse-only exits 2');
+    unlike($bad, qr/^parse OK\s*$/m, 'no "parse OK" success line on error path');
+};
+
+# ============================================================
 # 6. Script compiles cleanly
 # ============================================================
 subtest 'swaig-test compiles' => sub {
-    my $output = `PERL5LIB="lib:\$PERL5LIB" $^X -c bin/swaig-test 2>&1`;
-    like($output, qr/syntax OK/, 'bin/swaig-test compiles without errors');
+    CompileCheck::compile_ok(
+        qq{PERL5LIB="lib:\$PERL5LIB" $^X -c bin/swaig-test 2>&1},
+        'bin/swaig-test compiles without errors');
 };
 
 done_testing;

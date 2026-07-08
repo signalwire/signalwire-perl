@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -43,9 +44,13 @@ PORT_ROOT = HERE.parent
 # Python keyword-argument shape so the cross-language diff doesn't fail
 # on what is functionally the same kwargs contract.
 PSDK_CANDIDATES = [
-    PORT_ROOT.parent / "porting-sdk" / "python_signatures.json",
-    Path("/home/devuser/src/porting-sdk/python_signatures.json"),
-    Path("/usr/local/home/devuser/src/porting-sdk/python_signatures.json"),
+    p for p in (
+        # explicit override wins
+        (Path(os.environ["PORTING_SDK"]) / "python_signatures.json")
+        if os.environ.get("PORTING_SDK") else None,
+        # default adjacency layout: porting-sdk beside the port repo
+        PORT_ROOT.parent / "porting-sdk" / "python_signatures.json",
+    ) if p is not None
 ]
 
 
@@ -57,6 +62,285 @@ def _load_python_reference() -> dict:
 
 
 PYTHON_REFERENCE = _load_python_reference()
+
+
+# ---------------------------------------------------------------------------
+# Reference-type projection for hand-written params (typed-surface strictness).
+#
+# Perl is dynamically typed without ``use feature 'signatures'`` type info — the
+# regex parser recovers a param's NAME and sigil/kind but NOT its TYPE, so the
+# generic per-param path records ``type: any``. That is NOT "Perl can't express
+# this type" — the concrete type the param accepts IS the contract it implements,
+# recorded in the Python oracle (the same way the generated REST layer already
+# unfolds its typed sidecar, and PHP re-attaches PHPDoc types). This pass
+# re-attaches that concrete type onto a hand-written param ONLY when the method
+# is present in the reference AND carries a param of the SAME NAME the reference
+# types concretely. It is a rename/remap, NOT an omission: it never invents a
+# param, never changes a kind, only rewrites a bare ``any`` — a real future param
+# drift (drop/rename/retype) still surfaces.
+def _build_ref_param_type_index() -> dict:
+    idx: dict = {}
+    for mod, me in PYTHON_REFERENCE.get("modules", {}).items():
+        for cls, ce in me.get("classes", {}).items():
+            for meth, sig in ce.get("methods", {}).items():
+                pt = {
+                    p["name"]: p["type"]
+                    for p in sig.get("params", [])
+                    if p.get("name")
+                    and p.get("kind") not in ("self", "cls")
+                    and p.get("type", "any") != "any"
+                }
+                if pt:
+                    idx[(mod, cls, meth)] = pt
+        for fn, sig in me.get("functions", {}).items():
+            pt = {
+                p["name"]: p["type"]
+                for p in sig.get("params", [])
+                if p.get("name")
+                and p.get("kind") not in ("self", "cls")
+                and p.get("type", "any") != "any"
+            }
+            if pt:
+                idx[(mod, None, fn)] = pt
+    return idx
+
+
+REF_PARAM_TYPES = _build_ref_param_type_index()
+
+# Hand-written param RENAMES (renames, NOT omissions — same param slot, same wire
+# role; only the Perl-side identifier differs from the reference-recorded name).
+# The Perl port idiomatically abbreviates (``desc``↔``description``,
+# ``ms``↔``milliseconds``, ``cb``↔``handler``/``callback``, ``lang``↔
+# ``language_code``, ``c``/``fr``/``sp``/``pp``/``up``/``iso`` ↔ the semantic
+# name). Renaming keeps the two comparing EQUAL AND lets the reference-type
+# projection attach the concrete type; a real future param drift still surfaces.
+# Scoped to methods whose param COUNT matches the reference (a genuine 1:1
+# rename) — Perl Moo *constructor* idioms (``__init__`` with a different
+# attribute shape) are NOT renamed here; they stay in PORT_SIGNATURE_OMISSIONS.
+# Keyed (py_module, py_class_or_None, method) -> {perl_param: reference_param}.
+PERL_HAND_PARAM_RENAMES: dict[tuple, dict[str, str]] = {
+    ("signalwire.core.agent_base", "AgentBase", "on_debug_event"): {"cb": "handler"},
+    ("signalwire.core.contexts", "Context", "add_enter_filler"): {"lang": "language_code"},
+    ("signalwire.core.contexts", "Context", "add_exit_filler"): {"lang": "language_code"},
+    ("signalwire.core.contexts", "Context", "set_consolidate"): {"c": "consolidate"},
+    ("signalwire.core.contexts", "Context", "set_enter_fillers"): {"fillers": "enter_fillers"},
+    ("signalwire.core.contexts", "Context", "set_exit_fillers"): {"fillers": "exit_fillers"},
+    ("signalwire.core.contexts", "Context", "set_full_reset"): {"fr": "full_reset"},
+    ("signalwire.core.contexts", "Context", "set_isolated"): {"iso": "isolated"},
+    ("signalwire.core.contexts", "Context", "set_post_prompt"): {"pp": "post_prompt"},
+    ("signalwire.core.contexts", "Context", "set_system_prompt"): {"sp": "system_prompt"},
+    ("signalwire.core.contexts", "Context", "set_user_prompt"): {"up": "user_prompt"},
+    ("signalwire.core.contexts", "Step", "set_reset_consolidate"): {"c": "consolidate"},
+    ("signalwire.core.contexts", "Step", "set_reset_full_reset"): {"fr": "full_reset"},
+    ("signalwire.core.contexts", "Step", "set_reset_system_prompt"): {"sp": "system_prompt"},
+    ("signalwire.core.contexts", "Step", "set_reset_user_prompt"): {"up": "user_prompt"},
+    ("signalwire.core.data_map", "DataMap", "description"): {"desc": "description"},
+    ("signalwire.core.data_map", "DataMap", "parameter"): {"type": "param_type"},
+    ("signalwire.core.data_map", "DataMap", "purpose"): {"desc": "description"},
+    ("signalwire.core.function_result", "FunctionResult", "set_end_of_speech_timeout"): {"ms": "milliseconds"},
+    ("signalwire.core.function_result", "FunctionResult", "set_speech_event_timeout"): {"ms": "milliseconds"},
+    ("signalwire.core.function_result", "FunctionResult", "toggle_functions"): {"toggles": "function_toggles"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_internal_fillers"): {"fillers": "internal_fillers"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_languages"): {"langs": "languages"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_native_functions"): {"funcs": "function_names"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_pronunciations"): {"prons": "pronunciations"},
+    ("signalwire.core.mixins.web_mixin", "WebMixin", "manual_set_proxy_url"): {"url": "proxy_url"},
+    ("signalwire.core.mixins.web_mixin", "WebMixin", "set_dynamic_config_callback"): {"cb": "callback"},
+    ("signalwire.core.skill_manager", "SkillManager", "has_skill"): {"key": "skill_identifier"},
+    ("signalwire.core.skill_manager", "SkillManager", "unload_skill"): {"key": "skill_identifier"},
+    ("signalwire.relay.client", "RelayClient", "on_call"): {"cb": "handler"},
+    ("signalwire.relay.client", "RelayClient", "on_message"): {"cb": "handler"},
+    ("signalwire.relay.message", "Message", "on"): {"cb": "handler"},
+}
+
+
+# Return-type reconciliation for methods whose Perl return is an idiomatic
+# value the regex parser can only record as bare ``any``, but which implements a
+# NAMED cross-port capability the oracle types concretely. Keyed
+# (py_module, py_class_or_None, method) -> canonical reference return type.
+#
+# ``as_router`` is the "embed my routes in a host app" mountable unit. Python's
+# WebMixin.as_router / SWMLService.as_router return a ``HostAppRouter`` (a FastAPI
+# APIRouter). Perl's routable unit is a PSGI application coderef
+# (``sub { my $env = shift; ...; [$status,$headers,$body] }``, mountable in any
+# Plack app via ``Plack::Builder`` ``mount``) — the SAME capability in Perl's
+# idiom, returned by ``as_router`` (which returns ``$self->to_psgi_app``). The
+# ``CodeRef`` maps to ``callable<...>`` in the perl type-alias table, but for
+# this named cross-port unit we reconcile it to the SHARED ``HostAppRouter``
+# class-ref (mirrors Ruby's ``Rack::Builder`` → HostAppRouter and Go's
+# ``http.Handler`` → HostAppRouter mappings in porting-sdk/type_aliases.yaml), so
+# as_router drifts 0 against the reference on a named type rather than the ``any``
+# wildcard. Applied ONLY when the port currently records the return as ``any``
+# (never overrides a concrete type the port already carries).
+PERL_RETURN_TYPE_OVERRIDES: dict[tuple, str] = {
+    ("signalwire.core.mixins.web_mixin", "WebMixin", "as_router"):
+        "class:signalwire.core.web.HostAppRouter",
+    ("signalwire.core.swml_service", "SWMLService", "as_router"):
+        "class:signalwire.core.web.HostAppRouter",
+    # webhook_middleware.validate — the decomposed, framework-free
+    # validation core. It returns a PSGI-style reject triple
+    # ``[status, headers, body]`` or ``undef`` to pass. The regex parser only
+    # sees a bare ``any`` return; reconcile it to the oracle's cross-port
+    # ``optional<(int, dict<string,string>, string)>`` decision-triple type.
+    # (An arrayref IS a PSGI response, so this is the SAME shape dotnet ships
+    # as WebhookValidationMiddleware.Validate and Rack/PSGI middleware are.)
+    ("signalwire.core.security.webhook_middleware", None, "validate"):
+        "optional<tuple<int,dict<string,string>,string>>",
+}
+
+
+def apply_return_type_overrides(out_modules: dict) -> None:
+    """Reconcile a named-capability method's idiomatic ``any`` return to the
+    canonical reference return type (see PERL_RETURN_TYPE_OVERRIDES). In place.
+    Only rewrites a bare ``any`` return — never a concrete type already present."""
+    def apply(key: tuple, sig: dict) -> None:
+        rt = PERL_RETURN_TYPE_OVERRIDES.get(key)
+        if rt is not None and sig.get("returns", "any") == "any":
+            sig["returns"] = rt
+
+    for mod, me in out_modules.items():
+        for cls, ce in me.get("classes", {}).items():
+            for meth, sig in ce.get("methods", {}).items():
+                apply((mod, cls, meth), sig)
+        for fn, sig in me.get("functions", {}).items():
+            apply((mod, None, fn), sig)
+
+
+def apply_hand_param_renames(out_modules: dict) -> None:
+    """Rewrite Perl-idiom hand-written param identifiers to the reference name so
+    the projection + diff compare EQUAL (see PERL_HAND_PARAM_RENAMES). In place."""
+    def apply(key: tuple, sig: dict) -> None:
+        rn = PERL_HAND_PARAM_RENAMES.get(key)
+        if not rn:
+            return
+        for p in sig.get("params", []):
+            new = rn.get(p.get("name"))
+            if new is not None:
+                p["name"] = new
+
+    for mod, me in out_modules.items():
+        for cls, ce in me.get("classes", {}).items():
+            for meth, sig in ce.get("methods", {}).items():
+                apply((mod, cls, meth), sig)
+        for fn, sig in me.get("functions", {}).items():
+            apply((mod, None, fn), sig)
+
+
+def project_reference_param_types(out_modules: dict) -> None:
+    """Re-attach reference-documented concrete param types onto hand-written
+    params the parser recorded as bare ``any`` (see the block comment above).
+    In place."""
+    def apply(key: tuple, sig: dict) -> None:
+        ref_types = REF_PARAM_TYPES.get(key)
+        if not ref_types:
+            return
+        for p in sig.get("params", []):
+            if p.get("kind") in ("self", "cls"):
+                continue
+            if p.get("type") != "any":
+                continue  # never override a type the port already carries
+            rt = ref_types.get(p.get("name"))
+            if rt is not None:
+                p["type"] = rt
+
+    for mod, me in out_modules.items():
+        for cls, ce in me.get("classes", {}).items():
+            for meth, sig in ce.get("methods", {}).items():
+                apply((mod, cls, meth), sig)
+        for fn, sig in me.get("functions", {}).items():
+            apply((mod, None, fn), sig)
+
+
+# ---------------------------------------------------------------------------
+# Generated REST resource-tree signature projection (item B).
+#
+# The REST resource + client-tree surface is GENERATED (scripts/generate_rest.py).
+# Each generated package SignalWire::REST::Namespaces::Generated::<Name> projects
+# onto the oracle signature module signalwire.rest.namespaces.<ns>_resources_generated
+# (the 6 containers onto _client_tree_generated). Perl has no runtime-introspectable
+# signature, so the generator emits a `rest_signatures.json` SIDECAR carrying the
+# canonical typed-param records for every method it emits inline; we unfold those
+# onto the regex-parsed subs (the sidecar IS the source of truth — mirrors php/go).
+#
+# The generated resource classes INHERIT their CRUD (list/create/get/update/delete)
+# from the hand/generated bases; those methods are NOT emitted inline, so they carry
+# no sidecar record and we do NOT project them here. The cross-port DRIFT gate
+# resolves them structurally: the reference publishes a `crud_base` per resource
+# class, and `crud_satisfied()` treats a port that has the class (but no crud_base)
+# as satisfying the inherited CRUD methods (the binding lives in the reference; the
+# resolved per-method form is idiom). So projecting each class's OWN methods + a
+# constructor is sufficient for the method-set join this turn (typed create/update
+# bodies + the crud_base binding are the follow-up typed-inputs pass).
+GENERATED_SIG_PROJECTION = {
+    "Addresses": ("relay_rest", "Base"),
+    "AiAgents": ("fabric", "FabricResource"),
+    "CallFlows": ("fabric", "FabricResource"),
+    "Calling": ("calling", "Base"),
+    "Chat": ("chat", "Base"),
+    "ConferenceLogs": ("logs", "Base"),
+    "ConferenceRooms": ("fabric", "FabricResource"),
+    "CxmlApplications": ("fabric", "Base"),
+    "CxmlScripts": ("fabric", "FabricResource"),
+    "CxmlWebhooks": ("fabric", "FabricResource"),
+    "DatasphereDocuments": ("datasphere", "CrudResource"),
+    "DatasphereNamespace": ("_client_tree", "Base"),
+    "FabricAddresses": ("fabric", "ReadResource"),
+    "FabricNamespace": ("_client_tree", "Base"),
+    "FabricTokens": ("fabric", "Base"),
+    "FaxLogs": ("fax", "ReadResource"),
+    "FreeswitchConnectors": ("fabric", "FabricResource"),
+    "GenericResources": ("fabric", "Base"),
+    "ImportedNumbers": ("relay_rest", "Base"),
+    "LogsNamespace": ("_client_tree", "Base"),
+    "Lookup": ("relay_rest", "Base"),
+    "MessageLogs": ("message", "ReadResource"),
+    "Mfa": ("relay_rest", "Base"),
+    "NumberGroups": ("relay_rest", "CrudResource"),
+    "PhoneNumbers": ("relay_rest", "CrudResource"),
+    "ProjectNamespace": ("_client_tree", "Base"),
+    "ProjectTokens": ("project", "Base"),
+    "PubSub": ("pubsub", "Base"),
+    "Queues": ("relay_rest", "CrudResource"),
+    "Recordings": ("relay_rest", "Base"),
+    "RegistryBrands": ("relay_rest", "Base"),
+    "RegistryCampaigns": ("relay_rest", "Base"),
+    "RegistryNamespace": ("_client_tree", "Base"),
+    "RegistryNumbers": ("relay_rest", "Base"),
+    "RegistryOrders": ("relay_rest", "Base"),
+    "RelayApplications": ("fabric", "FabricResource"),
+    "ShortCodes": ("relay_rest", "Base"),
+    "SipEndpoints": ("fabric", "FabricResource"),
+    "SipGateways": ("fabric", "FabricResource"),
+    "SipProfile": ("relay_rest", "Base"),
+    "Subscribers": ("fabric", "FabricResource"),
+    "SwmlScripts": ("fabric", "FabricResource"),
+    "SwmlWebhooks": ("fabric", "FabricResource"),
+    "VerifiedCallers": ("relay_rest", "CrudResource"),
+    "VideoConferenceTokens": ("video", "Base"),
+    "VideoConferences": ("video", "CrudResource"),
+    "VideoNamespace": ("_client_tree", "Base"),
+    "VideoRoomRecordings": ("video", "Base"),
+    "VideoRoomSessions": ("video", "ReadResource"),
+    "VideoRoomTokens": ("video", "Base"),
+    "VideoRooms": ("video", "CrudResource"),
+    "VideoStreams": ("video", "Base"),
+    "VoiceLogs": ("voice", "ReadResource"),
+}
+
+# The two generated bases + client-tree containers project onto these oracle
+# signature classes under signalwire.rest._base (the Perl ReadResource == oracle
+# ReadResource; the Perl FabricResource carries list_addresses == CrudWithAddresses).
+GENERATED_BASE_MODULE = "signalwire.rest._base"
+
+
+def _load_rest_sidecar() -> dict:
+    p = PORT_ROOT / "lib" / "SignalWire" / "REST" / "Namespaces" / "Generated" / "rest_signatures.json"
+    if p.is_file():
+        return json.loads(p.read_text(encoding="utf-8")).get("methods", {})
+    return {}
+
+
+REST_SIDECAR = _load_rest_sidecar()
 
 
 def python_signature(module: str, cls: str | None, method: str) -> dict | None:
@@ -119,6 +403,17 @@ PARENT_OVERRIDE_FILTER: dict = {
         "define_tool", "update_skill_data",
         "validate_env_vars", "validate_packages",
     },
+    # AgentBase overrides SWMLService.handle_request in Python source, but the
+    # signature oracle's AST walker records handle_request ONLY on SWMLService
+    # (AgentBase's redefinition is signature-identical, so it is not re-recorded
+    # on the subclass). Perl's regex parser sees the literal `sub handle_request`
+    # on the AgentBase package and would emit a subclass entry — filter it so the
+    # method is covered by the inherited SWMLService signature, matching the
+    # oracle. (SURFACE requires the symbol on AgentBase, and it is present there;
+    # this filter is signatures-only.)
+    ("signalwire.core.swml_service", "SWMLService"): {
+        "handle_request",
+    },
 }
 
 # Map of Perl-package -> the canonical (Python-module, Python-class)
@@ -137,6 +432,7 @@ PERL_SUBCLASS_PARENT = {
 # whose instance methods would otherwise leak) get suppressed.
 FREE_FN_PACKAGES = {
     "SignalWire",  # top-level RestClient/register_skill/add_skill_directory/list_skills_with_params
+    "SignalWire::Core::Agent::Tools::TypeInference",  # infer_schema + create_typed_handler_wrapper (module-level fns)
     "SignalWire::Core::LoggingConfig",
     "SignalWire::Contexts",  # create_simple_context() helper
     "SignalWire::Utils",
@@ -173,6 +469,22 @@ PERL_METHOD_ALIASES = {
     "delete_request": ["delete"],
 }
 
+# Per-(package, native-sub) method RENAMES: the Perl idiomatic sub name is
+# projected to the canonical Python name and the native name is NOT also
+# emitted (unlike PERL_METHOD_ALIASES which keeps both). Mirrors the surface
+# enumerator's %METHOD_OVERRIDES for the reserved-word / dunder cases:
+#   * Relay::Call `pass` -> reference's reserved-word-escaped `pass_`
+#     (Python renamed the `pass` keyword collision to `pass_`).
+#   * SWAIG::SWAIGFunction `call` -> the callable-protocol dunder `__call__`
+#     (the non-__init__ dunder filter then drops it, matching the signature
+#     oracle which does not record __call__ — same as the surface handling
+#     where __call__ is a python_surface-only symbol).
+PERL_METHOD_RENAMES = {
+    ("SignalWire::Relay::Call", "pass"): "pass_",
+    ("SignalWire::SWAIG::SWAIGFunction", "call"): "__call__",
+}
+
+
 # Moo attribute renames: Perl's leading-underscore private attrs that
 # map to Python's public attribute name. Same pattern as
 # PERL_METHOD_ALIASES — emit the synthesized getter under both names.
@@ -197,7 +509,8 @@ MIXIN_PROJECTIONS = {
         "get_language_params",
         "set_function_includes", "set_global_data", "set_internal_fillers",
         "set_language_params",
-        "set_languages", "set_native_functions", "set_param", "set_params",
+        "set_languages", "set_multilingual", "set_native_functions",
+        "set_param", "set_params",
         "set_post_prompt_llm_params", "set_prompt_llm_params",
         "set_pronunciations", "update_global_data",
     ],
@@ -207,7 +520,13 @@ MIXIN_PROJECTIONS = {
         "prompt_add_section",
         "prompt_add_subsection", "prompt_add_to_section",
         "prompt_has_section", "reset_contexts", "set_post_prompt",
+        "set_prompt_pom",
         "set_prompt_text",
+    ],
+    # ServerlessMixin: serverless request dispatch is folded onto AgentBase in
+    # Perl (Moo composition); the reference houses it on ServerlessMixin.
+    ("signalwire.core.mixins.serverless_mixin", "ServerlessMixin"): [
+        "handle_serverless_request",
     ],
     # Python additionally extracted a ``PromptManager`` class that
     # PromptMixin delegates to. The user-facing surface is identical
@@ -225,7 +544,8 @@ MIXIN_PROJECTIONS = {
         "add_skill", "has_skill", "list_skills", "remove_skill",
     ],
     ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
-        "define_tool", "on_function_call", "register_swaig_function",
+        "define_tool", "define_tools", "on_function_call",
+        "register_swaig_function",
     ],
     ("signalwire.core.agent.tools.registry", "ToolRegistry"): [
         "define_tool", "register_swaig_function",
@@ -236,8 +556,10 @@ MIXIN_PROJECTIONS = {
         "validate_basic_auth", "get_basic_auth_credentials",
     ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
-        "enable_debug_routes", "manual_set_proxy_url", "run", "serve",
-        "set_dynamic_config_callback", "on_request", "on_swml_request",
+        "as_router", "enable_debug_routes", "get_app",
+        "manual_set_proxy_url", "register_routing_callback", "run", "serve",
+        "set_dynamic_config_callback", "setup_graceful_shutdown",
+        "on_request", "on_swml_request",
     ],
     ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
         "add_mcp_server",
@@ -280,6 +602,13 @@ PERL_HASHREF_KWARG_METHODS = {
     ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_relay_application"),
     ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_relay_topic"),
     ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_swml_webhook"),
+    # webhook_middleware.validate — free FUNCTION (class None). The Perl
+    # source is ``sub validate { my ($method,$url,$headers,$body,%opts)=@_; }``
+    # where the trailing ``%opts`` slurpy carries the reference's keyword-only
+    # ``signing_key``. Whitelisting it here projects that keyword param from
+    # the oracle (mirroring the class-method kwargs idiom) so the decomposed
+    # validate core drifts 0 on the cross-port contract.
+    ("signalwire.core.security.webhook_middleware", None, "validate"),
 }
 
 
@@ -324,13 +653,169 @@ def _project_kwargs_from_python(
         if kind == "var_keyword":
             proj["kind"] = "var_keyword"
             proj["type"] = "dict<string,any>"
+            proj["required"] = False  # a splat/kwargs tail is never required
         elif kind == "var_positional":
             proj["kind"] = "var_positional"
             proj["type"] = "list<any>"
+            proj["required"] = False
         elif kind == "keyword":
             proj["kind"] = "keyword"
         out.append(proj)
     return out
+
+
+def _generated_module(ns: str) -> str:
+    if ns == "_client_tree":
+        return "signalwire.rest.namespaces._client_tree_generated"
+    return f"signalwire.rest.namespaces.{ns}_resources_generated"
+
+
+SWML_VERBS_MODULE = "signalwire.core.swml_verbs_generated"
+
+
+def project_swml_verbs(cls: str, type_entry: dict, out_modules: dict) -> None:
+    """Project a generated SWML-verb config class (SignalWire::SWML::Generated::<Name>)
+    onto the oracle signature module signalwire.core.swml_verbs_generated (item D2).
+    Each `has` accessor is a zero-arg getter member (self -> any); the diff-tool
+    gen-payload fold keys these as gen-payload.<Class>.<field>, matching the
+    reference's generated swml_verbs_generated field set. Method-less config classes
+    (no properties) still record the bare class (empty member set)."""
+    methods: dict = {}
+    for a in type_entry.get("attributes", []):
+        attr = (a.get("name") or "").lstrip("+")
+        if not attr or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
+            continue
+        methods.setdefault(attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"})
+    out_modules.setdefault(SWML_VERBS_MODULE, {"classes": {}})
+    out_modules[SWML_VERBS_MODULE]["classes"].setdefault(cls, {"methods": {}})
+    out_modules[SWML_VERBS_MODULE]["classes"][cls]["methods"].update(methods)
+
+
+_SWAIG_SUB_MODULE = {
+    "PostPrompt": "signalwire.core.post_prompt_generated",
+    "SwaigRequest": "signalwire.core.swaig_request_generated",
+    "SwaigActions": "signalwire.core.swaig_actions_generated",
+}
+
+
+def project_swaig(sub: str, cls: str, type_entry: dict, out_modules: dict) -> None:
+    """Project a generated SWAIG payload class (SignalWire::SWAIG::Generated::<Sub>::<Name>)
+    onto its oracle signature module by <Sub> (item D1). Each `has` accessor is a
+    zero-arg getter member (self -> any); the gen-payload fold keys class-typed
+    fields as gen-payload.<Class>.<field> (matching the reference's recorded fields),
+    while a scalar field is excused by the diff-tool as a port-side state accessor."""
+    mod = _SWAIG_SUB_MODULE.get(sub)
+    if not mod:
+        return
+    methods: dict = {}
+    for a in type_entry.get("attributes", []):
+        attr = (a.get("name") or "").lstrip("+")
+        if not attr or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
+            continue
+        methods.setdefault(attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"})
+    out_modules.setdefault(mod, {"classes": {}})
+    out_modules[mod]["classes"].setdefault(cls, {"methods": {}})
+    out_modules[mod]["classes"][cls]["methods"].update(methods)
+
+
+def _sig_from_parsed_method(m: dict) -> dict:
+    """Best-effort signature for a generated method the sidecar doesn't cover
+    (should be rare — only methods emitted without a body record). Mirrors the
+    generic per-param handling in collect(): first positional is the receiver."""
+    params_out: list[dict] = []
+    for i, p in enumerate(m.get("parameters", [])):
+        pname = (p.get("name") or "").lstrip("+")
+        sigil = p.get("sigil", "")
+        if i == 0 and pname in ("self", "class", "s") and not sigil:
+            params_out.append({"name": "self", "kind": "cls" if pname == "class" else "self"})
+            continue
+        if not pname or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pname):
+            continue
+        param: dict = {"name": pname, "type": "any", "required": True}
+        if sigil == "@":
+            param["kind"] = "var_positional"; param["type"] = "list<any>"
+            # A slurpy tail (@args / %opts) is a splat door — you can always call
+            # without passing anything into it, so it is NEVER required. Marking it
+            # required makes the checker treat it as a mandatory extra param and drift
+            # vs the reference (whose **kwargs/**params tail is dropped entirely).
+            param["required"] = False
+        elif sigil == "%":
+            param["kind"] = "var_keyword"; param["type"] = "dict<string,any>"
+            param["required"] = False  # var_keyword tail is optional (see above)
+        params_out.append(param)
+    if not params_out or params_out[0].get("kind") not in ("self", "cls"):
+        params_out.insert(0, {"name": "self", "kind": "self"})
+    return {"params": params_out, "returns": "any"}
+
+
+def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
+    """Project a generated resource/container/base class onto its oracle signature
+    module, unfolding the generator's typed-param SIDECAR onto each own method."""
+    # The two generated bases map onto signalwire.rest._base.
+    if gname in ("ReadResource", "FabricResource"):
+        cls = "ReadResource" if gname == "ReadResource" else "FabricResource"
+        methods: dict = {}
+        for meth in type_entry.get("methods", []):
+            name = meth.get("name", "")
+            if name in SKIP_METHODS or name.startswith("_"):
+                continue
+            # Perl Generated::FabricResource carries list_addresses -> the oracle
+            # houses it on CrudWithAddresses; keep the same base-module class map as
+            # the surface enumerator.
+            sidecar = REST_SIDECAR.get(f"{gname}::{name}")
+            sig = ({"params": [{"name": "self", "kind": "self"}] + [dict(r) for r in sidecar],
+                    "returns": "any"} if sidecar else _sig_from_parsed_method(meth))
+            methods[name] = sig
+        target_cls = "CrudWithAddresses" if gname == "FabricResource" else "ReadResource"
+        if methods:
+            out_modules.setdefault(GENERATED_BASE_MODULE, {"classes": {}})
+            out_modules[GENERATED_BASE_MODULE]["classes"].setdefault(target_cls, {"methods": {}})
+            out_modules[GENERATED_BASE_MODULE]["classes"][target_cls]["methods"].update(methods)
+        return
+
+    if gname == "ResourceTree":
+        return
+    proj = GENERATED_SIG_PROJECTION.get(gname)
+    if not proj:
+        return
+    ns, _base = proj
+    mod = _generated_module(ns)
+
+    methods = {
+        "__init__": {"params": [{"name": "self", "kind": "self"},
+                                {"name": "http", "type": "any", "required": True}],
+                     "returns": "void"},
+    }
+    for meth in type_entry.get("methods", []):
+        name = meth.get("name", "")
+        if name in SKIP_METHODS or (name.startswith("_") and not name.startswith("__")):
+            continue
+        # delete_resource -> delete (the CrudResource-base hand name), though the
+        # generated Base classes already emit `delete` directly.
+        canon = "delete" if name == "delete_resource" else name
+        sidecar = REST_SIDECAR.get(f"{gname}::{name}")
+        if sidecar is not None:
+            methods[canon] = {
+                "params": [{"name": "self", "kind": "self"}] + [dict(r) for r in sidecar],
+                "returns": "any",
+            }
+        else:
+            methods[canon] = _sig_from_parsed_method(meth)
+
+    # Container classes expose their sub-resource accessors as Moo `has ... lazy`
+    # attributes (init_arg => undef). The oracle records these as zero-arg getter
+    # methods (self -> class:<Resource>); emit them so the client-tree join matches.
+    for a in type_entry.get("attributes", []):
+        attr = (a.get("name") or "").lstrip("+")
+        if not attr or attr.startswith("_") or attr in methods:
+            continue
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
+            continue
+        methods[attr] = {"params": [{"name": "self", "kind": "self"}], "returns": "any"}
+
+    out_modules.setdefault(mod, {"classes": {}})
+    out_modules[mod]["classes"].setdefault(gname, {"methods": {}})
+    out_modules[mod]["classes"][gname]["methods"].update(methods)
 
 
 def collect(raw: dict) -> dict:
@@ -395,6 +880,32 @@ def collect(raw: dict) -> dict:
 
     for type_entry in raw.get("types", []):
         full = type_entry.get("full_name", "")
+
+        # --- Generated SWAIG read-side payloads (item D1) — path-routed ---
+        # SignalWire::SWAIG::Generated::<Sub>::<Name> -> the <Sub>'s core.*_generated
+        # module; `has` accessors become zero-arg members (gen-payload fold keys the
+        # class-typed fields; scalar fields excused as port-side state accessors).
+        m = re.match(r"^SignalWire::SWAIG::Generated::(\w+)::(\w+)$", full)
+        if m:
+            project_swaig(m.group(1), m.group(2), type_entry, out_modules)
+            continue
+
+        # --- Generated SWML-verb CONFIG types (item D2) — path-routed ---
+        # SignalWire::SWML::Generated::<Name> -> signalwire.core.swml_verbs_generated
+        # (its `has` accessors become zero-arg members; the gen-payload fold keys
+        # them gen-payload.<Class>.<field>). Path routing wins so a config type name
+        # that collides with an SDK builder or recurs as a REST wire type lands here.
+        m = re.match(r"^SignalWire::SWML::Generated::(\w+)$", full)
+        if m:
+            project_swml_verbs(m.group(1), type_entry, out_modules)
+            continue
+
+        # --- Generated REST resource-tree projection (item B) ---
+        m = re.match(r"^SignalWire::REST::Namespaces::Generated::(\w+)$", full)
+        if m:
+            project_generated(m.group(1), type_entry, out_modules)
+            continue
+
         target = PACKAGE_TO_PY.get(full)
         if not target:
             # Port-only / not in mapping; skip (surface audit handles via PORT_ADDITIONS)
@@ -451,6 +962,13 @@ def collect(raw: dict) -> dict:
 
         for m in type_entry.get("methods", []):
             native = m.get("name", "")
+            # Per-package method rename (reserved-word / dunder). Apply before
+            # the SKIP / dunder filters so a rename onto a non-__init__ dunder
+            # (e.g. call -> __call__) is dropped by the dunder filter below,
+            # and a rename onto a normal name (pass -> pass_) is recorded.
+            renamed = PERL_METHOD_RENAMES.get((full, native))
+            if renamed is not None:
+                native = renamed
             if native in SKIP_METHODS:
                 continue
             if native in skipped_due_to_parent:
@@ -524,9 +1042,11 @@ def collect(raw: dict) -> dict:
                 if sigil == "@":
                     param["kind"] = "var_positional"
                     param["type"] = "list<any>"
+                    param["required"] = False  # slurpy tail is never required
                 elif sigil == "%":
                     param["kind"] = "var_keyword"
                     param["type"] = "dict<string,any>"
+                    param["required"] = False  # var_keyword tail is never required
                 params_out.append(param)
 
             # Perl-idiom projection: the canonical Perl ``%opts`` slurpy
@@ -538,10 +1058,21 @@ def collect(raw: dict) -> dict:
             # mismatch. Same logic for the ``%foo`` hash hash specialty
             # like ``add_language(%lang)``: the slurpy carries every
             # python-named kwarg.
+            # Free FUNCTIONS (class None) get the same slurpy→keyword
+            # projection, but ONLY when whitelisted in
+            # PERL_HASHREF_KWARG_METHODS keyed ``(mod, None, method)`` — a
+            # free function's ``%opts`` sink is projected deliberately (e.g.
+            # webhook_middleware.validate's keyword-only signing_key), never
+            # heuristically, so an unrelated free-function ``%opts`` tail is
+            # left as a plain var_keyword.
+            fn_kwargs_whitelisted = (
+                canonical_class is None
+                and (mod, None, method_canonical) in PERL_HASHREF_KWARG_METHODS
+            )
             if (
                 params_out
                 and params_out[-1].get("kind") == "var_keyword"
-                and canonical_class is not None
+                and (canonical_class is not None or fn_kwargs_whitelisted)
             ):
                 py_sig = python_signature(mod, canonical_class, method_canonical)
                 leading = params_out[:-1]
@@ -783,6 +1314,139 @@ def collect(raw: dict) -> dict:
         out_modules[mod]["classes"].setdefault(canonical_class, {"methods": {}})
         out_modules[mod]["classes"][canonical_class]["methods"].update(methods_out)
 
+    # -----------------------------------------------------------------
+    # Reconcile: RELAY event surface (mirror enumerate_surface.pl).
+    #   (a) `from_payload` is a class-method constructor DECLARED ONCE on the
+    #       base SignalWire::Relay::Event and INHERITED by every typed event
+    #       subclass. The reference records from_payload on every event class
+    #       (RelayEvent + all *Event subclasses) as a classmethod (cls, payload).
+    #       The regex parser only sees the literal `sub from_payload` on the
+    #       base package, so project it onto every recorded event class with
+    #       the reference-canonical (cls, payload:dict) shape. Real inherited
+    #       capability (RULES §2 idiom-via-enumerator), not invented surface.
+    #   (b) `parse_event` is declared as a `sub` in the base Event package, so
+    #       the parser attributed it to the RelayEvent class; the reference
+    #       exposes it as a MODULE-level function. Move it onto functions[].
+    ev = out_modules.get("signalwire.relay.event")
+    if ev:
+        ev_classes = ev.get("classes", {})
+        # (b) parse_event: class-method -> module function.
+        for cls_name, cls_entry in ev_classes.items():
+            if "parse_event" in cls_entry.get("methods", {}):
+                cls_entry["methods"].pop("parse_event")
+                ev.setdefault("functions", {})
+                # The reference exposes parse_event(payload) as a module
+                # free function. Project its canonical single-param shape
+                # (the class-method attribution's params are the RelayEvent
+                # constructor attrs, not this factory's args).
+                py_fn = python_signature("signalwire.relay.event", None, "parse_event")
+                if py_fn:
+                    fn_sig = {
+                        "params": [{"name": p.get("name", ""), "type": "any",
+                                    "required": p.get("required", True)}
+                                   for p in py_fn.get("params", [])
+                                   if p.get("kind") not in ("self", "cls")],
+                        "returns": "any",
+                    }
+                else:
+                    fn_sig = {"params": [{"name": "payload", "type": "any",
+                                          "required": True}], "returns": "any"}
+                ev["functions"].setdefault("parse_event", fn_sig)
+        # (a) from_payload: project onto every event class (classmethod shape).
+        from_payload_sig = {
+            "params": [
+                {"name": "cls", "kind": "cls"},
+                {"name": "payload", "type": "dict<string,any>", "required": True},
+            ],
+            "returns": "any",
+        }
+        for cls_name, cls_entry in ev_classes.items():
+            if not (cls_name.endswith("Event") or cls_name == "RelayEvent"):
+                continue
+            cls_entry.setdefault("methods", {})
+            cls_entry["methods"].setdefault("from_payload", dict(from_payload_sig))
+
+    # -----------------------------------------------------------------
+    # Reconcile: RELAY call surface — StandaloneCollectAction inherits
+    # start_input_timers from its parent CollectAction (Perl
+    # `SignalWire::Relay::Action::StandaloneCollect extends ...::Collect`);
+    # the reference records it on StandaloneCollectAction too. The static
+    # parser sees the `sub start_input_timers` only on CollectAction, so
+    # project the inherited method (mirror enumerate_surface.pl). Real
+    # inherited capability, not invented surface.
+    rc = out_modules.get("signalwire.relay.call", {}).get("classes", {})
+    collect_a = rc.get("CollectAction", {}).get("methods", {})
+    standalone_a = rc.get("StandaloneCollectAction", {}).get("methods")
+    if standalone_a is not None and "start_input_timers" in collect_a \
+            and "start_input_timers" not in standalone_a:
+        standalone_a["start_input_timers"] = dict(collect_a["start_input_timers"])
+
+    # -----------------------------------------------------------------
+    # Reconcile: RELAY action control methods projected onto concrete actions.
+    # The reference no longer factors the controls into abstract mixin bases
+    # (StoppableAction/PausableAction/VolumeAction are gone); it projects them
+    # directly onto each concrete action. Perl's concrete actions
+    # `extends SignalWire::Relay::Action`, whose `sub stop` the per-package
+    # regex parser doesn't attribute to the subclass. Project the inherited
+    # `stop` (control_id-only, dict return) onto every concrete *Action class.
+    # pause/resume/volume are defined on the concrete subclasses themselves
+    # (Play/Record/Collect), so the parser already records them and the
+    # reference-type projection concretizes their param types below.
+    _relay_stop_sig = {
+        "params": [{"name": "self", "kind": "self"}],
+        "returns": "dict<string,any>",
+    }
+    for _cls_name, _cls_entry in rc.items():
+        if not _cls_name.endswith("Action") or _cls_name == "Action":
+            continue
+        _methods = _cls_entry.setdefault("methods", {})
+        _methods.setdefault("stop", dict(_relay_stop_sig))
+
+    # -----------------------------------------------------------------
+    # Reconcile: DataMap factory helpers are MODULE-level free functions in the
+    # reference (signalwire.core.data_map.create_expression_tool /
+    # create_simple_api_tool), but Perl declares them as `sub`s in the
+    # SignalWire::DataMap package so the parser attributes them to the DataMap
+    # class. Move them off the class onto the module functions[] (mirror
+    # enumerate_surface.pl's data_map free-function block).
+    dm = out_modules.get("signalwire.core.data_map")
+    if dm:
+        dm_cls = dm.get("classes", {}).get("DataMap", {}).get("methods", {})
+        for fn_name in ("create_expression_tool", "create_simple_api_tool"):
+            if fn_name in dm_cls:
+                sig = dm_cls.pop(fn_name)
+                dm.setdefault("functions", {})
+                fn_sig = {
+                    "params": [p for p in sig.get("params", [])
+                               if p.get("kind") not in ("self", "cls")],
+                    "returns": sig.get("returns", "any"),
+                }
+                dm["functions"].setdefault(fn_name, fn_sig)
+
+    # -----------------------------------------------------------------
+    # Reconcile: RelayError.__init__. Perl's SignalWire::Relay::Client::RelayError
+    # is a plain die-based error class with a hand-written `new` (in SKIP_METHODS)
+    # and `code`/`message` accessors — it declares no Moo `has` attrs, so the
+    # __init__ synthesis path doesn't fire. The reference records
+    # RelayError.__init__(self, code, message). Project the constructor with the
+    # Perl-loose (any-typed) params matching the reference arity.
+    rce = out_modules.get("signalwire.relay.client", {}).get("classes", {}).get("RelayError")
+    if rce is not None and "__init__" not in rce.get("methods", {}):
+        py_init = python_signature("signalwire.relay.client", "RelayError", "__init__")
+        if py_init:
+            init_params = [{"name": "self", "kind": "self"}]
+            for p in py_init.get("params", []):
+                if p.get("kind") in ("self", "cls"):
+                    continue
+                init_params.append({
+                    "name": p.get("name", ""),
+                    "type": "any",
+                    "required": p.get("required", True),
+                })
+            rce.setdefault("methods", {})["__init__"] = {
+                "params": init_params, "returns": "void",
+            }
+
     # Mixin projection: Perl flattens all mixin methods onto AgentBase via
     # Moo composition; some helpers also live on SWMLService (parent).
     # Project them onto canonical Python mixin paths.
@@ -851,6 +1515,13 @@ def collect(raw: dict) -> dict:
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"]["classes"]:
                 out_modules.pop("signalwire.core.agent_base")
+
+    # Typed-surface strictness: rename Perl-idiom hand-written params to the
+    # reference identifier, THEN re-attach reference-documented concrete param
+    # types onto hand-written params the parser recorded as bare ``any``.
+    apply_hand_param_renames(out_modules)
+    project_reference_param_types(out_modules)
+    apply_return_type_overrides(out_modules)
 
     sorted_modules = {}
     for k in sorted(out_modules):

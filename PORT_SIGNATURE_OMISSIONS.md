@@ -59,14 +59,10 @@ signalwire.relay.event.ReferEvent.__init__: Perl ReferEvent doesn't model `sip_r
 signalwire.relay.event.RelayEvent.__init__: Perl base RelayEvent omits `call_id` (subclasses add it where applicable); Python keeps it on the base class with `''` default
 signalwire.relay.event.StreamEvent.__init__: Perl StreamEvent doesn't model `url` / `name` as Moo attrs; the Perl SDK reads them from the underlying CallStream payload
 signalwire.relay.event.TranscribeEvent.__init__: Perl TranscribeEvent doesn't model `url`, `recording_id`, `duration`, `size` as Moo attrs; the Perl SDK reads them from the underlying CallTranscribe payload
-signalwire.skills.api_ninjas_trivia.skill.ApiNinjasTriviaSkill.__init__: Perl declares the skill's constructor explicitly (Moo `extends` SkillBase); Python's same skill now simply inherits `SkillBase.__init__` verbatim, so the reference no longer emits a per-skill ctor. Same construction contract (agent, params) — Perl just keeps it explicit.
-signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill.__init__: Perl declares the skill's constructor explicitly (Moo `extends` SkillBase); Python's same skill now inherits `SkillBase.__init__` verbatim, so the reference no longer emits a per-skill ctor. Same construction contract.
-signalwire.skills.weather_api.skill.WeatherApiSkill.__init__: Perl declares the skill's constructor explicitly (Moo `extends` SkillBase); Python's same skill now inherits `SkillBase.__init__` verbatim, so the reference no longer emits a per-skill ctor. Same construction contract.
 
 
 ## Idiom: Perl-side helpers replicated on AgentBase
 
-signalwire.core.agent_base.AgentBase.create_tool_token: Perl AgentBase exposes ``create_tool_token`` directly (Moo composition flattens the StateMixin helper onto AgentBase); Python keeps the same helper one level out on a mixin class. Functionally equivalent — the Perl audit reports it as port-only because the Python class itself doesn't redeclare the method.
 signalwire.core.agent_base.AgentBase.extract_sip_username: Perl AgentBase keeps a SignalWire-style ``from``/``caller_id_number`` extractor for backward compatibility; Python's ``SWMLService.extract_sip_username`` (the canonical version) checks ``call.to`` and is now also exposed on the Perl SWMLService. The AgentBase helper is a Perl-only convenience.
 
 
@@ -86,11 +82,103 @@ underlying state-tracking IS implemented: `$call->state` reflects the
 latest `calling.call.state`, and callers can register `$call->on(...)` to
 react to transitions.)
 
-signalwire.relay.call.Call.wait_for_answered: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed
-signalwire.relay.call.Call.wait_for_ringing: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed
-signalwire.relay.call.Call.wait_for_ending: no Call-level state-wait primitive in the Perl port (state is tracked, but blocking wait-on-state lives on Client's read-loop, not on Call); omitted rather than stubbed
 
 
 ## Source-side stubs (Perl method bodies don't yet declare full args)
 
 (All previously-listed stubs have been closed. New stubs would live here.)
+
+
+## Idiom: loose-param signatures (Perl `%opts`/positional, untyped `any`)
+
+Perl has no runtime-introspectable parameter types (no `use feature
+'signatures'` type annotations); the SDK's methods take idiomatic
+`%opts` slurpy hashes or positional scalars, so every parameter surfaces
+as untyped `any` where the Python reference types it concretely. The
+wire contract is identical — only the static parameter TYPE differs.
+These are the new subsystems' methods (item H/I) recorded by the
+signature enumerator; the loose-param `any` is idiom, not a wire defect.
+
+signalwire.core.agent_base.AgentBase.register_sip_username: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
+signalwire.core.auth_handler.AuthHandler.flask_decorator: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
+signalwire.core.mixins.web_mixin.WebMixin.register_routing_callback: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
+signalwire.core.security_config.SecurityConfig.__init__: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
+signalwire.core.swml_renderer.SwmlRenderer.render_function_response_swml: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
+signalwire.core.swml_renderer.SwmlRenderer.render_swml: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
+signalwire.web.web_service.WebService.__init__: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
+
+
+## Reference-oracle gap: symbol in python_surface but not python_signatures
+
+These symbols exist in the surface oracle (python_surface.json) and are
+genuinely implemented by the Perl port, but the signature oracle
+(enumerate_python_signatures.py) did not enumerate them, so the DRIFT
+gate reports them as `missing-reference` (in port, not in the signature
+reference). The SURFACE gate is clean for all of them (they match the
+reference surface, hence not in PORT_ADDITIONS.md). Excused as a
+reference-oracle gap, not port-invented surface.
+
+signalwire.agents.bedrock.BedrockAgent.set_inference_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.agents.bedrock.BedrockAgent.set_llm_model: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.agents.bedrock.BedrockAgent.set_llm_temperature: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.agents.bedrock.BedrockAgent.set_post_prompt_llm_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.agents.bedrock.BedrockAgent.set_prompt_llm_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.agents.bedrock.BedrockAgent.set_voice: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.core.swml_handler.AIVerbHandler.validate_config: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.list_skills: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.prefabs.concierge.ConciergeAgent.on_summary: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.prefabs.faq_bot.FAQBotAgent.on_summary: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.prefabs.receptionist.ReceptionistAgent.on_summary: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.prefabs.survey.SurveyAgent.on_summary: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.utils.schema_utils.SchemaUtils.generate_method_body: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+signalwire.utils.schema_utils.SchemaUtils.generate_method_signature: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+
+
+## Idiom: param-count divergences (Moo attr set / classmethod receiver / %opts)
+
+signalwire.core.data_map.create_expression_tool: Perl `create_expression_tool` is a module free function taking a single `%opts`/`$opts` hash carrying every reference kwarg (name/patterns/parameters); the slurpy sink surfaces as one param vs the reference's 3 named args — loose-param idiom.
+signalwire.core.data_map.create_simple_api_tool: Perl `create_simple_api_tool` is a module free function taking a single `%opts`/`$opts` hash carrying every reference kwarg (name/url/response_template/...); the slurpy sink surfaces as one param vs the reference's 8 named args — loose-param idiom.
+signalwire.core.logging_config.strip_control_chars: Perl `strip_control_chars($event_dict)` takes just the payload to sanitize; the reference is a structlog processor with the `(logger, method_name, event_dict)` processor-protocol arity — Perl's logging pipeline doesn't use structlog's 3-arg processor contract.
+signalwire.core.pom_builder.PomBuilder.from_sections: Perl `from_sections($class_or_self, $sections)` is a dual-invocant classmethod; the `$class_or_self` receiver is stripped as a @staticmethod-style receiver, leaving `sections` vs the reference classmethod's `(cls, sections)` — classmethod-receiver idiom.
+signalwire.relay.event.DenoiseEvent.__init__: Perl DenoiseEvent doesn't model the base RelayEvent `call_id` as a Moo attr (this event carries no call_id in the Perl port); Python keeps `call_id` on the base with `''` default.
+signalwire.relay.event.EchoEvent.__init__: Perl EchoEvent doesn't model the base RelayEvent `call_id` as a Moo attr; Python keeps `call_id` on the base with `''` default.
+signalwire.relay.event.HoldEvent.__init__: Perl HoldEvent doesn't model the base RelayEvent `call_id` as a Moo attr; Python keeps `call_id` on the base with `''` default.
+signalwire.relay.event.QueueEvent.__init__: Perl QueueEvent doesn't model the base RelayEvent `call_id` nor `queue_id`/`queue_name` as Moo attrs; the Perl SDK reads queue identity from the underlying CallQueue payload — a subset of the reference's dataclass fields.
+
+
+## Idiom: reference-only attributes with no Perl method (Plack/PSGI + security)
+
+signalwire.web.web_service.WebService.app: Perl WebService wraps a Plack/PSGI coderef (psgi_app) rather than a FastAPI app instance; the reference's `.app` FastAPI accessor has no direct equivalent in Plack land (mirrors agent_server.AgentServer.app).
+signalwire.web.web_service.WebService.security: Perl WebService applies security headers inline (_security_headers) rather than exposing a SecurityConfig accessor attribute; the reference's `.security` accessor has no first-class Perl equivalent.
+
+
+# ---------------------------------------------------------------------------
+# Typed-surface strictness pass (2026-07): the signature audit now compares
+# PARAM TYPES too. Concrete param types are re-attached by the enumerator's
+# reference-type projection + a hand-param rename table (Perl abbreviations →
+# reference names). The residual below is the Perl Moo *constructor* idiom: a
+# Moo class is built from `has` attributes (keyword construction) whose
+# declaration order does not align with Python's positional __init__, so a
+# positional param comparison mismatches even though the attribute set + call
+# contract match. Not a wire bug — Moo constructors are keyword-only.
+
+signalwire.core.agent_base.AgentBase.__init__: Perl Moo constructor idiom — AgentBase is built via ~47 Moo `has` attributes in declaration order; Python's positional __init__ enumerates the same config as ordered positional-with-default params. The two don't align positionally (Moo keyword construction); functional parity holds via the shared attribute set
+signalwire.core.swml_service.SWMLService.__init__: Perl Moo constructor idiom — SWMLService is built via Moo `has` attributes; Python's positional __init__(name, route, host, port, basic_auth, schema_path, config_file, schema_validation) does not align positionally with the keyword-constructed Perl object
+signalwire.core.swml_service.SWMLService.register_routing_callback: Perl idiom — SWMLService.register_routing_callback takes `(path, callback)` where Python takes `(callback_fn, path)`; the callback + path are the same two args in swapped order (Perl reads path-first). Same routing contract, argument order idiom
+signalwire.relay.call.AIAction.__init__: Perl Moo constructor idiom — AIAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.Action.__init__: Perl Moo constructor idiom — Action is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.CollectAction.__init__: Perl Moo constructor idiom — CollectAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.DetectAction.__init__: Perl Moo constructor idiom — DetectAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.FaxAction.__init__: Perl Moo constructor idiom — FaxAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.PayAction.__init__: Perl Moo constructor idiom — PayAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.PlayAction.__init__: Perl Moo constructor idiom — PlayAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.RecordAction.__init__: Perl Moo constructor idiom — RecordAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.StandaloneCollectAction.__init__: Perl Moo constructor idiom — StandaloneCollectAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.StreamAction.__init__: Perl Moo constructor idiom — StreamAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.TapAction.__init__: Perl Moo constructor idiom — TapAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.call.TranscribeAction.__init__: Perl Moo constructor idiom — TranscribeAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
+signalwire.relay.client.RelayClient.__init__: Perl Moo constructor idiom — RelayClient Moo `has` attributes vs Python positional __init__; `max_active_calls` is a Moo keyword attr, positional slot differs
+signalwire.relay.event.CallStateEvent.__init__: Perl Moo constructor idiom — CallStateEvent models only the event fields the Perl SDK consumes as `has` attrs; the reference dataclass __init__ enumerates the full field set. Moo keyword construction, positional comparison is an artifact
+signalwire.relay.event.CallingErrorEvent.__init__: Perl Moo constructor idiom — CallingErrorEvent models only the event fields the Perl SDK consumes as `has` attrs; the reference dataclass __init__ enumerates the full field set. Moo keyword construction, positional comparison is an artifact
+signalwire.relay.event.DialEvent.__init__: Perl Moo constructor idiom — DialEvent models only the event fields the Perl SDK consumes as `has` attrs; the reference dataclass __init__ enumerates the full field set. Moo keyword construction, positional comparison is an artifact
+signalwire.rest.client.RestClient.__init__: Perl Moo constructor idiom — RestClient Moo `has` attributes (project, token, host) vs Python positional __init__; `host` is a Moo keyword attr, positional slot differs

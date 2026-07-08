@@ -45,10 +45,46 @@ subtest 'global data' => sub {
         questions => [{ key_name => 'n', question_text => 'Name?' }],
     });
     my $gdata = $skill->get_global_data;
-    my $ns = $gdata->{info_gatherer};
+    # State is stored under the skill namespace (skill:<instance_key>), the same
+    # key the handlers read/write via get_skill_data / update_skill_data.
+    my $ns = $gdata->{ $skill->_skill_namespace };
     ok(defined $ns, 'namespace exists');
     is(scalar @{$ns->{questions}}, 1, 'one question');
     is($ns->{question_index}, 0, 'index starts at 0');
+};
+
+# Contract #3 (skill form): the submit_answer handler is a real state machine,
+# not an "Answer recorded" echo. It reads the namespaced state from raw_data,
+# stores the answer, advances the index, and presents the next question.
+subtest 'submit_answer state machine (namespaced)' => sub {
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_sm');
+    my $skill = $factory->new(agent => $agent, params => {
+        questions => [
+            { key_name => 'full_name', question_text => 'What is your full name?' },
+            { key_name => 'email',     question_text => 'What is your email?' },
+        ],
+    });
+    $skill->setup;
+    $skill->register_tools;
+
+    my $ns = $skill->_skill_namespace;
+    my $raw = { global_data => { $ns => {
+        questions      => $skill->params->{questions},
+        question_index => 0,
+        answers        => [],
+    } } };
+
+    my $result = $agent->on_function_call('submit_answer', { answer => 'Ada' }, $raw);
+    my ($upd) = grep { exists $_->{set_global_data} } @{ $result->action };
+    ok(defined $upd, 'emits a set_global_data action (not an echo)');
+    my $new = $upd->{set_global_data}{$ns};
+    is($new->{question_index}, 1, 'question_index advanced');
+    is_deeply(
+        $new->{answers},
+        [ { key_name => 'full_name', answer => 'Ada' } ],
+        'answer recorded under its key_name',
+    );
+    like($result->response, qr/email/i, 'next question presented');
 };
 
 subtest 'prompt sections' => sub {

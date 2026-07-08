@@ -115,7 +115,7 @@ SignalWire::Relay::DialState - RELAY dial-outcome states as a typed closed set
 
     # Named constants and bare wire strings are interchangeable:
     $event->dial_state eq ANSWERED;     # constant
-    $event->dial_state eq 'answered';   # string (Python parity)
+    $event->dial_state eq 'answered';   # plain wire string still works
 
     # Membership / terminality (false on unknown — never dies):
     SignalWire::Relay::DialState->is_state('dialing');         # 1
@@ -135,8 +135,8 @@ answered). Each constant's value is the exact wire string the server sends.
 The constants B<are> the canonical wire strings, so the dial flow is
 unchanged: it still compares plain strings (see
 L<SignalWire::Relay::Client>'s dial dispatch, which resolves a pending dial
-on C<answered> and rejects on C<failed>). That keeps parity with the Python
-reference and leaves forward-compatible server states working.
+on C<answered> and rejects on C<failed>). Any bare state string is still
+accepted, so forward-compatible server states keep working.
 
 Grounded in the port's L<SignalWire::Relay::Constants> (C<DIAL_STATES> /
 C<DIAL_TERMINAL_STATES>), which are the single source the lists below are

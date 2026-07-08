@@ -54,3 +54,18 @@
 
 # Avoid cpanfile (not needed in dist)
 ^cpanfile$
+
+# Avoid porting-audit artifacts (in-repo audit contract, NOT part of the published dist)
+^port_signatures.*\.json$
+^port_surface.*\.json$
+^audit_coverage.*\.json$
+^PORT_.*\.md$
+^CHECKLIST\.md$
+^DOC_AUDIT_IGNORE\.md$
+^REST_COVERAGE_GAPS\.md$
+^ROOT_HYGIENE_ALLOW\.md$
+^ARTIFACT_DENY_ALLOW\.md$
+^DOC_LANG_ALLOW\.md$
+^tidy\.err$
+# audit harness examples (in-repo audit tooling, not shippable examples)
+^examples/.*audit_harness.*\.pl$

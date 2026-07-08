@@ -254,7 +254,7 @@ subtest 'TestNumberGroups' => sub {
 subtest 'TestProjectTokens' => sub {
     subtest 'update' => sub {
         my $client = MockTest::client();
-        my $body = $client->project_ns->tokens->update('tok-1', name => 'renamed-token');
+        my $body = $client->project->tokens->update('tok-1', name => 'renamed-token');
         is(ref $body, 'HASH', 'response is a hashref');
         ok(exists $body->{id}, 'project token has id');
         my $j = MockTest::journal_last();
@@ -266,7 +266,7 @@ subtest 'TestProjectTokens' => sub {
 
     subtest 'delete' => sub {
         my $client = MockTest::client();
-        my $body = $client->project_ns->tokens->delete('tok-1');
+        my $body = $client->project->tokens->delete('tok-1');
         is(ref $body, 'HASH', 'delete returns a hashref');
         my $j = MockTest::journal_last();
         is($j->{method}, 'DELETE', 'DELETE recorded');

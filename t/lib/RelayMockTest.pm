@@ -507,7 +507,7 @@ __END__
 
 =head1 NAME
 
-RelayMockTest - test helper for the porting-sdk mock_relay WebSocket server.
+RelayMockTest - test helper for the shared mock_relay WebSocket server.
 
 =head1 SYNOPSIS
 
