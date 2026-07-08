@@ -28,7 +28,7 @@ $client->on_call(
         my ($call) = @_;
         $call->answer;
         my $action =
-            $call->play( media => [ { type => 'tts', params => { text => 'Welcome!' } } ] );
+            $call->play( play => [ { type => 'tts', params => { text => 'Welcome!' } } ] );
         $action->wait;
         $call->hangup;
     }

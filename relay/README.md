@@ -19,7 +19,7 @@ $client->on_call(sub {
     my ($call) = @_;
     print "Incoming call: ${\$call->call_id}\n";
     $call->answer;
-    my $action = $call->play(media => [
+    my $action = $call->play(play => [
         { type => 'tts', params => { text => 'Welcome to SignalWire!' } },
     ]);
     $action->wait;

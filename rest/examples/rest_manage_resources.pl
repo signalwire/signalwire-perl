@@ -47,7 +47,7 @@ for my $a (@{ $agents->{data} // [] }) {
 # 3. Search for a phone number
 print "\nSearching for available phone numbers...\n";
 my $available = safe('Search numbers', sub {
-    $client->phone_numbers->search(area_code => '512', max_results => 3);
+    $client->phone_numbers->search(areacode => '512', max_results => 3);
 });
 if ($available) {
     for my $num (@{ $available->{data} // [] }) {
@@ -59,7 +59,7 @@ if ($available) {
 print "\nPlacing a test call...\n";
 safe('Dial', sub {
     $client->calling->dial(
-        from_ => '+15559876543',
+        from  => '+15559876543',
         to    => '+15551234567',
         url   => 'https://example.com/call-handler',
     );
