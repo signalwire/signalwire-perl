@@ -88,6 +88,7 @@ At least one of `body` or `media` is required.
 Register a handler with `on_message` to receive inbound SMS/MMS. The
 callback receives a `SignalWire::Relay::Event::MessageReceive`.
 
+<!-- snippet: no-run live RELAY WebSocket connection (real network) -->
 ```perl
 use SignalWire::Relay::Client;
 
@@ -180,6 +181,7 @@ See [Events](events.md) for the full list of fields on each.
 
 The same client handles both calls and messages:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 my $client = SignalWire::Relay::Client->new(
     project  => $ENV{SIGNALWIRE_PROJECT_ID},

@@ -67,6 +67,7 @@ WebService can be configured through multiple methods (in order of priority):
 ### 1. Constructor Parameters
 
 ```perl
+use SignalWire::Web::WebService;
 my $service = SignalWire::Web::WebService->new(
     port        => 8002,                    # Port to bind to
     directories => {                        # URL path to directory mappings
@@ -161,6 +162,7 @@ WebService prevents access outside designated directories:
 #### File Size Limits
 Default maximum file size is 100MB. Configure with:
 ```perl
+use SignalWire::Web::WebService;
 my $service = SignalWire::Web::WebService->new(max_file_size => 50 * 1024 * 1024);  # 50MB
 ```
 
@@ -194,6 +196,7 @@ MIIEvQIBADANBgkqhkiG9w0BAQE...
 
 `start` accepts `ssl_cert` and `ssl_key` for API parity with the reference:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 my $service = SignalWire::Web::WebService->new(directories => { '/docs' => './docs' });
 $service->start(
@@ -266,6 +269,7 @@ $service->start;
 
 ### With Directory Browsing
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 my $service = SignalWire::Web::WebService->new(
     directories               => { '/files' => './public' },
@@ -279,6 +283,7 @@ $service->start;
 ### Restricted File Types
 
 ```perl
+use SignalWire::Web::WebService;
 # Only serve web assets
 my $service = SignalWire::Web::WebService->new(
     directories               => { '/web' => './www' },
@@ -289,6 +294,7 @@ my $service = SignalWire::Web::WebService->new(
 
 ### Dynamic Directory Management
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 my $service = SignalWire::Web::WebService->new;
 
@@ -304,6 +310,7 @@ $service->start;
 
 ### With Custom Authentication
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 my $service = SignalWire::Web::WebService->new(
     directories => { '/private' => './sensitive-docs' },
@@ -314,6 +321,7 @@ $service->start;
 
 ### HTTPS with Let's Encrypt
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 # Assuming you have Let's Encrypt certificates
 my $service = SignalWire::Web::WebService->new(
@@ -327,6 +335,7 @@ $service->start(
 
 ### Multi-Environment Configuration
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 # Development vs Production
 my $service;
@@ -358,6 +367,7 @@ else {
 
 Run WebService as a dedicated static file server:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 # web_server.pl
 use SignalWire::Web::WebService;
@@ -381,6 +391,7 @@ Run WebService alongside your AI agents on different ports:
 the bound port), so no explicit thread is required — start the web service,
 then run the agent in the foreground:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 # main.pl
 use SignalWire::Agent::AgentBase;
@@ -529,6 +540,7 @@ chmod -R 755 /path/to/static/files
 
 **Issue: Directory not found**
 ```perl
+use SignalWire::Web::WebService;
 # Use absolute paths
 use Cwd qw(abs_path);
 my $service = SignalWire::Web::WebService->new(
@@ -613,6 +625,7 @@ Return the PSGI coderef, for mounting the service in your own Plack stack.
 
 WebService complements AI agents by providing static file serving:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package DocumentationAgent;
 use Moo;

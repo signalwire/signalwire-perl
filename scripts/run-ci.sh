@@ -319,10 +319,10 @@ sched_gate LINT defer=1 desc="run-lint.sh (perlcritic severity 4, zero findings)
     -- bash scripts/run-lint.sh
 
 # ---- §C1 doc/example/CLI execution gates (mirrors python's run-ci.sh) ----
-# SNIPPET-COMPILE + DOC-CLI are cheap/blocking; EXAMPLES-RUN is defer=1 blocking;
-# SNIPPET-RUN is defer=1 report-only (large illustrative-fragment residual — the
-# gate's fragment auto-classifier is python-only, so perl page-scoped/missing-
-# import fragments all read as fails; python itself keeps SNIPPET-RUN report-only).
+# SNIPPET-COMPILE + DOC-CLI are cheap/blocking; EXAMPLES-RUN + SNIPPET-RUN are
+# defer=1 blocking. SNIPPET-RUN's residual was burned to zero (missing `use`
+# lines added, live-network/blocking-server/user-subclass snippets marked
+# `no-run`), so it now blocks like the other doc-execution gates.
 sched_gate SNIPPET-COMPILE desc="documented code snippets compile (perl -c with lib/ on @INC)" \
     -- python3 "$PORTING_SDK_DIR/scripts/snippet_compile.py" --port perl --repo .
 
@@ -332,8 +332,8 @@ sched_gate DOC-CLI desc="documented swaig-test invocations parse against the rea
 sched_gate EXAMPLES-RUN defer=1 desc="shipped examples load/start against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \
     -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port perl --repo .
 
-sched_gate SNIPPET-RUN defer=1 desc="dynamic-port doc snippets run to a zero exit against the mock (report-only: illustrative-fragment residual)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port perl --repo . --report-only
+sched_gate SNIPPET-RUN defer=1 desc="dynamic-port doc snippets run to a zero exit against the mock" \
+    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port perl --repo .
 
 # ---- §G anti-laundering ledger gate ----
 sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressions (perlcritic ## no critic etc.)" \

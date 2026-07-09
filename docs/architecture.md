@@ -83,6 +83,8 @@ DataMap tools follow a pipeline execution model on the SignalWire server:
 
 1. **Builder Pattern**: Fluent interface for constructing data_map configurations
    ```perl
+   use SignalWire::SWAIG::FunctionResult;
+   use SignalWire::DataMap;
    my $tool = SignalWire::DataMap->new('function_name')
        ->description('Function purpose')
        ->parameter('param', 'string', 'Description', required => 1)
@@ -109,6 +111,8 @@ The system supports different tool patterns:
 
 1. **API Integration Tools**: Direct REST API calls
    ```perl
+   use SignalWire::SWAIG::FunctionResult;
+   use SignalWire::DataMap;
    my $weather_tool = SignalWire::DataMap->new('get_weather')
        ->webhook('GET', 'https://api.weather.com/v1/current?q=${location}')
        ->output(SignalWire::SWAIG::FunctionResult->new('Weather: ${response.current.condition}'));
@@ -116,6 +120,8 @@ The system supports different tool patterns:
 
 2. **Expression-Based Tools**: Pattern matching without API calls
    ```perl
+   use SignalWire::SWAIG::FunctionResult;
+   use SignalWire::DataMap;
    my $control_tool = SignalWire::DataMap->new('file_control')
        ->expression('${args.command}', qr/start.*/,
            SignalWire::SWAIG::FunctionResult->new->add_action('start', JSON::true))
@@ -125,10 +131,12 @@ The system supports different tool patterns:
 
 3. **Array Processing Tools**: Handle list responses
    ```perl
+   use SignalWire::SWAIG::FunctionResult;
+   use SignalWire::DataMap;
    my $search_tool = SignalWire::DataMap->new('search_docs')
        ->webhook('GET', 'https://api.docs.com/search')
-       ->foreach('${response.results}')
-       ->output(SignalWire::SWAIG::FunctionResult->new('Found: ${foreach.title}'));
+       ->foreach({ input_key => 'results', output_key => 'formatted', append => 'Found: ${this.title}\n' })
+       ->output(SignalWire::SWAIG::FunctionResult->new('${formatted}'));
    ```
 
 ### Integration with Agent Architecture

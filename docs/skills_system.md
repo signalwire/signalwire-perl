@@ -217,6 +217,7 @@ $agent->add_skill('swml_transfer', {
 ## Usage Examples
 
 ### Basic Usage
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use lib 'lib';
 use SignalWire::Agent::AgentBase;
@@ -238,6 +239,7 @@ $agent->run;
 ```
 
 ### Skills with Custom Parameters
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use lib 'lib';
 use SignalWire::Agent::AgentBase;
@@ -265,6 +267,7 @@ $agent->run;
 
 ### Runtime Skill Management
 ```perl
+use SignalWire::Agent::AgentBase;
 my $agent = SignalWire::Agent::AgentBase->new(name => 'Dynamic Agent');
 
 # Add skills with different configurations

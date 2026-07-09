@@ -196,6 +196,7 @@ Basic authentication is automatically enforced on the protected routes.
 Credentials are generated if not provided, or can be specified at construction:
 
 ```perl
+use SignalWire::SWML::Service;
 my $service = SignalWire::SWML::Service->new(
     name                => 'my-service',
     basic_auth_user     => 'username',
@@ -392,6 +393,7 @@ In this example:
 including alongside other apps with `Plack::Builder`:
 
 ```perl
+use SignalWire::SWML::Service;
 use Plack::Builder;
 
 my $service = SignalWire::SWML::Service->new(name => 'my-service', route => '/voice');
@@ -408,6 +410,7 @@ instance method) that pulls the caller's SIP username out of a request body's
 `call.to`/`call.from` field:
 
 ```perl
+use SignalWire::SWML::Service;
 my $user = SignalWire::SWML::Service->extract_sip_username($request_body);
 ```
 

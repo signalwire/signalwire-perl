@@ -112,6 +112,7 @@ calls chain.
 
 ### Basic Single-Context Workflow
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use strict;
 use warnings;
@@ -161,6 +162,7 @@ $agent->run;
 
 ### Multi-Context Workflow
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package CustomerServiceAgent;
 use Moo;
@@ -457,6 +459,7 @@ $step->set_functions('none');
 
 ### Security-Focused Example
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package SecureBankingAgent;
 use Moo;
@@ -627,6 +630,7 @@ Without a gather `prompt`, the AI jumps straight into asking the first question 
 
 Each question has a `type` that controls the JSON schema of the `answer` parameter in `gather_submit`:
 
+<!-- snippet: no-compile method-chain fragments (leading arrow, no invocant) -->
 ```perl
 # String (default) - free text
 ->add_gather_question(key => 'name', question => 'What is your name?', type => 'string')
@@ -685,6 +689,7 @@ The `resolve_airport` function must already be registered on the agent. The `fun
 
 Answers are stored in `global_data`, which is available in prompt variable expansion via `${key}`:
 
+<!-- snippet: no-compile method-chain fragments (leading arrow, no invocant) -->
 ```perl
 # Store under a namespace
 ->set_gather_info(output_key => 'profile')
@@ -800,6 +805,7 @@ Flow:
 
 ### Example 1: Technical Support Troubleshooting
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package TechnicalSupportAgent;
 use Moo;
@@ -887,6 +893,7 @@ $agent->run;
 
 ### Example 2: Multi-Step Application Process
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package LoanApplicationAgent;
 use Moo;
@@ -965,6 +972,7 @@ $agent->run;
 
 ### Example 3: E-commerce Customer Service
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package EcommerceServiceAgent;
 use Moo;

@@ -12,6 +12,7 @@ cpanm SignalWire
 
 ## Use Statement Changes
 
+<!-- snippet: no-run illustrative pre-2.0 'Before' code using removed module names -->
 ```perl
 # Before
 use SignalWire::Agents::AgentBase;

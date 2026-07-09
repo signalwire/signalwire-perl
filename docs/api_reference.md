@@ -23,6 +23,7 @@ The `AgentBase` class is the foundation for creating AI agents. It extends `Sign
 Construct an agent with `SignalWire::Agent::AgentBase->new(...)` (or, from a subclass, `MyAgent->new(...)`). Constructor options are passed as `key => value` pairs:
 
 ```perl
+use SignalWire::Agent::AgentBase;
 my $agent = SignalWire::Agent::AgentBase->new(
     name          => 'my-agent',
     route         => '/',
@@ -531,6 +532,7 @@ Register a pre-built SWAIG function hashref (for example, one produced by `DataM
 
 **Usage:**
 ```perl
+use SignalWire::DataMap;
 # Register a DataMap tool
 my $weather_tool = SignalWire::DataMap->new('get_weather')
     ->webhook( 'GET', 'https://api.weather.com/...' );
@@ -1131,6 +1133,7 @@ The handler receives:
 
 **Usage:**
 ```perl
+use SignalWire::Agent::AgentBase;
 my $agent = SignalWire::Agent::AgentBase->new( name => 'my_agent' );
 $agent->enable_debug_events;
 
@@ -1292,6 +1295,7 @@ The `SignalWire::SWAIG::FunctionResult` class is used to create structured respo
 ### Constructor
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 SignalWire::SWAIG::FunctionResult->new( $response, post_process => $bool );
 ```
 
@@ -1329,6 +1333,7 @@ Set or update the natural-language response text. Returns `$self` for chaining.
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $result = SignalWire::SWAIG::FunctionResult->new;
 $result->set_response('I found your order information');
 ```
@@ -1341,6 +1346,7 @@ Enable or disable post-processing for this result. Returns `$self` for chaining.
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $result = SignalWire::SWAIG::FunctionResult->new("I'll help you with that");
 $result->set_post_process(1);   # Let the AI handle follow-up questions first
 ```
@@ -1447,6 +1453,7 @@ End the call immediately. Returns `$self` for chaining.
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $result = SignalWire::SWAIG::FunctionResult->new('Thank you for calling. Goodbye!');
 $result->hangup;
 ```
@@ -1459,6 +1466,7 @@ Put the call on hold. Returns `$self` for chaining.
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $result = SignalWire::SWAIG::FunctionResult->new('Please hold while I look that up');
 $result->hold(60);
 ```
@@ -1963,6 +1971,7 @@ Convert the result to a hashref for serialization (the Perl equivalent of Python
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $result = SignalWire::SWAIG::FunctionResult->new('Hello world');
 $result->add_action( 'play', 'music.mp3' );
 my $result_hash = $result->to_hash;
@@ -1982,6 +1991,7 @@ Create a payment-prompt configuration hashref. Callable as a class or instance m
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $prompt = SignalWire::SWAIG::FunctionResult->create_payment_prompt(
     for_situation => 'card_number',
     actions       => [
@@ -1999,6 +2009,7 @@ Create a payment-action configuration hashref. Callable as a class or instance m
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $action = SignalWire::SWAIG::FunctionResult->create_payment_action( 'say', 'Enter your card number' );
 ```
 
@@ -2011,6 +2022,7 @@ Create a payment-parameter configuration hashref. Callable as a class or instanc
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $param = SignalWire::SWAIG::FunctionResult->create_payment_parameter( 'merchant_id', '12345' );
 ```
 
@@ -2019,6 +2031,7 @@ my $param = SignalWire::SWAIG::FunctionResult->create_payment_parameter( 'mercha
 All mutating methods return `$self`, enabling fluent method chaining:
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $result = SignalWire::SWAIG::FunctionResult->new("I'll help you with that")
     ->set_post_process(1)
     ->update_global_data({ status => 'helping' })
@@ -2052,6 +2065,7 @@ The `SignalWire::DataMap` class provides a declarative approach to creating SWAI
 ### Constructor
 
 ```perl
+use SignalWire::DataMap;
 SignalWire::DataMap->new($function_name);
 ```
 
@@ -2079,6 +2093,7 @@ Set the function description/purpose. Returns `$self` for chaining.
 
 **Usage:**
 ```perl
+use SignalWire::DataMap;
 my $data_map = SignalWire::DataMap->new('get_weather')
     ->purpose('Get current weather information for any city');
 ```
@@ -2091,6 +2106,7 @@ Alias for `purpose()` - set the function description. Returns `$self` for chaini
 
 **Usage:**
 ```perl
+use SignalWire::DataMap;
 my $data_map = SignalWire::DataMap->new('search_api')
     ->description('Search our knowledge base for information');
 ```
@@ -2224,6 +2240,8 @@ $data_map->params({
 DataMap supports multiple webhook configurations for fallback scenarios:
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
+use SignalWire::DataMap;
 # Primary API with fallback
 my $data_map = SignalWire::DataMap->new('search_with_fallback')
     ->purpose('Search with multiple API fallbacks')
@@ -2260,6 +2278,7 @@ Set the response template for successful API calls. Returns `$self` for chaining
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 # Simple response template
 $data_map->output(
     SignalWire::SWAIG::FunctionResult->new(
@@ -2288,6 +2307,7 @@ Set the response used when all webhooks fail. Returns `$self` for chaining.
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 $data_map->fallback_output(
     SignalWire::SWAIG::FunctionResult->new('Sorry, the service is temporarily unavailable. Please try again later.')
         ->add_action( 'play', 'service_unavailable.mp3' )
@@ -2304,6 +2324,8 @@ Process array responses by iterating over elements. In Perl, `foreach` takes a h
 
 **Array Processing:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
+use SignalWire::DataMap;
 # Process an array of search results
 my $data_map = SignalWire::DataMap->new('search_docs')
     ->webhook( 'GET', 'https://api.docs.com/search?q=${args.query}' )
@@ -2335,6 +2357,8 @@ Add pattern-based responses without API calls. `$test_value`, `$pattern`, and `$
 
 **Usage:**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
+use SignalWire::DataMap;
 # Command-based responses
 my $control_map = SignalWire::DataMap->new('file_control')
     ->purpose('Control file playback')
@@ -2434,6 +2458,8 @@ $data_map->webhook_expressions([
 #### Simple Weather API
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
+use SignalWire::DataMap;
 my $weather_tool = SignalWire::DataMap->new('get_weather')
     ->purpose('Get current weather information')
     ->parameter( 'location', 'string', 'City name or ZIP code', required => 1 )
@@ -2452,6 +2478,8 @@ $agent->register_swaig_function( $weather_tool->to_swaig_function );
 #### Search with Array Processing
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
+use SignalWire::DataMap;
 my $search_tool = SignalWire::DataMap->new('search_knowledge')
     ->purpose('Search company knowledge base')
     ->parameter( 'query', 'string', 'Search query', required => 1 )
@@ -2478,6 +2506,8 @@ my $search_tool = SignalWire::DataMap->new('search_knowledge')
 #### Command Processing (No API)
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
+use SignalWire::DataMap;
 my $control_tool = SignalWire::DataMap->new('system_control')
     ->purpose('Control system functions')
     ->parameter( 'action', 'string', 'Action to perform', required => 1 )
@@ -2518,6 +2548,7 @@ Convert the DataMap to a SWAIG function hashref for registration.
 
 **Usage:**
 ```perl
+use SignalWire::DataMap;
 # Build the DataMap
 my $weather_map = SignalWire::DataMap->new('get_weather')
     ->purpose('Get weather')
@@ -2605,6 +2636,8 @@ $agent->register_swaig_function( $file_control->to_swaig_function );
 All DataMap methods return `$self`, enabling fluent method chaining:
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
+use SignalWire::DataMap;
 my $complete_tool = SignalWire::DataMap->new('comprehensive_search')
     ->purpose('Comprehensive search with fallbacks')
     ->parameter( 'query', 'string', 'Search query', required => 1 )
@@ -2939,6 +2972,7 @@ Represents a SWAIG function definition with metadata and validation. In most cas
 #### Constructor
 
 ```perl
+use SignalWire::SWAIG::SWAIGFunction;
 SignalWire::SWAIG::SWAIGFunction->new(
     name        => $name,
     description => $description,
@@ -3052,6 +3086,7 @@ The SDK supports various environment variables for configuration:
 ### Usage
 
 ```perl
+use SignalWire::Agent::AgentBase;
 # Set environment variables
 $ENV{SWML_BASIC_AUTH_USER}     = 'admin';
 $ENV{SWML_BASIC_AUTH_PASSWORD} = 'secret';
@@ -3071,6 +3106,7 @@ $agent->add_skill('web_search', {
 
 Here's a comprehensive example using multiple SDK components:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package ComprehensiveAgent;
 use Moo;

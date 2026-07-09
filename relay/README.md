@@ -4,6 +4,7 @@ Real-time call control and messaging over WebSocket. The RELAY client connects t
 
 ## Quick Start
 
+<!-- snippet: no-run live RELAY WebSocket connection (real network) -->
 ```perl
 use lib 'lib';
 use SignalWire::Relay::Client;

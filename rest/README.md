@@ -4,6 +4,7 @@ Synchronous REST client for managing SignalWire resources, controlling live call
 
 ## Quick Start
 
+<!-- snippet: no-run live REST call (real network; SDK REST base is https://{space}, no mock override) -->
 ```perl
 use lib 'lib';
 use SignalWire::REST::RestClient;

@@ -3,6 +3,7 @@
 ## Constructor
 
 ```perl
+use SignalWire::REST::RestClient;
 my $client = SignalWire::REST::RestClient->new(
     project => $ENV{SIGNALWIRE_PROJECT_ID},   # required
     token   => $ENV{SIGNALWIRE_API_TOKEN},    # required

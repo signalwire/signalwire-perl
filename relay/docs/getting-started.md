@@ -40,6 +40,7 @@ instead of `project` + `token`. The `host` parameter is still required.
 
 ## Minimal Example
 
+<!-- snippet: no-run live RELAY WebSocket connection (real network) -->
 ```perl
 use strict;
 use warnings;
@@ -103,6 +104,7 @@ When a call arrives on a context you're subscribed to, the handler you
 registered with `on_call` is invoked.
 
 ```perl
+use SignalWire::Relay::Client;
 # Subscribe at connect time
 my $client = SignalWire::Relay::Client->new(
     project  => $ENV{SIGNALWIRE_PROJECT_ID},
