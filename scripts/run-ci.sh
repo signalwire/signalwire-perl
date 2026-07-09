@@ -318,6 +318,45 @@ sched_gate FMT defer=1 res=surface desc="run-format.sh (local: apply; CI: --chec
 sched_gate LINT defer=1 desc="run-lint.sh (perlcritic severity 4, zero findings)" \
     -- bash scripts/run-lint.sh
 
+# ---- §C1 doc/example/CLI execution gates (mirrors python's run-ci.sh) ----
+# SNIPPET-COMPILE + DOC-CLI are cheap/blocking; EXAMPLES-RUN is defer=1 blocking;
+# SNIPPET-RUN is defer=1 report-only (large illustrative-fragment residual — the
+# gate's fragment auto-classifier is python-only, so perl page-scoped/missing-
+# import fragments all read as fails; python itself keeps SNIPPET-RUN report-only).
+sched_gate SNIPPET-COMPILE desc="documented code snippets compile (perl -c with lib/ on @INC)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/snippet_compile.py" --port perl --repo .
+
+sched_gate DOC-CLI desc="documented swaig-test invocations parse against the real CLI" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_cli.py" --port perl --repo .
+
+sched_gate EXAMPLES-RUN defer=1 desc="shipped examples load/start against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port perl --repo .
+
+sched_gate SNIPPET-RUN defer=1 desc="dynamic-port doc snippets run to a zero exit against the mock (report-only: illustrative-fragment residual)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port perl --repo . --report-only
+
+# ---- §G anti-laundering ledger gate ----
+sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressions (perlcritic ## no critic etc.)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/suppression_ledger.py" --port perl --repo .
+
+# ---- §D1 packaging: build the real make-dist tarball, install clean, require it ----
+# Heavy (real per-port build) → defer=1, blocking (artifact builds/installs/imports).
+# package_smoke.py runs `perl Makefile.PL && make manifest && make dist` IN-TREE, so
+# (exactly like ARTIFACT-DENY) it rewrites the tracked MANIFEST and drops the dist
+# tarball. Wrap it so the tree is restored afterward — MANIFEST back to the committed
+# copy, MakeMaker byproducts + the tarball swept (tarball is .gitignore'd, but leave
+# no scratch behind per the repo cleanup rule).
+package_smoke_gate() {
+    python3 "$PORTING_SDK_DIR/scripts/package_smoke.py" --port perl --repo .
+    local rc=$?
+    git checkout -- MANIFEST 2>/dev/null || true
+    rm -f MANIFEST.bak MYMETA.json MYMETA.yml Makefile Makefile.old pm_to_blib \
+          SignalWire-*.tar SignalWire-*.tar.gz
+    return $rc
+}
+sched_gate PACKAGE-SMOKE defer=1 desc="real make-dist artifact builds, installs clean, and requires (MANIFEST completeness)" \
+    --fn package_smoke_gate
+
 sched_gate DOC-AUDIT res=surface desc="audit_docs vs port_surface.json" \
     -- python3 "$PORTING_SDK_DIR/scripts/audit_docs.py" \
         --root "$PORT_ROOT" \
