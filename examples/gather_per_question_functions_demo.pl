@@ -28,7 +28,7 @@
 use strict;
 use warnings;
 use lib 'lib';
-use JSON qw(encode_json decode_json);
+use JSON;
 use SignalWire::Agent::AgentBase;
 use SignalWire::SWAIG::FunctionResult;
 
@@ -136,4 +136,4 @@ $ctx->add_step('confirm')
     ->set_end(1);
 
 my $swml = $agent->render_swml();
-print JSON->new->pretty->encode(decode_json($swml));
+print JSON->new->pretty->canonical->encode($swml);

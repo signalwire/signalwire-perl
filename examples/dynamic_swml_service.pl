@@ -43,7 +43,7 @@ if ($choice eq 'router') {
     print "Basic Auth: " . $svc->basic_auth_user . ":" . $svc->basic_auth_password . "\n\n";
     print "SWML Document:\n";
     print $doc->to_pretty_json . "\n\n";
-    $svc->run;
+    $svc->serve;
 
 } else {
     # --- Dynamic Greeting Service ---
@@ -93,5 +93,5 @@ if ($choice eq 'router') {
     print "Available sections: main, vip, new_customer\n";
     print "SWML Document:\n";
     print $doc->to_pretty_json . "\n\n";
-    $svc->run;
+    $svc->serve;
 }

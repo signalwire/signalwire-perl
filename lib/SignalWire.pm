@@ -152,9 +152,8 @@ SignalWire - SDK for building AI agents as microservices on SignalWire
 
     # Build structured prompts
     $agent->prompt_add_section('Role', 'You are a helpful assistant.');
-    $agent->prompt_add_section('Rules',
-        body   => ['Be concise', 'Be friendly'],
-        bullet => '*',
+    $agent->prompt_add_section('Rules', '',
+        bullets => ['Be concise', 'Be friendly'],
     );
 
     # Define tools with local handlers
