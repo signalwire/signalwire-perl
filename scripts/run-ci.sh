@@ -323,14 +323,17 @@ sched_gate LINT defer=1 desc="run-lint.sh (perlcritic severity 4, zero findings)
 # defer=1 blocking. SNIPPET-RUN's residual was burned to zero (missing `use`
 # lines added, live-network/blocking-server/user-subclass snippets marked
 # `no-run`), so it now blocks like the other doc-execution gates.
-sched_gate SNIPPET-COMPILE tier=nightly desc="documented code snippets compile (perl -c with lib/ on @INC)" \    -- python3 "$PORTING_SDK_DIR/scripts/snippet_compile.py" --port perl --repo .
+sched_gate SNIPPET-COMPILE tier=nightly desc="documented code snippets compile (perl -c with lib/ on @INC)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/snippet_compile.py" --port perl --repo .
 
 sched_gate DOC-CLI desc="documented swaig-test invocations parse against the real CLI" \
     -- python3 "$PORTING_SDK_DIR/scripts/doc_cli.py" --port perl --repo .
 
-sched_gate EXAMPLES-RUN tier=nightly defer=1 desc="shipped examples load/start against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \    -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port perl --repo .
+sched_gate EXAMPLES-RUN tier=nightly defer=1 desc="shipped examples load/start against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port perl --repo .
 
-sched_gate SNIPPET-RUN tier=nightly defer=1 desc="dynamic-port doc snippets run to a zero exit against the mock" \    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port perl --repo .
+sched_gate SNIPPET-RUN tier=nightly defer=1 desc="dynamic-port doc snippets run to a zero exit against the mock" \
+    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port perl --repo .
 
 # ---- §G anti-laundering ledger gate ----
 sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressions (perlcritic ## no critic etc.)" \
