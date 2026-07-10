@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ fe98b7ba5e306afb0344b24a828fb0140b56b5a3",
+   "generated_from" : "signalwire-perl @ cc50a6a168b2823079e93bcd9464566484b6da82",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -172,6 +172,7 @@
                "set_enter_fillers",
                "set_exit_fillers",
                "set_full_reset",
+               "set_history",
                "set_initial_step",
                "set_isolated",
                "set_post_prompt",
@@ -210,6 +211,7 @@
                "set_end",
                "set_functions",
                "set_gather_info",
+               "set_history",
                "set_reset_consolidate",
                "set_reset_full_reset",
                "set_reset_system_prompt",

@@ -21,6 +21,25 @@ our %RESERVED_NATIVE_TOOL_NAMES = (
     gather_submit  => 1,
 );
 
+# Valid values for a step's or context's ``history`` visibility mode.
+#   keep     nothing is cleared — every prior step's instructions AND dialogue
+#            stay in the model's context.
+#   default  prior step instructions are hidden; the dialogue is kept.
+#   hide     prior instructions hidden AND the prior dialogue pulled out of the
+#            model's context (recover it via ${step_history.*} in the new text).
+our @HISTORY_MODES = qw( keep default hide );
+
+sub _validate_history {
+    my ($mode) = @_;
+    unless ( defined $mode && grep { $_ eq $mode } @HISTORY_MODES ) {
+        my $shown = defined $mode ? "'$mode'" : 'undef';
+        die "history must be one of ("
+            . join( ', ', map { "'$_'" } @HISTORY_MODES )
+            . "), got $shown";
+    }
+    return $mode;
+}
+
 # ==========================================================================
 # GatherQuestion
 # ==========================================================================
@@ -35,6 +54,10 @@ has 'confirm'   => ( is => 'ro', default  => sub { 0 } );
 has 'prompt'    => ( is => 'ro', default  => sub { undef } );
 has 'functions' => ( is => 'ro', default  => sub { undef } );
 
+# Tri-state: undef means "inherit the gather_info default"; a defined 0/1
+# overrides it for this question.
+has 'isolated' => ( is => 'ro', default => sub { undef } );
+
 sub to_hash {
     my ($self) = @_;
     my %d = ( key => $self->key, question => $self->question );
@@ -42,6 +65,10 @@ sub to_hash {
     $d{confirm}   = JSON::true       if $self->confirm;
     $d{prompt}    = $self->prompt    if defined $self->prompt;
     $d{functions} = $self->functions if defined $self->functions;
+
+    # Emitted even when false, so it can override an isolated gather default.
+    $d{isolated} = $self->isolated ? JSON::true : JSON::false
+        if defined $self->isolated;
     return \%d;
 }
 
@@ -50,11 +77,13 @@ sub to_hash {
 # ==========================================================================
 package SignalWire::Contexts::GatherInfo;
 use Moo;
+use JSON ();
 
 has '_questions'         => ( is => 'rw', default => sub { [] } );
 has '_output_key'        => ( is => 'rw', default => sub { undef } );
 has '_completion_action' => ( is => 'rw', default => sub { undef } );
 has '_prompt'            => ( is => 'rw', default => sub { undef } );
+has '_isolated'          => ( is => 'rw', default => sub { 0 } );
 
 sub add_question {
     my ( $self, %opts ) = @_;
@@ -65,6 +94,7 @@ sub add_question {
         confirm   => $opts{confirm} // 0,
         prompt    => $opts{prompt},
         functions => $opts{functions},
+        isolated  => $opts{isolated},
     );
     push @{ $self->_questions }, $q;
     return $self;
@@ -77,6 +107,7 @@ sub to_hash {
     $d{prompt}            = $self->_prompt            if defined $self->_prompt;
     $d{output_key}        = $self->_output_key        if defined $self->_output_key;
     $d{completion_action} = $self->_completion_action if defined $self->_completion_action;
+    $d{isolated}          = JSON::true                if $self->_isolated;
     return \%d;
 }
 
@@ -103,6 +134,7 @@ has '_reset_system_prompt' => ( is => 'rw', default => sub { undef } );
 has '_reset_user_prompt'   => ( is => 'rw', default => sub { undef } );
 has '_reset_consolidate'   => ( is => 'rw', default => sub { 0 } );
 has '_reset_full_reset'    => ( is => 'rw', default => sub { 0 } );
+has '_history'             => ( is => 'rw', default => sub { undef } );
 
 sub set_text {
     my ( $self, $text ) = @_;
@@ -219,6 +251,7 @@ sub set_gather_info {
             _output_key        => $opts{output_key},
             _completion_action => $opts{completion_action},
             _prompt            => $opts{prompt},
+            _isolated          => $opts{isolated} ? 1 : 0,
         )
     );
     return $self;
@@ -283,6 +316,29 @@ sub set_reset_full_reset {
     return $self;
 }
 
+#
+# set_history — control what the model still sees when this step is entered.
+#
+# The mode applies at the moment this step is entered and governs everything
+# before it (including the turn that triggered the transition); it does not
+# affect this step's own accumulating turns. Nothing is deleted from the call
+# log — this only changes what the model sees.
+#
+#   "keep"    — clear nothing; prior instructions AND dialogue stay visible.
+#   "default" — hide prior step instructions, keep the dialogue (the default
+#               when unset).
+#   "hide"    — hide prior instructions AND pull prior dialogue out of the
+#               model's context; recover pieces via a ${step_history.*}
+#               reference in this step's text.
+#
+# Dies unless $history is one of keep/default/hide. Returns $self for chaining.
+#
+sub set_history {
+    my ( $self, $history ) = @_;
+    $self->_history( SignalWire::Contexts::_validate_history($history) );
+    return $self;
+}
+
 sub _render_text {
     my ($self) = @_;
     return $self->_text if defined $self->_text;
@@ -320,6 +376,7 @@ sub to_hash {
     $d{end}               = JSON::true             if $self->_end;
     $d{skip_user_turn}    = JSON::true             if $self->_skip_user_turn;
     $d{skip_to_next_step} = JSON::true             if $self->_skip_to_next_step;
+    $d{history}           = $self->_history        if defined $self->_history;
 
     my %reset;
     $reset{system_prompt} = $self->_reset_system_prompt if defined $self->_reset_system_prompt;
@@ -358,6 +415,7 @@ has '_prompt_text'            => ( is => 'rw', default => sub { undef } );
 has '_prompt_sections'        => ( is => 'rw', default => sub { [] } );
 has '_enter_fillers'          => ( is => 'rw', default => sub { undef } );
 has '_exit_fillers'           => ( is => 'rw', default => sub { undef } );
+has '_history'                => ( is => 'rw', default => sub { undef } );
 
 sub add_step {
     my ( $self, $name, %opts ) = @_;
@@ -536,6 +594,19 @@ sub set_exit_fillers {
     return $self;
 }
 
+#
+# set_history — set the default visibility mode for every step in this context.
+#
+# A step's own set_history() overrides this default. See Step->set_history for
+# what each mode ("keep" / "default" / "hide") does. Dies unless $history is one
+# of the three modes. Returns $self for chaining.
+#
+sub set_history {
+    my ( $self, $history ) = @_;
+    $self->_history( SignalWire::Contexts::_validate_history($history) );
+    return $self;
+}
+
 sub add_enter_filler {
     my ( $self, $lang, $fillers ) = @_;
     if ( $lang && ref $fillers eq 'ARRAY' ) {
@@ -614,6 +685,7 @@ sub to_hash {
 
     $d{enter_fillers} = $self->_enter_fillers if defined $self->_enter_fillers;
     $d{exit_fillers}  = $self->_exit_fillers  if defined $self->_exit_fillers;
+    $d{history}       = $self->_history       if defined $self->_history;
 
     return \%d;
 }

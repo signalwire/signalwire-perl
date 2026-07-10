@@ -436,4 +436,87 @@ subtest 'create_simple_context' => sub {
     is($ctx->name, 'mycontext', 'custom name (free-fn form)');
 };
 
+# =============================================
+# Test: set_history (Step + Context) — python parity
+# =============================================
+subtest 'Step set_history' => sub {
+    # Unset: no "history" key emitted.
+    my $step = SignalWire::Contexts::Step->new(name => 'nohist');
+    $step->set_text('No history mode');
+    my $h = jrt($step->to_hash);
+    ok(!exists $h->{history}, 'history key omitted when unset');
+
+    # Each valid mode is emitted verbatim under key "history".
+    for my $mode (qw( keep default hide )) {
+        my $s = SignalWire::Contexts::Step->new(name => "s_$mode");
+        my $ret = $s->set_text('Step')->set_history($mode);
+        isa_ok($ret, 'SignalWire::Contexts::Step', "set_history('$mode') is fluent");
+        my $hh = jrt($s->to_hash);
+        is($hh->{history}, $mode, "step history '$mode' emitted");
+    }
+
+    # Invalid mode dies.
+    my $bad = SignalWire::Contexts::Step->new(name => 'bad');
+    $bad->set_text('Step');
+    eval { $bad->set_history('nope') };
+    like($@, qr/history must be one of/, 'invalid step history dies');
+    my $b2 = jrt($bad->to_hash);
+    ok(!exists $b2->{history}, 'rejected mode leaves history unset');
+};
+
+subtest 'Context set_history' => sub {
+    # Unset: no "history" key emitted.
+    my $ctx = SignalWire::Contexts::Context->new(name => 'default');
+    $ctx->add_step('greet')->set_text('Hi');
+    my $h = jrt($ctx->to_hash);
+    ok(!exists $h->{history}, 'context history key omitted when unset');
+
+    # Each valid mode is emitted verbatim under key "history".
+    for my $mode (qw( keep default hide )) {
+        my $c = SignalWire::Contexts::Context->new(name => 'default');
+        $c->add_step('greet')->set_text('Hi');
+        my $ret = $c->set_history($mode);
+        isa_ok($ret, 'SignalWire::Contexts::Context', "set_history('$mode') is fluent");
+        my $hh = jrt($c->to_hash);
+        is($hh->{history}, $mode, "context history '$mode' emitted");
+    }
+
+    # Invalid mode dies.
+    my $bad = SignalWire::Contexts::Context->new(name => 'default');
+    $bad->add_step('greet')->set_text('Hi');
+    eval { $bad->set_history('bogus') };
+    like($@, qr/history must be one of/, 'invalid context history dies');
+};
+
+subtest 'GatherInfo isolated' => sub {
+    # gather_info-level isolated flag emitted only when true.
+    my $step = SignalWire::Contexts::Step->new(name => 'iso');
+    $step->set_text('Gather')
+         ->set_gather_info(isolated => 1)
+         ->add_gather_question(key => 'a', question => 'A?');
+    my $gi = jrt($step->to_hash)->{gather_info};
+    ok($gi->{isolated}, 'gather_info isolated=true emitted');
+
+    # Default (not set) omits the gather_info-level flag.
+    my $s2 = SignalWire::Contexts::Step->new(name => 'noiso');
+    $s2->set_text('Gather')
+       ->set_gather_info
+       ->add_gather_question(key => 'a', question => 'A?');
+    my $gi2 = jrt($s2->to_hash)->{gather_info};
+    ok(!exists $gi2->{isolated}, 'gather_info isolated omitted when unset');
+
+    # Per-question isolated is tri-state: omitted when undef, emitted as
+    # true OR false when defined (so it can override the gather default).
+    my $s3 = SignalWire::Contexts::Step->new(name => 'perq');
+    $s3->set_text('Gather')
+       ->set_gather_info
+       ->add_gather_question(key => 'q1', question => 'Q1?')
+       ->add_gather_question(key => 'q2', question => 'Q2?', isolated => 1)
+       ->add_gather_question(key => 'q3', question => 'Q3?', isolated => 0);
+    my $qs = jrt($s3->to_hash)->{gather_info}{questions};
+    ok(!exists $qs->[0]{isolated}, 'question isolated omitted when undef');
+    is($qs->[1]{isolated}, JSON::true,  'question isolated true emitted');
+    is($qs->[2]{isolated}, JSON::false, 'question isolated false emitted (override)');
+};
+
 done_testing;

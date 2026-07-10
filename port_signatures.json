@@ -2409,6 +2409,11 @@
                   "name": "exit_fillers",
                   "type": "any",
                   "required": false
+                },
+                {
+                  "name": "history",
+                  "type": "any",
+                  "required": false
                 }
               ],
               "returns": "void"
@@ -2678,6 +2683,20 @@
                 {
                   "name": "full_reset",
                   "type": "bool",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "set_history": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "history",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -2954,6 +2973,11 @@
                   "required": false
                 },
                 {
+                  "name": "isolated",
+                  "type": "bool",
+                  "required": false
+                },
+                {
                   "name": "questions",
                   "type": "any",
                   "required": false
@@ -3037,6 +3061,11 @@
                   "name": "functions",
                   "type": "optional<list<string>>",
                   "required": false
+                },
+                {
+                  "name": "isolated",
+                  "type": "optional<bool>",
+                  "required": false
                 }
               ],
               "returns": "void"
@@ -3051,6 +3080,15 @@
               "returns": "any"
             },
             "functions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "isolated": {
               "params": [
                 {
                   "name": "self",
@@ -3197,6 +3235,11 @@
                   "name": "reset_full_reset",
                   "type": "any",
                   "required": false
+                },
+                {
+                  "name": "history",
+                  "type": "any",
+                  "required": false
                 }
               ],
               "returns": "void"
@@ -3254,6 +3297,11 @@
                 {
                   "name": "functions",
                   "type": "optional<list<string>>",
+                  "required": false
+                },
+                {
+                  "name": "isolated",
+                  "type": "optional<bool>",
                   "required": false
                 }
               ],
@@ -3344,6 +3392,25 @@
                   "name": "prompt",
                   "type": "optional<string>",
                   "required": false
+                },
+                {
+                  "name": "isolated",
+                  "type": "bool",
+                  "required": false
+                }
+              ],
+              "returns": "any"
+            },
+            "set_history": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "history",
+                  "type": "string",
+                  "required": true
                 }
               ],
               "returns": "any"
