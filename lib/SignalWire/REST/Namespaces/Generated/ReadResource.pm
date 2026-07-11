@@ -10,12 +10,29 @@ use strict;
 use warnings;
 use Moo;
 use SignalWire::REST::Namespaces::Base ();
+use SignalWire::REST::Pagination       ();
 extends 'SignalWire::REST::Namespaces::Base';
 
 sub list {
     my ( $self, %params ) = @_;
     my $p = %params ? \%params : undef;
     return $self->_http->get( $self->_base_path, params => $p );
+}
+
+# Iterate every item across all pages of this resource's list endpoint.
+# list() returns a single raw page; paginate() follows the wire cursor
+# (links.next / page_token) and returns a PaginatedIterator that yields
+# each item, so callers no longer hand-build the token loop. Mirrors the
+# Python reference ReadResource.paginate(**params) -> PaginatedIterator.
+sub paginate {
+    my ( $self, %params ) = @_;
+    my $p = %params ? \%params : undef;
+    return SignalWire::REST::Pagination::PaginatedIterator->new(
+        http     => $self->_http,
+        path     => $self->_base_path,
+        params   => $p,
+        data_key => 'data',
+    );
 }
 
 sub get {

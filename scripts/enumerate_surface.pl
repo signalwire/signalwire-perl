@@ -292,6 +292,12 @@ my %PACKAGE_TO_PY = (
     # REST client
     'SignalWire::REST::RestClient' => { module => 'signalwire.rest.client', class => 'RestClient' },
     'SignalWire::REST::HttpClient' => { module => 'signalwire.rest._base',  class => 'HttpClient' },
+
+    # Canonical REST error (Python parity: signalwire.rest._base.SignalWireRestError).
+    # The class is `package SignalWireRestError`; the legacy fully-qualified name
+    # SignalWire::REST::HttpClient::Error is a glob-alias of the same stash for
+    # back-compat, so both map onto the oracle's SignalWireRestError.
+    'SignalWireRestError' => { module => 'signalwire.rest._base', class => 'SignalWireRestError' },
     'SignalWire::REST::HttpClient::Error' =>
         { module => 'signalwire.rest._base', class => 'SignalWireRestError' },
     'SignalWire::REST::Namespaces::Base' =>
@@ -1269,6 +1275,7 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
     # REST core
     'SignalWire::REST::RestClient',
     'SignalWire::REST::HttpClient',
+    'SignalWireRestError',
     'SignalWire::REST::HttpClient::Error',
     'SignalWire::REST::Namespaces::Base',
 

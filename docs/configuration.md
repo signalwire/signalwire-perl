@@ -112,7 +112,7 @@ $agent->run(
 
 ### 2. Environment variables
 
-Otherwise the `SWML_SSL_*` environment variables are consulted. TLS is enabled only
+Otherwise the SSL/TLS environment variables are consulted. TLS is enabled only
 when `SWML_SSL_ENABLED` is truthy AND both `SWML_SSL_CERT_PATH` and
 `SWML_SSL_KEY_PATH` resolve:
 
@@ -142,7 +142,8 @@ export SWML_PROXY_URL_BASE=https://agent.example.com
    3000 with auto-generated basic auth credentials (printed when the agent starts).
 
 3. **Terminate TLS at a proxy in production** - Run the agent over HTTP behind a
-   proxy and set `SWML_PROXY_URL_BASE`, or serve HTTPS directly via `SWML_SSL_*`.
+   proxy and set `SWML_PROXY_URL_BASE`, or serve HTTPS directly via `SWML_SSL_ENABLED`
+   plus `SWML_SSL_CERT_PATH` / `SWML_SSL_KEY_PATH`.
 
 ## Troubleshooting
 

@@ -107,6 +107,52 @@ subtest 'TestPaginatedIterator' => sub {
             'second fetch carries cursor=page2');
     };
 
+    subtest 'test_resource_paginate_walks_all_pages' => sub {
+        # Exercise the ReadResource->paginate() convenience wired on the
+        # generated resource base (Python parity: ReadResource.paginate).
+        # It must return a PaginatedIterator wired to the resource's own
+        # list endpoint and follow the links.next cursor across pages.
+        my $client = MockTest::client();
+        MockTest::scenario_set(
+            $FABRIC_ADDRESSES_ENDPOINT_ID, 200,
+            {
+                data => [
+                    { id => 'pg-1', name => 'first' },
+                    { id => 'pg-2', name => 'second' },
+                ],
+                links => {
+                    next => 'http://example.com/api/fabric/addresses?cursor=next2',
+                },
+            },
+        );
+        MockTest::scenario_set(
+            $FABRIC_ADDRESSES_ENDPOINT_ID, 200,
+            {
+                data  => [ { id => 'pg-3', name => 'third' } ],
+                links => {},
+            },
+        );
+
+        my $it = $client->fabric->addresses->paginate( page_size => 2 );
+        isa_ok($it, 'SignalWire::REST::Pagination::PaginatedIterator',
+            'paginate() returns a PaginatedIterator');
+        # No HTTP until we iterate.
+        is(scalar(@{ MockTest::journal_all() }), 0,
+            'paginate() is lazy - no fetch before iteration');
+
+        my @collected = $it->all;
+        is_deeply(
+            [ map { $_->{id} } @collected ],
+            [ 'pg-1', 'pg-2', 'pg-3' ],
+            'paginate() yields every item across both pages in order',
+        );
+        my $j = MockTest::journal_all();
+        my @gets = grep { $_->{path} eq $FABRIC_ADDRESSES_PATH } @$j;
+        is(scalar(@gets), 2, 'paginate() issued exactly two page GETs');
+        is_deeply($gets[1]{query_params}{cursor}, ['next2'],
+            'second page fetch carried cursor=next2 from links.next');
+    };
+
     subtest 'test_next_raises_stop_iteration_when_done' => sub {
         # One terminal page.
         my $client = MockTest::client();

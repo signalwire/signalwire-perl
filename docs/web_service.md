@@ -92,8 +92,8 @@ export SWML_BASIC_AUTH_PASSWORD="secretpassword"
 
 # SSL/HTTPS configuration
 export SWML_SSL_ENABLED=true
-export SWML_SSL_CERT="/path/to/cert.pem"
-export SWML_SSL_KEY="/path/to/key.pem"
+export SWML_SSL_CERT_PATH="/path/to/cert.pem"
+export SWML_SSL_KEY_PATH="/path/to/key.pem"
 
 # Security settings
 export SWML_ALLOWED_HOSTS="example.com,*.example.com"
@@ -180,16 +180,8 @@ WebService provides multiple ways to enable HTTPS:
 
 ```bash
 # Using file paths
-export SWML_SSL_CERT="/path/to/cert.pem"
-export SWML_SSL_KEY="/path/to/key.pem"
-
-# Or using inline PEM content
-export SWML_SSL_CERT_INLINE="-----BEGIN CERTIFICATE-----
-MIIDXTCCAkWgAwIBAgIJAKLdQVPy...
------END CERTIFICATE-----"
-export SWML_SSL_KEY_INLINE="-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQE...
------END PRIVATE KEY-----"
+export SWML_SSL_CERT_PATH="/path/to/cert.pem"
+export SWML_SSL_KEY_PATH="/path/to/key.pem"
 ```
 
 ### Method 2: Direct Parameters
@@ -227,8 +219,8 @@ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem \
     -days 365 -nodes -subj "/CN=localhost"
 
 # Use with WebService
-export SWML_SSL_CERT="cert.pem"
-export SWML_SSL_KEY="key.pem"
+export SWML_SSL_CERT_PATH="cert.pem"
+export SWML_SSL_KEY_PATH="key.pem"
 ```
 
 ## API Endpoints
@@ -448,8 +440,8 @@ After=network.target
 Type=simple
 User=www-data
 WorkingDirectory=/opt/signalwire
-Environment="SWML_SSL_CERT=/etc/ssl/certs/server.crt"
-Environment="SWML_SSL_KEY=/etc/ssl/private/server.key"
+Environment="SWML_SSL_CERT_PATH=/etc/ssl/certs/server.crt"
+Environment="SWML_SSL_KEY_PATH=/etc/ssl/private/server.key"
 ExecStart=/usr/bin/perl -Ilib /opt/signalwire/web_server.pl
 Restart=always
 

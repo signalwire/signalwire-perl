@@ -9,8 +9,9 @@ use strict;
 use warnings;
 use Moo;
 
-# Pure data DTO: one read-only accessor per property carrying the snake
-# wire key; no methods (the reference records this as a method-less type).
+# struct SignalWire::REST::Namespaces::Generated::Types::RelayRest::CreateDomainApplicationRequest: pure data DTO (wire-response shape, not an exception).
+# One read-only accessor per property carrying the snake wire key; no
+# methods (the reference records this as a method-less type).
 has 'name'                                   => ( is => 'ro' );
 has 'identifier'                             => ( is => 'ro' );
 has 'user'                                   => ( is => 'ro' );

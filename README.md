@@ -31,7 +31,7 @@ _Build AI voice agents, control live calls over WebSocket, and manage every Sign
 |-----------|-------------|------------|
 | **AI Agents** | Build voice agents that handle calls autonomously -- the platform runs the AI pipeline, your code defines the persona, tools, and call flow | [Agent Guide](#ai-agents) |
 | **RELAY Client** | Control live calls and SMS/MMS in real time over WebSocket -- answer, play, record, collect DTMF, conference, transfer, and more | [RELAY docs](relay/README.md) |
-| **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 21 API namespaces | [REST docs](rest/README.md) |
+| **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 20 API namespaces | [REST docs](rest/README.md) |
 
 ```bash
 cpanm SignalWire
@@ -191,7 +191,7 @@ $client->datasphere->documents->search( query_string => 'billing policy' );
 
 ```
 
-- 21 namespaced API surfaces: Fabric (16 resource types), Calling (40 commands), Video, Datasphere, Compat (Twilio-compatible), Phone Numbers, SIP, Queues, Recordings, and more
+- 20 namespaced API surfaces: Fabric (16 resource types), Calling (40 commands), Video, Datasphere, Phone Numbers, SIP, Queues, Recordings, and more
 - HTTP::Tiny for lightweight, dependency-free HTTP
 - Hash ref returns -- raw data, no wrapper objects
 

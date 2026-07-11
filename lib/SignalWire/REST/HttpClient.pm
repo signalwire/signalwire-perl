@@ -108,7 +108,7 @@ sub _request {
         my $parsed;
         eval { $parsed = decode_json($body) };
         $parsed = $body if $@;
-        die SignalWire::REST::HttpClient::Error->new(
+        die SignalWireRestError->new(
             status_code => $response->{status},
             body        => $parsed,
             url         => $path,
@@ -162,7 +162,15 @@ sub _uri_encode {
 }
 
 # --- Error class ---
-package SignalWire::REST::HttpClient::Error;
+#
+# SignalWireRestError is the SDK's canonical typed REST error (Python parity:
+# signalwire.rest._base.SignalWireRestError). It carries the full failure
+# envelope — status_code, body, url, method — and is raised via `die` on any
+# HTTP >= 400 response, so a caller can branch on the status/body instead of
+# parsing a stringified message. SignalWire::REST::HttpClient::Error is retained
+# as a subclass alias for back-compat (existing isa_ok checks against the old
+# name keep passing through inheritance).
+package SignalWireRestError;
 use Moo;
 use JSON qw(encode_json);
 
@@ -176,5 +184,13 @@ use overload '""' => sub {
     my $body = ref $self->body ? encode_json( $self->body ) : ( $self->body // '' );
     return sprintf( '%s %s returned %s: %s', $self->method, $self->url, $self->status_code, $body );
 };
+
+# Back-compat alias: the error was historically named
+# SignalWire::REST::HttpClient::Error. Alias that package's symbol table to
+# SignalWireRestError's so the two names are the SAME class — an instance
+# ->isa() both, and existing `isa_ok($e, 'SignalWire::REST::HttpClient::Error')`
+# checks keep passing without re-blessing.
+package SignalWire::REST::HttpClient::Error;    ## no critic (ProhibitMultiplePackages)
+BEGIN { *SignalWire::REST::HttpClient::Error:: = *SignalWireRestError:: }
 
 1;
