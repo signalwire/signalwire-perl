@@ -93,6 +93,34 @@ serves HTTPS directly.
 
 - `SIGNALWIRE_SIGNING_KEY` - Key used to validate signed SWAIG tool-token requests
 
+### Schema validation
+
+- `SWML_SKIP_SCHEMA_VALIDATION` - When truthy (`1`, `true`, or `yes`), skips the
+  SWML document schema-validation step. This is a **security/debugging toggle**:
+  validation normally rejects malformed SWML before it reaches the platform, so
+  disabling it removes that guard. Leave it unset in production; set it only when
+  intentionally bypassing validation (e.g. testing a document the schema does not
+  yet cover).
+
+### Web-service security (read by `SignalWire::Core::SecurityConfig`)
+
+These knobs harden the built-in HTTP server. Each is secure by default; set the
+env var to override.
+
+- `SWML_DOMAIN` - Public domain name for the service (used in generated URLs / TLS).
+- `SWML_ALLOWED_HOSTS` - Comma-separated allow-list of `Host` headers the server
+  accepts (default `*`). Narrow this in production to block Host-header spoofing.
+- `SWML_CORS_ORIGINS` - Comma-separated allow-list of CORS origins (default `*`).
+- `SWML_SSL_VERIFY_MODE` - Peer-certificate verification mode (default
+  `CERT_REQUIRED`).
+- `SWML_MAX_REQUEST_SIZE` - Maximum accepted request body size in bytes
+  (default 10485760 = 10 MiB).
+- `SWML_RATE_LIMIT` - Maximum requests per minute per client (default 60).
+- `SWML_REQUEST_TIMEOUT` - Per-request timeout in seconds (default 30).
+- `SWML_USE_HSTS` - Emit an HTTP Strict-Transport-Security header when truthy
+  (default enabled).
+- `SWML_HSTS_MAX_AGE` - HSTS `max-age` in seconds (default 31536000 = 1 year).
+
 ## TLS / HTTPS
 
 There are two ways to serve HTTPS:
