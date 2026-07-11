@@ -36,6 +36,7 @@ An agent is configured identically to a normal server deployment; in Lambda you
 bridge events to the PSGI app via a PSGI-to-Lambda adapter (for example
 `AWS::Lambda::PSGI`).
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use lib 'lib';
 use SignalWire;
@@ -81,6 +82,7 @@ For container platforms, run the agent's built-in HTTP server. The agent serves
 unauthenticated `/health` and `/ready` endpoints suitable for liveness and
 readiness probes, and reads `PORT` from the environment.
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use lib 'lib';
 use SignalWire;
@@ -180,6 +182,7 @@ print "Detected mode: ", get_execution_mode(), "\n";
 ### Check Generated URLs
 
 ```perl
+use SignalWire::Agent::AgentBase;
 my $agent = SignalWire::Agent::AgentBase->new(name => 'test');
 print "Base URL: ", $agent->get_full_url, "\n";
 print "Auth URL: ", $agent->get_full_url(include_auth => 1), "\n";

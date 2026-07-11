@@ -16,6 +16,7 @@ use SignalWire::SWAIG::FunctionResult;
 Creates a new result object with optional response text and post-processing behavior. The constructor is positional: a single string is the response. You may also pass named pairs.
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $result = SignalWire::SWAIG::FunctionResult->new("Hello, I'll help you with that");
 my $result = SignalWire::SWAIG::FunctionResult->new("Processing request...", post_process => 1);
 ```
@@ -185,6 +186,7 @@ $result->pay(
 
 **Helper Methods for Payment Setup (class methods):**
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 # Create a payment action
 my $action = SignalWire::SWAIG::FunctionResult->create_payment_action('Say', 'Enter card number');
 
@@ -594,6 +596,7 @@ Remove or replace the tool_call + tool_result pair from the LLM's conversation h
 When called with a string, the tool_call/tool_result pair is replaced with an assistant message containing that text. When called with no argument (or a true value), the pair is removed entirely — the LLM will never see that the function was called.
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 # Remove entirely — LLM won't see this function was called
 my $result = SignalWire::SWAIG::FunctionResult->new('Done.');
 $result->replace_in_history;
@@ -728,6 +731,7 @@ my $result_hash = $result->to_hash;
 All mutators return `$self` to enable fluent method chaining:
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 my $result = SignalWire::SWAIG::FunctionResult->new('Processing your request', post_process => 1)
     ->update_global_data({ status => 'processing' })
     ->play_background_file('processing.wav', wait => 1)

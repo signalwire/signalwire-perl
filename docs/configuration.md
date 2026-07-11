@@ -17,6 +17,7 @@ the environment.
 
 ### Zero Configuration (Default)
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use lib 'lib';
 use SignalWire::Agent::AgentBase;
@@ -28,6 +29,7 @@ $agent->run;
 
 ### With Explicit Settings
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 my $agent = SignalWire::Agent::AgentBase->new(
     name  => 'my-agent',

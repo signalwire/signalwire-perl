@@ -26,6 +26,7 @@ Call ends → SignalWire POSTs analytics to agent's /post_prompt/ endpoint
 
 The agent auto-detects its own public URL -- including behind ngrok, load balancers, API Gateway, or any reverse proxy (via `X-Forwarded-Host`, `Forwarded` header, or `SWML_PROXY_URL_BASE` env var). It embeds Basic Auth credentials directly into the webhook URLs. It generates per-call security tokens for each function. The developer writes none of this:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package WeatherAgent;
 use Moo;
@@ -127,6 +128,7 @@ $self->define_tool(
 ### 2. DataMap (Server-Side Execution)
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 use SignalWire::DataMap;
 
 my $data_map = SignalWire::DataMap->new('check_stock')
@@ -282,6 +284,7 @@ The SDK's contexts/steps/function restrictions are the primitives that make PGI 
 
 ## Deployment: One `run()` Call
 
+<!-- snippet: no-run references a user-defined agent subclass not in this snippet -->
 ```perl
 my $agent = MyAgent->new;
 $agent->run;
@@ -309,6 +312,7 @@ For standalone mode, the SDK provides:
 
 ## Multi-Agent Hosting
 
+<!-- snippet: no-run references a user-defined agent subclass not in this snippet -->
 ```perl
 use SignalWire::Server::AgentServer;
 

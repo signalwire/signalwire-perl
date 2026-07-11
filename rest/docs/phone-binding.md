@@ -48,6 +48,7 @@ The authoritative list of handler values. The SDK ships this as a set of constan
 
 Every port ships a small set of typed helpers that wrap `phone_numbers->update` with the right `call_handler` value and companion field already set. They're the one-line recipe for every common case.
 
+<!-- snippet: no-run live REST call (real network; SDK REST base is https://{space}, no mock override) -->
 ```perl
 use SignalWire::REST::RestClient;
 

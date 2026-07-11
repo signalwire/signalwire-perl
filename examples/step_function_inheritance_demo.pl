@@ -36,7 +36,7 @@
 use strict;
 use warnings;
 use lib 'lib';
-use JSON qw(encode_json decode_json);
+use JSON;
 use SignalWire::Agent::AgentBase;
 use SignalWire::SWAIG::FunctionResult;
 
@@ -119,4 +119,4 @@ $ctx->add_step('step_disabled')
 # Render and pretty-print the resulting SWML so you can see exactly
 # which steps have a `functions` key in the output and which don't.
 my $swml = $agent->render_swml();
-print JSON->new->pretty->encode(decode_json($swml));
+print JSON->new->pretty->canonical->encode($swml);

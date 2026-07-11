@@ -78,9 +78,9 @@ $agent->run;
 Test locally without running a server:
 
 ```bash
-swaig-test my_agent.pl --list-tools
-swaig-test my_agent.pl --dump-swml
-swaig-test my_agent.pl --exec get_time
+swaig-test --file my_agent.pl --list-tools
+swaig-test --file my_agent.pl --dump-swml
+swaig-test --file my_agent.pl --exec get_time
 ```
 
 ### Agent Features

@@ -142,6 +142,7 @@ $result->connect('+15551234567');
 
 #### DataMap Tools
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 use SignalWire::DataMap;
 
 my $tool = SignalWire::DataMap->new('get_weather')
@@ -170,6 +171,7 @@ $agent->add_skill('web_search', {
 ```
 
 #### RELAY Client
+<!-- snippet: no-run live RELAY WebSocket connection (real network) -->
 ```perl
 use SignalWire::Relay::Client;
 
@@ -193,6 +195,7 @@ $client->run;
 ```
 
 #### REST Client
+<!-- snippet: no-run live REST call (real network; SDK REST base is https://{space}, no mock override) -->
 ```perl
 use SignalWire::REST::RestClient;
 

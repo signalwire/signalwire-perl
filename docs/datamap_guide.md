@@ -2344,6 +2344,8 @@ SignalWire's servers — no HTTP request is made. Pass the match output and an
 optional `nomatch_output`:
 
 ```perl
+use SignalWire::SWAIG::FunctionResult;
+use SignalWire::DataMap;
 my $control = SignalWire::DataMap->new('media_control')
     ->description('Control media playback')
     ->parameter('command', 'string', 'Control command', required => 1)

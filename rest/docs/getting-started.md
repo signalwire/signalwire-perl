@@ -28,6 +28,7 @@ You need three things to connect:
 
 ## Minimal Example
 
+<!-- snippet: no-run live REST call (real network; SDK REST base is https://{space}, no mock override) -->
 ```perl
 use strict;
 use warnings;
@@ -53,6 +54,7 @@ export SIGNALWIRE_API_TOKEN=your-api-token
 export SIGNALWIRE_SPACE=example.signalwire.com
 ```
 
+<!-- snippet: no-run live REST call (real network; SDK REST base is https://{space}, no mock override) -->
 ```perl
 use SignalWire::REST::RestClient;
 

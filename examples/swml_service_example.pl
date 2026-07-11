@@ -109,4 +109,4 @@ print "SWML Document:\n";
 print $svc->document->to_pretty_json . "\n";
 
 print "\nStarting server on http://0.0.0.0:" . $svc->port . $svc->route . "\n";
-$svc->run;
+$svc->serve;

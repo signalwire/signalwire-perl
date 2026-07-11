@@ -58,4 +58,4 @@ print "Sections available: main, customer_section, product_section\n";
 print "\nSWML Document:\n";
 print $doc->to_pretty_json . "\n\n";
 
-$svc->run;
+$svc->serve;

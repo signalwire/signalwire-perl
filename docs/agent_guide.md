@@ -96,6 +96,7 @@ sub BUILD {
 
 Construct it with the standard agent options (POM is on by default):
 
+<!-- snippet: no-run references a user-defined agent subclass not in this snippet -->
 ```perl
 my $agent = MyAgent->new(
     name  => 'my-agent',
@@ -518,7 +519,9 @@ parameters => {
 
 To return results from a SWAIG function, use the `SignalWire::SWAIG::FunctionResult` class:
 
+<!-- snippet: no-compile illustrative return-statement fragments (top-level return) -->
 ```perl
+use SignalWire::SWAIG::FunctionResult;
 # Basic result with just text
 return SignalWire::SWAIG::FunctionResult->new("Here's the result");
 
@@ -635,6 +638,7 @@ $self->define_tool(
 
 The default token expiration is 60 minutes (3600 seconds), but you can configure this when initializing your agent:
 
+<!-- snippet: no-run references a user-defined agent subclass not in this snippet -->
 ```perl
 my $agent = MyAgent->new(
     name              => 'my_agent',
@@ -2029,6 +2033,7 @@ The debug events system provides real-time visibility into what the AI module is
 
 #### Basic Setup
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 my $agent = SignalWire::Agent::AgentBase->new(name => 'my_agent');
 $agent->enable_debug_events;  # That's it — events are auto-logged
@@ -2044,6 +2049,7 @@ With just `enable_debug_events`, every debug event is logged through the agent's
 
 To act on specific events (alerting, metrics, custom logging), register a handler:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 my $agent = SignalWire::Agent::AgentBase->new(name => 'my_agent');
 $agent->enable_debug_events;
@@ -2443,6 +2449,7 @@ The SDK includes several built-in prefab agents:
 
 Collects structured information from users:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use SignalWire::Prefabs::InfoGatherer;
 
@@ -2463,6 +2470,7 @@ $agent->serve(host => '0.0.0.0', port => 8000);
 
 Answers questions from a predefined FAQ knowledge base:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use SignalWire::Prefabs::FAQBot;
 
@@ -2485,6 +2493,7 @@ $agent->serve(host => '0.0.0.0', port => 8000);
 Provides virtual concierge services for a venue — answering questions about
 services, amenities, and hours of operation:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use SignalWire::Prefabs::Concierge;
 
@@ -2510,6 +2519,7 @@ $agent->serve(host => '0.0.0.0', port => 8000);
 
 Conducts structured surveys with different question types:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use SignalWire::Prefabs::Survey;
 
@@ -2541,6 +2551,7 @@ $agent->serve(host => '0.0.0.0', port => 8000);
 
 Handles call routing and department transfers:
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 use SignalWire::Prefabs::Receptionist;
 
@@ -2662,6 +2673,7 @@ sub register_knowledge_base_tool {
 
 #### Using the Custom Prefab
 
+<!-- snippet: no-run references a user-defined agent subclass not in this snippet -->
 ```perl
 # Create an instance of the custom prefab
 my $support_agent = CustomerSupportAgent->new(
@@ -2874,6 +2886,7 @@ For more detailed testing documentation, see the [CLI Guide](cli_guide.md).
 
 ### Simple Question-Answering Agent
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package SimpleAgent;
 use Moo;
@@ -2919,6 +2932,7 @@ $agent->run;
 
 ### Multi-Language Customer Service Agent
 
+<!-- snippet: no-run starts a blocking HTTP server (->run/->serve) -->
 ```perl
 package CustomerServiceAgent;
 use Moo;

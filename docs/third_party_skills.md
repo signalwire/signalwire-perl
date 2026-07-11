@@ -123,6 +123,7 @@ at load time (as in the example above) is registered simply by `use`-ing it.
 
 Register directories containing multiple skill modules:
 
+<!-- snippet: no-run references example skill directory /opt/custom_skills that does not exist -->
 ```perl
 use SignalWire;
 
