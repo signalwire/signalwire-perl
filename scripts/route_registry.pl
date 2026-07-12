@@ -57,7 +57,8 @@ our %REGISTRY_SKIP = (
     # a lazy paginator that follows the cursor via the already-covered list route
     # and issues no HTTP request itself, so it is not a distinct wire route. Mirrors
     # the python reference's paginate skip in porting-sdk python_route_registry.py.
-    '*.paginate' => 'client-side pagination helper, not a route (issues no HTTP request; follows the covered list route lazily)',
+    '*.paginate' =>
+'client-side pagination helper, not a route (issues no HTTP request; follows the covered list route lazily)',
 );
 
 # Moo / Moo::Object sugar + base plumbing that are NOT route methods. (This

@@ -60,9 +60,14 @@ subtest 'TestPaginatedIterator' => sub {
     };
 
     subtest 'test_next_pages_through_all_items' => sub {
-        # MockTest::client() resets journal + scenarios. Stage two pages
-        # AFTER reset so they survive.
         my $client = MockTest::client();
+        # journal_all() is cumulative across subtests (per-process auth), so
+        # snapshot this subtest's path-GET count before iterating and assert the
+        # delta rather than an absolute count.
+        my $addr_gets = sub {
+            [ grep { $_->{path} eq $FABRIC_ADDRESSES_PATH } @{ MockTest::journal_all() } ];
+        };
+        my $before = scalar @{ $addr_gets->() };
         # Page 1 has a next cursor.
         MockTest::scenario_set(
             $FABRIC_ADDRESSES_ENDPOINT_ID, 200,
@@ -97,13 +102,13 @@ subtest 'TestPaginatedIterator' => sub {
             [ 'addr-1', 'addr-2', 'addr-3' ],
             'collected ids match across pages',
         );
-        # Journal must have exactly two GETs at the same path.
-        my $j = MockTest::journal_all();
-        my @gets = grep { $_->{path} eq $FABRIC_ADDRESSES_PATH } @$j;
-        is(scalar(@gets), 2, 'two paginated GETs recorded');
+        # This subtest's own two GETs (delta against the pre-iteration snapshot).
+        my @gets = @{ $addr_gets->() };
+        my @mine = @gets[ $before .. $#gets ];
+        is(scalar(@mine), 2, 'two paginated GETs recorded');
         # The second fetch carries cursor=page2 from the first response's
         # links.next.
-        is_deeply($gets[1]{query_params}{cursor}, ['page2'],
+        is_deeply($mine[1]{query_params}{cursor}, ['page2'],
             'second fetch carries cursor=page2');
     };
 
@@ -133,11 +138,20 @@ subtest 'TestPaginatedIterator' => sub {
             },
         );
 
+        # The Authorization header is minted per-PROCESS, so journal_all() is
+        # cumulative across subtests (journal_reset is a no-op under active auth).
+        # Measure this subtest's own path GETs as a DELTA against the snapshot
+        # taken before iteration, rather than asserting an absolute journal count.
+        my $addr_gets = sub {
+            [ grep { $_->{path} eq $FABRIC_ADDRESSES_PATH } @{ MockTest::journal_all() } ];
+        };
+        my $before = scalar @{ $addr_gets->() };
+
         my $it = $client->fabric->addresses->paginate( page_size => 2 );
         isa_ok($it, 'SignalWire::REST::Pagination::PaginatedIterator',
             'paginate() returns a PaginatedIterator');
         # No HTTP until we iterate.
-        is(scalar(@{ MockTest::journal_all() }), 0,
+        is(scalar(@{ $addr_gets->() }) - $before, 0,
             'paginate() is lazy - no fetch before iteration');
 
         my @collected = $it->all;
@@ -146,10 +160,10 @@ subtest 'TestPaginatedIterator' => sub {
             [ 'pg-1', 'pg-2', 'pg-3' ],
             'paginate() yields every item across both pages in order',
         );
-        my $j = MockTest::journal_all();
-        my @gets = grep { $_->{path} eq $FABRIC_ADDRESSES_PATH } @$j;
-        is(scalar(@gets), 2, 'paginate() issued exactly two page GETs');
-        is_deeply($gets[1]{query_params}{cursor}, ['next2'],
+        my @gets = @{ $addr_gets->() };
+        my @mine = @gets[ $before .. $#gets ];    # only this subtest's GETs
+        is(scalar(@mine), 2, 'paginate() issued exactly two page GETs');
+        is_deeply($mine[1]{query_params}{cursor}, ['next2'],
             'second page fetch carried cursor=next2 from links.next');
     };
 
