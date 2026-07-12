@@ -57,7 +57,6 @@ remove_directory: Python FastAPI StaticFiles unmount (Python code block)
 # idiomatic method names -- see relay/docs for Perl forms)
 
 # Miscellaneous Python SDK method names in illustrative snippets
-enable_record_call: Python AgentBase record helper (Python code block)
 register_knowledge_base_tool: Python agent-internal helper (Python code block)
 start: Python web-service/agent-server start method (Python code block)
 tool: Python @AgentBase.tool(...) decorator (Python code block, decorator syntax)
