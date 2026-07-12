@@ -52,6 +52,12 @@ our %REGISTRY_SKIP = (
     # — the generated CxmlApplications resource extends BaseResource with no create
     # method (cXML apps cannot be created via the API), so there is no route to
     # skip. (Left empty; entries added here need a reason.)
+
+    # paginate is a client-side pagination helper on every ReadResource: it returns
+    # a lazy paginator that follows the cursor via the already-covered list route
+    # and issues no HTTP request itself, so it is not a distinct wire route. Mirrors
+    # the python reference's paginate skip in porting-sdk python_route_registry.py.
+    '*.paginate' => 'client-side pagination helper, not a route (issues no HTTP request; follows the covered list route lazily)',
 );
 
 # Moo / Moo::Object sugar + base plumbing that are NOT route methods. (This
