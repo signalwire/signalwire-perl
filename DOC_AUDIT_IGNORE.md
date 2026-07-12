@@ -25,7 +25,6 @@
 # datetime / time
 
 # logging / os.path — Python standard library utility calls in example code
-warning: Python stdlib logging.Logger.warning (Python code block)
 
 # threading — Python's `threading.Thread(...)` inside a web-service code sample
 
@@ -35,32 +34,16 @@ warning: Python stdlib logging.Logger.warning (Python code block)
 
 # SWMLService document lifecycle (Python prose; Perl port exposes
 # equivalent semantics via the generated document)
-build_document: Python SWMLService lifecycle method (Python code block)
-build_voicemail_document: Python SWMLService subclass override (Python code block)
-add_answer_verb: Python SWMLService helper (Python code block)
-add_verb_to_section: Python SWMLService helper (Python code block)
 
 # SIP routing — Python SDK mixins (Perl port offers equivalent routing
 # via SWML + AgentServer; these exact names are Python-only)
-enable_sip_routing: Python SDK mixin method (Python code block)
-register_sip_username: Python SDK mixin method (Python code block)
-register_routing_callback: Python SDK mixin method (Python code block)
-setup_sip_routing: Python AgentServer method (Python code block)
-register_customer_route: Python user-defined route (Python code block)
-register_product_route: Python user-defined route (Python code block)
 
 # FastAPI / Starlette ecosystem (shown in Python web_service examples)
-add_directory: Python FastAPI StaticFiles mount (Python code block)
-remove_directory: Python FastAPI StaticFiles unmount (Python code block)
 
 # Relay event / call methods (Python-only names; Perl Relay uses
 # idiomatic method names -- see relay/docs for Perl forms)
 
 # Miscellaneous Python SDK method names in illustrative snippets
-register_knowledge_base_tool: Python agent-internal helper (Python code block)
-start: Python web-service/agent-server start method (Python code block)
-tool: Python @AgentBase.tool(...) decorator (Python code block, decorator syntax)
-validate_packages: Python third-party skills helper (Python code block)
 
 ## User-code placeholders in pedagogical Python snippets
 
@@ -114,11 +97,6 @@ record_stereo: real AgentBase Moo attribute accessor (has record_stereo => is rw
   not Perl port surface.
 -->
 
-_configure_instructions: Python internal helper referenced in subclassing example
-_register_custom_tools: Python internal helper referenced in subclassing example
-_setup_contexts: Python internal helper referenced in subclassing example
-_setup_static_config: Python internal helper referenced in subclassing example
-_test_api_connection: Python internal helper referenced in subclassing example
 
 ## Regex false positives
 
