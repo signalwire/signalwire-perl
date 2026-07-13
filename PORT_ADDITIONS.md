@@ -18,6 +18,8 @@ signalwire.core.agent_base.AgentBase.get_raw_prompt: prompt_mixin_lifted: Perl r
 signalwire.core.agent_base.AgentBase.list_tool_names: port-only helper used by ContextBuilder->validate to surface reserved-name collisions
 signalwire.core.agent_base.AgentBase.pom: port-only Perl accessor returning the underlying SignalWire::POM::PromptObjectModel instance; Python keeps the POM private inside PromptMixin
 signalwire.core.agent_base.AgentBase.psgi_app: port-only: Perl ports use Plack/PSGI; psgi_app returns a coderef any Plack handler consumes
+signalwire.core.agent_base.AgentBase.record_format: port-only accessor: Perl declares `has record_format => (is => 'rw')` so callers read/set the recording format as `$agent->record_format('wav')`; Python models record_format as a set_answer_config constructor param with no surface accessor
+signalwire.core.agent_base.AgentBase.record_stereo: port-only accessor: Perl declares `has record_stereo => (is => 'rw')` so callers read/set stereo recording as `$agent->record_stereo(1)`; Python models record_stereo as a set_answer_config constructor param with no surface accessor
 signalwire.core.agent_base.AgentBase.render_swml: port-only public alias: Perl exposes render_swml as the method users call to dump SWML; Python keeps this internal
 signalwire.core.agent_base.AgentBase.set_answer_config: port-only helper: wires AnswerConfig into SWML rendering; Python threads these through AIConfigMixin
 signalwire.core.agent_base.AgentBase.set_prompt_pom: prompt_mixin_lifted: Perl rolls up PromptMixin onto AgentBase; Python keeps these on PromptMixin (mirrors tool_mixin_lifted pattern)

@@ -77,18 +77,6 @@ delete_session_state: user-supplied external-store accessor in the session-hooks
 default_units: example-local Moo attribute declared with `has` on the custom Weather skill package in agent_guide.md (reader-authored, not port surface)
 timeout: example-local Moo attribute declared with `has` on the custom Weather skill package in agent_guide.md (reader-authored, not port surface)
 
-## Real AgentBase attribute accessors (data attributes, not in the method surface)
-
-<!--
-  record_format / record_stereo are genuine AgentBase Moo attributes
-  (`has record_format => (is => 'rw')`, `has record_stereo => ...`) used as
-  `$agent->record_format('wav')` in sdk_features.md. port_surface.json records
-  them as constructor/data attributes rather than methods, so the doc auditor's
-  method resolver does not see them — the reference is valid, the accessor exists.
--->
-record_format: real AgentBase Moo attribute accessor (has record_format => is rw); recorded as a data attribute, not a method, in port_surface.json
-record_stereo: real AgentBase Moo attribute accessor (has record_stereo => is rw); recorded as a data attribute, not a method, in port_surface.json
-
 ## Private/underscored helpers in Python examples
 
 <!--

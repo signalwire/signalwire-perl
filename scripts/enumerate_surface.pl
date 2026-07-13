@@ -1817,6 +1817,27 @@ sub collect_surface {
     }
 
     # -----------------------------------------------------------------
+    # Reconcile: AgentBase recording-config attribute accessors. Perl declares
+    # `has record_format => (is => 'rw')` / `has record_stereo => (is => 'rw')`
+    # on AgentBase (AgentBase.pm) — real read/write accessor methods callers use
+    # as `$agent->record_format('wav')` / `$agent->record_stereo(1)` (see
+    # docs/sdk_features.md). The static parser matches only `sub`, so these Moo
+    # `has` accessors are invisible; without projecting them the port surface
+    # HIDES two real public methods (RULES §2/§3: an accessor is idiom-via-
+    # enumerator, never an omission). Python models these as CONSTRUCTOR PARAMS
+    # (set_answer_config record_format/record_stereo) with NO surface accessor,
+    # so they surface as PORT_ADDITIONS (Perl-only recording-config accessors).
+    {
+        my $ac = $modules{'signalwire.core.agent_base'}{classes} // {};
+        if ( $ac->{AgentBase} ) {
+            for my $attr (qw(record_format record_stereo)) {
+                push @{ $ac->{AgentBase} }, $attr
+                    unless grep { $_ eq $attr } @{ $ac->{AgentBase} };
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------
     # Reconcile: SWMLService.__getattr__. Perl's SWML::Service implements the
     # dynamic-verb dispatch via `sub AUTOLOAD` (the direct analog of Python's
     # __getattr__ — both intercept unknown-method calls to install schema
