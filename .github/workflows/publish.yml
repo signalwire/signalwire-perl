@@ -48,8 +48,8 @@ jobs:
           pip install -e porting-sdk/test_harness/mock_relay
           pip install -e porting-sdk/test_harness/mock_signalwire
 
-      - name: Run tests
-        run: PERL5LIB="lib:t/lib" prove -r t/
+      - name: Run full CI gate set (release precondition)
+        run: bash scripts/run-ci.sh
 
       - name: Build and upload to CPAN
         env:

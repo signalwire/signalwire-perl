@@ -411,8 +411,11 @@ sched_gate README-INCLUDE res=dayone desc="doc code blocks are byte-identical to
 sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at repo root (allowlist ROOT_HYGIENE_ALLOW.md)" \
     -- python3 "$PORTING_SDK_DIR/scripts/root_hygiene.py" --port perl --repo .
 
-sched_gate IGNORE-LEDGER-VERIFY res=dayone desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md" \
-    -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port perl --repo .
+sched_gate IGNORE-LEDGER-VERIFY res=dayone desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md (strict: reason/approver/date required)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port perl --repo . --require-fields
+
+sched_gate SEMVER-DIFF res=dayone desc="version bump matches API surface change vs release floor (port_signatures.baseline.json)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/semver_diff.py" --port perl --repo .
 
 sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
     -- python3 "$PORTING_SDK_DIR/scripts/meta_consistent.py" --port perl --repo .

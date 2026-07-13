@@ -53,20 +53,20 @@
   sample business logic). They are not API to implement.
 -->
 
-alert_ops_team: user-supplied hook in prose example (Python code block)
-apply_custom_config: user-supplied hook in prose example (Python code block)
-apply_default_config: user-supplied hook in prose example (Python code block)
-get_customer_config: user-supplied hook in prose example (Python code block)
-get_customer_settings: user-supplied hook in prose example (Python code block)
-get_customer_tier: user-supplied hook in prose example (Python code block)
-is_valid_customer: user-supplied hook in prose example (Python code block)
-load_user_preferences: user-supplied hook in prose example (Python code block)
-schedule_follow_up: user-supplied hook in prose example (Python code block)
-send_to_analytics: user-supplied hook in prose example (Python code block)
-load_session_state: user-supplied external-store accessor in the session-hooks prose example (the reader persists/loads session state in their own datastore; not a port API)
-delete_session_state: user-supplied external-store accessor in the session-hooks prose example (the reader cleans up their own datastore; not a port API)
+alert_ops_team: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+apply_custom_config: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+apply_default_config: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+get_customer_config: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+get_customer_settings: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+get_customer_tier: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+is_valid_customer: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+load_user_preferences: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+schedule_follow_up: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+send_to_analytics: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+load_session_state: reason=reader-authored external-store accessor in the session-hooks prose example (reader persists/loads session state in their own datastore), absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+delete_session_state: reason=reader-authored external-store accessor in the session-hooks prose example (reader cleans up their own datastore), absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
 
-## Example-local attributes on custom-skill demo packages
+## Example-local Moo accessor names on custom-skill demo packages
 
 <!--
   agent_guide.md's custom Weather skill (a reader-authored SkillBase subclass)
@@ -107,21 +107,24 @@ pm: appears in the substring ".pm(" inside a code comment path "lib/SignalWire/S
   satisfy that watcher). Calling the private helper from a harness is
   intentional and not part of the public API surface.
 -->
-_send: private hook used by examples/relay_audit_harness.pl to emit method-bearing ack frame to the audit fixture
+_send: reason=private underscore hook used by examples/relay_audit_harness.pl to emit a method-bearing ack frame to the audit fixture, not public port surface (absent from port_surface.json); approver=mike@signalwire.com; date=2026-07-13
 
-## Private agent/swmlservice render helpers used by examples
+## Perl built-in / CPAN module functions + constructor idiom used by examples
 
 <!--
   Some Perl examples drive Plack::Runner directly via `parse_options`
   (real Perl module method, in the Plack distribution — not part of the
   port's public surface) before handing the resulting PSGI app to the
   runner. The audit's regex picks up the method call but it isn't a
-  port symbol.
+  port symbol. `sleep`/`new` are a Perl built-in / a Moo constructor.
 -->
-parse_options: Plack::Runner method called by SWML standalone examples
+parse_options: Plack::Runner CPAN module method called by SWML standalone examples
 sleep: Perl built-in (and the SWML `sleep` verb the auto-vivified example illustrates) — appears in `sleep(...)` syntax inside an example
-new: Perl/Moo constructor — appears in 148+ ClassName->new(...) call sites in docs and examples; not a port symbol to resolve
-not_a_real_verb: intentional placeholder in swml_service_guide.md demonstrating that an unknown verb name dies ("Can't locate method ...") — not a port API
+new: Perl/Moo constructor idiom — appears in 148+ ClassName->new(...) call sites in docs and examples; not a port symbol to resolve
+
+## Intentional doc placeholder demonstrating an unknown verb
+
+not_a_real_verb: reason=intentional placeholder in swml_service_guide.md demonstrating that an unknown verb name dies ("Can't locate method ..."), not a port API (absent from port_surface.json); approver=mike@signalwire.com; date=2026-07-13
 
 ## Perl stdlib / CPAN module functions + doc placeholder (2026-07-08)
 

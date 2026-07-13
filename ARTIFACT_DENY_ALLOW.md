@@ -23,6 +23,7 @@ Each entry below is proven to be excluded from `make dist` by a corresponding
 - audit_coverage.json — audit contract; excluded via MANIFEST.SKIP ^audit_coverage.*\.json$ (orchestrator, 2026-07-06)
 - audit_coverage_baseline.json — audit contract; excluded via MANIFEST.SKIP ^audit_coverage.*\.json$ (orchestrator, 2026-07-06)
 - port_signatures.json — audit contract; excluded via MANIFEST.SKIP ^port_signatures.*\.json$ (orchestrator, 2026-07-06)
+- port_signatures.baseline.json — load-bearing SEMVER-DIFF release-floor file; mirrors port_signatures.json; must be at root, must not ship; excluded via MANIFEST.SKIP ^port_signatures.*\.json$ (orchestrator, 2026-07-13)
 - port_surface.json — audit contract; excluded via MANIFEST.SKIP ^port_surface.*\.json$ (orchestrator, 2026-07-06)
 - examples/relay_audit_harness.pl — in-repo audit tooling; excluded via MANIFEST.SKIP ^examples/.*audit_harness.*\.pl$ (orchestrator, 2026-07-06)
 - examples/rest_audit_harness.pl — in-repo audit tooling; excluded via MANIFEST.SKIP ^examples/.*audit_harness.*\.pl$ (orchestrator, 2026-07-06)
