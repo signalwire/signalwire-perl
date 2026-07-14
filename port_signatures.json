@@ -27732,6 +27732,21 @@
                 }
               ],
               "returns": "any"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": false,
+                  "kind": "var_keyword"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
@@ -30341,6 +30356,21 @@
                 }
               ],
               "returns": "void"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": false,
+                  "kind": "var_keyword"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
@@ -31143,6 +31173,21 @@
                 }
               ],
               "returns": "void"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": false,
+                  "kind": "var_keyword"
+                }
+              ],
+              "returns": "any"
             }
           }
         }
@@ -31203,6 +31248,21 @@
                 }
               ],
               "returns": "void"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": false,
+                  "kind": "var_keyword"
+                }
+              ],
+              "returns": "any"
             }
           }
         }
@@ -33387,6 +33447,21 @@
                 }
               ],
               "returns": "any"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": false,
+                  "kind": "var_keyword"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
@@ -33759,6 +33834,21 @@
                   "type": "any",
                   "required": false,
                   "default": {}
+                }
+              ],
+              "returns": "any"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": false,
+                  "kind": "var_keyword"
                 }
               ],
               "returns": "any"

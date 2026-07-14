@@ -91,29 +91,36 @@ sub BUILD ( $self, $args ) {
 # ---------- public methods ----------
 
 # Load configuration from environment variables.
+#
+# Each read spells the SWML_* env var as a literal `$ENV{'SWML_...'}` (rather than
+# `$ENV{ CONST() }`) so the read is statically visible — both to a human and to the
+# cross-port DOC-ENV audit, which resolves `$ENV{LITERAL}` but cannot trace Perl's
+# `use constant { NAME => 'SWML_...' }` fat-comma indirection. The constants above
+# remain the single source of the names (still used as the %DEFAULTS keys).
 sub load_from_env ($self) {
-    my $ssl_enabled_env = lc( $ENV{ SSL_ENABLED() } // '' );
+    my $ssl_enabled_env = lc( $ENV{'SWML_SSL_ENABLED'} // '' );
     $self->ssl_enabled( ( grep { $_ eq $ssl_enabled_env } qw(true 1 yes) ) ? 1 : 0 );
-    $self->ssl_cert_path( $ENV{ SSL_CERT_PATH() } );
-    $self->ssl_key_path( $ENV{ SSL_KEY_PATH() } );
-    $self->domain( $ENV{ SSL_DOMAIN() } );
-    $self->ssl_verify_mode( $ENV{ SSL_VERIFY_MODE() } // $DEFAULTS{ SSL_VERIFY_MODE() } );
+    $self->ssl_cert_path( $ENV{'SWML_SSL_CERT_PATH'} );
+    $self->ssl_key_path( $ENV{'SWML_SSL_KEY_PATH'} );
+    $self->domain( $ENV{'SWML_DOMAIN'} );
+    $self->ssl_verify_mode( $ENV{'SWML_SSL_VERIFY_MODE'} // $DEFAULTS{ SSL_VERIFY_MODE() } );
 
     $self->allowed_hosts(
-        $self->_parse_list( $ENV{ ALLOWED_HOSTS() } // $DEFAULTS{ ALLOWED_HOSTS() } ) );
+        $self->_parse_list( $ENV{'SWML_ALLOWED_HOSTS'} // $DEFAULTS{ ALLOWED_HOSTS() } ) );
     $self->cors_origins(
-        $self->_parse_list( $ENV{ CORS_ORIGINS() } // $DEFAULTS{ CORS_ORIGINS() } ) );
-    $self->max_request_size( int( $ENV{ MAX_REQUEST_SIZE() } // $DEFAULTS{ MAX_REQUEST_SIZE() } ) );
-    $self->rate_limit( int( $ENV{ RATE_LIMIT() }             // $DEFAULTS{ RATE_LIMIT() } ) );
-    $self->request_timeout( int( $ENV{ REQUEST_TIMEOUT() }   // $DEFAULTS{ REQUEST_TIMEOUT() } ) );
+        $self->_parse_list( $ENV{'SWML_CORS_ORIGINS'} // $DEFAULTS{ CORS_ORIGINS() } ) );
+    $self->max_request_size(
+        int( $ENV{'SWML_MAX_REQUEST_SIZE'} // $DEFAULTS{ MAX_REQUEST_SIZE() } ) );
+    $self->rate_limit( int( $ENV{'SWML_RATE_LIMIT'}           // $DEFAULTS{ RATE_LIMIT() } ) );
+    $self->request_timeout( int( $ENV{'SWML_REQUEST_TIMEOUT'} // $DEFAULTS{ REQUEST_TIMEOUT() } ) );
 
-    my $use_hsts_env = lc( $ENV{ USE_HSTS() } // '' );
+    my $use_hsts_env = lc( $ENV{'SWML_USE_HSTS'} // '' );
     $self->use_hsts(
         length $use_hsts_env ? ( $use_hsts_env ne 'false' ? 1 : 0 ) : $DEFAULTS{ USE_HSTS() } );
-    $self->hsts_max_age( int( $ENV{ HSTS_MAX_AGE() } // $DEFAULTS{ HSTS_MAX_AGE() } ) );
+    $self->hsts_max_age( int( $ENV{'SWML_HSTS_MAX_AGE'} // $DEFAULTS{ HSTS_MAX_AGE() } ) );
 
-    $self->basic_auth_user( $ENV{ BASIC_AUTH_USER() } );
-    $self->basic_auth_password( $ENV{ BASIC_AUTH_PASSWORD() } );
+    $self->basic_auth_user( $ENV{'SWML_BASIC_AUTH_USER'} );
+    $self->basic_auth_password( $ENV{'SWML_BASIC_AUTH_PASSWORD'} );
     return;
 }
 

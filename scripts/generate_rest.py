@@ -279,7 +279,7 @@ def perl_str(s: str) -> str:
 BASE_PROVIDES = {
     "CrudResource": {"list", "create", "get", "update", "delete"},
     "FabricResource": {"list", "create", "get", "update", "delete", "list_addresses"},
-    "ReadResource": {"list", "get"},
+    "ReadResource": {"list", "get", "paginate"},
     "BaseResource": set(),
 }
 
@@ -919,11 +919,27 @@ def emit_read_resource_base() -> str:
     out += "\npackage SignalWire::REST::Namespaces::Generated::ReadResource;\n"
     out += "use strict;\nuse warnings;\nuse Moo;\n"
     out += "use SignalWire::REST::Namespaces::Base ();\n"
+    out += "use SignalWire::REST::Pagination ();\n"
     out += "extends 'SignalWire::REST::Namespaces::Base';\n\n"
     out += "sub list {\n"
     out += "    my ( $self, %params ) = @_;\n"
     out += "    my $p = %params ? \\%params : undef;\n"
     out += "    return $self->_http->get( $self->_base_path, params => $p );\n"
+    out += "}\n\n"
+    out += "# Iterate every item across all pages of this resource's list endpoint.\n"
+    out += "# list() returns a single raw page; paginate() follows the wire cursor\n"
+    out += "# (links.next / page_token) and returns a PaginatedIterator that yields\n"
+    out += "# each item, so callers no longer hand-build the token loop. Mirrors the\n"
+    out += "# Python reference ReadResource.paginate(**params) -> PaginatedIterator.\n"
+    out += "sub paginate {\n"
+    out += "    my ( $self, %params ) = @_;\n"
+    out += "    my $p = %params ? \\%params : undef;\n"
+    out += "    return SignalWire::REST::Pagination::PaginatedIterator->new(\n"
+    out += "        http     => $self->_http,\n"
+    out += "        path     => $self->_base_path,\n"
+    out += "        params   => $p,\n"
+    out += "        data_key => 'data',\n"
+    out += "    );\n"
     out += "}\n\n"
     out += "sub get {\n"
     out += "    my ( $self, $resource_id ) = @_;\n"
@@ -1227,8 +1243,14 @@ def emit_type_class(sub: str, raw_name: str, node: dict, ns_key: str, psdk: Path
     out += "use strict;\n"
     out += "use warnings;\n"
     out += "use Moo;\n\n"
-    out += "# Pure data DTO: one read-only accessor per property carrying the snake\n"
-    out += "# wire key; no methods (the reference records this as a method-less type).\n"
+    # Pure data record (a wire-response struct), NOT a raisable exception — even
+    # when the spec schema is named '<X>Error'/'<X>422Error'. The reference models
+    # these as method-less TypedDicts. The explicit `struct` marker keeps the
+    # cross-port DEAD-PUBLIC-ERROR audit from misreading an *Error-named DTO as a
+    # dead exception (Perl has no TypedDict/struct keyword for it to key on).
+    out += f"# struct {pkg}: pure data DTO (wire-response shape, not an exception).\n"
+    out += "# One read-only accessor per property carrying the snake wire key; no\n"
+    out += "# methods (the reference records this as a method-less type).\n"
     props = node.get("properties") or {}
     used: set[str] = set()
     for wire_key in props:

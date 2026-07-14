@@ -365,8 +365,11 @@ def load_package_map() -> dict[str, dict[str, str | None]]:
     pl = (HERE / "enumerate_surface.pl").read_text(encoding="utf-8")
     # Match lines like:
     #   'SignalWire::Agent::AgentBase' => { module => 'signalwire.core.agent_base', class => 'AgentBase' },
+    # Package name is `SignalWire` optionally followed by `::…` (the usual FQ
+    # packages) OR a bare `SignalWire<Ident>` leaf like `SignalWireRestError`
+    # (the canonical REST error is a bare-leaf package for Python-name parity).
     pattern = re.compile(
-        r"'(SignalWire(?:::[^']+)?)'\s*=>\s*\{\s*module\s*=>\s*'([^']+)'\s*,\s*class\s*=>\s*(?:'([^']+)'|undef)"
+        r"'(SignalWire(?:::[^']+|[A-Za-z0-9_]*)?)'\s*=>\s*\{\s*module\s*=>\s*'([^']+)'\s*,\s*class\s*=>\s*(?:'([^']+)'|undef)"
     )
     out: dict = {}
     for m in pattern.finditer(pl):
@@ -801,6 +804,20 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
             }
         else:
             methods[canon] = _sig_from_parsed_method(meth)
+
+    # paginate() lives on the generated ReadResource base and is inherited by each
+    # ReadResource-based leaf resource. The reference oracle records it LITERALLY on
+    # every such leaf class (Python's enumerator publishes the inherited method), and
+    # it is NOT one of the crud_base-governed CRUD methods, so DRIFT demands it
+    # per-class. Project it onto each ReadResource-based leaf so the method-set joins.
+    if _base == "ReadResource":
+        methods["paginate"] = {
+            "params": [
+                {"name": "self", "kind": "self"},
+                {"name": "params", "type": "dict<string,any>", "required": False, "kind": "var_keyword"},
+            ],
+            "returns": "any",
+        }
 
     # Container classes expose their sub-resource accessors as Moo `has ... lazy`
     # attributes (init_arg => undef). The oracle records these as zero-arg getter

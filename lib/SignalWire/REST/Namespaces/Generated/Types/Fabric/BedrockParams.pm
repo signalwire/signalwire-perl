@@ -9,8 +9,9 @@ use strict;
 use warnings;
 use Moo;
 
-# Pure data DTO: one read-only accessor per property carrying the snake
-# wire key; no methods (the reference records this as a method-less type).
+# struct SignalWire::REST::Namespaces::Generated::Types::Fabric::BedrockParams: pure data DTO (wire-response shape, not an exception).
+# One read-only accessor per property carrying the snake wire key; no
+# methods (the reference records this as a method-less type).
 has 'attention_timeout'    => ( is => 'ro' );
 has 'hard_stop_time'       => ( is => 'ro' );
 has 'inactivity_timeout'   => ( is => 'ro' );

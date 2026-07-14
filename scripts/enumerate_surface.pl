@@ -292,6 +292,12 @@ my %PACKAGE_TO_PY = (
     # REST client
     'SignalWire::REST::RestClient' => { module => 'signalwire.rest.client', class => 'RestClient' },
     'SignalWire::REST::HttpClient' => { module => 'signalwire.rest._base',  class => 'HttpClient' },
+
+    # Canonical REST error (Python parity: signalwire.rest._base.SignalWireRestError).
+    # The class is `package SignalWireRestError`; the legacy fully-qualified name
+    # SignalWire::REST::HttpClient::Error is a glob-alias of the same stash for
+    # back-compat, so both map onto the oracle's SignalWireRestError.
+    'SignalWireRestError' => { module => 'signalwire.rest._base', class => 'SignalWireRestError' },
     'SignalWire::REST::HttpClient::Error' =>
         { module => 'signalwire.rest._base', class => 'SignalWireRestError' },
     'SignalWire::REST::Namespaces::Base' =>
@@ -1269,6 +1275,7 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
     # REST core
     'SignalWire::REST::RestClient',
     'SignalWire::REST::HttpClient',
+    'SignalWireRestError',
     'SignalWire::REST::HttpClient::Error',
     'SignalWire::REST::Namespaces::Base',
 
@@ -1806,6 +1813,27 @@ sub collect_surface {
             && !( grep { $_ eq 'result' } @{ $mc->{Message} } ) )
         {
             push @{ $mc->{Message} }, 'result';
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Reconcile: AgentBase recording-config attribute accessors. Perl declares
+    # `has record_format => (is => 'rw')` / `has record_stereo => (is => 'rw')`
+    # on AgentBase (AgentBase.pm) — real read/write accessor methods callers use
+    # as `$agent->record_format('wav')` / `$agent->record_stereo(1)` (see
+    # docs/sdk_features.md). The static parser matches only `sub`, so these Moo
+    # `has` accessors are invisible; without projecting them the port surface
+    # HIDES two real public methods (RULES §2/§3: an accessor is idiom-via-
+    # enumerator, never an omission). Python models these as CONSTRUCTOR PARAMS
+    # (set_answer_config record_format/record_stereo) with NO surface accessor,
+    # so they surface as PORT_ADDITIONS (Perl-only recording-config accessors).
+    {
+        my $ac = $modules{'signalwire.core.agent_base'}{classes} // {};
+        if ( $ac->{AgentBase} ) {
+            for my $attr (qw(record_format record_stereo)) {
+                push @{ $ac->{AgentBase} }, $attr
+                    unless grep { $_ eq $attr } @{ $ac->{AgentBase} };
+            }
         }
     }
 

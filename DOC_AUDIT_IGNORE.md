@@ -25,7 +25,6 @@
 # datetime / time
 
 # logging / os.path — Python standard library utility calls in example code
-warning: Python stdlib logging.Logger.warning (Python code block)
 
 # threading — Python's `threading.Thread(...)` inside a web-service code sample
 
@@ -35,33 +34,16 @@ warning: Python stdlib logging.Logger.warning (Python code block)
 
 # SWMLService document lifecycle (Python prose; Perl port exposes
 # equivalent semantics via the generated document)
-build_document: Python SWMLService lifecycle method (Python code block)
-build_voicemail_document: Python SWMLService subclass override (Python code block)
-add_answer_verb: Python SWMLService helper (Python code block)
-add_verb_to_section: Python SWMLService helper (Python code block)
 
 # SIP routing — Python SDK mixins (Perl port offers equivalent routing
 # via SWML + AgentServer; these exact names are Python-only)
-enable_sip_routing: Python SDK mixin method (Python code block)
-register_sip_username: Python SDK mixin method (Python code block)
-register_routing_callback: Python SDK mixin method (Python code block)
-setup_sip_routing: Python AgentServer method (Python code block)
-register_customer_route: Python user-defined route (Python code block)
-register_product_route: Python user-defined route (Python code block)
 
 # FastAPI / Starlette ecosystem (shown in Python web_service examples)
-add_directory: Python FastAPI StaticFiles mount (Python code block)
-remove_directory: Python FastAPI StaticFiles unmount (Python code block)
 
 # Relay event / call methods (Python-only names; Perl Relay uses
 # idiomatic method names -- see relay/docs for Perl forms)
 
 # Miscellaneous Python SDK method names in illustrative snippets
-enable_record_call: Python AgentBase record helper (Python code block)
-register_knowledge_base_tool: Python agent-internal helper (Python code block)
-start: Python web-service/agent-server start method (Python code block)
-tool: Python @AgentBase.tool(...) decorator (Python code block, decorator syntax)
-validate_packages: Python third-party skills helper (Python code block)
 
 ## User-code placeholders in pedagogical Python snippets
 
@@ -71,20 +53,20 @@ validate_packages: Python third-party skills helper (Python code block)
   sample business logic). They are not API to implement.
 -->
 
-alert_ops_team: user-supplied hook in prose example (Python code block)
-apply_custom_config: user-supplied hook in prose example (Python code block)
-apply_default_config: user-supplied hook in prose example (Python code block)
-get_customer_config: user-supplied hook in prose example (Python code block)
-get_customer_settings: user-supplied hook in prose example (Python code block)
-get_customer_tier: user-supplied hook in prose example (Python code block)
-is_valid_customer: user-supplied hook in prose example (Python code block)
-load_user_preferences: user-supplied hook in prose example (Python code block)
-schedule_follow_up: user-supplied hook in prose example (Python code block)
-send_to_analytics: user-supplied hook in prose example (Python code block)
-load_session_state: user-supplied external-store accessor in the session-hooks prose example (the reader persists/loads session state in their own datastore; not a port API)
-delete_session_state: user-supplied external-store accessor in the session-hooks prose example (the reader cleans up their own datastore; not a port API)
+alert_ops_team: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+apply_custom_config: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+apply_default_config: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+get_customer_config: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+get_customer_settings: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+get_customer_tier: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+is_valid_customer: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+load_user_preferences: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+schedule_follow_up: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+send_to_analytics: reason=reader-authored business-logic hook in a pedagogical Python code block, absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+load_session_state: reason=reader-authored external-store accessor in the session-hooks prose example (reader persists/loads session state in their own datastore), absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
+delete_session_state: reason=reader-authored external-store accessor in the session-hooks prose example (reader cleans up their own datastore), absent from port_surface.json; approver=mike@signalwire.com; date=2026-07-13
 
-## Example-local attributes on custom-skill demo packages
+## Example-local Moo accessor names on custom-skill demo packages
 
 <!--
   agent_guide.md's custom Weather skill (a reader-authored SkillBase subclass)
@@ -95,18 +77,6 @@ delete_session_state: user-supplied external-store accessor in the session-hooks
 default_units: example-local Moo attribute declared with `has` on the custom Weather skill package in agent_guide.md (reader-authored, not port surface)
 timeout: example-local Moo attribute declared with `has` on the custom Weather skill package in agent_guide.md (reader-authored, not port surface)
 
-## Real AgentBase attribute accessors (data attributes, not in the method surface)
-
-<!--
-  record_format / record_stereo are genuine AgentBase Moo attributes
-  (`has record_format => (is => 'rw')`, `has record_stereo => ...`) used as
-  `$agent->record_format('wav')` in sdk_features.md. port_surface.json records
-  them as constructor/data attributes rather than methods, so the doc auditor's
-  method resolver does not see them — the reference is valid, the accessor exists.
--->
-record_format: real AgentBase Moo attribute accessor (has record_format => is rw); recorded as a data attribute, not a method, in port_surface.json
-record_stereo: real AgentBase Moo attribute accessor (has record_stereo => is rw); recorded as a data attribute, not a method, in port_surface.json
-
 ## Private/underscored helpers in Python examples
 
 <!--
@@ -115,11 +85,6 @@ record_stereo: real AgentBase Moo attribute accessor (has record_stereo => is rw
   not Perl port surface.
 -->
 
-_configure_instructions: Python internal helper referenced in subclassing example
-_register_custom_tools: Python internal helper referenced in subclassing example
-_setup_contexts: Python internal helper referenced in subclassing example
-_setup_static_config: Python internal helper referenced in subclassing example
-_test_api_connection: Python internal helper referenced in subclassing example
 
 ## Regex false positives
 
@@ -142,21 +107,24 @@ pm: appears in the substring ".pm(" inside a code comment path "lib/SignalWire/S
   satisfy that watcher). Calling the private helper from a harness is
   intentional and not part of the public API surface.
 -->
-_send: private hook used by examples/relay_audit_harness.pl to emit method-bearing ack frame to the audit fixture
+_send: reason=private underscore hook used by examples/relay_audit_harness.pl to emit a method-bearing ack frame to the audit fixture, not public port surface (absent from port_surface.json); approver=mike@signalwire.com; date=2026-07-13
 
-## Private agent/swmlservice render helpers used by examples
+## Perl built-in / CPAN module functions + constructor idiom used by examples
 
 <!--
   Some Perl examples drive Plack::Runner directly via `parse_options`
   (real Perl module method, in the Plack distribution — not part of the
   port's public surface) before handing the resulting PSGI app to the
   runner. The audit's regex picks up the method call but it isn't a
-  port symbol.
+  port symbol. `sleep`/`new` are a Perl built-in / a Moo constructor.
 -->
-parse_options: Plack::Runner method called by SWML standalone examples
+parse_options: Plack::Runner CPAN module method called by SWML standalone examples
 sleep: Perl built-in (and the SWML `sleep` verb the auto-vivified example illustrates) — appears in `sleep(...)` syntax inside an example
-new: Perl/Moo constructor — appears in 148+ ClassName->new(...) call sites in docs and examples; not a port symbol to resolve
-not_a_real_verb: intentional placeholder in swml_service_guide.md demonstrating that an unknown verb name dies ("Can't locate method ...") — not a port API
+new: Perl/Moo constructor idiom — appears in 148+ ClassName->new(...) call sites in docs and examples; not a port symbol to resolve
+
+## Intentional doc placeholder demonstrating an unknown verb
+
+not_a_real_verb: reason=intentional placeholder in swml_service_guide.md demonstrating that an unknown verb name dies ("Can't locate method ..."), not a port API (absent from port_surface.json); approver=mike@signalwire.com; date=2026-07-13
 
 ## Perl stdlib / CPAN module functions + doc placeholder (2026-07-08)
 

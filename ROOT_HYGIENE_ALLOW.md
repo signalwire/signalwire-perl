@@ -17,6 +17,7 @@ load-bearing audit-contract file, not clutter.
 - audit_coverage.json — required audit-contract file read by porting-sdk audit scripts (orchestrator, 2026-07-06)
 - audit_coverage_baseline.json — required audit-contract file read by porting-sdk audit scripts (orchestrator, 2026-07-06)
 - port_signatures.json — required audit-contract file read by porting-sdk audit scripts (orchestrator, 2026-07-06)
+- port_signatures.baseline.json — load-bearing SEMVER-DIFF release-floor file; mirrors port_signatures.json; must be at root, must not ship (orchestrator, 2026-07-13)
 - port_surface.json — required audit-contract file read by porting-sdk audit scripts (orchestrator, 2026-07-06)
 - ROOT_HYGIENE_ALLOW.md — this allowlist file (read by root_hygiene gate at repo root) (orchestrator, 2026-07-06)
 - ARTIFACT_DENY_ALLOW.md — artifact-deny allowlist file read by the artifact_deny gate at repo root (orchestrator, 2026-07-06)

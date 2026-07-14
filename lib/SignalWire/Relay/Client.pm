@@ -30,6 +30,27 @@ use SignalWire::Logging;
 
 my $logger = SignalWire::Logging->get_logger('relay_client');
 
+# Derive the RELAY User-Agent from the distribution $VERSION -- the single source
+# of truth in lib/SignalWire.pm (same approach as REST/HttpClient.pm) -- so it can
+# never go stale against the released version. Resolve the version WITHOUT loading
+# the full framework tree: read $SignalWire::VERSION if already loaded, else parse
+# it off the on-disk module (ExtUtils::MakeMaker's VERSION_FROM way), fall back '0'.
+sub _sdk_version {
+    return $SignalWire::VERSION if defined $SignalWire::VERSION;
+    ( my $rel = 'SignalWire.pm' ) =~ s{::}{/}g;
+    for my $dir (@INC) {
+        next if ref $dir;
+        my $file = "$dir/$rel";
+        next unless -f $file;
+        require ExtUtils::MakeMaker;
+        my $v = eval { MM->parse_version($file) };
+        return $v if defined $v && $v ne 'undef';
+    }
+    return '0';
+}
+
+my $USER_AGENT = 'signalwire-agents-perl/' . _sdk_version();
+
 has 'project' => ( is => 'ro', default => sub { '' } );
 has 'token'   => ( is => 'ro', default => sub { '' } );
 
@@ -48,7 +69,7 @@ has 'contexts' => (
     default => sub { [] },
     isa     => sub { Carp::croak("contexts must be an arrayref") unless ref $_[0] eq 'ARRAY' },
 );
-has 'agent' => ( is => 'ro', default => sub { 'signalwire-agents-perl/1.0' } );
+has 'agent' => ( is => 'ro', default => sub { $USER_AGENT } );
 
 # Optional JWT-based authentication (alternative to project/token).
 has 'jwt_token'  => ( is => 'ro', default => sub { '' } );
@@ -346,10 +367,38 @@ sub execute ( $self, $method, $params = undef ) {
     delete $self->_pending->{$id};
 
     if ($error) {
-        die "RELAY error: $error";
+        die _relay_error_from($error);
+    }
+
+    # Never resolved and never rejected within the deadline: a half-open
+    # connection or a lost response. Mirror the reference, which raises
+    # RelayError(-1, "Request timeout for <method>") in this case rather than
+    # returning undef (which the caller would silently mistake for success).
+    if ( !$done ) {
+        die SignalWire::Relay::Client::RelayError->new(
+            code    => -1,
+            message => "Request timeout for $method",
+        );
     }
 
     return $result;
+}
+
+# Coerce a rejection payload into a RelayError. The RELAY server sends a
+# JSON-RPC error object ({ code, message }); connection-drop rejections pass a
+# bare reason string. Either way the raised value is a RelayError carrying the
+# numeric code + message, matching the Python reference's RelayError(code, msg).
+sub _relay_error_from ($error) {
+    if ( ref $error eq 'HASH' ) {
+        return SignalWire::Relay::Client::RelayError->new(
+            code    => $error->{code}    // -1,
+            message => $error->{message} // 'RELAY request failed',
+        );
+    }
+    return SignalWire::Relay::Client::RelayError->new(
+        code    => -1,
+        message => "$error",
+    );
 }
 
 # --- Messaging ---
@@ -488,7 +537,17 @@ sub dial ( $self, %opts ) {
     delete $self->_pending_dials->{$tag};
 
     if ($dial_error) {
-        die "Dial failed: $dial_error";
+        die _relay_error_from($dial_error);
+    }
+
+    # Dial neither resolved nor rejected within the deadline: mirror the
+    # reference, which raises RelayError(-1, "Dial timed out ...") rather than
+    # returning an undef call the caller would misread as success.
+    if ( !$done ) {
+        die SignalWire::Relay::Client::RelayError->new(
+            code    => -1,
+            message => "Dial timed out waiting for answer (tag=$tag)",
+        );
     }
 
     if ( $call && $on_completed ) {

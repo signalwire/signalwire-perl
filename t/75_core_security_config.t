@@ -26,12 +26,24 @@ subtest 'defaults' => sub {
 subtest 'load_from_env' => sub {
     local $ENV{SWML_SSL_ENABLED}    = 'true';
     local $ENV{SWML_ALLOWED_HOSTS}  = 'a.com, b.com';
+    local $ENV{SWML_CORS_ORIGINS}   = 'https://x.com, https://y.com';
+    local $ENV{SWML_DOMAIN}         = 'agent.example.test';
     local $ENV{SWML_RATE_LIMIT}     = '120';
+    local $ENV{SWML_REQUEST_TIMEOUT} = '45';
+    local $ENV{SWML_MAX_REQUEST_SIZE} = '2048';
+    local $ENV{SWML_SSL_VERIFY_MODE}  = 'CERT_OPTIONAL';
+    local $ENV{SWML_HSTS_MAX_AGE}     = '600';
     local $ENV{SWML_USE_HSTS}       = 'false';
     my $c = SignalWire::Core::SecurityConfig->new;
     ok( $c->ssl_enabled, 'ssl enabled from env' );
     is_deeply( $c->allowed_hosts, [ 'a.com', 'b.com' ], 'hosts parsed + trimmed' );
-    is( $c->rate_limit, 120, 'rate limit from env' );
+    is_deeply( $c->cors_origins, [ 'https://x.com', 'https://y.com' ], 'cors origins from env' );
+    is( $c->domain,           'agent.example.test', 'domain from env' );
+    is( $c->rate_limit,       120,                  'rate limit from env' );
+    is( $c->request_timeout,  45,                   'request timeout from env' );
+    is( $c->max_request_size, 2048,                 'max request size from env' );
+    is( $c->ssl_verify_mode,  'CERT_OPTIONAL',      'ssl verify mode from env' );
+    is( $c->hsts_max_age,     600,                  'hsts max-age from env' );
     ok( !$c->use_hsts, 'hsts disabled from env' );
 };
 

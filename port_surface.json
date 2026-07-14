@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ cc50a6a168b2823079e93bcd9464566484b6da82",
+   "generated_from" : "signalwire-perl @ 267a31f9f75e1b46807c365089a972b105c2dcf7",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -113,6 +113,8 @@
                "on_summary",
                "pom",
                "psgi_app",
+               "record_format",
+               "record_stereo",
                "register_sip_username",
                "render_swml",
                "set_answer_config",
@@ -1354,7 +1356,8 @@
             ],
             "ReadResource" : [
                "get",
-               "list"
+               "list",
+               "paginate"
             ],
             "SignalWireRestError" : [
                "__init__"
