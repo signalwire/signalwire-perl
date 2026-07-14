@@ -103,6 +103,7 @@ Contexts are topics your client subscribes to for receiving inbound calls.
 When a call arrives on a context you're subscribed to, the handler you
 registered with `on_call` is invoked.
 
+<!-- snippet: no-run calls client.receive/unreceive, which issue a live signalwire.receive RELAY request over a WebSocket to SIGNALWIRE_SPACE — cannot reach the loopback mock standalone -->
 ```perl
 use SignalWire::Relay::Client;
 # Subscribe at connect time
