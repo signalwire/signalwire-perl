@@ -76,9 +76,11 @@ except ImportError:  # pragma: no cover
 #   * a TYPES-ONLY spec is a dir with components/schemas but NO servers block
 #     (swml-webhooks: a webhook payload spec, not a REST surface) — it produces
 #     wire types only.
-# A dir that has schemas + servers but NO x-sdk-resource (currently rest-apis/
-# projects/ — a staged spec no SDK implements yet, see mock_signalwire SPEC_NAMES)
-# is neither: it is intentionally excluded until it grows x-sdk-resource markup.
+# A dir that has schemas + servers but NO x-sdk-resource would be neither a
+# resource nor a types-only spec: it is intentionally excluded until it grows
+# x-sdk-resource markup. (rest-apis/projects/ — the /api/projects full-CRUD
+# project-management API, DISTINCT from the singular ``project`` token namespace —
+# now carries an x-sdk-resource block and is a first-class resource spec.)
 #
 # Two facts are NOT derivable from a directory name and are kept explicit:
 #   * SPEC_ORDER — the emission order (it drives the ResourceTree flat-accessor
@@ -88,7 +90,7 @@ except ImportError:  # pragma: no cover
 #     PascalCase differs from the curated name (pubsub -> PubSub, not Pubsub).
 SPEC_ORDER = [
     "relay-rest", "fabric", "calling", "video", "datasphere",
-    "logs", "message", "voice", "fax", "project", "chat", "pubsub",
+    "logs", "message", "voice", "fax", "project", "projects", "chat", "pubsub",
     "swml-webhooks",
 ]
 

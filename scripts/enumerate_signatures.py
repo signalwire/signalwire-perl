@@ -299,6 +299,7 @@ GENERATED_SIG_PROJECTION = {
     "PhoneNumbers": ("relay_rest", "CrudResource"),
     "ProjectNamespace": ("_client_tree", "Base"),
     "ProjectTokens": ("project", "Base"),
+    "Projects": ("projects", "CrudResource"),
     "PubSub": ("pubsub", "Base"),
     "Queues": ("relay_rest", "CrudResource"),
     "Recordings": ("relay_rest", "Base"),
