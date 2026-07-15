@@ -35,10 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Perl SDK
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Checkout porting-sdk (reference)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: signalwire/porting-sdk
           path: porting-sdk
