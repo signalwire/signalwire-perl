@@ -64,12 +64,92 @@ except ImportError:  # pragma: no cover
     raise
 
 
-# The 12 real REST spec directories (registry has no own dir — its resources
-# live inside relay-rest via namespace: registry; swml-webhooks is types-only).
-SPEC_DIRS = [
+# ---------------------------------------------------------------------------
+# Spec discovery (§ REST_GENERATOR_RULES — scan rest-apis/, don't hardcode).
+# ---------------------------------------------------------------------------
+# The set of REST namespaces is DISCOVERED by scanning porting-sdk/rest-apis/*/
+# openapi.yaml — mirroring the python reference (generate_python_rest_types.py:
+# `sorted(d.name for d in rest_apis.iterdir() if (d/"openapi.yaml").exists())`).
+# Membership is derived from spec CONTENT, not a hand-list:
+#   * a RESOURCE spec is any dir whose spec declares an x-sdk-resource block on
+#     some path — it produces both resource classes AND wire types;
+#   * a TYPES-ONLY spec is a dir with components/schemas but NO servers block
+#     (swml-webhooks: a webhook payload spec, not a REST surface) — it produces
+#     wire types only.
+# A dir that has schemas + servers but NO x-sdk-resource would be neither a
+# resource nor a types-only spec: it is intentionally excluded until it grows
+# x-sdk-resource markup. (rest-apis/projects/ — the /api/projects full-CRUD
+# project-management API, DISTINCT from the singular ``project`` token namespace —
+# now carries an x-sdk-resource block and is a first-class resource spec.)
+#
+# Two facts are NOT derivable from a directory name and are kept explicit:
+#   * SPEC_ORDER — the emission order (it drives the ResourceTree flat-accessor
+#     order + each container's member order; an arbitrary curated order, not a
+#     sort). New specs the scan finds but that aren't ordered fail loud.
+#   * _SUB_CASE_OVERRIDE — the PascalCase Types-subdir leaf where naive
+#     PascalCase differs from the curated name (pubsub -> PubSub, not Pubsub).
+SPEC_ORDER = [
     "relay-rest", "fabric", "calling", "video", "datasphere",
-    "logs", "message", "voice", "fax", "project", "chat", "pubsub",
+    "logs", "message", "voice", "fax", "project", "projects", "chat", "pubsub",
+    "swml-webhooks",
 ]
+
+# PascalCase Types-subdir leaf overrides (naive PascalCase can't recover the
+# intended intra-word capitalization). ns_key (snake) is always dir.replace("-","_").
+_SUB_CASE_OVERRIDE = {"pubsub": "PubSub"}
+
+
+def _spec_pascal(ns: str) -> str:
+    """rest-apis dir name -> PascalCase Types-subdir leaf (relay-rest -> RelayRest,
+    swml-webhooks -> SwmlWebhooks), honoring the curated-casing override."""
+    if ns in _SUB_CASE_OVERRIDE:
+        return _SUB_CASE_OVERRIDE[ns]
+    return "".join(w[:1].upper() + w[1:] for w in ns.replace("-", "_").split("_") if w)
+
+
+def _has_x_sdk_resource(doc: dict) -> bool:
+    for _path, item in (doc.get("paths") or {}).items():
+        if isinstance(item, dict) and item.get("x-sdk-resource"):
+            return True
+    return False
+
+
+def discover_specs(psdk: Path) -> tuple[list[str], list[tuple[str, str, str]]]:
+    """Scan rest-apis/ and return (resource_spec_dirs, type_ns) — the discovered
+    replacements for the former hardcoded SPEC_DIRS / TYPE_NS.
+
+      resource_spec_dirs : dirs whose spec has an x-sdk-resource block, in SPEC_ORDER.
+      type_ns            : (dir, PascalSub, snake_key) for every RESOURCE spec plus
+                           every types-only (schemas, no servers) spec, in SPEC_ORDER.
+
+    Fails loud if the scan finds a participating spec not present in SPEC_ORDER
+    (so a newly-added namespace can't be silently dropped)."""
+    rest_apis = psdk / "rest-apis"
+    resource_dirs: set[str] = set()
+    type_dirs: set[str] = set()
+    for d in sorted(rest_apis.iterdir()):
+        of = d / "openapi.yaml"
+        if not of.is_file():
+            continue
+        doc = yaml.safe_load(of.read_text()) or {}
+        has_resource = _has_x_sdk_resource(doc)
+        has_servers = bool(doc.get("servers"))
+        has_schemas = bool(((doc.get("components") or {}).get("schemas")))
+        if has_resource:
+            resource_dirs.add(d.name)
+        if has_resource or (has_schemas and not has_servers):
+            type_dirs.add(d.name)
+
+    unordered = (resource_dirs | type_dirs) - set(SPEC_ORDER)
+    if unordered:
+        raise SystemExit(
+            "generate_rest.py: discovered REST spec(s) not in SPEC_ORDER: "
+            f"{sorted(unordered)} — add them to SPEC_ORDER (curated emission order)"
+        )
+    spec_dirs = [ns for ns in SPEC_ORDER if ns in resource_dirs]
+    type_ns = [(ns, _spec_pascal(ns), ns.replace("-", "_"))
+               for ns in SPEC_ORDER if ns in type_dirs]
+    return spec_dirs, type_ns
 
 
 # ---------------------------------------------------------------------------
@@ -1136,24 +1216,10 @@ def emit_resource_tree(placed) -> str:
 # enumerator).
 # ---------------------------------------------------------------------------
 
-# Spec-dir -> the Perl Types subdir leaf + the oracle <ns>_types_generated leaf.
-# The swml-webhooks spec is types-only (no resources, no servers block) and is
-# loaded via _load_types_schemas. relay-rest folds registry.
-TYPE_NS = [
-    ("relay-rest", "RelayRest", "relay_rest"),
-    ("fabric", "Fabric", "fabric"),
-    ("calling", "Calling", "calling"),
-    ("video", "Video", "video"),
-    ("datasphere", "Datasphere", "datasphere"),
-    ("logs", "Logs", "logs"),
-    ("message", "Message", "message"),
-    ("voice", "Voice", "voice"),
-    ("fax", "Fax", "fax"),
-    ("project", "Project", "project"),
-    ("chat", "Chat", "chat"),
-    ("pubsub", "PubSub", "pubsub"),
-    ("swml-webhooks", "SwmlWebhooks", "swml_webhooks"),
-]
+# The Types-subdir leaf + the oracle <ns>_types_generated leaf per spec-dir are
+# now DISCOVERED (discover_specs -> type_ns): the swml-webhooks spec is types-only
+# (no resources, no servers block) and is loaded via _load_types_schemas;
+# relay-rest folds registry.
 
 
 def type_name(raw: str) -> str:
@@ -1307,10 +1373,11 @@ def _load_types_schemas(psdk: Path, spec_dir: str) -> dict:
     return ((doc.get("components") or {}).get("schemas")) or {}
 
 
-def emit_types(psdk: Path, outs: dict) -> None:
+def emit_types(psdk: Path, outs: dict, type_ns: list[tuple[str, str, str]]) -> None:
     """Emit every <ns>_types_generated Perl data package / enum into
-    ``Types/<Sub>/<TypeName>.pm`` keys of ``outs`` (relative to the Generated dir)."""
-    for spec_dir, sub, ns_key in TYPE_NS:
+    ``Types/<Sub>/<TypeName>.pm`` keys of ``outs`` (relative to the Generated dir).
+    ``type_ns`` is the discovered (dir, PascalSub, snake_key) list (discover_specs)."""
+    for spec_dir, sub, ns_key in type_ns:
         schemas = _load_types_schemas(psdk, spec_dir)
         for raw_name, node in schemas.items():
             if not isinstance(node, dict):
@@ -1340,7 +1407,8 @@ def emit_types(psdk: Path, outs: dict) -> None:
 def build_outputs(psdk: Path) -> dict[str, str]:
     load_bases(psdk)  # validate x-sdk-bases (fail loud)
     _SIDECAR.clear()
-    specs = [load_spec(psdk, ns) for ns in SPEC_DIRS]
+    spec_dirs, type_ns = discover_specs(psdk)  # scan rest-apis/ (no hardcoded lists)
+    specs = [load_spec(psdk, ns) for ns in spec_dirs]
     outs: dict[str, str] = {}
 
     outs["ReadResource.pm"] = emit_read_resource_base()
@@ -1372,7 +1440,7 @@ def build_outputs(psdk: Path) -> dict[str, str]:
 
     # Wire types (item A/H): one method-less Moo data package per components/schemas
     # object across all 13 namespaces, under Types/<Sub>/.
-    emit_types(psdk, outs)
+    emit_types(psdk, outs, type_ns)
 
     # Sidecar (§5): canonical typed-param records the signature enumerator unfolds
     # onto the regex-parsed Perl params (Perl signatures aren't introspectable —

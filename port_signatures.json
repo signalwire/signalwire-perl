@@ -31390,6 +31390,43 @@
         }
       }
     },
+    "signalwire.rest.namespaces.projects_resources_generated": {
+      "classes": {
+        "Projects": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "http",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "rotate_signing_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "id",
+                  "kind": "positional",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
     "signalwire.rest.namespaces.pubsub_resources_generated": {
       "classes": {
         "PubSub": {

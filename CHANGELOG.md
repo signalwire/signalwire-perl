@@ -5,6 +5,15 @@ All notable changes to the SignalWire Perl SDK are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.0
+
+Adds the `projects` (plural) full-CRUD REST resource — `$client->projects` over
+`/api/projects` — distinct from the singular `project` token namespace.
+
+### Added
+- `$client->projects` — full-CRUD Projects resource (list/get/create/update/delete)
+  plus `rotate_signing_key`, generated from the `projects` REST spec.
+
 ## 3.0.2
 
 Release-readiness baseline for the generated-REST surface. This version unifies

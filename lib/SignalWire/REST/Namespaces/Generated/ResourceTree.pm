@@ -21,6 +21,7 @@ use SignalWire::REST::Namespaces::Generated::ShortCodes          ();
 use SignalWire::REST::Namespaces::Generated::SipProfile          ();
 use SignalWire::REST::Namespaces::Generated::VerifiedCallers     ();
 use SignalWire::REST::Namespaces::Generated::Calling             ();
+use SignalWire::REST::Namespaces::Generated::Projects            ();
 use SignalWire::REST::Namespaces::Generated::Chat                ();
 use SignalWire::REST::Namespaces::Generated::PubSub              ();
 use SignalWire::REST::Namespaces::Generated::RegistryNamespace   ();
@@ -45,6 +46,7 @@ has 'short_codes'      => ( is => 'lazy', init_arg => undef );
 has 'sip_profile'      => ( is => 'lazy', init_arg => undef );
 has 'verified_callers' => ( is => 'lazy', init_arg => undef );
 has 'calling'          => ( is => 'lazy', init_arg => undef );
+has 'projects'         => ( is => 'lazy', init_arg => undef );
 has 'chat'             => ( is => 'lazy', init_arg => undef );
 has 'pubsub'           => ( is => 'lazy', init_arg => undef );
 has 'registry'         => ( is => 'lazy', init_arg => undef );
@@ -112,6 +114,11 @@ sub _build_verified_callers {
 sub _build_calling {
     my ($self) = @_;
     return SignalWire::REST::Namespaces::Generated::Calling->new( _http => $self->_http );
+}
+
+sub _build_projects {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Generated::Projects->new( _http => $self->_http );
 }
 
 sub _build_chat {

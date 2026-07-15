@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 267a31f9f75e1b46807c365089a972b105c2dcf7",
+   "generated_from" : "signalwire-perl @ 65d802871ec04ef666e1e29c926ff282217847e4",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -2238,6 +2238,30 @@
             "Types_StatusCodes_StatusCode404" : [],
             "Types_StatusCodes_StatusCode500" : [],
             "UpdateTokenRequest" : []
+         },
+         "functions" : []
+      },
+      "signalwire.rest.namespaces.projects_resources_generated" : {
+         "classes" : {
+            "Projects" : [
+               "__init__",
+               "create",
+               "rotate_signing_key",
+               "update"
+            ]
+         },
+         "functions" : []
+      },
+      "signalwire.rest.namespaces.projects_types_generated" : {
+         "classes" : {
+            "Project" : [],
+            "ProjectCreate" : [],
+            "ProjectList" : [],
+            "ProjectStatusCode422" : [],
+            "Types_StatusCodes_RestApiErrorItem" : [],
+            "Types_StatusCodes_StatusCode401" : [],
+            "Types_StatusCodes_StatusCode403" : [],
+            "Types_StatusCodes_StatusCode404" : []
          },
          "functions" : []
       },

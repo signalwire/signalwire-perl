@@ -73,11 +73,12 @@ our %SUGAR = map { $_ => 1 } qw(
 # namespace containers are provided by the generated ResourceTree role the client
 # composes (accessor names verbatim from the specs). `project` is the
 # ProjectNamespace container (the raw project-id credential lives on the private
-# `_project_id` slot).
+# `_project_id` slot); `projects` (plural) is the flat /api/projects full-CRUD
+# resource — distinct from the singular `project` token namespace.
 our @NAMESPACES = qw(
     fabric calling phone_numbers addresses queues recordings number_groups
     verified_callers sip_profile lookup short_codes imported_numbers mfa
-    registry datasphere video logs project pubsub chat
+    registry datasphere video logs project projects pubsub chat
 );
 
 # ---- recording HTTP client -------------------------------------------------
