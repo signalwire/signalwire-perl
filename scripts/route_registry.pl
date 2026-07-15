@@ -78,7 +78,7 @@ our %SUGAR = map { $_ => 1 } qw(
 our @NAMESPACES = qw(
     fabric calling phone_numbers addresses queues recordings number_groups
     verified_callers sip_profile lookup short_codes imported_numbers mfa
-    registry datasphere video logs project projects pubsub chat
+    registry datasphere video logs messages project projects pubsub chat
 );
 
 # ---- recording HTTP client -------------------------------------------------

@@ -294,6 +294,7 @@ GENERATED_SIG_PROJECTION = {
     "LogsNamespace": ("_client_tree", "Base"),
     "Lookup": ("relay_rest", "Base"),
     "MessageLogs": ("message", "ReadResource"),
+    "Messages": ("messages", "Base"),
     "Mfa": ("relay_rest", "Base"),
     "NumberGroups": ("relay_rest", "CrudResource"),
     "PhoneNumbers": ("relay_rest", "CrudResource"),
