@@ -5,6 +5,18 @@ All notable changes to the SignalWire Perl SDK are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.0
+
+Adds the `messages` (plural) REST resource — `$client->messages` over
+`/api/messaging/messages` — for sending and redacting messages. This is DISTINCT
+from message logs (`$client->logs->messages`, the read-side log query).
+
+### Added
+- `$client->messages->create(...)` — send an outbound SMS/MMS message
+  (`POST /api/messaging/messages`), generated from the `messages` REST spec.
+- `$client->messages->update($message_id, ...)` — redact a message
+  (`PATCH /api/messaging/messages/{message_id}`).
+
 ## 3.1.0
 
 Adds the `projects` (plural) full-CRUD REST resource — `$client->projects` over
