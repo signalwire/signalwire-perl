@@ -1116,87 +1116,14 @@ my %METHOD_OVERRIDES = (
         },
     },
 
-    # Perl renamed `delete` to `delete_<resource>` because `delete` is a
-    # core builtin keyword. Translate back to the Python name `delete`.
-    'SignalWire::REST::Namespaces::Recordings' => {
-        'delete_recording' => {
-            module => 'signalwire.rest.namespaces.recordings',
-            class  => 'RecordingsResource',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Fabric::GenericResources' => {
-        'delete_resource' => {
-            module => 'signalwire.rest.namespaces.fabric',
-            class  => 'GenericResources',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Compat::PhoneNumbers' => {
-        'delete_number' => {
-            module => 'signalwire.rest.namespaces.compat',
-            class  => 'CompatPhoneNumbers',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Compat::Recordings' => {
-        'delete_recording' => {
-            module => 'signalwire.rest.namespaces.compat',
-            class  => 'CompatRecordings',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Compat::Tokens' => {
-        'delete_token' => {
-            module => 'signalwire.rest.namespaces.compat',
-            class  => 'CompatTokens',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Compat::Transcriptions' => {
-        'delete_transcription' => {
-            module => 'signalwire.rest.namespaces.compat',
-            class  => 'CompatTranscriptions',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Project::Tokens' => {
-        'delete_token' => {
-            module => 'signalwire.rest.namespaces.project',
-            class  => 'ProjectTokens',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Registry::Numbers' => {
-        'delete_number' => {
-            module => 'signalwire.rest.namespaces.registry',
-            class  => 'RegistryNumbers',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Video::RoomRecordings' => {
-        'delete_recording' => {
-            module => 'signalwire.rest.namespaces.video',
-            class  => 'VideoRoomRecordings',
-            method => 'delete'
-        },
-    },
-    'SignalWire::REST::Namespaces::Video::Streams' => {
-        'delete_stream' => {
-            module => 'signalwire.rest.namespaces.video',
-            class  => 'VideoStreams',
-            method => 'delete'
-        },
-    },
-
-    # CrudResource base class's delete_resource maps to the Python `delete`. In the
+    # CrudResource base class's `delete` maps to the Python `delete`. In the
     # oracle's base decomposition list/get live on ReadResource (the parent), and
     # CrudResource itself only adds create/update/delete. The Perl hand CrudResource
     # carries list+get inline (it does not extend a separate ReadResource base), so
     # reproject those two onto ReadResource to match the oracle's per-class surface.
+    # (Every generated resource class + this base now name the method `delete`
+    # directly — matching Python — so no per-resource rename overrides are needed.)
     'SignalWire::REST::Namespaces::CrudResource' => {
-        'delete_resource' =>
-            { module => 'signalwire.rest._base', class => 'CrudResource', method => 'delete' },
         'list' => { module => 'signalwire.rest._base', class => 'ReadResource', method => 'list' },
         'get'  => { module => 'signalwire.rest._base', class => 'ReadResource', method => 'get' },
     },

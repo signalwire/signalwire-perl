@@ -39,7 +39,6 @@ $client->calling->dial(
 - Full Fabric API: resource types with CRUD + addresses, tokens, and generic resources
 - Datasphere: document management and semantic search
 - Video: rooms, sessions, recordings, conferences, tokens, streams
-- Compatibility API: full Twilio-compatible LAML surface
 - Phone number management, 10DLC registry, MFA, logs, and more
 - HTTP::Tiny for lightweight, dependency-free HTTP
 - Hash ref returns -- raw data, no wrapper objects to learn
@@ -81,15 +80,18 @@ $client->calling->dial(
 
 ```
 lib/SignalWire/REST/
-    RestClient.pm    # Main client -- namespace wiring, lazy builders
+    RestClient.pm          # Main client -- namespace wiring, lazy builders
     HttpClient.pm          # HTTP::Tiny wrapper with auth, JSON, error handling
     Namespaces/
-        Fabric.pm          # AI agents, SWML scripts, subscribers, call flows, etc.
-        Calling.pm         # REST-based call control commands
-        PhoneNumbers.pm    # Search, purchase, update, release
-        Compat.pm          # Twilio-compatible LAML API
-        Video.pm           # Rooms, sessions, recordings, conferences
-        Datasphere.pm      # Documents, search, chunks
-        Registry.pm        # 10DLC brands, campaigns, orders
-        ... and more
+        Base.pm            # BaseResource + CrudResource base classes (list/create/get/update/delete)
+        Generated/         # Generated-from-spec resource + namespace classes:
+            ResourceTree.pm    # the $client-><namespace> accessor role
+            FabricNamespace.pm # AI agents, SWML scripts, subscribers, call flows, etc.
+            Calling.pm         # REST-based call control commands
+            PhoneNumbers.pm    # Search, purchase, update, release
+            VideoNamespace.pm  # Rooms, sessions, recordings, conferences
+            DatasphereNamespace.pm  # Documents, search, chunks
+            RegistryNamespace.pm  # 10DLC brands, campaigns, orders
+            Types/             # Generated typed request/response wire objects
+            ... and more
 ```

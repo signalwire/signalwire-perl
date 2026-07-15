@@ -94,7 +94,7 @@ use_ok('SignalWire::REST::Namespaces::Base');
     ok($crud->can('create'), 'has create');
     ok($crud->can('get'), 'has get');
     ok($crud->can('update'), 'has update');
-    ok($crud->can('delete_resource'), 'has delete_resource');
+    ok($crud->can('delete'), 'has delete');
 }
 
 # ===== RestClient =====

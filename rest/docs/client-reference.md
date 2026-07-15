@@ -72,14 +72,13 @@ There are 21 namespace accessors on the client. Every API surface is available a
 | `$client->datasphere` | Datasphere document management and semantic search |
 | `$client->video` | Video rooms, sessions, recordings, conferences |
 | `$client->logs` | Message, voice, fax, and conference logs |
-| `$client->project_ns` | API token management |
+| `$client->project` | API token management |
 | `$client->pubsub` | PubSub token creation |
 | `$client->chat` | Chat token creation |
-| `$client->compat` | Twilio-compatible LAML API |
 
-> Note: the project-token namespace is reached via `$client->project_ns` (the
-> accessor is named `project_ns` because `project` is the credential attribute
-> on the constructor).
+> Note: the project-token namespace is reached via `$client->project`. The
+> `project` credential passed to the constructor is stored privately (as
+> `_project_id`) so it does not collide with this generated `project` accessor.
 
 ## Error Handling
 

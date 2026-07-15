@@ -27431,20 +27431,6 @@
               ],
               "returns": "any"
             },
-            "delete_resource": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "resource_id",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "any"
-            },
             "get": {
               "params": [
                 {

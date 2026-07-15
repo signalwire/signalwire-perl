@@ -95,18 +95,18 @@ subtest 'conferences_create_stream_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'video.create_conference_stream', 'matched_route video.create_conference_stream');
 };
 
-subtest 'conferences_delete_resource_success' => sub {
+subtest 'conferences_delete_success' => sub {
     my $client = MockTest::client();
-    $client->video->conferences->delete_resource('x');
+    $client->video->conferences->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'video.delete_video_conference', 'matched_route video.delete_video_conference');
 };
 
-subtest 'conferences_delete_resource_error' => sub {
+subtest 'conferences_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('video.delete_video_conference', 500, { error => 'x' });
-    my $ok = eval { $client->video->conferences->delete_resource('x'); 1 };
+    my $ok = eval { $client->video->conferences->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -437,18 +437,18 @@ subtest 'rooms_create_stream_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'video.create_room_stream', 'matched_route video.create_room_stream');
 };
 
-subtest 'rooms_delete_resource_success' => sub {
+subtest 'rooms_delete_success' => sub {
     my $client = MockTest::client();
-    $client->video->rooms->delete_resource('x');
+    $client->video->rooms->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'video.delete_room', 'matched_route video.delete_room');
 };
 
-subtest 'rooms_delete_resource_error' => sub {
+subtest 'rooms_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('video.delete_room', 500, { error => 'x' });
-    my $ok = eval { $client->video->rooms->delete_resource('x'); 1 };
+    my $ok = eval { $client->video->rooms->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');

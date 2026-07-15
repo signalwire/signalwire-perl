@@ -153,18 +153,7 @@ signalwire.utils.schema_utils.SchemaUtils.instance: port-only: Perl SchemaUtils 
 signalwire.utils.schema_utils.SchemaUtils.verb_count: port-only: Perl SchemaUtils exposes verb-introspection helpers (get_verb, get_verb_names, has_verb, verb_count, instance); Python keeps these internal
 signalwire.web.web_service.WebService.file_allowed: port-only public helper: Perl exposes the size+extension filter as a callable predicate (Ruby's file_allowed?); Python keeps it private as _is_file_allowed
 signalwire.web.web_service.WebService.psgi_app: port-only: Perl ports use Plack/PSGI; WebService.psgi_app returns the static-file-serving coderef any Plack handler consumes; Python builds a FastAPI app internally
-signalwire.rest._base.CrudResource.delete_resource: perl-idiom port-only: Perl reserves the bareword ``delete`` for the built-in hash operator, so the canonical method is ``delete_resource``; the Python parity alias ``delete`` is also exposed
-signalwire.rest._base.HttpClient.delete_request: perl-idiom port-only: Perl reserves the bareword ``delete`` for the built-in hash operator, so HttpClient exposes ``delete_request``; the Python parity alias ``delete`` is also exposed
-signalwire.rest.namespaces.compat.CompatPhoneNumbers.delete_number: perl-idiom port-only: Compat resource keeps the domain-named ``delete_number`` alongside the Python-parity ``delete`` alias
-signalwire.rest.namespaces.compat.CompatRecordings.delete_recording: perl-idiom port-only: Compat resource keeps the domain-named ``delete_recording`` alongside the Python-parity ``delete`` alias
-signalwire.rest.namespaces.compat.CompatTokens.delete_token: perl-idiom port-only: Compat resource keeps the domain-named ``delete_token`` alongside the Python-parity ``delete`` alias
-signalwire.rest.namespaces.compat.CompatTranscriptions.delete_transcription: perl-idiom port-only: Compat resource keeps the domain-named ``delete_transcription`` alongside the Python-parity ``delete`` alias
-signalwire.rest.namespaces.fabric.GenericResources.delete_resource: perl-idiom port-only: Fabric GenericResources exposes ``delete_resource`` directly (the Python parity ``delete`` alias is also offered)
-signalwire.rest.namespaces.project.ProjectTokens.delete_token: perl-idiom port-only: ProjectTokens keeps the domain-named ``delete_token`` alongside the Python-parity ``delete`` alias
-signalwire.rest.namespaces.recordings.RecordingsResource.delete_recording: perl-idiom port-only: RecordingsResource keeps the domain-named ``delete_recording`` alongside the Python-parity ``delete`` alias
-signalwire.rest.namespaces.registry.RegistryNumbers.delete_number: perl-idiom port-only: RegistryNumbers keeps the domain-named ``delete_number`` alongside the Python-parity ``delete`` alias
-signalwire.rest.namespaces.video.VideoRoomRecordings.delete_recording: perl-idiom port-only: VideoRoomRecordings keeps the domain-named ``delete_recording`` alongside the Python-parity ``delete`` alias
-signalwire.rest.namespaces.video.VideoStreams.delete_stream: perl-idiom port-only: VideoStreams keeps the domain-named ``delete_stream`` alongside the Python-parity ``delete`` alias
+signalwire.rest._base.HttpClient.delete_request: perl-idiom port-only: the low-level HTTP transport method is named ``delete_request`` on HttpClient to read as an HTTP-verb helper (paired with get/post/put/patch); the Python parity name ``delete`` is also exposed via the enumerator alias
 signalwire.core.security.webhook_middleware.wrap: perl-idiom port-only: Plack middleware wrap() instance method (Plack convention) — Python uses make_webhook_validation_dependency factory function instead
 
 # --- item H/I surface-align additions ---

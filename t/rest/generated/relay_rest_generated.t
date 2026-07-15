@@ -228,6 +228,25 @@ subtest 'number_groups_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.create_number_group', 'matched_route relay-rest.create_number_group');
 };
 
+subtest 'number_groups_delete_success' => sub {
+    my $client = MockTest::client();
+    $client->number_groups->delete('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'relay-rest.delete_number_group', 'matched_route relay-rest.delete_number_group');
+};
+
+subtest 'number_groups_delete_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.delete_number_group', 500, { error => 'x' });
+    my $ok = eval { $client->number_groups->delete('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.delete_number_group', 'matched_route relay-rest.delete_number_group');
+};
+
 subtest 'number_groups_delete_membership_success' => sub {
     my $client = MockTest::client();
     $client->number_groups->delete_membership('x');
@@ -245,25 +264,6 @@ subtest 'number_groups_delete_membership_error' => sub {
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
     is($e->status_code, 500, 'status 500');
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.delete_number_group_membership', 'matched_route relay-rest.delete_number_group_membership');
-};
-
-subtest 'number_groups_delete_resource_success' => sub {
-    my $client = MockTest::client();
-    $client->number_groups->delete_resource('x');
-    my $last = MockTest::journal_last();
-    is($last->{method}, 'DELETE', 'method DELETE');
-    is($last->{matched_route}, 'relay-rest.delete_number_group', 'matched_route relay-rest.delete_number_group');
-};
-
-subtest 'number_groups_delete_resource_error' => sub {
-    my $client = MockTest::client();
-    MockTest::scenario_set('relay-rest.delete_number_group', 500, { error => 'x' });
-    my $ok = eval { $client->number_groups->delete_resource('x'); 1 };
-    ok(!$ok, 'call raised');
-    my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'relay-rest.delete_number_group', 'matched_route relay-rest.delete_number_group');
 };
 
 subtest 'number_groups_get_success' => sub {
@@ -380,18 +380,18 @@ subtest 'phone_numbers_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.purchase_phone_number', 'matched_route relay-rest.purchase_phone_number');
 };
 
-subtest 'phone_numbers_delete_resource_success' => sub {
+subtest 'phone_numbers_delete_success' => sub {
     my $client = MockTest::client();
-    $client->phone_numbers->delete_resource('x');
+    $client->phone_numbers->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'relay-rest.release_phone_number', 'matched_route relay-rest.release_phone_number');
 };
 
-subtest 'phone_numbers_delete_resource_error' => sub {
+subtest 'phone_numbers_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('relay-rest.release_phone_number', 500, { error => 'x' });
-    my $ok = eval { $client->phone_numbers->delete_resource('x'); 1 };
+    my $ok = eval { $client->phone_numbers->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -494,18 +494,18 @@ subtest 'queues_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.create_queue', 'matched_route relay-rest.create_queue');
 };
 
-subtest 'queues_delete_resource_success' => sub {
+subtest 'queues_delete_success' => sub {
     my $client = MockTest::client();
-    $client->queues->delete_resource('x');
+    $client->queues->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'relay-rest.delete_queue', 'matched_route relay-rest.delete_queue');
 };
 
-subtest 'queues_delete_resource_error' => sub {
+subtest 'queues_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('relay-rest.delete_queue', 500, { error => 'x' });
-    my $ok = eval { $client->queues->delete_resource('x'); 1 };
+    my $ok = eval { $client->queues->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -1026,18 +1026,18 @@ subtest 'verified_callers_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.create_verified_caller_id', 'matched_route relay-rest.create_verified_caller_id');
 };
 
-subtest 'verified_callers_delete_resource_success' => sub {
+subtest 'verified_callers_delete_success' => sub {
     my $client = MockTest::client();
-    $client->verified_callers->delete_resource('x');
+    $client->verified_callers->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'relay-rest.delete_verified_caller_id', 'matched_route relay-rest.delete_verified_caller_id');
 };
 
-subtest 'verified_callers_delete_resource_error' => sub {
+subtest 'verified_callers_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('relay-rest.delete_verified_caller_id', 500, { error => 'x' });
-    my $ok = eval { $client->verified_callers->delete_resource('x'); 1 };
+    my $ok = eval { $client->verified_callers->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
