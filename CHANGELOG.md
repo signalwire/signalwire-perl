@@ -5,6 +5,24 @@ All notable changes to the SignalWire Perl SDK are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.0
+
+Converges the REST resource-deletion method name to `delete`, matching every other
+SignalWire SDK and the Python reference. The `CrudResource` base and every generated
+resource class now expose `delete($id)` directly.
+
+### Changed (BREAKING)
+- `CrudResource->delete_resource($id)` is renamed to `CrudResource->delete($id)`.
+  Every CRUD resource reached via `$client-><namespace>` (phone numbers, video rooms,
+  queues, verified callers, datasphere documents, …) now removes with
+  `->delete($id)` instead of `->delete_resource($id)`. The documented
+  `->delete($id)` form on the already-`delete`-named resources is unchanged.
+
+### Fixed
+- CRUD resources built on `CrudResource` previously lacked a `delete` method entirely
+  (only `delete_resource` was inherited); `->delete($id)` — the name shown in the docs
+  and used by every sibling SDK — now works on all of them.
+
 ## 3.2.0
 
 Adds the `messages` (plural) REST resource — `$client->messages` over

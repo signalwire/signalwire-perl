@@ -38,18 +38,18 @@ subtest 'projects_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'projects.create_subproject', 'matched_route projects.create_subproject');
 };
 
-subtest 'projects_delete_resource_success' => sub {
+subtest 'projects_delete_success' => sub {
     my $client = MockTest::client();
-    $client->projects->delete_resource('x');
+    $client->projects->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'projects.delete_subproject', 'matched_route projects.delete_subproject');
 };
 
-subtest 'projects_delete_resource_error' => sub {
+subtest 'projects_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('projects.delete_subproject', 500, { error => 'x' });
-    my $ok = eval { $client->projects->delete_resource('x'); 1 };
+    my $ok = eval { $client->projects->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');

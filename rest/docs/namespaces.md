@@ -266,15 +266,17 @@ $logs = $client->logs->conferences->list;
 
 ## Project Tokens
 
-Reached via the `project_ns` accessor (the constructor already uses `project` for credentials):
+Reached via the `project` accessor. The `project` credential passed to the
+constructor is stored privately (as `_project_id`) so it does not collide with this
+generated `project` accessor:
 
 ```perl
-my $token = $client->project_ns->tokens->create(
+my $token = $client->project->tokens->create(
     name        => 'ci-token',
     permissions => ['calling', 'messaging', 'numbers'],
 );
-$client->project_ns->tokens->update('token-uuid', name => 'renamed-token');
-$client->project_ns->tokens->delete('token-uuid');
+$client->project->tokens->update('token-uuid', name => 'renamed-token');
+$client->project->tokens->delete('token-uuid');
 ```
 
 ## PubSub Tokens

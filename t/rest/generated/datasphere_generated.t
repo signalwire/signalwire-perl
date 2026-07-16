@@ -38,6 +38,25 @@ subtest 'documents_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'datasphere.create_document', 'matched_route datasphere.create_document');
 };
 
+subtest 'documents_delete_success' => sub {
+    my $client = MockTest::client();
+    $client->datasphere->documents->delete('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'datasphere.delete_document', 'matched_route datasphere.delete_document');
+};
+
+subtest 'documents_delete_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('datasphere.delete_document', 500, { error => 'x' });
+    my $ok = eval { $client->datasphere->documents->delete('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'datasphere.delete_document', 'matched_route datasphere.delete_document');
+};
+
 subtest 'documents_delete_chunk_success' => sub {
     my $client = MockTest::client();
     $client->datasphere->documents->delete_chunk('x', 'x');
@@ -55,25 +74,6 @@ subtest 'documents_delete_chunk_error' => sub {
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
     is($e->status_code, 500, 'status 500');
     is(MockTest::journal_last()->{matched_route}, 'datasphere.delete_document_chunk', 'matched_route datasphere.delete_document_chunk');
-};
-
-subtest 'documents_delete_resource_success' => sub {
-    my $client = MockTest::client();
-    $client->datasphere->documents->delete_resource('x');
-    my $last = MockTest::journal_last();
-    is($last->{method}, 'DELETE', 'method DELETE');
-    is($last->{matched_route}, 'datasphere.delete_document', 'matched_route datasphere.delete_document');
-};
-
-subtest 'documents_delete_resource_error' => sub {
-    my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.delete_document', 500, { error => 'x' });
-    my $ok = eval { $client->datasphere->documents->delete_resource('x'); 1 };
-    ok(!$ok, 'call raised');
-    my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.delete_document', 'matched_route datasphere.delete_document');
 };
 
 subtest 'documents_get_success' => sub {

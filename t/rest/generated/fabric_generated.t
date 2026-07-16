@@ -76,18 +76,18 @@ subtest 'ai_agents_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_ai_agent', 'matched_route fabric.create_ai_agent');
 };
 
-subtest 'ai_agents_delete_resource_success' => sub {
+subtest 'ai_agents_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->ai_agents->delete_resource('x');
+    $client->fabric->ai_agents->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_ai_agent', 'matched_route fabric.delete_ai_agent');
 };
 
-subtest 'ai_agents_delete_resource_error' => sub {
+subtest 'ai_agents_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_ai_agent', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->ai_agents->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->ai_agents->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -190,18 +190,18 @@ subtest 'call_flows_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_call_flow', 'matched_route fabric.create_call_flow');
 };
 
-subtest 'call_flows_delete_resource_success' => sub {
+subtest 'call_flows_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->call_flows->delete_resource('x');
+    $client->fabric->call_flows->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_call_flow', 'matched_route fabric.delete_call_flow');
 };
 
-subtest 'call_flows_delete_resource_error' => sub {
+subtest 'call_flows_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_call_flow', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->call_flows->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->call_flows->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -342,18 +342,18 @@ subtest 'conference_rooms_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_conference_room', 'matched_route fabric.create_conference_room');
 };
 
-subtest 'conference_rooms_delete_resource_success' => sub {
+subtest 'conference_rooms_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->conference_rooms->delete_resource('x');
+    $client->fabric->conference_rooms->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_conference_room', 'matched_route fabric.delete_conference_room');
 };
 
-subtest 'conference_rooms_delete_resource_error' => sub {
+subtest 'conference_rooms_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_conference_room', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->conference_rooms->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->conference_rooms->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -551,18 +551,18 @@ subtest 'cxml_scripts_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_cxml_script', 'matched_route fabric.create_cxml_script');
 };
 
-subtest 'cxml_scripts_delete_resource_success' => sub {
+subtest 'cxml_scripts_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->cxml_scripts->delete_resource('x');
+    $client->fabric->cxml_scripts->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_cxml_script', 'matched_route fabric.delete_cxml_script');
 };
 
-subtest 'cxml_scripts_delete_resource_error' => sub {
+subtest 'cxml_scripts_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_cxml_script', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->cxml_scripts->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->cxml_scripts->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -665,18 +665,18 @@ subtest 'cxml_webhooks_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_cxml_webhook', 'matched_route fabric.create_cxml_webhook');
 };
 
-subtest 'cxml_webhooks_delete_resource_success' => sub {
+subtest 'cxml_webhooks_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->cxml_webhooks->delete_resource('x');
+    $client->fabric->cxml_webhooks->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_cxml_webhook', 'matched_route fabric.delete_cxml_webhook');
 };
 
-subtest 'cxml_webhooks_delete_resource_error' => sub {
+subtest 'cxml_webhooks_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_cxml_webhook', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->cxml_webhooks->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->cxml_webhooks->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -779,18 +779,18 @@ subtest 'freeswitch_connectors_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_freeswitch_connector', 'matched_route fabric.create_freeswitch_connector');
 };
 
-subtest 'freeswitch_connectors_delete_resource_success' => sub {
+subtest 'freeswitch_connectors_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->freeswitch_connectors->delete_resource('x');
+    $client->fabric->freeswitch_connectors->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_freeswitch_connector', 'matched_route fabric.delete_freeswitch_connector');
 };
 
-subtest 'freeswitch_connectors_delete_resource_error' => sub {
+subtest 'freeswitch_connectors_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_freeswitch_connector', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->freeswitch_connectors->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->freeswitch_connectors->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -893,18 +893,18 @@ subtest 'relay_applications_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_relay_application', 'matched_route fabric.create_relay_application');
 };
 
-subtest 'relay_applications_delete_resource_success' => sub {
+subtest 'relay_applications_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->relay_applications->delete_resource('x');
+    $client->fabric->relay_applications->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_relay_application', 'matched_route fabric.delete_relay_application');
 };
 
-subtest 'relay_applications_delete_resource_error' => sub {
+subtest 'relay_applications_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_relay_application', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->relay_applications->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->relay_applications->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -1121,18 +1121,18 @@ subtest 'sip_endpoints_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_sip_endpoint', 'matched_route fabric.create_sip_endpoint');
 };
 
-subtest 'sip_endpoints_delete_resource_success' => sub {
+subtest 'sip_endpoints_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->sip_endpoints->delete_resource('x');
+    $client->fabric->sip_endpoints->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_sip_endpoint', 'matched_route fabric.delete_sip_endpoint');
 };
 
-subtest 'sip_endpoints_delete_resource_error' => sub {
+subtest 'sip_endpoints_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_sip_endpoint', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->sip_endpoints->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->sip_endpoints->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -1235,18 +1235,18 @@ subtest 'sip_gateways_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_sip_gateway', 'matched_route fabric.create_sip_gateway');
 };
 
-subtest 'sip_gateways_delete_resource_success' => sub {
+subtest 'sip_gateways_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->sip_gateways->delete_resource('x');
+    $client->fabric->sip_gateways->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_sip_gateway', 'matched_route fabric.delete_sip_gateway');
 };
 
-subtest 'sip_gateways_delete_resource_error' => sub {
+subtest 'sip_gateways_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_sip_gateway', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->sip_gateways->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->sip_gateways->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -1368,18 +1368,18 @@ subtest 'subscribers_create_sip_endpoint_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_subscriber_sip_endpoint', 'matched_route fabric.create_subscriber_sip_endpoint');
 };
 
-subtest 'subscribers_delete_resource_success' => sub {
+subtest 'subscribers_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->subscribers->delete_resource('x');
+    $client->fabric->subscribers->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_subscriber', 'matched_route fabric.delete_subscriber');
 };
 
-subtest 'subscribers_delete_resource_error' => sub {
+subtest 'subscribers_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_subscriber', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->subscribers->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->subscribers->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -1558,18 +1558,18 @@ subtest 'swml_scripts_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_swml_script', 'matched_route fabric.create_swml_script');
 };
 
-subtest 'swml_scripts_delete_resource_success' => sub {
+subtest 'swml_scripts_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->swml_scripts->delete_resource('x');
+    $client->fabric->swml_scripts->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_swml_script', 'matched_route fabric.delete_swml_script');
 };
 
-subtest 'swml_scripts_delete_resource_error' => sub {
+subtest 'swml_scripts_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_swml_script', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->swml_scripts->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->swml_scripts->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
@@ -1672,18 +1672,18 @@ subtest 'swml_webhooks_create_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_swml_webhook', 'matched_route fabric.create_swml_webhook');
 };
 
-subtest 'swml_webhooks_delete_resource_success' => sub {
+subtest 'swml_webhooks_delete_success' => sub {
     my $client = MockTest::client();
-    $client->fabric->swml_webhooks->delete_resource('x');
+    $client->fabric->swml_webhooks->delete('x');
     my $last = MockTest::journal_last();
     is($last->{method}, 'DELETE', 'method DELETE');
     is($last->{matched_route}, 'fabric.delete_swml_webhook', 'matched_route fabric.delete_swml_webhook');
 };
 
-subtest 'swml_webhooks_delete_resource_error' => sub {
+subtest 'swml_webhooks_delete_error' => sub {
     my $client = MockTest::client();
     MockTest::scenario_set('fabric.delete_swml_webhook', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->swml_webhooks->delete_resource('x'); 1 };
+    my $ok = eval { $client->fabric->swml_webhooks->delete('x'); 1 };
     ok(!$ok, 'call raised');
     my $e = $@;
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');

@@ -373,7 +373,7 @@ SignalWire::Relay::Action - handles for long-running RELAY call operations
 
     # Actions are returned by SignalWire::Relay::Call methods, not
     # constructed directly:
-    my $action = $call->play_async( url => $url );   # ::Action::Play
+    my $action = $call->play_audio( $url );          # ::Action::Play
 
     $action->on_completed(sub ($a) { print "done: ", $a->state, "\n"; });
     my $result = $action->wait( timeout => 30 );      # block until done

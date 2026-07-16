@@ -466,11 +466,12 @@ PERL_METHOD_ALIASES = {
     # Perl uses ``hash`` for the dict-like data structure; Python uses
     # ``dict``. The serialization helper is named accordingly.
     "to_hash": ["to_dict"],
-    # Perl reserves the bareword ``delete`` for the built-in hash
-    # operator; CrudResource and HttpClient use ``delete_resource`` /
-    # ``delete_request`` to avoid shadowing it. Both describe the same
-    # HTTP DELETE / resource-removal operation as Python's ``delete``.
-    "delete_resource": ["delete"],
+    # The low-level HTTP transport method is named ``delete_request`` on
+    # HttpClient (paired with get/post/put/patch) to read as an HTTP verb
+    # helper; it is the same operation as Python's ``HttpClient.delete``.
+    # (The resource-level CRUD ``delete`` needs no alias — CrudResource and
+    # every generated resource class expose ``delete`` natively, matching the
+    # Python name exactly.)
     "delete_request": ["delete"],
 }
 
@@ -795,9 +796,9 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
         name = meth.get("name", "")
         if name in SKIP_METHODS or (name.startswith("_") and not name.startswith("__")):
             continue
-        # delete_resource -> delete (the CrudResource-base hand name), though the
-        # generated Base classes already emit `delete` directly.
-        canon = "delete" if name == "delete_resource" else name
+        # Every generated resource class and the CrudResource base emit `delete`
+        # directly (matching the Python name), so no rename is needed here.
+        canon = name
         sidecar = REST_SIDECAR.get(f"{gname}::{name}")
         if sidecar is not None:
             methods[canon] = {

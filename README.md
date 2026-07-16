@@ -31,7 +31,7 @@ _Build AI voice agents, control live calls over WebSocket, and manage every Sign
 |-----------|-------------|------------|
 | **AI Agents** | Build voice agents that handle calls autonomously -- the platform runs the AI pipeline, your code defines the persona, tools, and call flow | [Agent Guide](#ai-agents) |
 | **RELAY Client** | Control live calls and SMS/MMS in real time over WebSocket -- answer, play, record, collect DTMF, conference, transfer, and more | [RELAY docs](relay/README.md) |
-| **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 20 API namespaces | [REST docs](rest/README.md) |
+| **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 22 API namespaces | [REST docs](rest/README.md) |
 
 ```bash
 cpanm SignalWire
@@ -93,7 +93,7 @@ swaig-test --file my_agent.pl --exec get_time
 - **Dynamic configuration** -- per-request agent customization for multi-tenant deployments
 - **Call flow control** -- pre-answer, post-answer, and post-AI verb insertion
 - **Prefab agents** -- ready-to-use archetypes (InfoGatherer, Survey, FAQ, Receptionist, Concierge)
-- **Multi-agent hosting** -- serve multiple agents on a single server with `SignalWire::Agent::AgentServer`
+- **Multi-agent hosting** -- serve multiple agents on a single server with `SignalWire::Server::AgentServer`
 - **SIP routing** -- route SIP calls to agents based on usernames
 - **Session state** -- persistent conversation state with global data and post-prompt summaries
 - **Security** -- auto-generated basic auth, function-specific HMAC tokens, SSL support
@@ -191,7 +191,7 @@ $client->datasphere->documents->search( query_string => 'billing policy' );
 
 ```
 
-- 20 namespaced API surfaces: Fabric (16 resource types), Calling (40 commands), Video, Datasphere, Phone Numbers, SIP, Queues, Recordings, and more
+- 22 namespaced API surfaces: Fabric (16 resource types), Calling (40 commands), Video, Datasphere, Phone Numbers, SIP, Queues, Recordings, and more
 - HTTP::Tiny for lightweight, dependency-free HTTP
 - Hash ref returns -- raw data, no wrapper objects
 

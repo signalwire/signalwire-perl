@@ -19,6 +19,7 @@ WriteMakefile(
         'Digest::SHA'       => 0,
         'MIME::Base64'      => 0,
         'Protocol::WebSocket' => '0.26',
+        'IO::Socket::SSL'   => 0,
     },
     TEST_REQUIRES => {
         'Test::More'        => '0.98',
@@ -28,6 +29,7 @@ WriteMakefile(
     },
     EXE_FILES => ['bin/swaig-test'],
     META_MERGE => {
+        'meta-spec' => { version => 2 },
         resources => {
             repository => {
                 type => 'git',
@@ -37,6 +39,16 @@ WriteMakefile(
             bugtracker => {
                 web => 'https://github.com/signalwire/signalwire-perl/issues',
             },
+        },
+        # PAUSE indexing hygiene: the generated REST layer emits ~800 internal
+        # `.pm` files (per-resource classes + typed wire objects) that are NOT a
+        # stable public package surface — they should not each claim a CPAN
+        # namespace. Exclude the generated tree from indexing. `SignalWireRestError`
+        # is a top-level (non-`SignalWire::`) error package that likewise must not
+        # register a root-namespace claim on PAUSE.
+        no_index => {
+            directory => ['lib/SignalWire/REST/Namespaces/Generated'],
+            package   => ['SignalWireRestError'],
         },
     },
 );

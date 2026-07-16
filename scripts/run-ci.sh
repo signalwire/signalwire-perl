@@ -97,6 +97,13 @@ source "$PORT_ROOT/scripts/_env.sh"
 # perltidy) and every gate below have them. Fail loud if they can't be resolved.
 _sw_ensure_perl_tools || exit 1
 
+# GATE-ENFORCEMENT: perl's Wave-A findings are BLOCKING, not report-only. The
+# widened doc/POD perimeter + real-count checks (audit_docs, count_claim,
+# status_claim, semver_diff, …) fail the gate on any finding. The full red list was
+# burned to zero before this flip; a NEW Wave-A violation now turns CI red at PR
+# time. (Exported so every scheduler worker subshell inherits it.)
+export SW_WAVE_A_REPORT_ONLY=0
+
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
 pick_free_port() {
@@ -345,11 +352,48 @@ sched_gate COUNT-CLAIM desc="numeric doc claims (skills/namespaces) match realit
 sched_gate ACCESSOR-TRUTH desc="documented backtick method() refs exist in source" \
     -- python3 "$PORTING_SDK_DIR/scripts/accessor_truth.py" --port perl --repo "$PORT_ROOT"
 
-sched_gate EXAMPLES-RUN tier=nightly defer=1 desc="shipped examples load/start against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port perl --repo .
+# ---- gate-enforcement quartet (plan Parts A1/C2/2.4) ----
+# DOC-WIRE + STATUS-CLAIM are per-PR (POD-aware — perl's docs are POD-first).
+# WAIT-LIVENESS is nightly (spawns a dump program). GATE-INVENTORY is deliberately
+# NOT wired per-port: gen_gate_inventory.py resolves its reference as a sibling
+# signalwire-typescript checkout, absent in a port's CI layout (→ exit 2); it is
+# inherently porting-sdk-side and already runs in porting-sdk's own CI.
+#
+# DOC-WIRE (§A1) — the documented REST doc fixtures put the SPEC wire shape on the
+# wire (areacode not area_code, nested params:{text} not a flat item). doc_wire.py
+# spawns its OWN flag-mode mock (free port, self-cleaning) and replays the doc
+# fixtures via the runner, failing on any journaled wire_violations. Cheap/blocking.
+sched_gate DOC-WIRE desc="documented REST doc fixtures put the spec wire shape on the wire (areacode/params:{text})" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_wire.py" --port perl --repo "$PORT_ROOT" \
+        --runner "perl $PORT_ROOT/scripts/doc_wire_runner.pl"
 
-sched_gate SNIPPET-RUN tier=nightly defer=1 desc="dynamic-port doc snippets run to a zero exit against the mock" \
-    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port perl --repo .
+# STATUS-CLAIM (§C2) — no false capability/status claims in docs OR POD (e.g. "not
+# yet implemented" next to a shipped method). POD-aware: scans lib/**/*.pm POD
+# blocks in addition to markdown. Deterministic source/doc analysis, cheap/blocking.
+sched_gate STATUS-CLAIM res=surface desc="doc/POD status/capability claims match the shipped surface" \
+    -- python3 "$PORTING_SDK_DIR/scripts/status_claim.py" --port perl --repo "$PORT_ROOT" \
+        --surface "$PORT_ROOT/port_surface.json"
+
+# WAIT-LIVENESS (§2.4) — the RELAY Action::wait() liveness contract: wait() BLOCKS
+# until the deferred completing event arrives, then returns (never a no-op early
+# return, never a hung wait). The corpus includes the NESTED wait case (wait inside
+# an on_completed callback → re-entrant _read_once). The port's dump classification
+# is diffed against the python-oracle golden. Nightly (spawns a dump program).
+sched_gate WAIT-LIVENESS tier=nightly defer=1 desc="wait() liveness corpus (incl. nested re-entrant wait) matches the python-oracle golden classification" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_wait_liveness.py" \
+        --port perl --python-sdk "$PYTHON_SDK_DIR" \
+        --dump-cmd "perl -Ilib $PORT_ROOT/bin/wait-liveness-dump.pl 2>/dev/null"
+
+# EXAMPLES-RUN + SNIPPET-RUN run under STRICT-MOCKS on the nightly tier
+# (MOCK_RELAY_STRICT=1): the mock_relay REJECTS any inbound frame that violates the
+# RELAY wire spec, so a shipped example / doc snippet that puts a wrong frame on the
+# wire fails LOUD instead of being silently ignored. `env VAR=val` (not a bare
+# prefix) keeps the command analyzable to the permission matcher.
+sched_gate EXAMPLES-RUN tier=nightly defer=1 desc="shipped examples load/start against the mock (modulo EXAMPLES_RUN_ALLOW.md; STRICT-MOCKS: MOCK_RELAY_STRICT=1)" \
+    -- env MOCK_RELAY_STRICT=1 python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port perl --repo .
+
+sched_gate SNIPPET-RUN tier=nightly defer=1 desc="dynamic-port doc snippets run to a zero exit against the mock (STRICT-MOCKS: MOCK_RELAY_STRICT=1)" \
+    -- env MOCK_RELAY_STRICT=1 python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port perl --repo .
 
 # ---- §G anti-laundering ledger gate ----
 sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressions (perlcritic ## no critic etc.)" \

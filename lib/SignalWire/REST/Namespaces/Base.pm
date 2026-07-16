@@ -42,7 +42,7 @@ sub update {
     return $self->_http->$method( $self->_path($resource_id), body => \%kwargs );
 }
 
-sub delete_resource {
+sub delete {
     my ( $self, $resource_id ) = @_;
     return $self->_http->delete_request( $self->_path($resource_id) );
 }

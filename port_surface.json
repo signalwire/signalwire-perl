@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ f9890a8e952ec48e350314be6a5c1fcb77877d4c",
+   "generated_from" : "signalwire-perl @ 2a5209a49f57a4008b25a794375ef634f6f7374f",
    "modules" : {
       "signalwire" : {
          "classes" : {},
