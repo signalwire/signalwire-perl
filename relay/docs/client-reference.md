@@ -13,7 +13,7 @@ use SignalWire::Relay::Client;
 my $client = SignalWire::Relay::Client->new(
     project   => $ENV{SIGNALWIRE_PROJECT_ID},   # legacy auth
     token     => $ENV{SIGNALWIRE_API_TOKEN},    # legacy auth
-    jwt_token => $ENV{SIGNALWIRE_JWT_TOKEN},    # alternative auth
+    jwt_token => $my_jwt,                        # alternative auth (pass your own JWT)
     host      => $ENV{SIGNALWIRE_SPACE},        # REQUIRED
     contexts  => ['default'],                   # topics to subscribe to
 );
