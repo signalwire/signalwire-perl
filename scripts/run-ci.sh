@@ -315,6 +315,18 @@ sched_gate BEHAVIORAL-WIRE-RELAY desc="diff_port_wire_relay vs python oracle (La
         --port perl --python-sdk "$PYTHON_SDK_DIR" \
         --dump-cmd "perl -Ilib bin/wire-relay-dump.pl 2>/dev/null"
 
+# ERROR-ENVELOPE behavior (Layer D): run the shared error-envelope corpus through
+# the port's REST client at a live mock and byte-compare the reduced artifact
+# (raised / error_kind / status_code / body_error_code / request_count) against the
+# python oracle. Pins the TYPED transport error on connection-refused (status None,
+# request_count 0) alongside the HTTP-error decoding. bin/emit-envelope.pl spawns
+# its own mock_signalwire, so no gate-level mock pre-spawn is needed; 2>/dev/null
+# keeps only the JSON object on stdout.
+sched_gate BEHAVIORAL-ENVELOPE desc="diff_port_envelope vs python oracle (Layer D): typed error incl transport" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_envelope.py" \
+        --port perl --python-sdk "$PYTHON_SDK_DIR" \
+        --dump-cmd "perl bin/emit-envelope.pl 2>/dev/null"
+
 # FMT joins res=surface: run locally (no CI) it rewrites lib/**/*.pm in place via
 # `perltidy -b`, which a concurrent TEST (`perl -c` / module load) or surface-enumerator
 # (loads lib/) would otherwise read mid-write. Under CI (--check) it's read-only, but the

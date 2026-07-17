@@ -104,6 +104,26 @@ sub _request {
     my $response = $self->_ua->request( $method, $url, \%request_opts );
 
     unless ( $response->{success} ) {
+
+        # Distinguish a TRANSPORT failure (the request never reached the server --
+        # connection refused, DNS failure, connection reset, TLS error) from a real
+        # HTTP >= 400 response. HTTP::Tiny does NOT throw on a transport failure; it
+        # SYNTHESISES a response with status 599 / reason "Internal Exception" (599 is
+        # reserved by HTTP::Tiny for its own internal exceptions -- no real server
+        # sends it). Map that synthetic 599 to the TYPED transport error
+        # (SignalWireRestTransportError, status_code => undef), a member of the
+        # SignalWireRestError family, so a caller catching SignalWireRestError handles
+        # every REST failure (HTTP + transport) with one eval -- instead of a raw 599
+        # leaking through as if the server had answered. Python parity:
+        # signalwire.rest._base.SignalWireRestTransportError (plan 1.3b).
+        if ( _is_transport_failure($response) ) {
+            die SignalWireRestTransportError->new(
+                body   => $response->{content} // '',
+                url    => $path,
+                method => $method,
+            );
+        }
+
         my $body = $response->{content} // '';
         my $parsed;
         eval { $parsed = decode_json($body) };
@@ -154,6 +174,25 @@ sub delete_request {
     return $self->_request( 'DELETE', $path );
 }
 
+# Detect an HTTP::Tiny TRANSPORT failure vs a real HTTP error response.
+#
+# On a connection-level failure (connect refused, DNS failure, connection reset,
+# TLS handshake error, read timeout) HTTP::Tiny does NOT die; it returns a
+# SYNTHETIC response hashref with status => 599 and reason => "Internal Exception"
+# (documented behaviour: 599 is reserved by HTTP::Tiny for its own internal
+# exceptions, and no real HTTP server issues a 599). That synthetic 599 is the
+# ONLY transport signal we treat specially -- a genuine >= 400 from the server
+# (400/404/422/429/500/503/...) stays on the normal HTTP-error path and keeps its
+# real status_code. Guard on both status 599 AND the "Internal Exception" reason so
+# an (impossible-but-defensive) real 599 from a server would not be misclassified.
+sub _is_transport_failure {
+    my ($response) = @_;
+    return 0 unless ref $response eq 'HASH';
+    return 0 unless defined $response->{status} && $response->{status} == 599;
+    my $reason = $response->{reason} // '';
+    return $reason eq 'Internal Exception' ? 1 : 0;
+}
+
 # Simple URI encoding
 sub _uri_encode {
     my ($str) = @_;
@@ -182,6 +221,12 @@ has 'method'      => ( is => 'ro', default  => sub { 'GET' } );
 use overload '""' => sub {
     my ($self) = @_;
     my $body = ref $self->body ? encode_json( $self->body ) : ( $self->body // '' );
+
+    # A TRANSPORT failure carries no HTTP status (status_code is undef): render
+    # "failed to reach the server" instead of "returned : ..." (Python parity).
+    if ( !defined $self->status_code ) {
+        return sprintf( '%s %s failed to reach the server: %s', $self->method, $self->url, $body );
+    }
     return sprintf( '%s %s returned %s: %s', $self->method, $self->url, $self->status_code, $body );
 };
 
@@ -190,6 +235,24 @@ use overload '""' => sub {
 # SignalWireRestError's so the two names are the SAME class — an instance
 # ->isa() both, and existing `isa_ok($e, 'SignalWire::REST::HttpClient::Error')`
 # checks keep passing without re-blessing.
+# --- Typed transport error ---
+#
+# SignalWireRestTransportError is raised when a REST request never reached a
+# response -- a transport-level failure (connection refused, DNS failure,
+# connection reset, TLS error). It is a SUBCLASS of SignalWireRestError (an
+# instance ->isa('SignalWireRestError')), so a caller catching the base family
+# handles both HTTP-error and transport-error failures with one eval, instead of a
+# bare HTTP::Tiny synthetic 599 leaking through as if the server had answered. Its
+# status_code is undef (there was no HTTP status) and body carries the underlying
+# transport message. Python parity: signalwire.rest._base.SignalWireRestTransportError.
+package SignalWireRestTransportError;    ## no critic (ProhibitMultiplePackages)
+use Moo;
+extends 'SignalWireRestError';
+
+# status_code is required on the base but is undef for a transport failure (no HTTP
+# status ever arrived). Override to default to undef so callers may omit it.
+has '+status_code' => ( is => 'ro', required => 0, default => sub { undef } );
+
 package SignalWire::REST::HttpClient::Error;    ## no critic (ProhibitMultiplePackages)
 BEGIN { *SignalWire::REST::HttpClient::Error:: = *SignalWireRestError:: }
 
