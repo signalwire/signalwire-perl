@@ -414,7 +414,7 @@ package_smoke_gate() {
           SignalWire-*.tar SignalWire-*.tar.gz
     return $rc
 }
-sched_gate PACKAGE-SMOKE defer=1 desc="real make-dist artifact builds, installs clean, and requires (MANIFEST completeness)" \
+sched_gate PACKAGE-SMOKE tier=nightly defer=1 desc="real make-dist artifact builds, installs clean, and requires (MANIFEST completeness)" \
     --fn package_smoke_gate
 
 sched_gate DOC-AUDIT res=surface desc="audit_docs vs port_surface.json" \
@@ -461,7 +461,7 @@ sched_gate IGNORE-LEDGER-VERIFY res=dayone desc="no laundered false-absence entr
 sched_gate SEMVER-DIFF res=dayone desc="version bump matches API surface change vs release floor (port_signatures.baseline.json)" \
     -- python3 "$PORTING_SDK_DIR/scripts/semver_diff.py" --port perl --repo .
 
-sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
+sched_gate META-CONSISTENT tier=nightly res=dayone desc="package metadata consistency" \
     -- python3 "$PORTING_SDK_DIR/scripts/meta_consistent.py" --port perl --repo .
 
 sched_gate ARTIFACT-DENY res=dayone desc="no porting artifacts in the PUBLISHED package (authoritative listing)" \
