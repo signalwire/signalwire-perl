@@ -34,6 +34,10 @@
 set -u
 set -o pipefail
 
+# STRICT-MOCKS 400-mode (plan §2.2c): strict is the default now.
+export MOCK_SIGNALWIRE_STRICT="${MOCK_SIGNALWIRE_STRICT:-1}"
+export MOCK_RELAY_STRICT="${MOCK_RELAY_STRICT:-1}"
+
 PORT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$PORT_ROOT/.sw-tmp"  # repo-local CI scratch (never /tmp)
 PORT_NAME="signalwire-perl"
@@ -181,7 +185,17 @@ rest_coverage_gate() {
         --spec-root "$PORTING_SDK_DIR/rest-apis" \
         --allowlist "$PORTING_SDK_DIR/REST_COVERAGE_BASELINE.md" \
         --allowlist "$PORT_ROOT/REST_COVERAGE_GAPS.md" \
-        --gap-baseline "$PORTING_SDK_DIR/REST_COVERAGE_GAP_BASELINE.md"
+        --gap-baseline "$PORTING_SDK_DIR/REST_COVERAGE_GAP_BASELINE.md" || return 1
+    # STRICT-MOCKS §2.2a — fail the gate on ANY journaled wire_violation. The shared
+    # helper reads the same live mock journal (already populated by the t/rest/ run
+    # above) and exits non-zero on any offender (see
+    # porting-sdk/scripts/assert_no_wire_violations.py). WIRE_VIOLATIONS_ALLOW.md
+    # holds ONLY owner-signed spec-gap parks (currently empty for perl — every
+    # hand-authored t/rest/ fixture was fixed to the real spec wire shape rather
+    # than parked).
+    python3 "$PORTING_SDK_DIR/scripts/assert_no_wire_violations.py" \
+        --rest-mock-url "http://127.0.0.1:$port" \
+        --allowlist "$PORT_ROOT/WIRE_VIOLATIONS_ALLOW.md"
 }
 
 # SPEC-PARITY — implemented routes == canonical spec. route_registry.pl drives the
@@ -255,8 +269,13 @@ sched_gate GEN-FRESH-TESTS desc="generate_rest_tests.py --check (generated REST 
 # nondeterministically (the moving `example parses:` / surface-audit failures). Sharing
 # the surface resource serializes TEST against those mutators; it still overlaps every
 # read-only gate (LINT, the differs, generators-in-check-mode).
-sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t/)" \
-    -- bash scripts/run-tests.sh
+#
+# STRICT-MOCKS §2.2b — run the suite (incl. RELAY tests, which probe-or-spawn their
+# own mock_relay) under MOCK_RELAY_STRICT=1: any unknown top-level frame field /
+# duplicate command-id is rejected with an error frame, so a wrong RELAY wire shape
+# fails the test rather than being silently accepted.
+sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t/) (STRICT-MOCKS: MOCK_RELAY_STRICT=1)" \
+    -- env MOCK_RELAY_STRICT=1 bash scripts/run-tests.sh
 
 sched_gate SIGNATURES desc="regenerate port_signatures.json" \
     -- python3 scripts/enumerate_signatures.py

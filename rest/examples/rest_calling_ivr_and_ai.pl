@@ -64,10 +64,22 @@ safe('AI stop',   sub { $client->calling->ai_stop($CALL_ID) });
 # 4. Live transcription and translation
 print "\nLive transcription and translation...\n";
 safe('Live transcribe', sub {
-    $client->calling->live_transcribe($CALL_ID, language => 'en-US');
+    $client->calling->live_transcribe(
+        $CALL_ID,
+        action => { start => { lang => 'en-US', direction => ['local-caller', 'remote-caller'] } },
+    );
 });
 safe('Live translate', sub {
-    $client->calling->live_translate($CALL_ID, language => 'es');
+    $client->calling->live_translate(
+        $CALL_ID,
+        action => {
+            start => {
+                from_lang => 'en-US',
+                to_lang   => 'es',
+                direction => ['local-caller', 'remote-caller'],
+            },
+        },
+    );
 });
 
 # 5. Tap (media fork)

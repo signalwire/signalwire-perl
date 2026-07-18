@@ -403,8 +403,8 @@ $action->stop;
 ### `live_transcribe(%opts)` / `live_translate(%opts)`
 
 ```perl
-$call->live_transcribe(start => { language => 'en-US' });
-$call->live_translate(start => { source => 'en-US', target => 'es' });
+$call->live_transcribe(action => { start => { lang => 'en-US' } });
+$call->live_translate(action => { start => { from_lang => 'en-US', to_lang => 'es' } });
 ```
 
 ## Echo

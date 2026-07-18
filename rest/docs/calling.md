@@ -209,8 +209,14 @@ $client->calling->ai_stop($call_id, control_id => 'ai-1');
 ## Live Transcribe & Translate
 
 ```perl
-$client->calling->live_transcribe($call_id, action => 'start', lang => 'en');
-$client->calling->live_translate($call_id, action => 'start', from_lang => 'en', to_lang => 'es');
+$client->calling->live_transcribe(
+    $call_id,
+    action => { start => { lang => 'en', direction => ['local-caller', 'remote-caller'] } },
+);
+$client->calling->live_translate(
+    $call_id,
+    action => { start => { from_lang => 'en', to_lang => 'es', direction => ['local-caller', 'remote-caller'] } },
+);
 ```
 
 ## Fax

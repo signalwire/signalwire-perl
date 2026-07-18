@@ -157,7 +157,7 @@ subtest 'TestFabricTokens' => sub {
     subtest 'test_create_invite_token' => sub {
         my $client = MockTest::client();
         my $body = $client->fabric->tokens->create_invite_token(
-            email => 'invitee@example.com',
+            address_id => 'addr-1',
         );
         is(ref $body, 'HASH', 'expected hashref');
 
@@ -166,13 +166,13 @@ subtest 'TestFabricTokens' => sub {
         # subscriber/invites uses the singular 'subscriber' path segment.
         is($last->{path}, '/api/fabric/subscriber/invites', 'path matches');
         is(ref $last->{body}, 'HASH', 'body is hashref');
-        is($last->{body}{email}, 'invitee@example.com', 'email forwarded');
+        is($last->{body}{address_id}, 'addr-1', 'address_id forwarded');
     };
 
     subtest 'test_create_embed_token' => sub {
         my $client = MockTest::client();
         my $body = $client->fabric->tokens->create_embed_token(
-            allowed_addresses => ['addr-1', 'addr-2'],
+            token => 'embed-tok-1',
         );
         is(ref $body, 'HASH', 'expected hashref');
 
@@ -180,8 +180,7 @@ subtest 'TestFabricTokens' => sub {
         is($last->{method}, 'POST', 'POST recorded');
         is($last->{path}, '/api/fabric/embeds/tokens', 'path matches');
         is(ref $last->{body}, 'HASH', 'body is hashref');
-        is_deeply($last->{body}{allowed_addresses}, ['addr-1', 'addr-2'],
-            'allowed_addresses forwarded');
+        is($last->{body}{token}, 'embed-tok-1', 'token forwarded');
     };
 
     subtest 'test_refresh_subscriber_token' => sub {
