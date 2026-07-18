@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 2a5209a49f57a4008b25a794375ef634f6f7374f",
+   "generated_from" : "signalwire-perl @ 82d9361cdae1e64b46bda560816d05d4576b5e50",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -1360,6 +1360,9 @@
                "paginate"
             ],
             "SignalWireRestError" : [
+               "__init__"
+            ],
+            "SignalWireRestTransportError" : [
                "__init__"
             ]
          },

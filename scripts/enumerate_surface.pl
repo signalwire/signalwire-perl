@@ -300,6 +300,12 @@ my %PACKAGE_TO_PY = (
     'SignalWireRestError' => { module => 'signalwire.rest._base', class => 'SignalWireRestError' },
     'SignalWire::REST::HttpClient::Error' =>
         { module => 'signalwire.rest._base', class => 'SignalWireRestError' },
+
+    # Transport-error subclass (plan 1.3b): `package SignalWireRestTransportError` in
+    # HttpClient.pm, a member of the SignalWireRestError family (status_code => undef).
+    # Python parity: signalwire.rest._base.SignalWireRestTransportError.
+    'SignalWireRestTransportError' =>
+        { module => 'signalwire.rest._base', class => 'SignalWireRestTransportError' },
     'SignalWire::REST::Namespaces::Base' =>
         { module => 'signalwire.rest._base', class => 'BaseResource' },
     'SignalWire::REST::Namespaces::CrudResource' =>
@@ -1209,6 +1215,13 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWireRestError',
     'SignalWire::REST::HttpClient::Error',
     'SignalWire::REST::Namespaces::Base',
+
+    # SignalWireRestTransportError (plan 1.3b) extends SignalWireRestError and
+    # only overrides the status_code attr default (no own `sub new`), so
+    # is_moo_root is false and it would otherwise surface with zero methods.
+    # The reference oracle records SignalWireRestTransportError.__init__
+    # (inherited-constructor surfacing, matching TS/PHP parity) — force it.
+    'SignalWireRestTransportError',
 
     # REST namespaces whose top-level class or resource declares __init__
     'SignalWire::REST::Namespaces::Calling',
