@@ -23,3 +23,4 @@ load-bearing audit-contract file, not clutter.
 - ARTIFACT_DENY_ALLOW.md — artifact-deny allowlist file read by the artifact_deny gate at repo root (orchestrator, 2026-07-06)
 - EXAMPLES_RUN_ALLOW.md — examples-run allowlist file read by the porting-sdk examples_run gate at repo root (burn-perl, 2026-07-09)
 - SNIPPET_RUN_ALLOW.md — snippet-run allowlist file read by the porting-sdk snippet_run gate at repo root (burn-perl, 2026-07-09)
+- WIRE_VIOLATIONS_ALLOW.md — STRICT-MOCKS signed-exception ledger read by porting-sdk assert_no_wire_violations.py / examples_run.py / snippet_run.py at repo root (mike@signalwire.com, 2026-07-18)
