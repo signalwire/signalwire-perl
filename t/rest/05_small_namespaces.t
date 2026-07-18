@@ -157,9 +157,8 @@ subtest 'TestImportedNumbers' => sub {
         my $client = MockTest::client();
         my $body = $client->imported_numbers->create(
             number       => '+15551234567',
-            sip_username => 'alice',
-            sip_password => 'secret',
-            sip_proxy    => 'sip.example.com',
+            number_type  => 'longcode',
+            capabilities => ['sms', 'voice'],
         );
         is(ref $body, 'HASH', 'response is a hashref');
         ok(exists $body->{id}, 'imported number has id');
@@ -167,9 +166,9 @@ subtest 'TestImportedNumbers' => sub {
         is($j->{method}, 'POST', 'POST recorded');
         is($j->{path},   '/api/relay/rest/imported_phone_numbers', 'path matches');
         my $sent = $j->{body} || {};
-        is($sent->{number},       '+15551234567',     'number forwarded');
-        is($sent->{sip_username}, 'alice',            'sip_username forwarded');
-        is($sent->{sip_proxy},    'sip.example.com', 'sip_proxy forwarded');
+        is($sent->{number},      '+15551234567',      'number forwarded');
+        is($sent->{number_type}, 'longcode',           'number_type forwarded');
+        is_deeply($sent->{capabilities}, ['sms', 'voice'], 'capabilities forwarded');
     };
 };
 
@@ -204,17 +203,17 @@ subtest 'TestSipProfile' => sub {
     subtest 'update' => sub {
         my $client = MockTest::client();
         my $body = $client->sip_profile->update(
-            domain         => 'myco.sip.signalwire.com',
-            default_codecs => ['PCMU', 'PCMA'],
+            domain_identifier => 'myco.sip.signalwire.com',
+            default_codecs    => ['PCMU', 'PCMA'],
         );
         is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{domain} || exists $body->{default_codecs},
-            'sip_profile resource has domain or default_codecs');
+        ok(exists $body->{domain_identifier} || exists $body->{default_codecs},
+            'sip_profile resource has domain_identifier or default_codecs');
         my $j = MockTest::journal_last();
         is($j->{method}, 'PUT', 'sip_profile update uses PUT');
         is($j->{path},   '/api/relay/rest/sip_profile', 'path matches');
         my $sent = $j->{body} || {};
-        is($sent->{domain},          'myco.sip.signalwire.com', 'domain forwarded');
+        is($sent->{domain_identifier}, 'myco.sip.signalwire.com', 'domain_identifier forwarded');
         is_deeply($sent->{default_codecs}, ['PCMU', 'PCMA'], 'default_codecs forwarded');
     };
 };

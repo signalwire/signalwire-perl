@@ -357,23 +357,33 @@ subtest 'TestCallingAI' => sub {
 subtest 'TestCallingLive' => sub {
     subtest 'live_transcribe' => sub {
         my $client = MockTest::client();
-        my $body = $client->calling->live_transcribe('call-1', language => 'en-US');
+        my $body = $client->calling->live_transcribe(
+            'call-1',
+            action => { start => { lang => 'en-US', direction => ['local-caller'] } },
+        );
         is(ref $body, 'HASH', 'response is a hashref');
         ok(exists $body->{id}, 'response has id');
         my $params = _assert_command('calling.live_transcribe', 'call-1');
-        is($params->{language}, 'en-US', 'params.language');
+        is($params->{action}{start}{lang}, 'en-US', 'params.action.start.lang');
     };
 
     subtest 'live_translate' => sub {
         my $client = MockTest::client();
         my $body = $client->calling->live_translate(
-            'call-1', source_language => 'en', target_language => 'es',
+            'call-1',
+            action => {
+                start => {
+                    from_lang => 'en-US',
+                    to_lang   => 'es-ES',
+                    direction => ['local-caller'],
+                },
+            },
         );
         is(ref $body, 'HASH', 'response is a hashref');
         ok(exists $body->{id}, 'response has id');
         my $params = _assert_command('calling.live_translate', 'call-1');
-        is($params->{source_language}, 'en', 'params.source_language');
-        is($params->{target_language}, 'es', 'params.target_language');
+        is($params->{action}{start}{from_lang}, 'en-US', 'params.action.start.from_lang');
+        is($params->{action}{start}{to_lang},   'es-ES', 'params.action.start.to_lang');
     };
 };
 
