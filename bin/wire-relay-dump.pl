@@ -195,6 +195,20 @@ sub capture_verbs ($out) {
     );
     $out->{relay_send_fax} = $c->last_frame;
 
+    # relay_live_transcribe: caller's action MUST land as params.action (the
+    # authoritative wire schema requires it -- relay-protocol/calling.live_transcribe.params.json).
+    $c = new_client();
+    new_call($c)->live_transcribe( { start => { lang => 'en' } } );
+    $out->{relay_live_transcribe} = $c->last_frame;
+
+    # relay_live_translate: same contract, plus optional sibling status_url.
+    $c = new_client();
+    new_call($c)->live_translate(
+        { start => { from_lang => 'en', to_lang => 'es' } },
+        status_url => 'https://x/cb',
+    );
+    $out->{relay_live_translate} = $c->last_frame;
+
     # ---- control-ops (Action methods) ----
     # relay_play_stop
     $c = new_client();

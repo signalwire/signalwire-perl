@@ -58,8 +58,8 @@ subtest 'TestRegistryBrands' => sub {
         my $body = $client->registry->brands->create_campaign(
             'brand-2',
             {
-                usecase     => 'LOW_VOLUME',
-                description => 'MFA',
+                sms_use_case => 'LOW_VOLUME',
+                description  => 'MFA',
             },
         );
         is(ref $body, 'HASH', 'expected hashref');
@@ -69,7 +69,7 @@ subtest 'TestRegistryBrands' => sub {
         is($last->{path}, "$REG_BASE/brands/brand-2/campaigns",
             'path matches');
         is(ref $last->{body}, 'HASH', 'body is hashref');
-        is($last->{body}{usecase}, 'LOW_VOLUME', 'usecase forwarded');
+        is($last->{body}{sms_use_case}, 'LOW_VOLUME', 'sms_use_case forwarded');
         is($last->{body}{description}, 'MFA', 'description forwarded');
     };
 };
@@ -92,7 +92,7 @@ subtest 'TestRegistryCampaigns' => sub {
         # RegistryCampaigns.update calls _http->put(...) — distinct from
         # the generic CrudResource which uses PATCH.
         my $body = $client->registry->campaigns->update(
-            'camp-2', description => 'Updated',
+            'camp-2', name => 'Updated',
         );
         is(ref $body, 'HASH', 'expected hashref');
 
@@ -100,7 +100,7 @@ subtest 'TestRegistryCampaigns' => sub {
         is($last->{method}, 'PUT', 'PUT recorded (not PATCH)');
         is($last->{path}, "$REG_BASE/campaigns/camp-2", 'path matches');
         is(ref $last->{body}, 'HASH', 'body is hashref');
-        is($last->{body}{description}, 'Updated', 'description forwarded');
+        is($last->{body}{name}, 'Updated', 'name forwarded');
     };
 
     subtest 'test_list_numbers_uses_numbers_subpath' => sub {
@@ -118,7 +118,7 @@ subtest 'TestRegistryCampaigns' => sub {
     subtest 'test_create_order_posts_to_orders_subpath' => sub {
         my $client = MockTest::client();
         my $body = $client->registry->campaigns->create_order(
-            'camp-4', numbers => ['pn-1', 'pn-2'],
+            'camp-4', phone_numbers => ['pn-1', 'pn-2'],
         );
         is(ref $body, 'HASH', 'expected hashref');
 
@@ -127,7 +127,7 @@ subtest 'TestRegistryCampaigns' => sub {
         is($last->{path}, "$REG_BASE/campaigns/camp-4/orders",
             'path matches');
         is(ref $last->{body}, 'HASH', 'body is hashref');
-        is_deeply($last->{body}{numbers}, ['pn-1', 'pn-2'], 'numbers forwarded');
+        is_deeply($last->{body}{phone_numbers}, ['pn-1', 'pn-2'], 'phone_numbers forwarded');
     };
 };
 

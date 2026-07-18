@@ -77,7 +77,7 @@ subtest 'TestPaginatedIterator' => sub {
                     { id => 'addr-2', name => 'second' },
                 ],
                 links => {
-                    next => 'http://example.com/api/fabric/addresses?cursor=page2',
+                    next => 'http://example.com/api/fabric/addresses?page_token=page2',
                 },
             },
         );
@@ -106,10 +106,10 @@ subtest 'TestPaginatedIterator' => sub {
         my @gets = @{ $addr_gets->() };
         my @mine = @gets[ $before .. $#gets ];
         is(scalar(@mine), 2, 'two paginated GETs recorded');
-        # The second fetch carries cursor=page2 from the first response's
+        # The second fetch carries page_token=page2 from the first response's
         # links.next.
-        is_deeply($mine[1]{query_params}{cursor}, ['page2'],
-            'second fetch carries cursor=page2');
+        is_deeply($mine[1]{query_params}{page_token}, ['page2'],
+            'second fetch carries page_token=page2');
     };
 
     subtest 'test_resource_paginate_walks_all_pages' => sub {
@@ -126,7 +126,7 @@ subtest 'TestPaginatedIterator' => sub {
                     { id => 'pg-2', name => 'second' },
                 ],
                 links => {
-                    next => 'http://example.com/api/fabric/addresses?cursor=next2',
+                    next => 'http://example.com/api/fabric/addresses?page_token=next2',
                 },
             },
         );
@@ -163,8 +163,8 @@ subtest 'TestPaginatedIterator' => sub {
         my @gets = @{ $addr_gets->() };
         my @mine = @gets[ $before .. $#gets ];    # only this subtest's GETs
         is(scalar(@mine), 2, 'paginate() issued exactly two page GETs');
-        is_deeply($mine[1]{query_params}{cursor}, ['next2'],
-            'second page fetch carried cursor=next2 from links.next');
+        is_deeply($mine[1]{query_params}{page_token}, ['next2'],
+            'second page fetch carried page_token=next2 from links.next');
     };
 
     subtest 'test_next_raises_stop_iteration_when_done' => sub {

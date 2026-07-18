@@ -400,11 +400,11 @@ $action->stop;
 
 ## Live Transcribe / Translate
 
-### `live_transcribe(%opts)` / `live_translate(%opts)`
+### `live_transcribe($action, %opts)` / `live_translate($action, %opts)`
 
 ```perl
-$call->live_transcribe(start => { language => 'en-US' });
-$call->live_translate(start => { source => 'en-US', target => 'es' });
+$call->live_transcribe({ start => { lang => 'en-US' } });
+$call->live_translate({ start => { from_lang => 'en-US', to_lang => 'es' } });
 ```
 
 ## Echo

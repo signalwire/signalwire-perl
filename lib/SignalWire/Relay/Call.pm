@@ -355,12 +355,12 @@ sub clear_digit_bindings ( $self, %opts ) {
     return $self->_execute( 'calling.clear_digit_bindings', %opts );
 }
 
-sub live_transcribe ( $self, %opts ) {
-    return $self->_execute( 'calling.live_transcribe', %opts );
+sub live_transcribe ( $self, $action, %opts ) {
+    return $self->_execute( 'calling.live_transcribe', action => $action, %opts );
 }
 
-sub live_translate ( $self, %opts ) {
-    return $self->_execute( 'calling.live_translate', %opts );
+sub live_translate ( $self, $action, %opts ) {
+    return $self->_execute( 'calling.live_translate', action => $action, %opts );
 }
 
 sub join_room ( $self, %opts ) {

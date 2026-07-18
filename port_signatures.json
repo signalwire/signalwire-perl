@@ -27746,7 +27746,7 @@
                 },
                 {
                   "name": "status_code",
-                  "type": "int",
+                  "type": "optional<int>",
                   "required": false
                 },
                 {
@@ -27795,6 +27795,48 @@
               "returns": "any"
             },
             "url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        },
+        "SignalWireRestTransportError": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "body",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "url",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "method",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "status_code",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "status_code": {
               "params": [
                 {
                   "name": "self",
