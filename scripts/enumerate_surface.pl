@@ -293,6 +293,17 @@ my %PACKAGE_TO_PY = (
     'SignalWire::REST::RestClient' => { module => 'signalwire.rest.client', class => 'RestClient' },
     'SignalWire::REST::HttpClient' => { module => 'signalwire.rest._base',  class => 'HttpClient' },
 
+    # RequestOptions envelope (plan 4.2). The value object maps to the oracle's
+    # signalwire.rest._request_options.RequestOptions (surface = merge only; the
+    # data-field accessors and the auto __init__ are not surface, matching the
+    # python dataclass). The module-level resolve() / status_is_retryable() live
+    # in a distinct class => undef package so they project onto the reference
+    # module's free-function surface.
+    'SignalWire::REST::RequestOptions' =>
+        { module => 'signalwire.rest._request_options', class => 'RequestOptions' },
+    'SignalWire::REST::RequestOptions::Resolver' =>
+        { module => 'signalwire.rest._request_options', class => undef },
+
     # Canonical REST error (Python parity: signalwire.rest._base.SignalWireRestError).
     # The class is `package SignalWireRestError`; the legacy fully-qualified name
     # SignalWire::REST::HttpClient::Error is a glob-alias of the same stash for
@@ -1309,6 +1320,12 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
 # as a public method. Matching that keeps the diff meaningful.
 my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::Relay::Constants',
+
+    # RequestOptions (plan 4.2): the oracle surface for
+    # signalwire.rest._request_options.RequestOptions is ONLY `merge` -- the
+    # python @dataclass's auto-generated __init__ is not recorded as surface, so
+    # the Perl Moo root's implicit __init__ is suppressed to match.
+    'SignalWire::REST::RequestOptions',
 
     # SWML helper classes whose Python reference class does NOT expose an
     # __init__ in the surface oracle: SwmlRenderer (staticmethod-only) and the

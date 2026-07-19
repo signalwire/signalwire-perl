@@ -73,6 +73,7 @@ use lib File::Spec->catdir( $RealBin, File::Spec->updir, 't', 'lib' );
 
 use SignalWire::REST::HttpClient;
 use SignalWire::REST::RestClient;
+use SignalWire::REST::RequestOptions;
 use MockTest ();
 
 # The mock child pid we spawn (if any), torn down on exit.
@@ -218,8 +219,27 @@ sub run_case ($case) {
     reset_journal();
     reset_scenarios();
 
+    # Arm the scenario. scenario_repeat arms the SAME override N times (FIFO) so a
+    # retry-armed case sees the failure on every attempt (the mock consumes one
+    # per request). Default 1 (a single arming) when the field is absent.
     my $scen = $case->{scenario};
-    arm_scenario( $case->{endpoint}, $scen ) if defined $scen;
+    if ( defined $scen ) {
+        my $repeat = $case->{scenario_repeat} // 1;
+        arm_scenario( $case->{endpoint}, $scen ) for 1 .. $repeat;
+    }
+
+    # Per-request options (plan 4.2): the corpus supplies {retries?, retry_backoff?,
+    # timeout?}; pass them as a RequestOptions so the retry-armed cases exercise the
+    # real retry loop. retry_backoff is pinned to 0 in the corpus so no wall-clock
+    # wait occurs. Absent => the port's default (retries 0, no retry).
+    my $req_opts;
+    if ( my $ro = $case->{request_options} ) {
+        $req_opts = SignalWire::REST::RequestOptions->new(
+            ( exists $ro->{retries}       ? ( retries       => $ro->{retries} )       : () ),
+            ( exists $ro->{retry_backoff} ? ( retry_backoff => $ro->{retry_backoff} ) : () ),
+            ( exists $ro->{timeout}       ? ( timeout       => $ro->{timeout} )       : () ),
+        );
+    }
 
     # Build the client. For a transport case, point it at a DEAD port so the
     # connection is refused; otherwise at the live mock.
@@ -235,10 +255,17 @@ sub run_case ($case) {
     my $http = $client->_http;
 
     eval {
-        if ( $call->{method} eq 'GET' ) {
-            $http->get($path);
+        my $method = $call->{method};
+        if ( $method eq 'GET' ) {
+            $http->get( $path, request_options => $req_opts );
+        } elsif ( $method eq 'POST' ) {
+            # POST cases carry a body (relay-rest.create_address); drive a real
+            # POST so the idempotency-asymmetry retry logic is exercised.
+            $http->post( $path, body => $call->{body}, request_options => $req_opts );
         } else {
-            $http->_request( $call->{method}, $path );
+            $http->_request( $method, $path,
+                body            => $call->{body},
+                request_options => $req_opts );
         }
         1;
     } or do {

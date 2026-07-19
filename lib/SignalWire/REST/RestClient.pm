@@ -30,6 +30,16 @@ has 'host' => (
     default => sub { $ENV{SIGNALWIRE_SPACE} },
 );
 
+# Client-default request options (plan 4.2): a SignalWire::REST::RequestOptions
+# applied to every request the shared HttpClient issues, shallow-overridden
+# per-call by a request_options passed to a verb. undef => the built-in defaults
+# (30s timeout, no retries). Mirrors the Python reference's
+# RestClient(..., request_options=...).
+has 'request_options' => (
+    is      => 'ro',
+    default => sub { undef },
+);
+
 # Fail loud when a credential is neither passed nor present in the environment —
 # same contract as the Python reference (rest/client.py raises ValueError with a
 # message naming the three SIGNALWIRE_* env vars).
@@ -64,9 +74,10 @@ with 'SignalWire::REST::Namespaces::Generated::ResourceTree';
 sub _build__http {
     my ($self) = @_;
     return SignalWire::REST::HttpClient->new(
-        project => $self->_project_id,
-        token   => $self->token,
-        host    => $self->host,
+        project         => $self->_project_id,
+        token           => $self->token,
+        host            => $self->host,
+        request_options => $self->request_options,
     );
 }
 

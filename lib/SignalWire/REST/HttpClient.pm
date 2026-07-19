@@ -6,6 +6,10 @@ use Moo;
 use HTTP::Tiny;
 use JSON         qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
+use Scalar::Util qw(blessed);
+use Time::HiRes  qw(sleep);
+
+use SignalWire::REST::RequestOptions;
 
 # Derive the outbound User-Agent from the distribution $VERSION -- the single
 # source of truth in lib/SignalWire.pm (also what Makefile.PL's VERSION_FROM
@@ -30,9 +34,17 @@ sub _sdk_version {
 
 my $USER_AGENT = 'signalwire-perl/' . _sdk_version();
 
-has 'project'      => ( is => 'ro', required => 1 );
-has 'token'        => ( is => 'ro', required => 1 );
-has 'host'         => ( is => 'ro', required => 1 );
+has 'project' => ( is => 'ro', required => 1 );
+has 'token'   => ( is => 'ro', required => 1 );
+has 'host'    => ( is => 'ro', required => 1 );
+
+# The CLIENT-DEFAULT request options (plan 4.2) -- a
+# SignalWire::REST::RequestOptions applied to every request, shallow-overridden
+# per call by a request_options passed to a verb. undef => the built-in defaults
+# (30s timeout, no retries) for every request. Stored here so the whole resource
+# tree (which shares this one HttpClient) inherits it.
+has 'request_options' => ( is => 'ro', default => sub { undef } );
+
 has 'base_url'     => ( is => 'lazy' );
 has '_ua'          => ( is => 'lazy' );
 has '_auth_header' => ( is => 'lazy' );
@@ -101,27 +113,90 @@ sub _request {
         $request_opts{content} = encode_json( $opts{body} );
     }
 
-    my $response = $self->_ua->request( $method, $url, \%request_opts );
+    # Resolve the effective options: per-request over client-default over the
+    # built-in defaults (plan 4.2). Every field is concrete after resolve().
+    my $ro = SignalWire::REST::RequestOptions::Resolver::resolve( $self->request_options,
+        $opts{request_options} );
 
-    unless ( $response->{success} ) {
+    # total attempts = retries + 1; retry a retryable status (idempotency-aware)
+    # or a transport failure, honoring Retry-After then exponential backoff.
+    # abort_signal is checked cooperatively BEFORE every attempt.
+    my $attempt = 0;
+    while (1) {
+        $attempt++;
+
+        # Cooperative cancellation: a set abort_signal raises the typed transport
+        # error (no response was produced) before the send. Checked between
+        # attempts -- the honest portable minimum for a synchronous client.
+        if ( _abort_is_set( $ro->{abort_signal} ) ) {
+            die SignalWireRestTransportError->new(
+                body   => 'request cancelled by abort_signal',
+                url    => $path,
+                method => $method,
+            );
+        }
+
+        # Per-attempt wall-clock timeout: HTTP::Tiny carries the timeout on the
+        # object, so scope the resolved timeout onto the shared UA for this send
+        # and restore it afterwards (the resource tree shares one UA).
+        my $ua       = $self->_ua;
+        my $saved_to = $ua->{timeout};
+        $ua->{timeout} = $ro->{timeout} if defined $ro->{timeout};
+        my $response = $ua->request( $method, $url, \%request_opts );
+        $ua->{timeout} = $saved_to;
+
+        if ( $response->{success} ) {
+
+            # 204 No Content or empty body
+            if ( $response->{status} == 204 || !$response->{content} ) {
+                return {};
+            }
+            my $result;
+            eval { $result = decode_json( $response->{content} ) };
+            return { raw => $response->{content} } if $@;
+            return $result;
+        }
+
+        # --- failure paths (transport vs HTTP >= 400), retry-aware ---
 
         # Distinguish a TRANSPORT failure (the request never reached the server --
-        # connection refused, DNS failure, connection reset, TLS error) from a real
-        # HTTP >= 400 response. HTTP::Tiny does NOT throw on a transport failure; it
-        # SYNTHESISES a response with status 599 / reason "Internal Exception" (599 is
-        # reserved by HTTP::Tiny for its own internal exceptions -- no real server
-        # sends it). Map that synthetic 599 to the TYPED transport error
-        # (SignalWireRestTransportError, status_code => undef), a member of the
-        # SignalWireRestError family, so a caller catching SignalWireRestError handles
-        # every REST failure (HTTP + transport) with one eval -- instead of a raw 599
-        # leaking through as if the server had answered. Python parity:
-        # signalwire.rest._base.SignalWireRestTransportError (plan 1.3b).
+        # connection refused, DNS failure, connection reset, TLS error, read
+        # timeout) from a real HTTP >= 400 response. HTTP::Tiny does NOT throw on a
+        # transport failure; it SYNTHESISES a response with status 599 / reason
+        # "Internal Exception" (599 is reserved by HTTP::Tiny for its own internal
+        # exceptions -- no real server sends it). Map that synthetic 599 to the
+        # TYPED transport error (SignalWireRestTransportError, status_code => undef),
+        # a member of the SignalWireRestError family, so a caller catching
+        # SignalWireRestError handles every REST failure (HTTP + transport) with one
+        # eval. Python parity: signalwire.rest._base.SignalWireRestTransportError
+        # (plan 1.3b).
         if ( _is_transport_failure($response) ) {
+            if ( $attempt <= $ro->{retries} ) {
+                _backoff_sleep( $ro->{retry_backoff} * ( 2**( $attempt - 1 ) ) );
+                next;
+            }
             die SignalWireRestTransportError->new(
                 body   => $response->{content} // '',
                 url    => $path,
                 method => $method,
             );
+        }
+
+        # A real HTTP-error response. Retry if attempts remain AND the status is
+        # retryable for this method (idempotency-aware), honoring Retry-After when
+        # present then exponential backoff.
+        if (
+            $attempt <= $ro->{retries}
+            && SignalWire::REST::RequestOptions::Resolver::status_is_retryable(
+                $method, $response->{status}, $ro
+            )
+            )
+        {
+            my $delay = _retry_after_seconds($response);
+            $delay = $ro->{retry_backoff} * ( 2**( $attempt - 1 ) )
+                unless defined $delay;
+            _backoff_sleep($delay);
+            next;
         }
 
         my $body = $response->{content} // '';
@@ -136,42 +211,87 @@ sub _request {
         );
     }
 
-    # 204 No Content or empty body
-    if ( $response->{status} == 204 || !$response->{content} ) {
-        return {};
-    }
+    # Unreachable: the while(1) loop only exits via a return (success) or a die
+    # (transport/HTTP error). Present to satisfy Subroutines::RequireFinalReturn.
+    return;
+}
 
-    my $result;
-    eval { $result = decode_json( $response->{content} ) };
-    if ($@) {
-        return { raw => $response->{content} };
+# Cooperative-cancellation probe: an abort_signal is any object/coderef answering
+# ->is_set (an object's is_set method) or a plain coderef (called). Truthy =>
+# cancel. undef => never cancelled.
+sub _abort_is_set {
+    my ($signal) = @_;
+    return 0 unless defined $signal;
+    if ( blessed($signal) && $signal->can('is_set') ) {
+        return $signal->is_set ? 1 : 0;
     }
-    return $result;
+    if ( ref $signal eq 'CODE' ) {
+        return $signal->() ? 1 : 0;
+    }
+    return 0;
+}
+
+# Backoff sleep between retries. A seam so a retry_backoff of 0 (the corpus /
+# tests use it) never waits on wall-clock -- the mock proves attempt ORDERING,
+# not real time. Time::HiRes::sleep handles the fractional exponential delays.
+sub _backoff_sleep {
+    my ($seconds) = @_;
+    sleep($seconds) if defined $seconds && $seconds > 0;
+    return;
+}
+
+# Parse a Retry-After header (delta-seconds form) off a response, or undef when
+# absent / an HTTP-date form (fall back to computed backoff). HTTP::Tiny
+# lower-cases header keys and gives an arrayref when a header repeats.
+sub _retry_after_seconds {
+    my ($response) = @_;
+    my $headers    = $response->{headers} || {};
+    my $value      = $headers->{'retry-after'};
+    $value = $value->[0] if ref $value eq 'ARRAY';
+    return unless defined $value;
+    return ( $value =~ /^\s*\d+(?:\.\d+)?\s*$/ ) ? ( $value + 0 ) : undef;
 }
 
 sub get {
     my ( $self, $path, %opts ) = @_;
-    return $self->_request( 'GET', $path, params => $opts{params} );
+    return $self->_request(
+        'GET', $path,
+        params          => $opts{params},
+        request_options => $opts{request_options}
+    );
 }
 
 sub post {
     my ( $self, $path, %opts ) = @_;
-    return $self->_request( 'POST', $path, body => $opts{body}, params => $opts{params} );
+    return $self->_request(
+        'POST', $path,
+        body            => $opts{body},
+        params          => $opts{params},
+        request_options => $opts{request_options}
+    );
 }
 
 sub put {
     my ( $self, $path, %opts ) = @_;
-    return $self->_request( 'PUT', $path, body => $opts{body} );
+    return $self->_request(
+        'PUT', $path,
+        body            => $opts{body},
+        request_options => $opts{request_options}
+    );
 }
 
 sub patch {
     my ( $self, $path, %opts ) = @_;
-    return $self->_request( 'PATCH', $path, body => $opts{body} );
+    return $self->_request(
+        'PATCH', $path,
+        body            => $opts{body},
+        request_options => $opts{request_options}
+    );
 }
 
 sub delete_request {
-    my ( $self, $path ) = @_;
-    return $self->_request( 'DELETE', $path );
+    my ( $self, $path, %opts ) = @_;
+    return $self->_request( 'DELETE', $path, request_options => $opts{request_options} );
 }
 
 # Detect an HTTP::Tiny TRANSPORT failure vs a real HTTP error response.
