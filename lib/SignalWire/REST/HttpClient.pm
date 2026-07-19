@@ -208,6 +208,7 @@ sub _request {
             body        => $parsed,
             url         => $url,
             method      => $method,
+            headers     => $response->{headers},    # §6.6 response header map
         );
     }
 
@@ -329,6 +330,12 @@ sub _uri_encode {
 # parsing a stringified message. SignalWire::REST::HttpClient::Error is retained
 # as a subclass alias for back-compat (existing isa_ok checks against the old
 # name keep passing through inheritance).
+#
+# §6.6 error-observability: `headers` is the response header map (undef for a
+# transport failure that produced no response) and `request_id` is the platform
+# request id pulled from those headers — client-side observability with NO
+# wire-contract change, so a caller can log/correlate a failure against
+# SignalWire's own request id (Python parity: _base.SignalWireRestError).
 package SignalWireRestError;
 use Moo;
 use JSON qw(encode_json);
@@ -338,16 +345,48 @@ has 'body'        => ( is => 'ro', default  => sub { '' } );
 has 'url'         => ( is => 'ro', default  => sub { '' } );
 has 'method'      => ( is => 'ro', default  => sub { 'GET' } );
 
+# The response header map (undef for a transport error — no response arrived).
+has 'headers' => ( is => 'ro', default => sub { undef } );
+
+# request_id is DERIVED from headers (lazy): the platform request id, matched
+# case-insensitively against the SignalWire/proxy header names in preference
+# order. undef when there are no headers or none of the names are present.
+has 'request_id' => ( is => 'lazy' );
+
+# Header names SignalWire (and common proxies) use for the platform request id,
+# in preference order (Python parity: _base._REQUEST_ID_HEADERS).
+my @_REQUEST_ID_HEADERS =
+    ( 'x-request-id', 'x-signalwire-request-id', 'request-id', 'x-amzn-requestid', );
+
+sub _build_request_id {
+    my ($self) = @_;
+    my $headers = $self->headers;
+    return undef unless $headers && ref $headers eq 'HASH';
+    my %lowered = map { lc($_) => $headers->{$_} } keys %$headers;
+    for my $name (@_REQUEST_ID_HEADERS) {
+        return $lowered{$name} if defined $lowered{$name};
+    }
+    return undef;
+}
+
 use overload '""' => sub {
     my ($self) = @_;
     my $body = ref $self->body ? encode_json( $self->body ) : ( $self->body // '' );
 
     # A TRANSPORT failure carries no HTTP status (status_code is undef): render
     # "failed to reach the server" instead of "returned : ..." (Python parity).
+    my $msg;
     if ( !defined $self->status_code ) {
-        return sprintf( '%s %s failed to reach the server: %s', $self->method, $self->url, $body );
+        $msg = sprintf( '%s %s failed to reach the server: %s', $self->method, $self->url, $body );
+    } else {
+        $msg = sprintf( '%s %s returned %s: %s', $self->method, $self->url, $self->status_code,
+            $body );
     }
-    return sprintf( '%s %s returned %s: %s', $self->method, $self->url, $self->status_code, $body );
+
+    # §6.6: append the platform request id when present (Python parity).
+    my $rid = $self->request_id;
+    $msg .= sprintf( ' (request-id: %s)', $rid ) if defined $rid && length $rid;
+    return $msg;
 };
 
 # Back-compat alias: the error was historically named
@@ -502,10 +541,20 @@ the raw string.
 
 =item C<method> - the HTTP method.
 
+=item C<headers> - the response header map (C<undef> for a transport error,
+which produced no response).
+
+=item C<request_id> - the platform request id, derived from C<headers>
+(matched case-insensitively against C<x-request-id>,
+C<x-signalwire-request-id>, C<request-id>, C<x-amzn-requestid>, in that
+preference order); C<undef> when absent. Use it to correlate a failure with
+SignalWire's own logs.
+
 =back
 
 The object stringifies (C<use overload '""'>) to a human-readable
-C<< METHOD url returned STATUS: body >> message.
+C<< METHOD url returned STATUS: body >> message, with C<< (request-id: ...) >>
+appended when a request id is present.
 
 =item SignalWireRestTransportError
 

@@ -106,6 +106,8 @@ every kind of failure — HTTP-error responses and transport failures alike:
   | `body`          | the parsed JSON body (hashref) or the raw string if not JSON   |
   | `url`           | the full request URL (scheme + host + path + query string)     |
   | `method`        | the HTTP method (`GET`, `POST`, …)                             |
+  | `headers`       | the response header map (`undef` for a transport error)        |
+  | `request_id`    | the platform request id from the response headers (`x-request-id` / `x-signalwire-request-id` / `request-id` / `x-amzn-requestid`), for correlating with SignalWire's logs; `undef` when absent |
 
 - **`SignalWireRestTransportError`** — a **subclass** of `SignalWireRestError`,
   raised when the request never reached a response at all (connection refused, DNS
