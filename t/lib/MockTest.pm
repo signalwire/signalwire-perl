@@ -3,8 +3,9 @@ package MockTest;
 # Test helper for the porting-sdk mock_signalwire HTTP server.
 #
 # Mirrors the Python conftest fixtures and the Go pilot's mocktest package:
-# - On first call to MockTest::client(), probe http://127.0.0.1:8770/__mock__/health
-#   and either reuse a running mock server or spawn one as a subprocess.
+# - On first call to MockTest::client(), probe the mock's /__mock__/health on the
+#   resolved port and either reuse a running mock server or spawn one as a
+#   subprocess.
 # - This process mints a UNIQUE random project (test_proj_<hex>) =>
 #   unique Authorization header. journal_all()/journal_last() filter the shared
 #   global journal client-side by that header, so a test sees ONLY its own
@@ -13,8 +14,9 @@ package MockTest;
 #   MockTest::journal_last(). No reset is needed (the auth-filtered view starts
 #   empty), and a global wipe would race a concurrent test.
 # - Tests assert LAML AccountSid paths against $MockTest::PROJECT.
-# - PORT 8770 is reserved for the Perl rollout (see porting-sdk/test_harness/
-#   mock_signalwire/README.md).
+# - PORT: the CI gate's MOCK_SIGNALWIRE_PORT (a pre-spawned mock) is used when set;
+#   otherwise a FREE ephemeral port is picked per run (PortPicker) — never a fixed
+#   port, which would collide with a stale/concurrent mock and hang a health poll.
 
 use strict;
 use warnings;
@@ -308,7 +310,8 @@ END {
     # mock running for the lifetime of the prove run; the next invocation's
     # probe reuses it (idempotent), and per-client auth-header journal scoping
     # keeps cross-run state clean. Strays are reaped by the suite's stale-mock
-    # cleanup (`lsof -ti :8770 | xargs kill`). Mirrors the relay harness and the
+    # cleanup (`lsof -ti :$MOCK_SIGNALWIRE_PORT | xargs kill`, or the picked free
+    # port). Mirrors the relay harness and the
     # TS `child.unref()` lifecycle. (REST is quick request/response so the race
     # is far less likely than the relay WS case, but the fix is identical and
     # makes both harnesses uniformly parallel-safe.)
@@ -344,8 +347,8 @@ MockTest - test helper for the shared mock_signalwire HTTP server.
 =head1 DESCRIPTION
 
 The mock server's lifetime is per-process: the first MockTest::client()
-call probes http://127.0.0.1:8770/__mock__/health and either confirms
-a running server or starts one via `python -m mock_signalwire`. The
+call probes the mock's C</__mock__/health> on the resolved port and either
+confirms a running server or starts one via `python -m mock_signalwire`. The
 process mints a unique random project (C<test_proj_E<lt>hexE<gt>>), so its
 Basic-Auth header is unique; journal_all()/journal_last() filter the shared
 journal by that header and return only this process's requests, making the
@@ -354,7 +357,9 @@ assert LAML AccountSid paths against C<$MockTest::PROJECT>.
 
 =head1 PORT
 
-Port 8770 is reserved for the Perl rollout. Override with the
-MOCK_SIGNALWIRE_PORT environment variable.
+No fixed port is used. When the CI gate exports C<MOCK_SIGNALWIRE_PORT> (a
+pre-spawned mock), that port is reused; otherwise a FREE ephemeral port is
+picked per run (via C<PortPicker>) so concurrent/stale mocks never collide on a
+hardcoded port and hang a health poll.
 
 =cut

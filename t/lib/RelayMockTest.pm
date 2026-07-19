@@ -3,8 +3,9 @@ package RelayMockTest;
 # Test helper for the porting-sdk mock_relay WebSocket server.
 #
 # Mirrors MockTest.pm but for RELAY:
-# - Probes http://127.0.0.1:9780/__mock__/health to find/spawn mock-relay
-#   (WS plane on 8780, HTTP control plane on 9780).
+# - Probes the mock-relay HTTP control plane's /__mock__/health on the resolved
+#   HTTP port to find/spawn mock-relay (two independent planes: a WS plane and an
+#   HTTP control plane).
 # - Reuses MockTest's adjacency walk to find porting-sdk/test_harness/mock_relay
 #   and prepends to PYTHONPATH for `python -m mock_relay`.
 # - Test pattern:
@@ -14,7 +15,10 @@ package RelayMockTest;
 #       my $entry = RelayMockTest::journal_last();
 #       is($entry->{method}, "signalwire.connect", "...");
 #
-# Port 8780/9780 reserved for the Perl rollout.
+# PORT: the CI gate's MOCK_RELAY_PORT / MOCK_RELAY_HTTP_PORT (a pre-spawned mock)
+# are used when set; otherwise two FREE ephemeral ports are picked per run (WS and
+# HTTP control plane independently) — never fixed ports, which would collide with a
+# stale/concurrent mock and hang a health poll.
 
 use strict;
 use warnings;
@@ -494,7 +498,8 @@ END {
     # the lifetime of the prove run. The next invocation's _ensure_server probe
     # reuses it (idempotent), and per-session journal/scenario scoping keeps
     # cross-run state clean. Strays are reaped by the suite's stale-mock cleanup
-    # (`lsof -ti :9780 :8780 | xargs kill`). This mirrors the TS harness's
+    # (`lsof -ti :$MOCK_RELAY_HTTP_PORT :$MOCK_RELAY_PORT | xargs kill`, or the
+    # picked free ports). This mirrors the TS harness's
     # `child.unref()` lifecycle (tests/relay/mocktest.ts) — detach, never kill.
     #
     # $_MOCK_PID is retained only so a *failed* startup (below) can TERM the
@@ -527,16 +532,20 @@ RelayMockTest - test helper for the shared mock_relay WebSocket server.
 =head1 DESCRIPTION
 
 The mock server's lifetime is per-process: the first RelayMockTest::client()
-call probes http://127.0.0.1:9780/__mock__/health and either confirms a
-running server or starts one via `python -m mock_relay`. Each test that
-calls C<client()> gets a freshly-reset journal and scenarios.
+call probes the mock-relay HTTP control plane's C</__mock__/health> on the
+resolved HTTP port and either confirms a running server or starts one via
+`python -m mock_relay`. Each test that calls C<client()> gets a freshly-reset
+journal and scenarios.
 
 The mock is a real WebSocket server (no monkey-patching). It speaks
 ws://, so callers pass C<scheme =E<gt> 'ws'> to the SDK.
 
 =head1 PORTS
 
-WS port 8780 / HTTP port 9780 are reserved for the Perl rollout. Override
-with MOCK_RELAY_PORT / MOCK_RELAY_HTTP_PORT env vars.
+No fixed ports are used. When the CI gate exports MOCK_RELAY_PORT /
+MOCK_RELAY_HTTP_PORT (a pre-spawned mock), those are reused; otherwise two FREE
+ephemeral ports are picked per run (the WS plane and the HTTP control plane
+independently) so concurrent/stale mocks never collide on hardcoded ports and
+hang a health poll.
 
 =cut

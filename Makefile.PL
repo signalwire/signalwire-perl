@@ -44,11 +44,13 @@ WriteMakefile(
         # `.pm` files (per-resource classes + typed wire objects) that are NOT a
         # stable public package surface — they should not each claim a CPAN
         # namespace. Exclude the generated tree from indexing. `SignalWireRestError`
-        # is a top-level (non-`SignalWire::`) error package that likewise must not
-        # register a root-namespace claim on PAUSE.
+        # and its `SignalWireRestTransportError` subclass are top-level
+        # (non-`SignalWire::`) error packages that likewise must not register a
+        # root-namespace claim on PAUSE. Both live in HttpClient.pm (raised at
+        # HttpClient.pm:206 and :132/:178 respectively).
         no_index => {
             directory => ['lib/SignalWire/REST/Namespaces/Generated'],
-            package   => ['SignalWireRestError'],
+            package   => [ 'SignalWireRestError', 'SignalWireRestTransportError' ],
         },
     },
 );
