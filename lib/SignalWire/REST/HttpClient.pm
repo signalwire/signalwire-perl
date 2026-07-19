@@ -361,12 +361,12 @@ my @_REQUEST_ID_HEADERS =
 sub _build_request_id {
     my ($self) = @_;
     my $headers = $self->headers;
-    return undef unless $headers && ref $headers eq 'HASH';
+    return unless $headers && ref $headers eq 'HASH';
     my %lowered = map { lc($_) => $headers->{$_} } keys %$headers;
     for my $name (@_REQUEST_ID_HEADERS) {
         return $lowered{$name} if defined $lowered{$name};
     }
-    return undef;
+    return;
 }
 
 use overload '""' => sub {
