@@ -121,6 +121,7 @@ _send: reason=private underscore hook used by examples/relay_audit_harness.pl to
 parse_options: Plack::Runner CPAN module method called by SWML standalone examples
 sleep: Perl built-in (and the SWML `sleep` verb the auto-vivified example illustrates) — appears in `sleep(...)` syntax inside an example
 new: Perl/Moo constructor idiom — appears in 148+ ClassName->new(...) call sites in docs and examples; not a port symbol to resolve
+isa: UNIVERSAL::isa — core Perl method every object answers; the REST error-handling example (client-reference.md) uses `$err->isa('SignalWireRestError')` to branch on the typed error family. Not a port surface method.
 
 ## Intentional doc placeholder demonstrating an unknown verb
 
