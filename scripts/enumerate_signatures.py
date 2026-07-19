@@ -445,6 +445,9 @@ FREE_FN_PACKAGES = {
     "SignalWire::Security::WebhookValidator",  # validate_webhook_signature, validate_request
     "SignalWire::Security::WebhookMiddleware",  # make_webhook_validation_dependency
     "SignalWire::Security::SecurityUtils",  # filter_sensitive_headers, redact_url, is_valid_hostname
+    # RequestOptions envelope (plan 4.2): the module-level resolve() +
+    # status_is_retryable() free functions (signalwire.rest._request_options).
+    "SignalWire::REST::RequestOptions::Resolver",
 }
 
 # Free-function name overrides — for cases where the Python canonical

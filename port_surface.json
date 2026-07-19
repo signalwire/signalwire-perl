@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 82d9361cdae1e64b46bda560816d05d4576b5e50",
+   "generated_from" : "signalwire-perl @ d0307140488a20d2589ccaf1ccae69a1c4c18899",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -1378,6 +1378,17 @@
             ]
          },
          "functions" : []
+      },
+      "signalwire.rest._request_options" : {
+         "classes" : {
+            "RequestOptions" : [
+               "merge"
+            ]
+         },
+         "functions" : [
+            "resolve",
+            "status_is_retryable"
+         ]
       },
       "signalwire.rest.client" : {
          "classes" : {
