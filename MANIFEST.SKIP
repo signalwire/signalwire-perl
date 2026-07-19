@@ -75,6 +75,7 @@
 ^SNIPPET_RUN_ALLOW\.md$
 ^DOC_CLI_ALLOW\.md$
 ^PACKAGE_SMOKE_ALLOW\.md$
+^WIRED_MODES\.md$
 ^tidy\.err$
 # audit harness examples (in-repo audit tooling, not shippable examples)
 ^examples/.*audit_harness.*\.pl$

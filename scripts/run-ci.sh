@@ -31,6 +31,17 @@
 #
 # Flags:
 #   --fail-fast   stop launching new gates at the first failure (local dev loop).
+#
+# GATE-INVENTORY NOTE: porting-sdk/GATE_INVENTORY.md is GENERATED (by
+# gen_gate_inventory.py) from the REFERENCE port's run-ci.sh (signalwire-typescript),
+# NOT from this file. This perl run-ci intentionally deviates from that inventory in a
+# few port-specific ways, each documented at its gate below: the RELAY behavioral rule
+# keeps perl's hyphen spelling BEHAVIORAL-WIRE-RELAY; the SURFACE suite does NOT carry
+# ROUTE-COLLISION (route_collision.py is not yet spec-aware for perl's spec-faithful
+# ROUTE-SPLIT ×2 — see the SURFACE gate note); and the doc suite is POD-aware (perl's
+# reference docs are POD-first). A deviation here is not inventory drift — it is a
+# per-port idiom/disposition recorded in place. Load-bearing env/mode lines are
+# additionally guarded by the WIRED-MODES gate (WIRED_MODES.md).
 
 set -u
 set -o pipefail
@@ -104,6 +115,16 @@ _sw_ensure_perl_tools || exit 1
 # burned to zero before this flip; a NEW Wave-A violation now turns CI red at PR
 # time. (Exported so every scheduler worker subshell inherits it.)
 export SW_WAVE_A_REPORT_ONLY=0
+
+# STRICT-MOCKS (D3): the REST mock (mock_signalwire) 400s any wire violation
+# (unknown body key, malformed value) by DEFAULT instead of silently journaling
+# it — so a wrong wire key surfaces LOUD at PR time (in the TEST gate's own mock
+# and any test/gate that spawns one), not just in the REST-COVERAGE journal
+# post-pass. `:-1` keeps it a DEFAULT a caller can still override to 0 for a
+# deliberate non-strict repro. Exported so every scheduler worker subshell (and
+# every mock they spawn) inherits it. This is a WIRED MODE — see WIRED_MODES.md;
+# check_wired_modes.py fails the gate if this line is ever silently dropped.
+export MOCK_SIGNALWIRE_STRICT="${MOCK_SIGNALWIRE_STRICT:-1}"
 
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
@@ -255,6 +276,13 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 
 sched_gate PUBLIC-JARGON res=dayone desc="no porting/internal jargon leaked into the public surface" \
     -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port perl --repo .
+
+# WIRED-MODES (Part 1.6 / D7): the merge-coherence guard — greps this run-ci.sh for
+# every load-bearing env/mode line declared in WIRED_MODES.md (strict-mocks exports)
+# and fails loud if a merge ever silently drops one, so a wired mode can't vanish and
+# leave a gate green-but-vacuous.
+sched_gate WIRED-MODES desc="load-bearing run-ci modes (WIRED_MODES.md) all present" \
+    -- python3 "$PORTING_SDK_DIR/scripts/check_wired_modes.py" --port perl --repo .
 
 # ---- summary ----------------------------------------------------------------
 
