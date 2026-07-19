@@ -175,13 +175,16 @@ sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t
 #   * mixed tiers are split with --rules: PACKAGE + BEHAVIORAL each schedule a
 #     per-PR line and a nightly line (nightly members broken out below).
 # PERL-SPECIFIC vs the TS reference: perl's behavioral RELAY rule keeps perl's exact
-# spelling BEHAVIORAL-WIRE-RELAY (hyphen, same as ts). perl's SURFACE suite does NOT
-# carry ROUTE-COLLISION (route_collision.py has no default perl registry cmd and,
-# fed route_registry.pl, flags 2 un-approved ROUTE-SPLIT findings — a real
-# disposition held for a follow-up, NOT silenced here), matching perl's prior
-# standalone run-ci which likewise omitted it. DOC-AUDIT + STATUS-CLAIM read perl's
-# on-disk port_surface.json (POD-aware), which the SURFACE suite regenerates+restores
-# — so SURFACE and DOC-TRUTH share res=surface.
+# spelling BEHAVIORAL-WIRE-RELAY (hyphen, same as ts). ROUTE-COLLISION runs as a
+# standalone gate (scripts/route_collision.sh) rather than inside the SURFACE suite —
+# it feeds perl's route_registry.pl to porting-sdk's now-SPEC-AWARE route_collision.py
+# (a ROUTE-SPLIT is a finding ONLY when the dispatched path diverges from the spec
+# path for the method's operationId). perl's 2 splits (callFlows/conferenceRooms
+# list_addresses under the singular call_flow/conference_room sub-paths) are
+# spec-faithful platform routing (fabric/openapi.yaml x-sdk mounts), so the gate is
+# clean with NO allowlist. DOC-AUDIT + STATUS-CLAIM read perl's on-disk
+# port_surface.json (POD-aware), which the SURFACE suite regenerates+restores — so
+# SURFACE, DOC-TRUTH, and ROUTE-COLLISION share res=surface.
 
 # SURFACE (parity spine): SIGNATURES→DRIFT ordered, SURFACE-FRESH regen/restore,
 # SURFACE-DIFF, SEMVER-DIFF, GEN-TYPE-DEGENERACY, GEN-IDIOM — all read the one
@@ -189,6 +192,14 @@ sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t
 # (and restores it), so it must not overlap DOC-TRUTH's DOC-AUDIT/STATUS-CLAIM read.
 sched_gate SURFACE res=surface desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port perl --repo "$PORT_ROOT"
+
+# ROUTE-COLLISION (spec-aware): build perl's route_registry.pl → feed the SPEC-AWARE
+# route_collision.py (a split is a finding only when the dispatched path diverges from
+# the spec path for the method's operationId). perl's 2 callFlows/conferenceRooms
+# splits are spec-faithful (fabric x-sdk mounts) → clean with NO allowlist. res=surface
+# because it reads port_surface.json (must not overlap the SURFACE suite's regen).
+sched_gate ROUTE-COLLISION res=surface desc="no split routes / duplicate CRUD bases (spec-aware; fed by route_registry.pl)" \
+    -- bash scripts/route_collision.sh
 
 # GEN (regen-from-specs family): the 5 GEN-FRESH rules. The perltidy backstop each
 # generator runs needs _env.sh (sourced above, exported into every worker subshell).
