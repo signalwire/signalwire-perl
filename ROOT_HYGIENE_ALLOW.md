@@ -24,3 +24,4 @@ load-bearing audit-contract file, not clutter.
 - EXAMPLES_RUN_ALLOW.md — examples-run allowlist file read by the porting-sdk examples_run gate at repo root (burn-perl, 2026-07-09)
 - SNIPPET_RUN_ALLOW.md — snippet-run allowlist file read by the porting-sdk snippet_run gate at repo root (burn-perl, 2026-07-09)
 - WIRE_VIOLATIONS_ALLOW.md — STRICT-MOCKS signed-exception ledger read by porting-sdk assert_no_wire_violations.py / examples_run.py / snippet_run.py at repo root (mike@signalwire.com, 2026-07-18)
+- WIRED_MODES.md — load-bearing run-ci mode manifest read by porting-sdk check_wired_modes.py at repo root (the WIRED-MODES merge-coherence guard, plan a-bar 1.6/D7); must be at root (lane-perl, 2026-07-19)

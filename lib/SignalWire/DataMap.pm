@@ -474,7 +474,7 @@ C<description>, C<parameters>, C<data_map>) ready to register on an agent.
 
 =head1 FUNCTIONS
 
-Module-level factory functions (Python parity:
+Module-level factory functions (the Perl analog of
 C<signalwire.core.data_map>'s C<create_simple_api_tool> /
 C<create_expression_tool>) that build a configured C<DataMap> in one call:
 

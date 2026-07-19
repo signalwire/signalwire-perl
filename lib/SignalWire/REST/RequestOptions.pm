@@ -212,7 +212,7 @@ value intact). Returns C<$self> unchanged when C<$override> is C<undef>.
 =head1 THE RESOLVER
 
 Module-level free functions live in
-C<SignalWire::REST::RequestOptions::Resolver> (Python parity: the
+C<SignalWire::REST::RequestOptions::Resolver> (the Perl analog of the
 module-level C<resolve> / C<status_is_retryable> in
 C<signalwire.rest._request_options>), kept in a distinct package so they
 project onto the reference's module-free-function surface rather than the

@@ -250,7 +250,13 @@ sched_gate NO-CHEAT desc="audit_no_cheat_tests" \
 sched_gate FMT defer=1 res=surface desc="run-format.sh (local: apply; CI: --check)" \
     -- bash scripts/run-format.sh ${CI:+--check}
 
-sched_gate LINT defer=1 desc="run-lint.sh (perlcritic severity 4, zero findings)" \
+# LINT joins res=surface too: run locally, FMT's `perltidy -b` rewrites lib/**/*.pm
+# in place, and perlcritic (run-lint.sh) reads those same files — a concurrent
+# perlcritic reading a file mid-rewrite parse-fails and reds LINT spuriously. Sharing
+# the surface resource serializes LINT against the FMT/SURFACE/TEST mutators while it
+# still overlaps every read-only gate. (Under CI --check FMT is read-only, but the
+# label keeps local and CI scheduling identical.)
+sched_gate LINT defer=1 res=surface desc="run-lint.sh (perlcritic severity 4, zero findings)" \
     -- bash scripts/run-lint.sh
 
 # ---- §C1 doc/example/CLI execution gates ------------------------------------

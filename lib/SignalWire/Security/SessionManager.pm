@@ -219,7 +219,7 @@ per-call HMAC-SHA256 tokens used to authorise SWAIG tool invocations.
 Tokens embed the call id, function name, an expiry timestamp, and a
 nonce, all signed with a per-instance secret key; validation is
 constant-time. The manager holds no session state — the "session"
-methods exist for API parity and are effectively no-ops.
+methods exist for API compatibility and are effectively no-ops.
 
 =head1 ATTRIBUTES
 
@@ -257,8 +257,8 @@ is an alias taking C<($function_name, $token, $call_id)>.
 
 =item C<activate_session>, C<end_session>, C<get_session_metadata>, C<set_session_metadata>
 
-Stateless no-op session helpers kept for Python API parity. The metadata
-getters/setters return an empty hashref / true respectively.
+Stateless no-op session helpers kept for Python API compatibility. The
+metadata getters/setters return an empty hashref / true respectively.
 
 =item C<debug_token($token)>
 

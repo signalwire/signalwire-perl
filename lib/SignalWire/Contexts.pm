@@ -1035,7 +1035,7 @@ valid step/context history visibility modes (C<keep>, C<default>, C<hide>).
 
 =item C<create_simple_context($name)>
 
-Python parity for C<create_simple_context>. Returns a new
+The Perl analog of Python's C<create_simple_context>. Returns a new
 L</SignalWire::Contexts::Context> named C<$name> (default C<'default'>).
 Callable both as a free function
 (C<< SignalWire::Contexts::create_simple_context('x') >>) and as a class

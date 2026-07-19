@@ -29,7 +29,9 @@ else
 fi
 
 mkdir -p "$PORT_ROOT/.sw-tmp"
-reg="$(mktemp "$PORT_ROOT/.sw-tmp/perl_route_registry.XXXXXX.json")"
+# mktemp requires the X's at the END of the template (BSD/macOS is strict), so make
+# the temp then give it a .json name we control.
+reg="$(mktemp "$PORT_ROOT/.sw-tmp/perl_route_registry.XXXXXX")"
 trap 'rm -f "$reg"' EXIT
 
 # Capture ONLY the registry JSON (stdout); route_registry.pl's diagnostics go to

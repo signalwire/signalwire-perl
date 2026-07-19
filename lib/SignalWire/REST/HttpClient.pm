@@ -519,7 +519,7 @@ every attempt.
 
 =head1 ERRORS
 
-The client raises a typed error family (Python parity:
+The client raises a typed error family (the Perl analog of
 C<signalwire.rest._base>). A caller catching the base class handles every
 REST failure -- HTTP and transport -- with one C<eval>.
 
