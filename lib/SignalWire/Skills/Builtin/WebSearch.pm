@@ -386,3 +386,88 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::WebSearch - web-search skill using the Google Custom Search API
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('web_search', {
+        api_key          => $GOOGLE_API_KEY,
+        search_engine_id => $GOOGLE_CSE_ID,
+    });
+
+    # Optionally rename the tool and tune result count / latency:
+    $agent->add_skill('web_search', {
+        api_key          => $GOOGLE_API_KEY,
+        search_engine_id => $GOOGLE_CSE_ID,
+        tool_name        => 'web_search',
+        num_results      => 3,
+        overall_deadline => 10.0,
+    });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::WebSearch> is the Perl port of the Python reference
+C<signalwire.skills.web_search.skill> (the C<GoogleSearchScraper> path). It
+registers a handler-based SWAIG tool (default name C<web_search>) that searches
+the web via the Google Custom Search API.
+
+The handler issues an outbound GET to C<customsearch/v1> with C<key>/C<cx>/C<q>,
+parses the JSON C<items[]>, and formats title + snippet + link for the LLM. It is
+snippet-only (it does not deep-scrape result pages). Four latency-control params
+(C<per_page_timeout>, C<overall_deadline>, C<parallel_scrape>, C<snippets_only>)
+keep the response under the kernel webhook timeout; when the wall-clock deadline
+fires the skill returns the snippets it already has. The skill supports multiple
+instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the web-search tool (name overridable via C<tool_name>) with the agent.
+
+=item C<search_web($query)>
+
+Performs the Google CSE search for C<$query> and returns the formatted result
+string (or an error / no-results sentinel), enforcing the overall deadline.
+
+=item C<get_global_data>
+
+Returns the skill's global-data contribution (C<web_search_enabled>,
+C<search_provider>, C<quality_filtering>).
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema: C<api_key> and C<search_engine_id> (both
+required), C<num_results>, C<response_prefix>, C<response_postfix>, and the four
+latency-control params.
+
+=back
+
+=head1 ATTRIBUTES
+
+C<base_url> (derived from C<WEB_SEARCH_BASE_URL> when set, else the canonical
+Google CSE URL). The C<_http> and C<_clock> attributes are overridable hooks for
+testing.
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::Builtin::Spider>, L<SignalWire::Skills::SkillBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

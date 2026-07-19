@@ -125,3 +125,89 @@ sub list_loaded_skills {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::SkillManager - load and manage skills for a single agent
+
+=head1 SYNOPSIS
+
+    use SignalWire::Skills::SkillManager;
+
+    my $mgr = SignalWire::Skills::SkillManager->new( agent => $agent );
+
+    my ($ok, $err) = $mgr->load_skill('datetime');
+    die $err unless $ok;
+
+    $mgr->has_skill('datetime');       # 1
+    $mgr->list_loaded_skills;          # [ 'datetime' ]
+    $mgr->unload_skill('datetime');
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::SkillManager> is the Perl port of the Python SDK's
+per-agent skill manager. It resolves skill classes (via
+L<SignalWire::Skills::SkillRegistry> when a class isn't passed
+directly), instantiates them against its owning agent, and wires each
+loaded skill's tools, hints, global data, and prompt sections into that
+agent. It tracks loaded skills by instance key and enforces the
+single-instance / multi-instance rules each skill declares.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<agent>
+
+The owning agent (required, read-only, held as a weak reference).
+
+=item C<loaded_skills>
+
+Hashref mapping instance key to loaded skill instance (read/write).
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<load_skill($skill_name, $skill_class, $params)>
+
+Load, set up, and register a skill on the agent. C<$skill_class> and
+C<$params> are optional (the class is looked up in the registry when
+omitted). Returns a two-element list C<($ok, $message)> — C<$ok> is C<1>
+on success or C<0> with an explanatory C<$message> on failure (unknown
+skill, duplicate, missing env vars, setup / registration error).
+
+=item C<unload_skill($key)>
+
+Remove the loaded skill identified by C<$key>, calling its C<cleanup>.
+Returns C<1> if a skill was removed, C<0> otherwise.
+
+=item C<list_skills()> / C<list_loaded_skills()>
+
+Return an arrayref of the instance keys of currently-loaded skills.
+
+=item C<has_skill($key)>
+
+Return C<1> if a skill with instance key C<$key> is loaded, else C<0>.
+
+=item C<get_skill($skill_identifier)>
+
+Return the loaded skill instance for C<$skill_identifier>, or C<undef>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillRegistry>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

@@ -949,3 +949,146 @@ sub create_simple_context {    ## no critic (Subroutines::RequireArgUnpacking)
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Contexts - multi-step, multi-context AI agent workflow DSL
+
+=head1 SYNOPSIS
+
+    use SignalWire::Contexts;
+
+    my $builder = SignalWire::Contexts::ContextBuilder->new;
+
+    my $ctx = $builder->add_context('default');
+    $ctx->set_isolated(0);
+
+    my $step = $ctx->add_step('greet',
+        task    => 'Greet the caller and find out why they called.',
+        bullets => [ 'Be warm', 'Ask an open question' ],
+    );
+    $step->set_valid_steps( [ 'collect' ] );
+
+    my $collect = $ctx->add_step('collect');
+    $collect->add_section('Task', 'Collect the caller details.');
+    $collect->set_gather_info( output_key => 'caller' );
+    $collect->add_gather_question( key => 'name',  question => 'Your name?' );
+    $collect->add_gather_question( key => 'email', question => 'Your email?' );
+    $collect->set_end(1);
+
+    my $swml = $builder->to_hash;   # validates, then serializes
+
+    # Convenience free function / class method:
+    my $simple = SignalWire::Contexts::create_simple_context('default');
+
+=head1 DESCRIPTION
+
+This file defines the Perl port of C<signalwire.core.contexts> — the DSL
+for building multi-step, multi-context AI agent workflows. Loading it
+defines several cooperating packages in one shot:
+
+=over 4
+
+=item C<SignalWire::Contexts::ContextBuilder>
+
+The top-level builder. Owns one or more contexts; C<validate>/C<to_hash>
+check the whole workflow and serialize it.
+
+=item C<SignalWire::Contexts::Context>
+
+A named context owning an ordered list of steps, plus context-level prompt,
+history, filler, and reset configuration.
+
+=item C<SignalWire::Contexts::Step>
+
+A single step within a context: its instruction text (or POM sections),
+step criteria, function whitelist, navigation targets, gather-info, reset,
+and history settings.
+
+=item C<SignalWire::Contexts::GatherInfo> and
+C<SignalWire::Contexts::GatherQuestion>
+
+The structured question-gathering payload attached to a step, and one
+question within it.
+
+=back
+
+Only one context and one step is active at a time; per chat turn the
+runtime injects the current step's instructions as a system message. Most
+setters return C<$self> for fluent chaining.
+
+=head2 Package constants
+
+C<$MAX_CONTEXTS> (50) and C<$MAX_STEPS_PER_CONTEXT> (100) bound the
+workflow size. C<%RESERVED_NATIVE_TOOL_NAMES> holds the runtime-injected
+tool names (C<next_step>, C<change_context>, C<gather_submit>) that
+user-defined SWAIG tools must not collide with. C<@HISTORY_MODES> lists the
+valid step/context history visibility modes (C<keep>, C<default>, C<hide>).
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item C<create_simple_context($name)>
+
+Python parity for C<create_simple_context>. Returns a new
+L</SignalWire::Contexts::Context> named C<$name> (default C<'default'>).
+Callable both as a free function
+(C<< SignalWire::Contexts::create_simple_context('x') >>) and as a class
+method (C<< SignalWire::Contexts->create_simple_context('x') >>).
+
+=back
+
+=head1 METHODS
+
+=head2 SignalWire::Contexts::ContextBuilder
+
+C<new>, C<attach_agent>, C<reset>, C<add_context>, C<get_context>,
+C<has_contexts>, C<validate>, C<to_hash>. C<validate> enforces the
+single-context-must-be-named-default rule, that every context has steps,
+that C<initial_step>/C<valid_steps>/C<valid_contexts> reference real
+targets, gather-info integrity (non-empty, unique keys, valid
+C<completion_action>), and that no user tool name collides with a reserved
+native tool name.
+
+=head2 SignalWire::Contexts::Context
+
+C<add_step>, C<get_step>, C<remove_step>, C<move_step>,
+C<set_initial_step>, C<set_valid_contexts>, C<set_valid_steps>,
+C<set_post_prompt>, C<set_system_prompt>, C<set_consolidate>,
+C<set_full_reset>, C<set_user_prompt>, C<set_isolated>,
+C<add_system_section>, C<add_system_bullets>, C<set_prompt>,
+C<add_section>, C<add_bullets>, C<set_enter_fillers>, C<set_exit_fillers>,
+C<set_history>, C<add_enter_filler>, C<add_exit_filler>, C<to_hash>.
+
+=head2 SignalWire::Contexts::Step
+
+C<set_text>, C<add_section>, C<add_bullets>, C<set_step_criteria>,
+C<set_functions>, C<set_valid_steps>, C<set_valid_contexts>, C<set_end>,
+C<set_skip_user_turn>, C<set_skip_to_next_step>, C<set_gather_info>,
+C<add_gather_question>, C<clear_sections>, C<set_reset_system_prompt>,
+C<set_reset_user_prompt>, C<set_reset_consolidate>, C<set_reset_full_reset>,
+C<set_history>, C<to_hash>. Note C<set_functions>' inheritance behavior (a
+step with no declared function set inherits the previous step's active set)
+and that C<set_end> exits step mode but does not end the call.
+
+=head2 SignalWire::Contexts::GatherInfo and GatherQuestion
+
+C<GatherInfo> exposes C<add_question> and C<to_hash>; C<GatherQuestion>
+exposes C<to_hash>. Both are normally built via the step-level
+C<set_gather_info> / C<add_gather_question> methods rather than directly.
+
+=head1 SEE ALSO
+
+L<SignalWire::Contexts::ContextBuilder> (thin loader for this module),
+L<SignalWire::Agent::AgentBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

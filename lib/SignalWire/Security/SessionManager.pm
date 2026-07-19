@@ -190,3 +190,86 @@ sub debug_token {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Security::SessionManager - stateless HMAC token issuer/validator for SWAIG sessions
+
+=head1 SYNOPSIS
+
+    use SignalWire::Security::SessionManager;
+
+    my $mgr     = SignalWire::Security::SessionManager->new;
+    my $call_id = $mgr->create_session;
+    my $token   = $mgr->generate_token('get_weather', $call_id);
+
+    if ( $mgr->validate_token($call_id, 'get_weather', $token) ) {
+        # authorised
+    }
+
+=head1 DESCRIPTION
+
+L<SignalWire::Security::SessionManager> is the Perl port of the Python
+SDK's stateless C<SessionManager>. It issues and validates per-function,
+per-call HMAC-SHA256 tokens used to authorise SWAIG tool invocations.
+Tokens embed the call id, function name, an expiry timestamp, and a
+nonce, all signed with a per-instance secret key; validation is
+constant-time. The manager holds no session state — the "session"
+methods exist for API parity and are effectively no-ops.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<token_expiry_secs>
+
+Token lifetime in seconds (read-only; default 900 = 15 minutes).
+
+=item C<secret_key>
+
+The HMAC signing key (read-only; defaults to 32 random bytes from
+C</dev/urandom>).
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<create_session($call_id)>
+
+Return C<$call_id>, generating a random URL-safe id when none is given.
+
+=item C<generate_token($function_name, $call_id)>
+
+Issue a signed, base64url-encoded token scoped to C<$function_name> and
+C<$call_id>. C<create_tool_token> is an alias with the same signature.
+
+=item C<validate_token($call_id, $function_name, $token)>
+
+Return C<1> when C<$token> is well-formed, unexpired, and its signature,
+function, and call id all match; C<0> otherwise. C<validate_tool_token>
+is an alias taking C<($function_name, $token, $call_id)>.
+
+=item C<activate_session>, C<end_session>, C<get_session_metadata>, C<set_session_metadata>
+
+Stateless no-op session helpers kept for Python API parity. The metadata
+getters/setters return an empty hashref / true respectively.
+
+=item C<debug_token($token)>
+
+Decode and describe a token's components and expiry status (call id and
+signature are truncated). Returns an error hashref unless debug mode is
+enabled on the instance.
+
+=back
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

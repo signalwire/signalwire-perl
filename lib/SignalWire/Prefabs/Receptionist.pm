@@ -125,3 +125,85 @@ sub on_summary {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Prefabs::Receptionist - ready-made call-routing receptionist AI agent
+
+=head1 SYNOPSIS
+
+    use SignalWire::Prefabs::Receptionist;
+
+    my $agent = SignalWire::Prefabs::Receptionist->new(
+        departments => [
+            { name => 'Sales',   description => 'New orders and quotes', number => '+15551112222' },
+            { name => 'Support', description => 'Help with your account', number => '+15553334444' },
+        ],
+        greeting => 'Thank you for calling Acme. How can I help?',
+        voice    => 'rime.spore',
+    );
+
+    $agent->run;
+
+=head1 DESCRIPTION
+
+L<SignalWire::Prefabs::Receptionist> is the Perl port of
+C<signalwire.prefabs.receptionist.ReceptionistAgent>. It is a ready-made
+subclass of L<SignalWire::Agent::AgentBase> that greets callers,
+determines which department they need, and transfers them to that
+department's phone number via a real C<connect> action.
+
+C<BUILD> names the agent C<receptionist> and mounts it at C</receptionist>
+(unless overridden), enables POM sections, seeds global data with the
+department list, builds the receptionist prompt, and registers the
+C<transfer_to_department> SWAIG tool.
+
+=head1 ATTRIBUTES
+
+Constructor attributes (all C<ro>):
+
+=over 4
+
+=item C<departments>
+
+Arrayref of C<< { name => ..., description => ..., number => ... } >>
+hashrefs (default C<[]>).
+
+=item C<greeting>
+
+The opening greeting line (default a generic thank-you-for-calling line).
+
+=item C<voice>
+
+The TTS voice identifier (default C<rime.spore>).
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<on_summary($summary, $raw_data)>
+
+Lifecycle hook. A no-op extension point in the base receptionist;
+subclasses override it to process the transfer summary.
+
+=back
+
+The C<transfer_to_department> SWAIG tool is registered in C<BUILD>; its
+handler looks up the requested department and attaches a permanent
+C<< connect(final => 1) >> action so the caller is actually transferred.
+
+=head1 SEE ALSO
+
+L<SignalWire::Agent::AgentBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

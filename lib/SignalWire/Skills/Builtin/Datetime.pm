@@ -89,3 +89,66 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::Datetime - current date/time/timezone skill
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('datetime');
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::Datetime> is the Perl port of the Python reference
+C<signalwire.skills.datetime.skill>. It registers two handler-based SWAIG tools:
+
+=over
+
+=item *
+
+C<get_current_time> - the current time, optionally in a specific C<timezone> (an
+optional string param, default C<UTC>).
+
+=item *
+
+C<get_current_date> - the current date, optionally in a specific C<timezone> (an
+optional string param, default C<UTC>).
+
+=back
+
+Each handler sets C<$ENV{TZ}> locally, calls C<POSIX::tzset>, formats the value
+with C<strftime>, and returns a L<SignalWire::SWAIG::FunctionResult>. The skill
+takes no configuration parameters and does not support multiple instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the C<get_current_time> and C<get_current_date> tools with the agent.
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the base skill schema (this skill adds no parameters).
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

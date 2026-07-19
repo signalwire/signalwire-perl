@@ -88,3 +88,72 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::DatasphereServerless - DataSphere knowledge search via serverless DataMap execution
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('datasphere_serverless', {
+        space_name  => 'example.signalwire.com',
+        project_id  => $PROJECT_ID,
+        token       => $TOKEN,
+        document_id => $DOC_ID,
+    });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::DatasphereServerless> is the Perl port of the
+Python reference C<signalwire.skills.datasphere_serverless.skill>. It registers a
+DataMap-based SWAIG tool (default name C<search_knowledge>) that searches the
+SignalWire DataSphere knowledge base.
+
+This is the serverless counterpart to L<SignalWire::Skills::Builtin::Datasphere>:
+rather than issuing the HTTP call from the SDK, it registers a C<data_map> whose
+webhook POSTs to C<< /api/datasphere/documents/search >> and whose output
+template is rendered by the SignalWire SWML platform. The skill supports multiple
+instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the DataMap C<search_knowledge> tool (name overridable via C<tool_name>)
+with the agent via C<register_swaig_function>.
+
+=item C<get_global_data>
+
+Returns the skill's global-data contribution (C<datasphere_serverless_enabled>,
+C<document_id>, C<knowledge_provider>).
+
+=item C<get_hints>
+
+Returns an empty hint list.
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema: C<space_name>, C<project_id>, C<token>,
+C<document_id> (all required), plus C<count> and C<distance>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::Builtin::Datasphere>, L<SignalWire::Skills::SkillBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

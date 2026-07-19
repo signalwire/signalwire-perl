@@ -96,3 +96,67 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::SwmlTransfer - transfer calls by pattern-matching against configured destinations
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('swml_transfer', {
+        transfers => {
+            sales   => { url => 'https://.../sales',   message => 'Connecting you to sales.' },
+            support => { url => 'https://.../support', message => 'Connecting you to support.' },
+        },
+    });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::SwmlTransfer> is the Perl port of the Python
+reference C<signalwire.skills.swml_transfer.skill>. It registers a single
+DataMap-based SWAIG tool (default name C<transfer_call>) that transfers the caller
+to one of a set of configured destinations.
+
+The C<transfers> param maps a pattern to a destination config (C<url>/C<address>
+and optional C<message>); each entry becomes a C<data_map> expression that matches
+the tool's parameter (default name C<transfer_type>) against the pattern and emits
+a C<swml_transfer> action. The skill supports multiple instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the transfer tool with the agent, building one DataMap expression per
+configured transfer pattern.
+
+=item C<get_hints>
+
+Returns speech hints (C<transfer>, C<connect>, C<speak to>, C<talk to>, plus the
+tokens of each configured pattern).
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema: C<transfers> (required object), C<description>,
+C<parameter_name>, C<parameter_description>, and C<default_message>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

@@ -249,3 +249,111 @@ sub _fresh_global_data {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Prefabs::InfoGatherer - ready-made question-and-answer collection AI agent
+
+=head1 SYNOPSIS
+
+    use SignalWire::Prefabs::InfoGatherer;
+
+    # Static mode: fixed question list.
+    my $agent = SignalWire::Prefabs::InfoGatherer->new(
+        questions => [
+            { key_name => 'name',  question_text => 'What is your name?' },
+            { key_name => 'email', question_text => 'What is your email address?' },
+        ],
+    );
+
+    # Dynamic mode: resolve questions per request.
+    my $agent = SignalWire::Prefabs::InfoGatherer->new;
+    $agent->set_question_callback(sub {
+        my ($query_params, $body_params, $headers) = @_;
+        return [ { key_name => 'topic', question_text => 'What do you need help with?' } ];
+    });
+
+    $agent->run;
+
+=head1 DESCRIPTION
+
+L<SignalWire::Prefabs::InfoGatherer> is the Perl port of
+C<signalwire.prefabs.info_gatherer.InfoGathererAgent>. It is a ready-made
+subclass of L<SignalWire::Agent::AgentBase> that walks a caller through an
+ordered list of questions, one at a time, collecting the answers into
+global data.
+
+It supports two modes. In B<static mode> the questions are supplied at
+construction via the C<questions> attribute. In B<dynamic mode> (an empty
+C<questions> list) the questions are resolved per request via a callback
+registered with C<set_question_callback>; a built-in fallback list is used
+when no callback is registered or the callback fails.
+
+C<BUILD> names the agent C<info_gatherer> and mounts it at
+C</info_gatherer> (unless overridden), enables POM sections, seeds global
+data, builds the prompt, and registers the C<start_questions> and
+C<submit_answer> SWAIG tools.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<questions>
+
+Arrayref of C<< { key_name => ..., question_text => ... } >> hashrefs
+(default C<[]>); an empty list selects dynamic mode.
+
+=item C<question_callback>
+
+The per-request question-resolution callback (dynamic mode); normally set
+via C<set_question_callback>.
+
+=item C<static_questions>
+
+The static question list captured at construction (internal state).
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<set_question_callback($callback)>
+
+Register a callback for dynamic, per-request question configuration. The
+callback receives C<($query_params, $body_params, $headers)> and returns
+the arrayref of questions to ask on that call. Returns C<$self> for
+chaining.
+
+=item C<start_questions($args, $raw_data)>
+
+Tool handler. Returns the first question from the live global data.
+
+=item C<submit_answer($args, $raw_data)>
+
+Tool handler. Stores the answer, advances the question index, and presents
+the next question (or the completion message), emitting the updated state
+via an C<update_global_data> action.
+
+=item C<on_swml_request($request_data, $callback_path, %opts)>
+
+Lifecycle hook. In dynamic mode, resolves the questions (via the callback
+or the fallback) and returns a C<< { global_data => {...} } >> hashref for
+C<AgentBase> to merge into the SWML response. In static mode this is a
+no-op.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Agent::AgentBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

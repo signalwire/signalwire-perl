@@ -218,14 +218,14 @@ C<ai>-verb handler and a registry.
 
 =over 4
 
-=item * L</SignalWire::SWML::SWMLHandler> - base interface (maps to the Python
+=item * C<SignalWire::SWML::SWMLHandler> - base interface (maps to the Python
 C<SWMLVerbHandler> ABC). Its C<get_verb_name>, C<validate_config>, and
 C<build_config> die unless a subclass overrides them.
 
-=item * L</SignalWire::SWML::SWMLHandler::AIVerbHandler> - handler for the
+=item * C<SignalWire::SWML::SWMLHandler::AIVerbHandler> - handler for the
 C<ai> verb, with prompt/SWAIG validation and config building.
 
-=item * L</SignalWire::SWML::SWMLHandler::VerbHandlerRegistry> - registry that
+=item * C<SignalWire::SWML::SWMLHandler::VerbHandlerRegistry> - registry that
 auto-registers the AI handler on construction.
 
 =back

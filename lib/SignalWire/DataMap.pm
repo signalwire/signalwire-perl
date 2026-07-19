@@ -337,3 +337,169 @@ sub _apply_parameters {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::DataMap - build server-side data-map SWAIG tools (no webhooks)
+
+=head1 SYNOPSIS
+
+    use SignalWire::SWAIG::FunctionResult;
+    use SignalWire::DataMap;
+
+    my $tool = SignalWire::DataMap->new('get_weather')
+        ->description('Get the current weather for a city.')
+        ->parameter('city', 'string', 'The city name', required => 1)
+        ->webhook('GET', 'https://api.weather.com/v1?q=${args.city}')
+        ->output(SignalWire::SWAIG::FunctionResult->new('Weather: ${response.temp}'));
+
+    $agent->register_swaig_function($tool->to_swaig_function);
+
+=head1 DESCRIPTION
+
+L<SignalWire::DataMap> is the Perl port of C<signalwire.core.data_map>. It
+is a fluent builder for B<data-map> SWAIG tools -- server-side API
+integrations the SignalWire platform executes directly, without calling
+back to your webhook. You describe the tool (its LLM-facing purpose and
+parameters, one or more webhooks or expression matchers, and the response
+templates), then C<to_swaig_function> renders the SWAIG function definition
+you register on an agent.
+
+The constructor accepts either C<< new($function_name) >> or
+C<< new(function_name => $name) >>. Almost every method returns C<$self> so
+calls chain fluently.
+
+Note that C<purpose>/C<description> and each C<parameter> description are
+B<LLM-facing prompt engineering> -- the model reads them to decide when to
+call the tool and how to fill arguments -- not developer FYI. Write them
+accordingly.
+
+=head1 METHODS
+
+=head2 Description and parameters
+
+=over 4
+
+=item purpose($desc)
+
+Set the LLM-facing tool description (rendered into the OpenAI tool schema
+C<description>).
+
+=item description($desc)
+
+Alias for C<purpose>.
+
+=item parameter($name, $type, $description, %opts)
+
+Add a parameter definition. C<%opts> accepts C<required> (bool) and C<enum>
+(arrayref). The C<description> is LLM-facing.
+
+=back
+
+=head2 Matching and webhooks
+
+=over 4
+
+=item expression($test_value, $pattern, $output, %opts)
+
+Add a pattern-match expression producing C<$output> (a
+L<SignalWire::SWAIG::FunctionResult>) on a match. C<$pattern> may be a
+compiled C<Regexp> (its string is extracted). C<%opts> accepts
+C<nomatch_output> (another FunctionResult).
+
+=item webhook($method, $url, %opts)
+
+Add a webhook call. C<%opts> accepts C<headers>, C<form_param>,
+C<input_args_as_params>, and C<require_args>.
+
+=item webhook_expressions($expressions)
+
+Attach an expressions list to the most recently added webhook (dies if none
+added).
+
+=item body($data)
+
+Set the request body on the most recent webhook (dies if none added).
+
+=item params($data)
+
+Set request params on the most recent webhook (dies if none added).
+
+=item foreach($config)
+
+Set iteration config on the most recent webhook; C<$config> is a hashref
+that must contain C<input_key>, C<output_key>, and C<append>.
+
+=back
+
+=head2 Output and errors
+
+=over 4
+
+=item output($result)
+
+Set the output template (a L<SignalWire::SWAIG::FunctionResult>) on the most
+recent webhook (dies if none added).
+
+=item fallback_output($result)
+
+Set the top-level fallback output used when no webhook/expression produces
+output.
+
+=item error_keys($keys)
+
+Set error keys on the most recent webhook, or -- if no webhook has been
+added -- as the global error keys.
+
+=item global_error_keys($keys)
+
+Set the top-level (global) error keys.
+
+=back
+
+=head2 Rendering
+
+=over 4
+
+=item to_swaig_function()
+
+Render and return the SWAIG function definition hashref (C<function>,
+C<description>, C<parameters>, C<data_map>) ready to register on an agent.
+
+=back
+
+=head1 FUNCTIONS
+
+Module-level factory functions (Python parity:
+C<signalwire.core.data_map>'s C<create_simple_api_tool> /
+C<create_expression_tool>) that build a configured C<DataMap> in one call:
+
+=over 4
+
+=item SignalWire::DataMap::create_simple_api_tool(%opts)
+
+Build a simple API-calling tool. Required: C<name>, C<url>,
+C<response_template>. Optional: C<parameters>, C<method> (default C<GET>),
+C<headers>, C<body>, C<error_keys>.
+
+=item SignalWire::DataMap::create_expression_tool(%opts)
+
+Build an expression-only tool (no HTTP calls). Required: C<name>,
+C<patterns> (a hashref of C<< test_value => [ pattern, FunctionResult ] >>).
+Optional: C<parameters>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::SWAIG::FunctionResult>, L<SignalWire::Agent::AgentBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

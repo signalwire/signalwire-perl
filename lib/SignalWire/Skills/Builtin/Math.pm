@@ -185,3 +185,56 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::Math - basic mathematical-calculation skill
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('math');
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::Math> is the Perl port of the Python reference
+C<signalwire.skills.math.skill>. It registers a single handler-based SWAIG tool,
+C<calculate>, that evaluates a mathematical C<expression> supporting the
+operators C<+>, C<->, C<*>, C</>, C<%>, and C<**> (exponentiation).
+
+Expressions are evaluated by a safe recursive-descent parser over a fixed grammar
+(the Perl analog of Python's AST-based C<_safe_eval>): no user input ever reaches
+the Perl compiler, and any malformed input yields a "Could not evaluate" response
+rather than an error. The skill takes no configuration parameters and does not
+support multiple instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the C<calculate> tool with the agent.
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the base skill schema (this skill adds no parameters).
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

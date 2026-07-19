@@ -98,3 +98,79 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::GoogleMaps - address validation and driving-route skill using Google Maps
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('google_maps', { api_key => $GOOGLE_MAPS_KEY });
+
+    # Optionally rename the tools:
+    $agent->add_skill('google_maps', {
+        api_key          => $GOOGLE_MAPS_KEY,
+        lookup_tool_name => 'lookup_address',
+        route_tool_name  => 'compute_route',
+    });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::GoogleMaps> is the Perl port of the Python
+reference C<signalwire.skills.google_maps.skill>. It registers two handler-based
+SWAIG tools:
+
+=over
+
+=item *
+
+C<lookup_address> (name overridable via C<lookup_tool_name>) - validate/geocode
+an address; accepts C<address>, C<bias_lat>, C<bias_lng>.
+
+=item *
+
+C<compute_route> (name overridable via C<route_tool_name>) - compute a driving
+route between two points; accepts C<origin_lat>, C<origin_lng>, C<dest_lat>,
+C<dest_lng>.
+
+=back
+
+The skill does not support multiple instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the address-lookup and route-computation tools with the agent.
+
+=item C<get_hints>
+
+Returns speech hints (C<address>, C<location>, C<route>, C<directions>, C<miles>,
+C<distance>).
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema: C<api_key> (required) plus the two tool-name
+overrides.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

@@ -232,3 +232,109 @@ sub _open_ended_error {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Prefabs::Survey - ready-made survey-administering AI agent
+
+=head1 SYNOPSIS
+
+    use SignalWire::Prefabs::Survey;
+
+    my $agent = SignalWire::Prefabs::Survey->new(
+        survey_name      => 'Customer Satisfaction',
+        survey_questions => [
+            { id => 'q1', text => 'Rate our service 1-5', type => 'rating', scale => 5 },
+            { id => 'q2', text => 'Would you recommend us?', type => 'yes_no' },
+        ],
+        introduction => 'We would love your feedback.',
+        conclusion   => 'Thank you for your time.',
+    );
+
+    $agent->run;
+
+=head1 DESCRIPTION
+
+L<SignalWire::Prefabs::Survey> is the Perl port of
+C<signalwire.prefabs.survey.SurveyAgent>. It is a ready-made subclass of
+L<SignalWire::Agent::AgentBase> that administers a structured survey:
+it introduces the survey, asks each question in sequence, validates
+responses against each question's constraints, and records them.
+
+C<BUILD> names the agent C<survey> and mounts it at C</survey> (unless
+overridden), enables POM sections, seeds global data (survey name,
+questions, index, answers, completed flag), builds the introduction and
+question prompt sections, and registers the C<submit_survey_answer>,
+C<validate_response>, and C<log_response> SWAIG tools.
+
+Question hashrefs carry an C<id>, C<text>, and C<type>. Supported types
+are C<rating> (with a C<scale>), C<multiple_choice> (with C<options>),
+C<yes_no>, and C<open_ended> (honoring C<required>).
+
+=head1 ATTRIBUTES
+
+Constructor attributes (all C<ro>):
+
+=over 4
+
+=item C<survey_name>
+
+The survey's display name (default C<'Survey'>).
+
+=item C<survey_questions>
+
+Arrayref of question hashrefs (default C<[]>).
+
+=item C<introduction>
+
+Introductory text (default empty; a generated welcome is used when blank).
+
+=item C<conclusion>
+
+Closing text (default empty).
+
+=item C<brand_name>
+
+Optional brand name (default empty).
+
+=item C<max_retries>
+
+Maximum answer retries per question (default C<2>).
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<validate_response($args, $raw_data)>
+
+Tool handler. Validates a response against the identified question's
+constraints (rating range, multiple-choice options, yes/no, required
+open-ended) and returns a human-readable validity message.
+
+=item C<log_response($args, $raw_data)>
+
+Tool handler. Acknowledges that a validated response has been recorded,
+naming the question by its text.
+
+=item C<on_summary($summary, $raw_data)>
+
+Lifecycle hook. Logs the completed survey results; hashref summaries are
+emitted as pretty JSON.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Agent::AgentBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

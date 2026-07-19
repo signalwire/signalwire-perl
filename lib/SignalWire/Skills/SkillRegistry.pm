@@ -217,3 +217,85 @@ sub _external_paths {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::SkillRegistry - global registry of available agent skills
+
+=head1 SYNOPSIS
+
+    use SignalWire::Skills::SkillRegistry;
+
+    my $names = SignalWire::Skills::SkillRegistry->list_skills;
+    my $class = SignalWire::Skills::SkillRegistry->get_factory('datetime');
+
+    # Register an external skill directory (returns discovered SKILL.md skills):
+    my $found = SignalWire::Skills::SkillRegistry->add_skill_directory('/path/to/skills');
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::SkillRegistry> is the Perl port of the Python SDK's
+C<SkillRegistry>. It maps skill names to their classes (or factory
+closures) in a process-global registry, auto-loading the shipped built-in
+skills from the C<SignalWire::Skills::Builtin::> namespace on demand
+(snake_case names are camelised to package names). All methods are class
+methods.
+
+=head1 METHODS
+
+=over 4
+
+=item C<< register_skill($skill_name, $skill_class) >>
+
+Register C<$skill_class> under C<$skill_name>.
+
+=item C<< get_factory($skill_name) >>
+
+Return the class (or factory) for C<$skill_name>, auto-loading it from
+the C<Builtin::> namespace if not already registered; C<undef> if
+unknown. C<get_skill_class> is the class-returning alias, mirroring
+Python's C<get_skill_class>.
+
+=item C<< list_skills() >> / C<< discover_skills() >>
+
+Ensure all built-ins are registered and return a sorted arrayref of the
+registered skill names.
+
+=item C<< list_all_skill_sources() >>
+
+Return a hashref of skill sources keyed by type: C<built-in>,
+C<external_paths>, C<entry_points> (always empty in Perl), and
+C<registered> (skills registered outside the shipped built-ins).
+
+=item C<< get_all_skills_schema() >>
+
+Return a hashref keyed by skill name, each value carrying the skill's
+metadata and parameter schema (enriched for built-ins that expose
+C<parameter_schema> / C<skill_description> / C<skill_version>). Callable
+as a class or instance method.
+
+=item C<< add_skill_directory($path) >>
+
+Register an external skill load-path (dies loud if the path is missing or
+not a directory, de-duplicating the list), then walk it with the shared
+skill-discovery walker and return the discovered C<SKILL.md> skills.
+
+=item C<< clear_registry() >>
+
+Empty the registry and external-path list (primarily for tests).
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillManager>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

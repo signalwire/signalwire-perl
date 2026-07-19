@@ -193,3 +193,107 @@ sub on_summary {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Prefabs::Concierge - ready-made venue concierge AI agent
+
+=head1 SYNOPSIS
+
+    use SignalWire::Prefabs::Concierge;
+
+    my $agent = SignalWire::Prefabs::Concierge->new(
+        venue_name         => 'The Grand Hotel',
+        services           => [ 'Room service', 'Spa booking', 'Valet parking' ],
+        amenities          => {
+            Pool => { hours => '6am-10pm', location => '3rd floor' },
+            Gym  => { hours => '24/7',     location => 'Basement' },
+        },
+        hours_of_operation => { 'Front Desk' => '24/7' },
+        welcome_message    => 'Welcome to The Grand Hotel.',
+    );
+
+    $agent->run;
+
+=head1 DESCRIPTION
+
+L<SignalWire::Prefabs::Concierge> is the Perl port of
+C<signalwire.prefabs.concierge.ConciergeAgent>. It is a ready-made
+subclass of L<SignalWire::Agent::AgentBase> that acts as a virtual
+concierge for a venue: it welcomes callers, explains available services,
+answers questions about amenities and hours, and helps with bookings.
+
+C<BUILD> configures the agent from its attributes — it names the agent
+C<concierge> and mounts it at C</concierge> (unless overridden), enables
+POM prompt sections, seeds global data with the venue details, builds the
+prompt sections (role, services, amenities, hours, special instructions),
+and registers the C<check_availability> and C<get_directions> SWAIG tools.
+
+=head1 ATTRIBUTES
+
+Constructor attributes (all C<ro>):
+
+=over 4
+
+=item C<venue_name> (required)
+
+The name of the venue, used throughout the prompt and responses.
+
+=item C<services>
+
+Arrayref of service names offered by the venue (default C<[]>).
+
+=item C<amenities>
+
+Hashref of amenity name to a details hashref (C<hours>, C<location>)
+(default C<{}>).
+
+=item C<hours_of_operation>
+
+Hashref of day/label to hours string (default C<{}>).
+
+=item C<special_instructions>
+
+Arrayref of extra prompt bullets (default C<[]>).
+
+=item C<welcome_message>
+
+Optional custom welcome line; defaults to a generated greeting.
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<check_availability($args, $raw_data)>
+
+Tool handler. Confirms availability when the requested service is one the
+venue offers, otherwise lists the available services.
+
+=item C<get_directions($args, $raw_data)>
+
+Tool handler. Returns directions to an amenity that declares a C<location>
+detail, otherwise points the caller at the front desk.
+
+=item C<on_summary($summary, $raw_data)>
+
+Lifecycle hook. Logs the post-prompt interaction summary; hashref
+summaries are emitted as pretty JSON. Override to persist or forward the
+interaction.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Agent::AgentBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

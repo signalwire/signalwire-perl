@@ -199,3 +199,88 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::InfoGatherer - collect answers to a configurable list of questions
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('info_gatherer', {
+        questions => [
+            { key_name => 'name',  question_text => 'What is your name?' },
+            { key_name => 'email', question_text => 'What is your email?', confirm => 1 },
+        ],
+    });
+
+    # Optionally namespace the tools and set a completion message:
+    $agent->add_skill('info_gatherer', {
+        prefix             => 'intake',
+        questions          => [ ... ],
+        completion_message => 'Thanks, all done!',
+    });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::InfoGatherer> is the Perl port of the Python
+reference C<signalwire.skills.info_gatherer.skill>. It drives a small state
+machine that asks the user a configured sequence of questions and records the
+answers.
+
+It registers two handler-based SWAIG tools (their names optionally prefixed via
+the C<prefix> param):
+
+=over
+
+=item *
+
+C<start_questions> - present the first question.
+
+=item *
+
+C<submit_answer> - store the current answer (accepts C<answer> and
+C<confirmed_by_user>), advance to the next question, or, when finished, emit the
+completion message and toggle both tools off.
+
+=back
+
+Per-instance state (the question list, current index, and collected answers) is
+persisted in namespaced skill data across turns. The skill supports multiple
+instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the C<start_questions> and C<submit_answer> tools with the agent.
+
+=item C<get_global_data>
+
+Returns the skill's initial namespaced state (questions, index 0, empty answers).
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema: C<questions> (required array), C<prefix>, and
+C<completion_message>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

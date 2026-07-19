@@ -18,3 +18,48 @@ sub is_serverless_mode {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Utils - miscellaneous SDK utility functions
+
+=head1 SYNOPSIS
+
+    use SignalWire::Utils qw(is_serverless_mode);
+
+    if ( is_serverless_mode() ) {
+        # running in Lambda / a cloud function / CGI, not a long-lived server
+    }
+
+=head1 DESCRIPTION
+
+L<SignalWire::Utils> is the Perl port of C<signalwire.utils>. It collects
+small cross-cutting helpers. Nothing is exported by default; import from
+C<@EXPORT_OK>.
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item C<is_serverless_mode()>
+
+Return true (C<1>) when the SDK is running inside any short-lived /
+event-driven environment — that is, when
+L<SignalWire::Core::LoggingConfig/get_execution_mode> returns anything
+other than C<'server'>. Returns C<0> otherwise.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Core::LoggingConfig>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

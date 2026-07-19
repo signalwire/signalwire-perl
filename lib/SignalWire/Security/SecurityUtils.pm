@@ -75,3 +75,68 @@ sub is_valid_hostname {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Security::SecurityUtils - credential-hygiene and hostname-check utilities
+
+=head1 SYNOPSIS
+
+    use SignalWire::Security::SecurityUtils qw(
+        filter_sensitive_headers redact_url is_valid_hostname
+    );
+
+    my $safe_headers = filter_sensitive_headers($request_headers);
+    my $safe_url     = redact_url('https://user:secret@host/path');
+    #   -> 'https://user:****@host/path'
+    my $ok           = is_valid_hostname('example.com');   # 1
+
+=head1 DESCRIPTION
+
+L<SignalWire::Security::SecurityUtils> is the Perl port of
+C<signalwire.core.security.security_utils> (itself a mirror of the
+TypeScript SDK's SecurityUtils). It keeps credentials out of user
+callbacks and logs and provides a reusable character-level hostname
+check. All three subs are exportable via C<@EXPORT_OK>.
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item C<filter_sensitive_headers($headers)>
+
+Return a copy of the C<$headers> hashref with credential-bearing headers
+(C<authorization>, C<cookie>, C<x-api-key>, C<proxy-authorization>,
+C<set-cookie>) removed. The sensitivity check is case-insensitive; keys
+are otherwise preserved as given. Empty or non-hashref input yields an
+empty hashref.
+
+=item C<redact_url($url)>
+
+Mask the password in a URL's userinfo before logging, e.g.
+C<< https://user:secret@host >> becomes C<< https://user:****@host >>. A
+URL with no embedded credentials, or non-string input, is returned
+unchanged.
+
+=item C<is_valid_hostname($host)>
+
+Standalone hostname sanity check: return C<0> for an empty host or one
+containing whitespace, slashes, backslashes, or control characters;
+C<1> otherwise. This is the character-level check only, independent of
+the fuller C<validate_url> (scheme / DNS / private-IP checks).
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Utils::UrlValidator> for full URL / SSRF validation.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

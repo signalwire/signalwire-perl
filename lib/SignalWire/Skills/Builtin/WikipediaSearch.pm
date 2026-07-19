@@ -208,3 +208,70 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::WikipediaSearch - Wikipedia article-summary search skill
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('wikipedia_search');
+
+    # Optionally tune the number of results:
+    $agent->add_skill('wikipedia_search', { num_results => 2 });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::WikipediaSearch> is the Perl port of the Python
+reference C<signalwire.skills.wikipedia_search.skill>. It registers a
+handler-based SWAIG tool, C<search_wiki>, that searches Wikipedia for a C<query>
+and returns article summaries.
+
+The handler issues an outbound GET to C<< /w/api.php >> with an C<srsearch> query,
+parses the JSON C<< query.search >> list, and returns each article's snippet (or a
+fetched extract) formatted for the LLM. The skill does not support multiple
+instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the C<search_wiki> tool with the agent.
+
+=item C<search_wiki($query)>
+
+Performs the Wikipedia search for C<$query> and returns the formatted article
+summaries (or an error / no-results message).
+
+=item C<setup>
+
+Instance setup hook; applies the C<num_results> and C<no_results_message> params
+and returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema, adding C<num_results> and C<no_results_message>
+over the base skill schema.
+
+=back
+
+=head1 ATTRIBUTES
+
+C<base_url> (from C<WIKIPEDIA_BASE_URL> when set, else the canonical English
+Wikipedia API), C<num_results>, and C<no_results_message>.
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::Builtin::WebSearch>, L<SignalWire::Skills::SkillBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut
