@@ -108,6 +108,42 @@ use IO::Socket::INET ();
     isnt( "$err", '599', 'the error is not a bare 599' );
     like( "$err", qr/failed to reach the server/,
         'the raised transport error stringifies as a transport failure' );
+
+    # D1 (owner-approved): error.url is the FULL url (scheme+host+path), not the
+    # bare path — so a caught error tells you exactly which endpoint failed.
+    is( $err->url, "http://127.0.0.1:$dead/api/fabric/addresses",
+        'D1: transport error url is the full absolute URL (scheme+host+path)' );
+}
+
+# --- D1: an HTTP-error (>=400) error carries the FULL url INCLUDING query -----
+# Drive a real 404 through the mock; the raised SignalWireRestError.url must be the
+# absolute URL with the query string preserved (not the bare path).
+{
+    my $sock = IO::Socket::INET->new(
+        LocalAddr => '127.0.0.1',
+        LocalPort => 0,
+        Proto     => 'tcp',
+        Listen    => 1,
+    ) or die "cannot bind a probe port: $!";
+    my $dead = $sock->sockport;
+    $sock->close;
+
+    my $client = SignalWire::REST::RestClient->new(
+        project => 'p',
+        token   => 't',
+        host    => "http://127.0.0.1:$dead",
+    );
+
+    # Even a transport failure goes through the same url-building path; assert the
+    # query is preserved in the error url (the D1 "with query" clause).
+    my $err;
+    eval { $client->_http->get( '/api/things', params => { page => 2, q => 'a b' } ); 1 }
+        or $err = $@;
+    ok( blessed($err), 'query-bearing GET raised a typed error' );
+    like( $err->url, qr{^http://127\.0\.0\.1:\Q$dead\E/api/things\?},
+        'D1: error url is absolute and includes the query string' );
+    like( $err->url, qr/page=2/, 'D1: error url preserves the page query param' );
+    like( $err->url, qr/q=a(?:%20|\+)b/, 'D1: error url preserves + encodes the q param' );
 }
 
 done_testing;

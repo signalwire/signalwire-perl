@@ -131,7 +131,7 @@ sub _request {
         if ( _abort_is_set( $ro->{abort_signal} ) ) {
             die SignalWireRestTransportError->new(
                 body   => 'request cancelled by abort_signal',
-                url    => $path,
+                url    => $url,
                 method => $method,
             );
         }
@@ -177,7 +177,7 @@ sub _request {
             }
             die SignalWireRestTransportError->new(
                 body   => $response->{content} // '',
-                url    => $path,
+                url    => $url,
                 method => $method,
             );
         }
@@ -206,7 +206,7 @@ sub _request {
         die SignalWireRestError->new(
             status_code => $response->{status},
             body        => $parsed,
-            url         => $path,
+            url         => $url,
             method      => $method,
         );
     }
@@ -498,7 +498,7 @@ on any HTTP response with status E<gt>= 400. Read-only accessors:
 =item C<body> - the response body, decoded from JSON when possible, else
 the raw string.
 
-=item C<url> - the request path.
+=item C<url> - the full request URL (scheme, host, path, and query string).
 
 =item C<method> - the HTTP method.
 

@@ -104,7 +104,7 @@ every kind of failure — HTTP-error responses and transport failures alike:
   |-----------------|----------------------------------------------------------------|
   | `status_code`   | the HTTP status (`404`, `422`, `429`, `500`, …)                |
   | `body`          | the parsed JSON body (hashref) or the raw string if not JSON   |
-  | `url`           | the request path                                               |
+  | `url`           | the full request URL (scheme + host + path + query string)     |
   | `method`        | the HTTP method (`GET`, `POST`, …)                             |
 
 - **`SignalWireRestTransportError`** — a **subclass** of `SignalWireRestError`,
