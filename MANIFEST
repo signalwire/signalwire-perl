@@ -1,5 +1,7 @@
 .devcontainer/devcontainer.json
 .github/workflows/doc-audit.yml
+.github/workflows/live-smoke.yml
+.github/workflows/multi-os.yml
 .github/workflows/nightly.yml
 .github/workflows/publish.yml
 .github/workflows/surface-audit.yml
@@ -1336,9 +1338,6 @@ rest/examples/rest_phone_number_management.pl
 rest/examples/rest_queues_mfa_and_recordings.pl
 rest/examples/rest_video_rooms.pl
 rest/README.md
-scripts/__pycache__/_perltidy_gen.cpython-313.pyc
-scripts/__pycache__/enumerate_signatures.cpython-313.pyc
-scripts/__pycache__/generate_rest.cpython-313.pyc
 scripts/_env.sh
 scripts/_perltidy_gen.py
 scripts/doc_wire_runner.pl
@@ -1350,6 +1349,7 @@ scripts/generate_rest_tests.py
 scripts/generate_swaig_payloads.py
 scripts/generate_swml_verbs.py
 scripts/rest_test_plan.pl
+scripts/route_collision.sh
 scripts/route_registry.pl
 scripts/run-ci.sh
 scripts/run-format.sh
@@ -1464,6 +1464,7 @@ t/lib/MockTest.pm
 t/lib/PortPicker.pm
 t/lib/RelayMockTest.pm
 t/lib/TlsMockTest.pm
+t/live/smoke.t
 t/pom/prompt_object_model.t
 t/relay/actions_mock.t
 t/relay/connect_mock.t

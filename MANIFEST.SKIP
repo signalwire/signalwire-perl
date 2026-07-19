@@ -49,6 +49,12 @@
 # Avoid the repo-local CI scratch dir (gate logs, sandbox builds — never shipped)
 ^\.sw-tmp/
 
+# Avoid Python bytecode caches from the porting-sdk audit scripts run against this
+# tree (scripts/__pycache__/*.pyc) — build byproducts, never part of the dist, and
+# their presence must not make `make manifest` non-deterministic.
+\B__pycache__
+\.pyc$
+
 # Avoid MYMETA files
 ^MYMETA\.
 
