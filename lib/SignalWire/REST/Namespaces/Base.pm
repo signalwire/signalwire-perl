@@ -59,9 +59,10 @@ SignalWire::REST::Namespaces::Base - base classes for REST resource and namespac
 
 =head1 SYNOPSIS
 
-    package SignalWire::REST::Namespaces::PhoneNumbers;
-    use Moo;
-    extends 'SignalWire::REST::Namespaces::CrudResource';
+    # A generated resource class extends CrudResource, e.g.:
+    #   package SignalWire::REST::Namespaces::Generated::PhoneNumbers;
+    #   use Moo;
+    #   extends 'SignalWire::REST::Namespaces::CrudResource';
 
     # inherits list / create / get / update / delete over _base_path
 
