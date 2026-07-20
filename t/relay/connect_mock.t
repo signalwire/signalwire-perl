@@ -160,8 +160,13 @@ subtest 'connect rejects empty creds at constructor' => sub {
         );
         $c->connect;
     };
-    like($@, qr/project and token are required/i,
-         'connect with empty creds raises');
+    # A6 credential contract: with both creds empty, the PER-VARIABLE check
+    # names the first missing one (project) and its env var — an actionable
+    # message, not a generic combined one.
+    like($@, qr/project is required/i,
+         'connect with empty creds raises a per-variable error');
+    like($@, qr/SIGNALWIRE_PROJECT_ID/,
+         'the error names the SIGNALWIRE_PROJECT_ID env var');
 };
 
 subtest 'unauthenticated raw connect rejected by mock' => sub {
