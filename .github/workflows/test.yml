@@ -41,11 +41,12 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: signalwire/porting-sdk
-          # PINNED to the gate-enforcement plan branch: the ROUTE-COLLISION gate (wired
-          # blocking on this branch) needs the SPEC-AWARE route_collision.py that lives
-          # on porting-sdk plan/a-bar-2026-07-18, not yet on main. REVERT this ref to
-          # main when that porting-sdk branch merges.
-          ref: main
+          # PINNED to wave/1-aplus: this port PR's gates (SURFACE/DRIFT/REST-COVERAGE/
+          # BEHAVIORAL incl. PAGINATION-CORPUS/RELAY-LIVENESS) diff against the NEW Python
+          # oracle + the PAGINATION-CORPUS/RELAY-LIVENESS differs that live on porting-sdk
+          # wave/1-aplus, not yet on main (PY-7 request_options is a wave/1-aplus oracle
+          # addition). REVERT this ref to main when porting-sdk wave/1-aplus merges.
+          ref: wave/1-aplus
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 
@@ -58,7 +59,10 @@ jobs:
         with:
           repository: signalwire/signalwire-python
           path: signalwire-python
-          ref: main
+          # PINNED to wave/1-aplus: the reference SDK carrying PY-7 request_options +
+          # the new paginator/relay behavior this PR mirrors. REVERT to main when the
+          # python wave/1-aplus work merges.
+          ref: wave/1-aplus
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1
