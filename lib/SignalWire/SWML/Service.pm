@@ -830,12 +830,52 @@ sub on_swml_request {
 # Define a SWAIG function the AI can call. Tool descriptions and
 # parameter descriptions are LLM-facing prompt engineering — see
 # PORTING_GUIDE for guidance.
+# Wrap a bare property map into a JSON-Schema object (SWAIG parameters shape),
+# mirroring python's SWAIGFunction._ensure_parameter_structure. A hashref that
+# already carries BOTH `type` and `properties` is returned unchanged; a bare
+# property map (or empty/undef) is wrapped as { type => 'object', properties =>
+# <map> }, merging any `required` list.
+sub _normalise_tool_parameters {
+    my ( $parameters, $required ) = @_;
+
+    # Empty / undef -> the canonical empty object schema.
+    if ( !defined $parameters || ref $parameters ne 'HASH' || !%$parameters ) {
+        my %schema = ( type => 'object', properties => {} );
+        $schema{required} = [@$required] if ref $required eq 'ARRAY' && @$required;
+        return \%schema;
+    }
+
+    # Already a full object schema (has BOTH type and properties): use verbatim,
+    # only merging an explicit `required` list not already present.
+    if ( exists $parameters->{type} && exists $parameters->{properties} ) {
+        return $parameters unless ref $required eq 'ARRAY' && @$required;
+        my $existing = $parameters->{required} || [];
+        my %seen;
+        my @merged = grep { !$seen{$_}++ } ( @$existing, @$required );
+        return { %$parameters, required => \@merged };
+    }
+
+    # Bare property map -> wrap it.
+    my %schema = ( type => 'object', properties => $parameters );
+    $schema{required} = [@$required] if ref $required eq 'ARRAY' && @$required;
+    return \%schema;
+}
+
 sub define_tool {
     my ( $self, %opts ) = @_;
     my $name        = $opts{name}        // die("define_tool requires 'name'");
     my $description = $opts{description} // '';
     my $parameters  = $opts{parameters}  // { type => 'object', properties => {} };
     my $handler     = $opts{handler};
+
+    # Normalise `parameters` into a valid JSON-Schema object so a caller may pass
+    # a bare property map (the natural idiom) and still emit a SWAIG-valid schema.
+    # Mirrors the python reference's SWAIGFunction._ensure_parameter_structure:
+    # a map with BOTH `type` and `properties` is used verbatim; anything else is
+    # wrapped as { type => 'object', properties => <map> } (with `required`
+    # merged when given). Without this, a bare { city => {...} } was stored
+    # verbatim — an invalid SWAIG parameters schema (no type/properties wrapper).
+    $parameters = _normalise_tool_parameters( $parameters, $opts{required} );
 
     my $tool_def = {
         function    => $name,
@@ -844,7 +884,7 @@ sub define_tool {
         ( defined $handler ? ( _handler => $handler ) : () ),
     };
     for my $k ( keys %opts ) {
-        next if $k =~ /^(name|description|parameters|handler)$/;
+        next if $k =~ /^(name|description|parameters|handler|required)$/;
         $tool_def->{$k} = $opts{$k};
     }
     $self->tools->{$name} = $tool_def;
