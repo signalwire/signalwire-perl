@@ -131,6 +131,16 @@ has '_ws'     => ( is => 'rw', default => sub { undef } );
 has '_reconnect_attempts' => ( is => 'rw', default => sub { 0 } );
 has '_max_backoff'        => ( is => 'ro', default => sub { 30 } );
 
+# Set true by disconnect_ws() so run()'s auto-reconnect loop distinguishes an
+# INTENTIONAL teardown (do NOT reconnect, exit cleanly) from an unexpected drop
+# (reconnect). Mirrors the python reference's _closing guard.
+has '_closing' => ( is => 'rw', default => sub { 0 } );
+
+# Bound the auto-reconnect loop: after this many CONSECUTIVE failed reconnect
+# attempts run() gives up and exits rather than spinning forever (A6: never
+# infinite-reconnect). Reset to 0 on a successful (re)connect.
+has '_max_reconnect_attempts' => ( is => 'rw', default => sub { 10 } );
+
 # Callbacks
 has '_on_call'    => ( is => 'rw', default => sub { undef } );
 has '_on_message' => ( is => 'rw', default => sub { undef } );
@@ -176,8 +186,22 @@ sub on_event ( $self, $cb ) {
 # handshake in one call (matches Python RelayClient.connect()). Returns
 # the authenticate result hashref on success, dies on failure.
 sub connect ($self) {
-    die "project and token are required (or jwt_token)"
-        unless ( $self->project && $self->token ) || $self->jwt_token || $self->_jwt_token;
+
+    # A6 credential contract: fail fast PRE-CONNECT with a PER-VARIABLE
+    # actionable error naming exactly which credential is missing and the env
+    # var that supplies it (a combined "project and token" message misleads when
+    # only one is absent). JWT is the alternative for both. Mirrors the python
+    # reference (relay/client.py __init__ A6 validation).
+    unless ( $self->jwt_token || $self->_jwt_token ) {
+        die "project is required. Pass project => ... or set the "
+            . "SIGNALWIRE_PROJECT_ID env var (or use jwt_token / "
+            . "SIGNALWIRE_JWT_TOKEN for JWT auth).\n"
+            unless $self->project;
+        die "token is required. Pass token => ... or set the "
+            . "SIGNALWIRE_API_TOKEN env var (or use jwt_token / "
+            . "SIGNALWIRE_JWT_TOKEN for JWT auth).\n"
+            unless $self->token;
+    }
     my $ok = $self->connect_ws;
     die "WebSocket connect failed" unless $ok;
     return $self->authenticate;
@@ -901,7 +925,9 @@ sub _handle_disconnect ( $self, $params ) {
 
     $self->connected(0);
 
-    # The client should reconnect (handled by the event loop)
+    # Marking connected(0) drops out of run()'s inner read loop; run() then
+    # performs the actual bounded auto-reconnect (unless _closing). This is NOT
+    # a no-op: the reconnect is driven by run(), not "the event loop".
     return;
 }
 
@@ -941,6 +967,7 @@ sub reconnect ($self) {
 # --- Disconnect ---
 
 sub disconnect_ws ($self) {
+    $self->_closing(1);
     $self->connected(0);
 
     # Fail any in-flight requests so a synchronous waiter returns immediately
@@ -958,8 +985,35 @@ sub disconnect_ws ($self) {
 # --- Run event loop ---
 
 sub run ($self) {
-    while ( $self->connected ) {
-        $self->_read_once();
+
+    # Blocking event loop with AUTO-RECONNECT. On an unexpected socket drop
+    # (_read_once flips connected(0) on EOF), the loop attempts a bounded,
+    # backing-off reconnect instead of silently falling out of run() — the
+    # behavior the README advertises ("Auto-reconnect with exponential
+    # backoff"). An INTENTIONAL disconnect_ws() sets _closing so we exit cleanly
+    # and never reconnect. Reconnect gives up after _max_reconnect_attempts
+    # consecutive failures (never infinite-reconnect, A6).
+    while (1) {
+        while ( $self->connected ) {
+            $self->_read_once();
+        }
+
+        # Left the inner loop because connected went false. If this was an
+        # intentional teardown, or auto-reconnect is exhausted, stop.
+        last if $self->_closing;
+        last if $self->_reconnect_attempts >= $self->_max_reconnect_attempts;
+
+        # Attempt a real reconnect (backoff + fresh connect + authenticate).
+        my $ok = eval { $self->reconnect; 1 };
+        if ( $ok && $self->connected ) {
+            $self->_reconnect_attempts(0);    # success: reset the backoff counter
+            next;
+        }
+
+        # Reconnect attempt failed; loop will back off again (reconnect already
+        # incremented _reconnect_attempts) until the cap, then exit.
+        $logger->warn( "Reconnect attempt failed: " . ( $@ || 'not connected' ) )
+            if $logger->can('warn');
     }
     return;
 }
