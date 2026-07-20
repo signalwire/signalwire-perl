@@ -19,13 +19,19 @@ around BUILDARGS => sub {
 
 sub get {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get( $self->_path($id), params => $p,
+        request_options => $request_options );
 }
 
 sub reset {
-    my ( $self, $id ) = @_;
-    return $self->_http->post( $self->_path( $id, 'reset' ), body => {} );
+    my ( $self, $id, %opts ) = @_;
+    return $self->_http->post(
+        $self->_path( $id, 'reset' ),
+        body            => {},
+        request_options => $opts{request_options}
+    );
 }
 
 1;

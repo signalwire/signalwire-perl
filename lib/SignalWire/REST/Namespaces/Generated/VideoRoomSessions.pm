@@ -19,20 +19,35 @@ around BUILDARGS => sub {
 
 sub list_events {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $id, 'events' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $id, 'events' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub list_members {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $id, 'members' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $id, 'members' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub list_recordings {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $id, 'recordings' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $id, 'recordings' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 1;

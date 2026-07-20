@@ -20,27 +20,43 @@ around BUILDARGS => sub {
 
 sub list_memberships {
     my ( $self, $NumberGroupId, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $NumberGroupId, 'number_group_memberships' ),
-        params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $NumberGroupId, 'number_group_memberships' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub add_membership {
     my ( $self, $NumberGroupId, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_path( $NumberGroupId, 'number_group_memberships' ),
-        body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path( $NumberGroupId, 'number_group_memberships' ),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub get_membership {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( '/api/relay/rest/number_group_memberships/' . $id, params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        '/api/relay/rest/number_group_memberships/' . $id,
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub delete_membership {
-    my ( $self, $id ) = @_;
-    return $self->_http->delete_request( '/api/relay/rest/number_group_memberships/' . $id );
+    my ( $self, $id, %opts ) = @_;
+    return $self->_http->delete_request(
+        '/api/relay/rest/number_group_memberships/' . $id,
+        request_options => $opts{request_options}
+    );
 }
 
 1;

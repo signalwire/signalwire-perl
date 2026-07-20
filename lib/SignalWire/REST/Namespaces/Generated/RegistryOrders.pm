@@ -19,8 +19,10 @@ around BUILDARGS => sub {
 
 sub get {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get( $self->_path($id), params => $p,
+        request_options => $request_options );
 }
 
 1;

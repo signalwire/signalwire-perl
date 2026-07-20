@@ -18,11 +18,18 @@ around BUILDARGS => sub {
 };
 
 # Each method POSTs { command, params, id? } to the resource base path.
+# request_options is keyword-only: stripped from the command params and
+# threaded to the transport, never folded into the wire body.
 sub _execute {
     my ( $self, $command, $call_id, %params ) = @_;
-    my %body = ( command => $command, params => \%params );
+    my $request_options = delete $params{request_options};
+    my %body            = ( command => $command, params => \%params );
     $body{id} = $call_id if defined $call_id;
-    return $self->_http->post( $self->_base_path, body => \%body );
+    return $self->_http->post(
+        $self->_base_path,
+        body            => \%body,
+        request_options => $request_options
+    );
 }
 
 sub dial {

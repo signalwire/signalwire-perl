@@ -20,22 +20,33 @@ around BUILDARGS => sub {
 
 sub list_addresses {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( '/api/fabric/resources/call_flow/' . $id . '/addresses',
-        params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        '/api/fabric/resources/call_flow/' . $id . '/addresses',
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub list_versions {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( '/api/fabric/resources/call_flow/' . $id . '/versions',
-        params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        '/api/fabric/resources/call_flow/' . $id . '/versions',
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub deploy_version {
-    my ( $self, $id, $body ) = @_;
-    return $self->_http->post( '/api/fabric/resources/call_flow/' . $id . '/versions',
-        body => $body );
+    my ( $self, $id, $body, %opts ) = @_;
+    return $self->_http->post(
+        '/api/fabric/resources/call_flow/' . $id . '/versions',
+        body            => $body,
+        request_options => $opts{request_options}
+    );
 }
 
 1;

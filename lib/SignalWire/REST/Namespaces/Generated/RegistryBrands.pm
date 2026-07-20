@@ -19,30 +19,47 @@ around BUILDARGS => sub {
 
 sub list {
     my ( $self, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_base_path, params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get( $self->_base_path, params => $p,
+        request_options => $request_options );
 }
 
 sub create {
-    my ( $self, $body ) = @_;
-    return $self->_http->post( $self->_base_path, body => $body );
+    my ( $self, $body, %opts ) = @_;
+    return $self->_http->post(
+        $self->_base_path,
+        body            => $body,
+        request_options => $opts{request_options}
+    );
 }
 
 sub get {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get( $self->_path($id), params => $p,
+        request_options => $request_options );
 }
 
 sub list_campaigns {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $id, 'campaigns' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $id, 'campaigns' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub create_campaign {
-    my ( $self, $id, $body ) = @_;
-    return $self->_http->post( $self->_path( $id, 'campaigns' ), body => $body );
+    my ( $self, $id, $body, %opts ) = @_;
+    return $self->_http->post(
+        $self->_path( $id, 'campaigns' ),
+        body            => $body,
+        request_options => $opts{request_options}
+    );
 }
 
 1;

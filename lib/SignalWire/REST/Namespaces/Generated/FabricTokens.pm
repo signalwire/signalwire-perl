@@ -19,32 +19,57 @@ around BUILDARGS => sub {
 
 sub create_subscriber_token {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( '/api/fabric/subscribers/tokens', body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        '/api/fabric/subscribers/tokens',
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub refresh_subscriber_token {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( '/api/fabric/subscribers/tokens/refresh', body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        '/api/fabric/subscribers/tokens/refresh',
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub create_invite_token {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( '/api/fabric/subscriber/invites', body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        '/api/fabric/subscriber/invites',
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub create_guest_token {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( '/api/fabric/guests/tokens', body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        '/api/fabric/guests/tokens',
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub create_embed_token {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( '/api/fabric/embeds/tokens', body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        '/api/fabric/embeds/tokens',
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 1;

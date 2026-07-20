@@ -19,19 +19,27 @@ around BUILDARGS => sub {
 
 sub create {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_base_path, body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post( $self->_base_path, body => $body,
+        request_options => $request_options );
 }
 
 sub update {
     my ( $self, $token_id, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->patch( $self->_path($token_id), body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->patch(
+        $self->_path($token_id),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub delete {
-    my ( $self, $token_id ) = @_;
-    return $self->_http->delete_request( $self->_path($token_id) );
+    my ( $self, $token_id, %opts ) = @_;
+    return $self->_http->delete_request( $self->_path($token_id),
+        request_options => $opts{request_options} );
 }
 
 1;

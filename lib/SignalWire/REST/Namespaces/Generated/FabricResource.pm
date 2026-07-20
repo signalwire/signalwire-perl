@@ -14,8 +14,13 @@ extends 'SignalWire::REST::Namespaces::CrudResource';
 
 sub list_addresses {
     my ( $self, $resource_id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $resource_id, 'addresses' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $resource_id, 'addresses' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 1;

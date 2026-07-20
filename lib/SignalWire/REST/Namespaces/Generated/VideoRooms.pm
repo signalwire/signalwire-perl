@@ -20,14 +20,24 @@ around BUILDARGS => sub {
 
 sub list_streams {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $id, 'streams' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $id, 'streams' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub create_stream {
     my ( $self, $id, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_path( $id, 'streams' ), body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path( $id, 'streams' ),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 1;

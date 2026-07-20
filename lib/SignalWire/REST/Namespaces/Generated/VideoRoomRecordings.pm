@@ -19,25 +19,35 @@ around BUILDARGS => sub {
 
 sub list {
     my ( $self, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_base_path, params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get( $self->_base_path, params => $p,
+        request_options => $request_options );
 }
 
 sub get {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get( $self->_path($id), params => $p,
+        request_options => $request_options );
 }
 
 sub delete {
-    my ( $self, $id ) = @_;
-    return $self->_http->delete_request( $self->_path($id) );
+    my ( $self, $id, %opts ) = @_;
+    return $self->_http->delete_request( $self->_path($id),
+        request_options => $opts{request_options} );
 }
 
 sub list_events {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $id, 'events' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $id, 'events' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 1;
