@@ -682,6 +682,144 @@ def _generated_module(ns: str) -> str:
 SWML_VERBS_MODULE = "signalwire.core.swml_verbs_generated"
 
 
+# ---------------------------------------------------------------------------
+# Field-surface predicate for generated payload classes.
+#
+# The generated SWML/SWAIG payload .pm classes are TYPELESS Moo (`has 'x' =>
+# (is=>'ro')` — no `isa`), so the field's class-vs-primitive nature cannot be
+# read off the perl source. The Python SURFACE oracle
+# (porting-sdk/enumerate_python_signatures.py) records a payload field ONLY when
+# its type carries an SDK class (`"class:" in canonical`); primitive fields
+# (`str`/`int`/`dict[str,Any]`) are dropped as internal scaffolding. To compare
+# EQUAL we must apply the SAME rule here — derived from the SAME source the
+# generator emits from (porting-sdk/schema.json $defs), NOT by trimming real API
+# and NOT by mirroring the oracle's field set (which would be a permanent blind
+# spot). A field is surface iff its schema references an object $def at any depth
+# (direct $ref, or through array.items / anyOf / oneOf / allOf) — the exact
+# schema-level analog of the oracle's `class:`-carrying test.
+# ---------------------------------------------------------------------------
+
+_SCHEMA_DEFS_CACHE: dict | None = None
+
+
+def _schema_defs() -> dict:
+    global _SCHEMA_DEFS_CACHE
+    if _SCHEMA_DEFS_CACHE is None:
+        _SCHEMA_DEFS_CACHE = {}
+        # schema.json lives beside python_signatures.json in porting-sdk; reuse
+        # the same candidate resolution.
+        for sig_path in PSDK_CANDIDATES:
+            schema_path = sig_path.parent / "schema.json"
+            if schema_path.is_file():
+                try:
+                    _SCHEMA_DEFS_CACHE = json.loads(schema_path.read_text()).get("$defs") or {}
+                except Exception:
+                    _SCHEMA_DEFS_CACHE = {}
+                break
+    return _SCHEMA_DEFS_CACHE
+
+
+def _field_is_surface(field_schema: dict, defs: dict) -> bool:
+    """A generated-payload field is cross-port SURFACE iff its schema references
+    ANY named ``$def`` (a ``$ref``) at any depth — direct, or via array.items /
+    anyOf / oneOf / allOf. This is the schema analog of the reference oracle's
+    ``"class:" in canonical`` test: the oracle keeps a field whose canonical type
+    mentions a named SDK type (an object class OR a scalar TypeAlias like
+    ``SWMLVar``), and drops a field whose type is a BARE builtin (``str``, ``int``,
+    ``bool``, a plain ``type:object`` dict) with no named-type reference. So e.g.
+    ``acknowledge_interruptions: anyOf[boolean, $ref SWMLVar]`` IS surface (has a
+    $ref), while ``global_data: type object`` and ``post_prompt_url: type string``
+    are NOT (no $ref anywhere). A scalar-alias-typed field IS kept (matches the reference) —
+    the reference keeps scalar-alias-typed fields too."""
+    if not isinstance(field_schema, dict):
+        return False
+    if field_schema.get("$ref"):
+        return True
+    items = field_schema.get("items")
+    if isinstance(items, dict) and _field_is_surface(items, defs):
+        return True
+    for key in ("anyOf", "oneOf", "allOf"):
+        for sub in field_schema.get(key) or []:
+            if isinstance(sub, dict) and _field_is_surface(sub, defs):
+                return True
+    return False
+
+
+_SURFACE_FIELDS_CACHE: dict | None = None
+
+
+def _surface_fields_by_class() -> dict:
+    """Return {generated-class-name: {wire_key: is_surface_bool}} by replaying the
+    SAME field→schema resolution the generator uses (generate_swml_verbs' object
+    schemas + flattened <Verb>Config unions, and the SWAIG payload schemas), then
+    applying `_field_is_surface`. Reusing the generator's own build guarantees the
+    field→schema mapping can never drift from what was emitted."""
+    global _SURFACE_FIELDS_CACHE
+    if _SURFACE_FIELDS_CACHE is not None:
+        return _SURFACE_FIELDS_CACHE
+    result: dict = {}
+    defs = _schema_defs()
+    if not defs:
+        _SURFACE_FIELDS_CACHE = {}
+        return result
+    try:
+        import importlib.util
+        gen_path = HERE / "generate_swml_verbs.py"
+        spec = importlib.util.spec_from_file_location("_gen_swml_verbs", gen_path)
+        gen = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gen)
+        GR = gen.GR
+        psdk = gen.resolve_porting_sdk()
+
+        def _classify(props: dict, schema_name: str) -> dict:
+            # Surface iff the field carries a named-type $ref (the oracle's
+            # class:-token test) AND is not x-sdk-overlay HIDDEN (the overlay
+            # drops wire-only fields from the SDK surface; the generator applies
+            # the same hide, so a hidden field is never emitted / never surface).
+            out = {}
+            for k, v in props.items():
+                if GR.overlay_hidden(psdk, k, schema_name):
+                    out[k] = False
+                else:
+                    out[k] = _field_is_surface(v, defs)
+            return out
+
+        # 1. object $defs → data class
+        for raw_name, node in defs.items():
+            if not isinstance(node, dict) or not GR.is_object_schema(node):
+                continue
+            pl = GR.type_name(raw_name)
+            result[pl] = _classify(node.get("properties") or {}, raw_name)
+        # 2. <Verb>Config flattened unions
+        sm = defs.get("SWMLMethod")
+        if sm:
+            for ref in sm.get("anyOf") or []:
+                wrapper = gen._ref_leaf(ref.get("$ref", ""))
+                wdef = defs.get(wrapper)
+                if not wdef or not (wdef.get("properties") or {}):
+                    continue
+                verb = next(iter(wdef["properties"].keys()))
+                if verb in gen.HAND_WRITTEN_VERBS:
+                    continue
+                inner = wdef["properties"][verb]
+                if gen._type_str(inner) == "string" or inner.get("$ref"):
+                    continue
+                has_inline = gen._type_str(inner) == "object" and bool(inner.get("properties"))
+                if not inner.get("oneOf") and not has_inline:
+                    continue
+                props = gen._flatten_union(defs, inner)
+                if not props:
+                    continue
+                cfg_name = gen._pascal(verb) + "Config"
+                pl = GR.type_name(cfg_name)
+                result[pl] = _classify(props, cfg_name)
+    except Exception:
+        _SURFACE_FIELDS_CACHE = {}
+        return {}
+    _SURFACE_FIELDS_CACHE = result
+    return result
+
+
 def project_swml_verbs(cls: str, type_entry: dict, out_modules: dict) -> None:
     """Project a generated SWML-verb config class (SignalWire::SWML::Generated::<Name>)
     onto the oracle signature module signalwire.core.swml_verbs_generated (item D2).
@@ -689,11 +827,21 @@ def project_swml_verbs(cls: str, type_entry: dict, out_modules: dict) -> None:
     gen-payload fold keys these as gen-payload.<Class>.<field>, matching the
     reference's generated swml_verbs_generated field set. Method-less config classes
     (no properties) still record the bare class (empty member set)."""
+    surface = _surface_fields_by_class().get(cls)
     methods: dict = {}
     for a in type_entry.get("attributes", []):
         attr = (a.get("name") or "").lstrip("+")
         if not attr or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
             continue
+        # Apply the oracle's field-surface rule: drop primitive payload fields
+        # (only class-carrying fields are cross-port surface). `surface` is keyed
+        # by wire key; the generated attr name == wire key except for reserved-word
+        # escapes, so match on the de-escaped stem. Unknown field → keep (never
+        # silently drop a field the schema couldn't classify).
+        if surface is not None:
+            key = attr.rstrip("_")
+            if surface.get(key, surface.get(attr, True)) is False:
+                continue
         methods.setdefault(attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"})
     out_modules.setdefault(SWML_VERBS_MODULE, {"classes": {}})
     out_modules[SWML_VERBS_MODULE]["classes"].setdefault(cls, {"methods": {}})
