@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 86bbe35c1fac42426515c3b765478b1418cdb79c",
+   "generated_from" : "signalwire-perl @ 3cdc4e7fef43187e0142c16f6fc53868a3de4e31",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -2253,14 +2253,6 @@
             "Types_StatusCodes_StatusCode404" : [],
             "Types_StatusCodes_StatusCode500" : [],
             "UpdateMessageRequest" : []
-         },
-         "functions" : []
-      },
-      "signalwire.rest.namespaces.phone_numbers" : {
-         "classes" : {
-            "PhoneNumbersResource" : [
-               "__init__"
-            ]
          },
          "functions" : []
       },
