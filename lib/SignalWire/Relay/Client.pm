@@ -224,11 +224,24 @@ sub connect_ws ($self) {
             return 0;
         }
     } else {
+
+        # A5 fleet CA-var contract (hard-cut, no aliases): when
+        # SIGNALWIRE_RELAY_CA_FILE names a custom CA bundle, use it as the RELAY
+        # WebSocket transport's TLS trust root — the analog of the python
+        # reference's _build_relay_ssl_context (relay/client.py) trusting
+        # SIGNALWIRE_RELAY_CA_FILE. Unset -> the OS trust store, unchanged.
+        my %ssl_ca;
+        my $relay_ca_file = $ENV{SIGNALWIRE_RELAY_CA_FILE};
+        if ( defined $relay_ca_file && length $relay_ca_file ) {
+            $ssl_ca{SSL_ca_file} = $relay_ca_file;
+        }
+
         $socket = IO::Socket::SSL->new(
             PeerHost        => $host,
             PeerPort        => $port,
             SSL_verify_mode => SSL_VERIFY_PEER,
             Timeout         => 10,
+            %ssl_ca,
         );
         unless ($socket) {
             $logger->error("SSL connection failed: $! $IO::Socket::SSL::SSL_ERROR");

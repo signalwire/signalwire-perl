@@ -70,6 +70,19 @@ sub _build_base_url {
 
 sub _build__ua {
     my ($self) = @_;
+
+    my %ssl_options;
+
+    # A5 fleet CA-var contract (hard-cut, no aliases): when
+    # SIGNALWIRE_REST_CA_FILE names a custom CA bundle, use it as the REST HTTP
+    # client's TLS trust root — the analog of the python reference's
+    # session.verify = SIGNALWIRE_REST_CA_FILE (rest/_base.py). Unset -> the OS
+    # trust store / SSL_CERT_FILE, unchanged.
+    my $rest_ca_file = $ENV{SIGNALWIRE_REST_CA_FILE};
+    if ( defined $rest_ca_file && length $rest_ca_file ) {
+        $ssl_options{SSL_ca_file} = $rest_ca_file;
+    }
+
     return HTTP::Tiny->new(
         agent           => $USER_AGENT,
         default_headers => {
@@ -85,6 +98,7 @@ sub _build__ua {
         # divergence from Python. Verification honors SSL_CERT_FILE / the OS
         # trust store; plaintext http:// requests are unaffected.
         verify_SSL => 1,
+        ( %ssl_options ? ( SSL_options => \%ssl_options ) : () ),
     );
 }
 
