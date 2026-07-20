@@ -30,6 +30,25 @@ use SignalWire::Logging;
 
 my $logger = SignalWire::Logging->get_logger('relay_client');
 
+# SECRET-SCRUB (A6/enterprise): raw RELAY frames carry the connect authentication
+# (project/token/jwt_token) and the server's encrypted authorization_state re-auth
+# blob. A verbatim debug dump of a frame leaks live credentials. _scrub_frame masks
+# the string VALUES of those keys wherever they appear in the JSON frame, keeping the
+# frame diagnostic (method/id/structure intact) but credential-free. Mirrors the
+# python reference's _scrub_frame (relay/client.py).
+my @_SCRUB_KEYS = qw(token project jwt_token authorization_state);
+my $_SCRUB_RE   = do {
+    my $keys = join '|', @_SCRUB_KEYS;
+    qr/("(?:$keys)"\s*:\s*)"(?:\\.|[^"\\])*"/;
+};
+
+sub _scrub_frame ($raw) {
+    return '' unless defined $raw;
+    my $text = "$raw";
+    $text =~ s/$_SCRUB_RE/$1"***"/g;
+    return $text;
+}
+
 # Derive the RELAY User-Agent from the distribution $VERSION -- the single source
 # of truth in lib/SignalWire.pm (same approach as REST/HttpClient.pm) -- so it can
 # never go stale against the released version. Resolve the version WITHOUT loading
@@ -569,7 +588,7 @@ sub dial ( $self, %opts ) {
 
 sub _send ( $self, $msg ) {
     my $json = encode_json($msg);
-    $logger->debug("SEND: $json");
+    $logger->debug( "SEND: " . _scrub_frame($json) );
     my $ws = $self->_ws;
     if ($ws) {
         $ws->write($json);
@@ -630,7 +649,7 @@ sub _reject_all_pending ( $self, $reason ) {
 # --- Internal: handle an incoming WebSocket message ---
 
 sub _handle_message ( $self, $raw ) {
-    $logger->debug("RECV: $raw");
+    $logger->debug( "RECV: " . _scrub_frame($raw) );
 
     # Skip non-JSON-text frames. Protocol::WebSocket::Client doesn't
     # surface frame opcode in on_read, so we sniff: a JSON-RPC frame
