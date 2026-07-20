@@ -69,8 +69,9 @@ has '_http' => (
     default => sub {
         my ($self) = @_;
         HTTP::Tiny->new(
-            agent   => 'SignalWire-Perl-WebSearch/2.0',
-            timeout => $self->_per_page_timeout,
+            agent      => 'SignalWire-Perl-WebSearch/2.0',
+            timeout    => $self->_per_page_timeout,
+            verify_SSL => 1,
         );
     },
 );
