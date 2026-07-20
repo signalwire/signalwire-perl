@@ -100,3 +100,81 @@ sub reset_logging_configuration {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Core::LoggingConfig - SDK logging configuration and serverless-mode detection
+
+=head1 SYNOPSIS
+
+    use SignalWire::Core::LoggingConfig qw(
+        get_logger get_execution_mode configure_logging
+        reset_logging_configuration strip_control_chars
+    );
+
+    configure_logging();                  # idempotent one-time setup
+    my $logger = get_logger('signalwire.mymodule');
+    my $mode   = get_execution_mode();    # 'server', 'lambda', 'cgi', ...
+
+    # Sanitise a log event hashref against log injection:
+    my $event = strip_control_chars({ msg => $user_supplied });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Core::LoggingConfig> is the Perl port of
+C<signalwire.core.logging_config>. It provides the module-level factory
+and configuration functions for the SDK's logging system, plus the
+cross-language serverless / deployment-mode detection contract. Nothing
+is exported by default; import the functions you need from
+C<@EXPORT_OK>.
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item C<get_logger($name)>
+
+Return a structured logger bound to C<$name>. The free-function form of
+L<SignalWire::Logging>'s C<get_logger> class method, mirroring the Python
+import shape.
+
+=item C<get_execution_mode()>
+
+Detect the deployment environment from well-known environment variables
+and return one of C<'cgi'>, C<'lambda'>, C<'google_cloud_function'>,
+C<'azure_function'>, or C<'server'> (the fallback). First match wins in
+that order.
+
+=item C<configure_logging()>
+
+Configure the SDK logging system once, globally, based on the
+C<SIGNALWIRE_LOG_MODE> / C<SIGNALWIRE_LOG_LEVEL> environment variables.
+Idempotent — a second call is a no-op unless
+C<reset_logging_configuration> has run first.
+
+=item C<reset_logging_configuration()>
+
+Reset the one-time configuration guard so C<configure_logging> can run
+again (used when the environment changes after initial setup).
+
+=item C<strip_control_chars($event_dict)>
+
+Strip C0/C1 control characters (minus tab/newline/carriage-return) from
+every string value of the log-event hashref, preventing log injection.
+Mutates and returns the same hashref.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Logging>, L<SignalWire::Utils>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

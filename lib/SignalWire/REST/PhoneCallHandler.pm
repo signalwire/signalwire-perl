@@ -75,3 +75,116 @@ sub values {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::REST::PhoneCallHandler - enum of C<call_handler> values for phone_numbers->update
+
+=head1 SYNOPSIS
+
+    use SignalWire::REST::PhoneCallHandler qw(RELAY_SCRIPT AI_AGENT);
+
+    $client->phone_numbers->update(
+        $number_id,
+        call_handler          => RELAY_SCRIPT,
+        call_relay_script_url => 'https://example.com/swml',
+    );
+
+    # All wire values:
+    my @all = SignalWire::REST::PhoneCallHandler::values();
+
+=head1 DESCRIPTION
+
+L<SignalWire::REST::PhoneCallHandler> is the closed set of C<call_handler>
+values accepted by C<< phone_numbers->update >>. Setting a phone number's
+C<call_handler> plus its handler-specific companion field routes inbound
+calls and auto-materializes the matching Fabric resource on the server.
+
+It is named C<PhoneCallHandler> (not C<CallHandler>) to stay consistent
+with the other SignalWire ports and to avoid colliding with a RELAY client
+callback type. Each constant is a plain scalar equal to its wire value, so
+passing it directly to C<update> serializes without indirection.
+
+=head1 CONSTANTS
+
+Each constant maps to a wire value and pairs with a companion field:
+
+=over 4
+
+=item RELAY_SCRIPT
+
+C<relay_script> -- companion C<call_relay_script_url>; auto-materializes an
+C<swml_webhook>. Use this for SWML.
+
+=item LAML_WEBHOOKS
+
+C<laml_webhooks> -- companion C<call_request_url>; auto-materializes a
+C<cxml_webhook> (a cXML handler, not a generic webhook).
+
+=item LAML_APPLICATION
+
+C<laml_application> -- companion C<call_laml_application_id>;
+auto-materializes a C<cxml_application>.
+
+=item AI_AGENT
+
+C<ai_agent> -- companion C<call_ai_agent_id>; auto-materializes an
+C<ai_agent>.
+
+=item CALL_FLOW
+
+C<call_flow> -- companion C<call_flow_id>; auto-materializes a C<call_flow>.
+
+=item RELAY_APPLICATION
+
+C<relay_application> -- companion C<call_relay_application>;
+auto-materializes a C<relay_application>.
+
+=item RELAY_TOPIC
+
+C<relay_topic> -- companion C<call_relay_topic>; routes via RELAY.
+
+=item RELAY_CONTEXT
+
+C<relay_context> -- companion C<call_relay_context> (legacy; prefer
+C<RELAY_TOPIC>).
+
+=item RELAY_CONNECTOR
+
+C<relay_connector> -- connector config (internal).
+
+=item VIDEO_ROOM
+
+C<video_room> -- companion C<call_video_room_id>; routes to the Video API.
+
+=item DIALOGFLOW
+
+C<dialogflow> -- companion C<call_dialogflow_agent_id>.
+
+=back
+
+The constants are exportable individually or via the C<:all> tag.
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item values()
+
+Return the list of all 11 wire values (the authoritative list).
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::REST::RestClient>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

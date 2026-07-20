@@ -77,3 +77,80 @@ sub get_logger {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Logging - lightweight leveled logger for the SignalWire SDK
+
+=head1 SYNOPSIS
+
+    use SignalWire::Logging;
+
+    my $log = SignalWire::Logging->get_logger('signalwire.mymodule');
+    $log->info('starting up');
+    $log->warn('something looks off', $detail);
+    $log->error('failed', $err);
+
+=head1 DESCRIPTION
+
+L<SignalWire::Logging> is a small Moo-based leveled logger. Messages are
+written to C<STDERR> with a timestamp, level tag, and logger name. The
+active level and suppression are taken from the C<SIGNALWIRE_LOG_LEVEL>
+and C<SIGNALWIRE_LOG_MODE> environment variables at construction time,
+and only messages at or above the current level are emitted. Loggers are
+cached per name, so C<get_logger> returns the same instance for a given
+name.
+
+The four severity levels, in ascending order, are C<debug>, C<info>,
+C<warn>, C<error>. Setting C<SIGNALWIRE_LOG_MODE> to C<off> suppresses
+all output.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<name>
+
+The logger name (read-only, defaults to C<'signalwire'>).
+
+=item C<level>
+
+The active minimum level to emit (read/write; defaults from
+C<SIGNALWIRE_LOG_LEVEL>, else C<'info'>).
+
+=item C<suppressed>
+
+Whether all output is suppressed (read/write; true when
+C<SIGNALWIRE_LOG_MODE> is C<off>).
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<< SignalWire::Logging->get_logger($name) >>
+
+Class-method factory returning the cached logger for C<$name> (defaults
+to C<'signalwire'>), constructing it on first use.
+
+=item C<debug(@msgs)>, C<info(@msgs)>, C<warn(@msgs)>, C<error(@msgs)>
+
+Emit a message at the named level. Arguments are joined with a single
+space. Output is skipped when suppressed or below the current level.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Core::LoggingConfig>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

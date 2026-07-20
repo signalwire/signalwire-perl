@@ -223,3 +223,92 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::Datasphere - knowledge-base search skill using the SignalWire DataSphere RAG stack
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('datasphere', {
+        space_name  => 'example',
+        project_id  => $PROJECT_ID,
+        token       => $TOKEN,
+        document_id => $DOC_ID,
+    });
+
+    # Optional: rename the tool, tune result count / distance:
+    $agent->add_skill('datasphere', {
+        space_name  => 'example',
+        project_id  => $PROJECT_ID,
+        token       => $TOKEN,
+        document_id => $DOC_ID,
+        tool_name   => 'search_knowledge',
+        count       => 3,
+        distance    => 3.0,
+    });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::Datasphere> is the Perl port of the Python
+reference C<signalwire.skills.datasphere.skill>. It registers a handler-based
+SWAIG tool (default name C<search_knowledge>) that performs a
+retrieval-augmented search against the SignalWire DataSphere RAG stack.
+
+Unlike the serverless DataMap variant, this skill issues the HTTP request itself:
+the handler POSTs a JSON body to C<< /api/datasphere/documents/search >> with HTTP
+Basic auth (C<< project_id : token >>), parses the returned C<chunks[]>, and
+formats them as numbered results for the LLM. It supports multiple instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the C<search_knowledge> tool (name overridable via the C<tool_name>
+param) whose handler calls C<search_knowledge>.
+
+=item C<search_knowledge($query)>
+
+Performs the DataSphere search for C<$query> and returns the formatted result
+string (or an informative error/no-results message).
+
+=item C<get_global_data>
+
+Returns the skill's global-data contribution (C<datasphere_enabled>,
+C<document_id>, C<knowledge_provider>).
+
+=item C<get_hints>
+
+Returns an empty hint list.
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema: C<space_name>, C<project_id>, C<token>,
+C<document_id> (all required), plus C<count> and C<distance>.
+
+=back
+
+=head1 ATTRIBUTES
+
+C<base_url> (derived from C<DATASPHERE_BASE_URL> when set, else empty for the
+canonical space URL).
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::Builtin::DatasphereServerless>, L<SignalWire::Skills::SkillBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

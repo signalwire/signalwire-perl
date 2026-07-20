@@ -1017,3 +1017,278 @@ sub _handle_post_prompt {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::SWML::Service - foundation for SWML document management and serving
+
+=head1 SYNOPSIS
+
+    use SignalWire::SWML::Service;
+
+    my $svc = SignalWire::SWML::Service->new(
+        name  => 'my_service',
+        route => '/swml',
+    );
+
+    # Build a SWML document (schema verbs auto-vivify via AUTOLOAD):
+    $svc->answer;
+    $svc->play({ url => 'https://example.com/hi.mp3' });
+
+    # Or use the explicit document API:
+    $svc->add_verb('hangup', {});
+    my $json = $svc->render_document;
+
+    # Register SWAIG tools:
+    $svc->define_tool(
+        name        => 'get_time',
+        description => 'Return the current time',
+        handler     => sub { ... },
+    );
+
+    # Serve over HTTP (Plack/PSGI):
+    my $app = $svc->to_psgi_app;   # or $svc->serve(host => '0.0.0.0', port => 3000)
+
+=head1 DESCRIPTION
+
+L<SignalWire::SWML::Service> is the Perl port of
+C<signalwire.core.swml_service.SWMLService>. It is a Moo class that owns a
+L<SignalWire::SWML::Document>, exposes the document-building API, dispatches
+inbound HTTP requests (SWML render, SWAIG function calls, post-prompt) as a
+PSGI app, and provides basic-auth, routing callbacks, and a SWAIG tool
+registry. L<SignalWire::Agent::AgentBase> extends this class.
+
+SWML verbs are auto-vivified: any schema-known verb name (see
+L<SignalWire::SWML::Schema>) called as a method (e.g. C<< $svc->play(...) >>)
+appends that verb to the document's main section. C<can> is overridden to
+report these schema verbs as callable.
+
+=head1 ATTRIBUTES
+
+Constructor attributes (all C<rw> unless noted). Key ones:
+
+=over 4
+
+=item C<name>
+
+Service name (default C<'service'>).
+
+=item C<route>
+
+The base HTTP route the service is mounted at (default C<'/'>).
+
+=item C<host>, C<port>
+
+Bind host/port for C<serve> (default from C<SWML_HOST> / C<SWML_PORT> or
+C<0.0.0.0>:C<3000>).
+
+=item C<basic_auth_user>, C<basic_auth_password>
+
+Basic-auth credentials for the protected routes; default to the
+C<SWML_BASIC_AUTH_*> env vars or freshly generated secure random values.
+
+=item C<document>
+
+The composed L<SignalWire::SWML::Document> (default a fresh empty one).
+
+=item C<verb_handlers>
+
+Specialized verb handlers keyed by verb name
+(see C<register_verb_handler>).
+
+=item C<full_validation>
+
+Strict-schema-validation flag (default off).
+
+=item C<proxy_url_base>
+
+External base URL override for webhook URLs behind a proxy (default from
+C<SWML_PROXY_URL_BASE>).
+
+=item C<tools>, C<tool_order>, C<routing_callbacks>
+
+The SWAIG tool registry, its registration order, and routing callbacks.
+
+=item C<schema_utils>, C<verb_registry>, C<security>
+
+Lazily built accessors mirroring the Python reference's schema/verb-registry
+/security surface.
+
+=back
+
+=head1 METHODS
+
+=head2 Request handling / serving
+
+=over 4
+
+=item C<to_psgi_app>
+
+Return the PSGI app coderef that dispatches this service's routes (main
+SWML, C</swaig>, C</post_prompt>, health/ready). C<as_router> and C<get_app>
+are aliases.
+
+=item C<handle_request($method, $url, $headers, $body)>
+
+The framework-free dispatch core. Performs basic-auth, the routing-callback
+check, and the C<on_request> modification hook over plain primitives, and
+returns a C<($status, \%headers, $body_string)> triple.
+
+=item C<serve(host =E<gt> ..., port =E<gt> ...)>
+
+Start a blocking Plack HTTP server. C<stop> signals it to stop.
+
+=item C<setup_graceful_shutdown>
+
+Install SIGTERM/SIGINT handlers that stop the running server. Returns
+C<$self>.
+
+=item C<enable_debug_routes>
+
+Turn on the service's debug endpoints. Returns C<$self>.
+
+=item C<render_main_swml($env)> / C<render_swml($env)>
+
+Extension point returning the SWML document for the main path (subclasses
+override to render at request time).
+
+=back
+
+=head2 Authentication
+
+=over 4
+
+=item C<validate_basic_auth($username, $password)>
+
+Constant-time-compare the given credentials against the service's.
+
+=item C<get_basic_auth_credentials($include_source)>
+
+Return C<($user, $password)>, or C<($user, $password, $source)> when
+C<$include_source> is truthy (source is C<provided>/C<environment>/
+C<generated>). C<get_basic_auth_credentials_with_source> is a convenience
+alias.
+
+=item C<extract_sip_username($request_body)>
+
+Class or instance method. Pull the username out of a request body's
+C<call.to> field (SIP/TEL URI or plain destination); undef when the shape
+does not match.
+
+=back
+
+=head2 Document manipulation
+
+=over 4
+
+=item C<reset_document>
+
+Replace the working document with a fresh empty one.
+
+=item C<add_verb($verb_name, $config)>
+
+Append a verb to the main section (validating via a registered handler when
+present). Returns true on success.
+
+=item C<add_section($section_name)>
+
+Create a new named section. Returns false if it already exists.
+
+=item C<add_verb_to_section($section_name, $verb_name, $config)>
+
+Append a verb to a named section (creating it if absent).
+
+=item C<get_document>
+
+The current document as a plain hashref.
+
+=item C<render_document>
+
+The current document serialized to a JSON string.
+
+=item C<register_verb_handler($handler)>
+
+Install a specialized verb handler (keyed by its C<get_verb_name>).
+
+=item C<full_validation_enabled>
+
+Whether strict schema validation is on.
+
+=item C<manual_set_proxy_url($url)>
+
+Override the external base URL used for webhook URLs behind a proxy.
+
+=back
+
+=head2 SWAIG tool registry
+
+=over 4
+
+=item C<define_tool(%opts)>
+
+Define a SWAIG function the AI can call (C<name>, C<description>,
+C<parameters>, C<handler>). Returns C<$self>.
+
+=item C<define_tools(@tool_defs)>
+
+Register multiple tool definitions at once.
+
+=item C<register_swaig_function($func_def)>
+
+Register a raw SWAIG function definition (e.g. from DataMap).
+
+=item C<has_function($name)>, C<get_function($name)>,
+C<get_all_functions>, C<remove_function($name)>
+
+Query and manage the tool registry.
+
+=item C<list_tool_names>
+
+Registered tool names in registration order.
+
+=item C<on_function_call($name, $args, $raw_data)>
+
+Dispatch a function call to its registered handler.
+
+=back
+
+=head2 Extension / routing hooks
+
+=over 4
+
+=item C<on_request($request_data, $callback_path)> /
+C<on_swml_request($request_data, $callback_path, $request)>
+
+Customization hooks for modifying the SWML based on request data. The
+default returns undef (no modification).
+
+=item C<register_routing_callback($path, $cb)>
+
+Register a routing callback at a sub-path under the service route.
+
+=item C<swaig_pre_dispatch($request_data, $func_name, $env)>
+
+Extension point between argument parsing and dispatch on POST C</swaig>;
+returns C<($target, $short_circuit)>.
+
+=item C<handle_additional_route($sub_path, $request_data, $env)>
+
+Extension point for subclasses to add routes (e.g. C</mcp>). Returns a PSGI
+triple or undef.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::SWML::Document>, L<SignalWire::SWML::Schema>,
+L<SignalWire::Agent::AgentBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

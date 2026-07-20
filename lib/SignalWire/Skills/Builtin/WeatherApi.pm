@@ -93,3 +93,69 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::WeatherApi - current-weather skill backed by WeatherAPI.com
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('weather_api', { api_key => $WEATHERAPI_KEY });
+
+    # Optionally rename the tool or switch units:
+    $agent->add_skill('weather_api', {
+        api_key          => $WEATHERAPI_KEY,
+        tool_name        => 'get_weather',
+        temperature_unit => 'celsius',
+    });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::WeatherApi> is the Perl port of the Python
+reference C<signalwire.skills.weather_api.skill>. It registers a single
+DataMap-based SWAIG tool (default name C<get_weather>) that returns current
+weather for a C<location> from WeatherAPI.com.
+
+Being DataMap-based, the SignalWire SWML platform fetches the webhook
+(C<https://api.weatherapi.com/v1/current.json>) and renders the response
+template. The C<temperature_unit> param (C<fahrenheit> or C<celsius>) selects the
+temperature fields and unit label. The skill does not support multiple instances.
+
+=head1 METHODS
+
+=over
+
+=item C<get_tools>
+
+Returns an arrayref of the raw SWAIG tool-definition hash(es) this skill provides
+(the weather DataMap tool), honoring C<tool_name>, C<api_key>, and
+C<temperature_unit>.
+
+=item C<register_tools>
+
+Registers each tool from C<get_tools> with the agent.
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema: C<api_key> (required), C<tool_name>, and
+C<temperature_unit>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

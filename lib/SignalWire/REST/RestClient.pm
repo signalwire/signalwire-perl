@@ -82,3 +82,86 @@ sub _build__http {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::REST::RestClient - synchronous SignalWire REST API client
+
+=head1 SYNOPSIS
+
+    use SignalWire::REST::RestClient;
+
+    my $client = SignalWire::REST::RestClient->new(
+        project => $ENV{SIGNALWIRE_PROJECT_ID},
+        token   => $ENV{SIGNALWIRE_API_TOKEN},
+        host    => $ENV{SIGNALWIRE_SPACE},
+    );
+
+    # Namespaced resource access (the tree is generated from the specs):
+    my $numbers = $client->phone_numbers->list;
+    my $agent   = $client->fabric->ai_agents->create(
+        name => 'Bot', prompt => { text => '...' },
+    );
+
+=head1 DESCRIPTION
+
+L<SignalWire::REST::RestClient> is the Perl port of
+C<signalwire.rest.client.RestClient>. It is the entry point for the
+synchronous REST API: it holds the project/token/host credentials, owns
+the shared L<SignalWire::REST::HttpClient>, and exposes the generated
+resource tree (flat resources such as C<phone_numbers> and C<addresses>,
+plus namespace containers such as C<fabric>, C<video>, C<logs>,
+C<registry>, C<project>, and C<datasphere>).
+
+The resource accessors are provided by the generated
+C<SignalWire::REST::Namespaces::Generated::ResourceTree> role, which this
+class composes; this hand class owns only authentication and the HTTP
+client.
+
+Each credential falls back to its C<SIGNALWIRE_*> environment variable
+(C<SIGNALWIRE_PROJECT_ID>, C<SIGNALWIRE_API_TOKEN>, C<SIGNALWIRE_SPACE>)
+when the corresponding constructor argument is omitted, matching the
+Python reference. The constructor dies if any of the three is neither
+passed nor present in the environment.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item project
+
+The SignalWire project id (stored privately as C<_project_id> so it does
+not collide with the generated C<project> namespace accessor). Defaults to
+C<$ENV{SIGNALWIRE_PROJECT_ID}>.
+
+=item token
+
+The API token. Defaults to C<$ENV{SIGNALWIRE_API_TOKEN}>.
+
+=item host
+
+The SignalWire space host. Defaults to C<$ENV{SIGNALWIRE_SPACE}>.
+
+=item request_options
+
+An optional client-default L<SignalWire::REST::RequestOptions> applied to
+every request the shared HTTP client issues, shallow-overridden per call by
+a C<request_options> passed to a verb. C<undef> means the built-in defaults
+(30s timeout, no retries).
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::REST::HttpClient>, L<SignalWire::REST::RequestOptions>,
+L<SignalWire::REST::Namespaces::Base>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

@@ -13,8 +13,9 @@ package TlsMockTest;
 #     store, so the RELAY client (wss://, SSL_VERIFY_PEER) and the REST client
 #     (HTTP::Tiny verify_SSL => 1) both trust the leaf with NO code change and
 #     NO SSL_VERIFY_NONE. Real verification only.
-#   * Spawn the shared mocks in --tls mode on DEDICATED ports so the plaintext
-#     mocks the rest of the suite uses (8770 / 8780+9780) are untouched:
+#   * Spawn the shared mocks in --tls mode on DEDICATED free ports (distinct from
+#     the plaintext mocks' own free/env-resolved ports) so the plaintext mocks the
+#     rest of the suite uses are untouched:
 #       - mock_signalwire --tls  -> HTTPS (whole app, control plane included)
 #       - mock_relay      --tls  -> WSS WS plane; HTTP control plane stays plain
 #

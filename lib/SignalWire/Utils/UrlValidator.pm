@@ -199,3 +199,61 @@ sub _ip_to_bytes {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Utils::UrlValidator - SSRF-prevention guard for user-supplied URLs
+
+=head1 SYNOPSIS
+
+    use SignalWire::Utils::UrlValidator;
+
+    if ( SignalWire::Utils::UrlValidator::validate_url($url) ) {
+        # safe to fetch
+    }
+
+    # Bypass the private-IP blocklist explicitly:
+    my $ok = SignalWire::Utils::UrlValidator::validate_url($url, 1);
+
+=head1 DESCRIPTION
+
+L<SignalWire::Utils::UrlValidator> is the Perl port of
+C<signalwire.utils.url_validator>. It validates user-supplied URLs to
+prevent Server-Side Request Forgery (SSRF): it rejects non-C<http(s)>
+schemes, URLs with no hostname, and any URL whose hostname resolves to a
+private, loopback, link-local, or cloud-metadata IP address (IPv4 and
+IPv6). The blocklist is exposed as the package variable
+C<@BLOCKED_NETWORKS>.
+
+C<validate_url> is a module-level free function (no C<Exporter> export);
+call it fully qualified.
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item C<validate_url($url, $allow_private)>
+
+Return C<1> when C<$url> is safe to fetch and C<0> otherwise. When the
+optional C<$allow_private> is truthy — or the C<SWML_ALLOW_PRIVATE_URLS>
+environment variable is set to C<1>, C<true>, or C<yes>
+(case-insensitive) — the private-IP blocklist check is bypassed (scheme
+and hostname checks still apply). Rejections are logged via
+L<SignalWire::Logging>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Security::SecurityUtils> for the standalone
+character-level C<is_valid_hostname> check.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

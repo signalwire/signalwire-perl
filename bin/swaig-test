@@ -545,3 +545,104 @@ Examples:
 USAGE
     exit $code;
 }
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+swaig-test - command-line tool for testing SWAIG agent endpoints
+
+=head1 SYNOPSIS
+
+    # URL mode (fetch over HTTP; auth embedded in the URL):
+    swaig-test --url http://user:pass@host:port/route --dump-swml
+    swaig-test --url http://user:pass@host:port/route --list-tools
+    swaig-test --url http://user:pass@host:port/route --exec TOOL --param key=value
+
+    # File mode (load a Perl script in-process, no HTTP):
+    swaig-test --file examples/swmlservice_swaig_standalone.pl --list-tools
+    swaig-test --file path/to/agent.pl --exec TOOL --param key=value
+
+    # Validate arguments only, without running the agent:
+    swaig-test --url http://user:pass@host/ --exec TOOL --parse-only
+
+=head1 DESCRIPTION
+
+C<swaig-test> exercises a SignalWire SWAIG agent from the command line.
+It can render the agent's SWML document, list the SWAIG functions
+(tools) the agent exposes, or execute a named function with arguments.
+
+It operates in one of two mutually exclusive modes. In B<URL mode>
+(C<--url>) it talks to a running agent over HTTP, taking basic-auth
+credentials from the URL's userinfo and POSTing tool calls to the
+C<< /swaig >> endpoint. In B<File mode> (C<--file>) it loads a local Perl
+script in-process, locates the C<SignalWire::SWML::Service> /
+C<AgentBase> instance it builds, and reads the runtime tool registry
+directly — no server or network involved.
+
+Exactly one of C<--url> or C<--file> is required, and exactly one action
+(C<--dump-swml>, C<--list-tools>, or C<--exec>) must be given.
+
+=head1 OPTIONS
+
+=over 4
+
+=item C<--url URL>
+
+Agent URL with embedded basic-auth credentials
+(C<http://user:pass@host:port/route>). Selects URL (HTTP) mode.
+
+=item C<--file PATH>
+
+Path to a Perl script that builds an C<SignalWire::SWML::Service> /
+C<AgentBase> instance. Selects file (in-process) mode.
+
+=item C<--dump-swml>
+
+Fetch (or render) and print the agent's SWML document.
+
+=item C<--list-tools>
+
+List the available SWAIG functions, with their descriptions and
+parameters.
+
+=item C<--exec NAME>
+
+Execute the SWAIG function named C<NAME>.
+
+=item C<--param key=value>
+
+Supply a parameter to C<--exec>. Repeatable for multiple parameters.
+
+=item C<--raw>
+
+Emit compact JSON instead of the default pretty-printed output.
+
+=item C<--verbose>
+
+Print request/response details (and, in file mode, resolution steps) to
+STDERR.
+
+=item C<--parse-only>
+
+Validate the argument shape and exit without loading the agent, touching
+the filesystem, or hitting the network. Prints C<parse OK> on success; a
+bad invocation exits with status 2.
+
+=item C<--dry-run>
+
+Alias for C<--parse-only>.
+
+=item C<--help>, C<-h>
+
+Print the usage message and exit.
+
+=back
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

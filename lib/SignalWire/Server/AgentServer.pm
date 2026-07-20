@@ -398,3 +398,122 @@ sub _run_tls {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Server::AgentServer - multi-agent PSGI hosting server
+
+=head1 SYNOPSIS
+
+    use SignalWire::Server::AgentServer;
+
+    my $server = SignalWire::Server::AgentServer->new( port => 3000 );
+    $server->register($sales_agent,   '/sales');
+    $server->register($support_agent, '/support');
+
+    $server->setup_sip_routing( route => '/sip', auto_map => 1 );
+    $server->serve_static_files('/var/www/assets', '/static');
+
+    $server->run;               # or: my $app = $server->psgi_app;
+
+=head1 DESCRIPTION
+
+L<SignalWire::Server::AgentServer> is the Perl port of the Python SDK's
+C<AgentServer>. It hosts multiple agents behind one PSGI application,
+dispatching each incoming request to the agent whose registered route is
+the longest matching prefix. It also serves C<< /health >> and
+C<< /ready >> endpoints, optional static file routes (with path-traversal
+protection), SIP-username-to-route mapping, and per-agent global routing
+callbacks. Responses carry hardening headers
+(C<X-Content-Type-Options>, C<X-Frame-Options>, C<Cache-Control>). The
+server can serve plain HTTP or, when a cert/key pair is configured via
+C<run> options or the C<SWML_SSL_*> environment variables, HTTPS directly.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<host>
+
+Bind address (read/write; default C<'0.0.0.0'>).
+
+=item C<port>
+
+Listen port (read/write; default C<< $ENV{PORT} >> or 3000).
+
+=item C<log_level>
+
+Log level string (read/write; default C<'info'>).
+
+=item C<agents>
+
+Hashref mapping route to registered agent (read/write).
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<register($agent, $route)>
+
+Register C<$agent> at C<$route> (defaulting to the agent's own route),
+normalising the route and dying on a duplicate. Returns C<$self>.
+
+=item C<unregister($route)>
+
+Remove the agent at C<$route>. Returns C<$self>.
+
+=item C<list_agents()>
+
+Return a sorted arrayref of registered routes.
+
+=item C<get_agent($route)>
+
+Return the agent registered at C<$route>, or C<undef>.
+
+=item C<get_agents()>
+
+Return a shallow copy of the full route =E<gt> agent map.
+
+=item C<setup_sip_routing(route =E<gt> ..., auto_map =E<gt> ...)>
+
+Enable SIP-based routing; when C<auto_map> is true (the default), derive
+a SIP username for every registered agent from its route. Returns
+C<$self>.
+
+=item C<register_sip_username($username, $route)>
+
+Map a (lower-cased) SIP username to a normalised route. Returns C<$self>.
+
+=item C<register_global_routing_callback(callback =E<gt> \&cb, path =E<gt> ...)>
+
+Register the routing callback at C<path> on every agent that supports
+C<register_routing_callback>. Returns C<$self>.
+
+=item C<serve_static_files($directory, $route)>
+
+Serve files from C<$directory> under C<$route> (the directory must
+exist; it is resolved to an absolute path). Returns C<$self>.
+
+=item C<psgi_app()>
+
+Return the PSGI coderef for the whole server, suitable for any Plack
+handler.
+
+=item C<run(host =E<gt> ..., port =E<gt> ..., ssl_cert =E<gt> ..., ssl_key =E<gt> ...)>
+
+Start a blocking HTTP (or HTTPS, when a cert/key are configured) server.
+Options override the corresponding attributes.
+
+=back
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

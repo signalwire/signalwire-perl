@@ -131,7 +131,7 @@ sub _request {
         if ( _abort_is_set( $ro->{abort_signal} ) ) {
             die SignalWireRestTransportError->new(
                 body   => 'request cancelled by abort_signal',
-                url    => $path,
+                url    => $url,
                 method => $method,
             );
         }
@@ -177,7 +177,7 @@ sub _request {
             }
             die SignalWireRestTransportError->new(
                 body   => $response->{content} // '',
-                url    => $path,
+                url    => $url,
                 method => $method,
             );
         }
@@ -206,8 +206,9 @@ sub _request {
         die SignalWireRestError->new(
             status_code => $response->{status},
             body        => $parsed,
-            url         => $path,
+            url         => $url,
             method      => $method,
+            headers     => $response->{headers},    # §6.6 response header map
         );
     }
 
@@ -329,6 +330,12 @@ sub _uri_encode {
 # parsing a stringified message. SignalWire::REST::HttpClient::Error is retained
 # as a subclass alias for back-compat (existing isa_ok checks against the old
 # name keep passing through inheritance).
+#
+# §6.6 error-observability: `headers` is the response header map (undef for a
+# transport failure that produced no response) and `request_id` is the platform
+# request id pulled from those headers — client-side observability with NO
+# wire-contract change, so a caller can log/correlate a failure against
+# SignalWire's own request id (Python parity: _base.SignalWireRestError).
 package SignalWireRestError;
 use Moo;
 use JSON qw(encode_json);
@@ -338,16 +345,48 @@ has 'body'        => ( is => 'ro', default  => sub { '' } );
 has 'url'         => ( is => 'ro', default  => sub { '' } );
 has 'method'      => ( is => 'ro', default  => sub { 'GET' } );
 
+# The response header map (undef for a transport error — no response arrived).
+has 'headers' => ( is => 'ro', default => sub { undef } );
+
+# request_id is DERIVED from headers (lazy): the platform request id, matched
+# case-insensitively against the SignalWire/proxy header names in preference
+# order. undef when there are no headers or none of the names are present.
+has 'request_id' => ( is => 'lazy' );
+
+# Header names SignalWire (and common proxies) use for the platform request id,
+# in preference order (Python parity: _base._REQUEST_ID_HEADERS).
+my @_REQUEST_ID_HEADERS =
+    ( 'x-request-id', 'x-signalwire-request-id', 'request-id', 'x-amzn-requestid', );
+
+sub _build_request_id {
+    my ($self) = @_;
+    my $headers = $self->headers;
+    return unless $headers && ref $headers eq 'HASH';
+    my %lowered = map { lc($_) => $headers->{$_} } keys %$headers;
+    for my $name (@_REQUEST_ID_HEADERS) {
+        return $lowered{$name} if defined $lowered{$name};
+    }
+    return;
+}
+
 use overload '""' => sub {
     my ($self) = @_;
     my $body = ref $self->body ? encode_json( $self->body ) : ( $self->body // '' );
 
     # A TRANSPORT failure carries no HTTP status (status_code is undef): render
     # "failed to reach the server" instead of "returned : ..." (Python parity).
+    my $msg;
     if ( !defined $self->status_code ) {
-        return sprintf( '%s %s failed to reach the server: %s', $self->method, $self->url, $body );
+        $msg = sprintf( '%s %s failed to reach the server: %s', $self->method, $self->url, $body );
+    } else {
+        $msg = sprintf( '%s %s returned %s: %s', $self->method, $self->url, $self->status_code,
+            $body );
     }
-    return sprintf( '%s %s returned %s: %s', $self->method, $self->url, $self->status_code, $body );
+
+    # §6.6: append the platform request id when present (Python parity).
+    my $rid = $self->request_id;
+    $msg .= sprintf( ' (request-id: %s)', $rid ) if defined $rid && length $rid;
+    return $msg;
 };
 
 # Back-compat alias: the error was historically named
@@ -377,3 +416,174 @@ package SignalWire::REST::HttpClient::Error;    ## no critic (ProhibitMultiplePa
 BEGIN { *SignalWire::REST::HttpClient::Error:: = *SignalWireRestError:: }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::REST::HttpClient - HTTP transport for the SignalWire REST client
+
+=head1 SYNOPSIS
+
+    use SignalWire::REST::HttpClient;
+
+    my $http = SignalWire::REST::HttpClient->new(
+        project => $project_id,
+        token   => $api_token,
+        host    => $space_host,     # bare host or a full http(s):// URL
+    );
+
+    my $data = $http->get('/api/relay/rest/phone_numbers');
+    my $new  = $http->post('/api/fabric/resources/ai_agents',
+        body => { name => 'Bot' });
+
+    # Errors are raised via die() as typed objects:
+    my $result = eval { $http->get('/api/does-not-exist') };
+    if ( my $err = $@ ) {
+        warn $err->status_code, ': ', $err;   # SignalWireRestError
+    }
+
+=head1 DESCRIPTION
+
+L<SignalWire::REST::HttpClient> is the shared HTTP transport underneath
+L<SignalWire::REST::RestClient> and the whole generated resource tree. It
+wraps L<HTTP::Tiny>, adds Basic authentication from the project/token,
+sets the JSON content/accept headers and a version-derived User-Agent,
+verifies TLS by default, and applies the L<SignalWire::REST::RequestOptions>
+timeout/retry/cancellation policy to every request.
+
+The verb methods build the URL from C<base_url> plus the request path,
+encode a hashref C<body> as JSON, append a hashref C<params> as a
+query string, decode a JSON response body, and return C<{}> for a 204 /
+empty body. Any HTTP status E<gt>= 400 or a transport failure is raised
+via C<die> as a member of the typed error family (see L</ERRORS>).
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item project / token / host
+
+Required. The credentials and space host; C<host> may be a bare hostname
+(C<https://> is prepended) or a full C<http(s)://> URL (used verbatim, so
+the audit fixture can point at a loopback server).
+
+=item request_options
+
+An optional client-default L<SignalWire::REST::RequestOptions> applied to
+every request, shallow-overridden per call. C<undef> means the built-in
+defaults (30s timeout, no retries).
+
+=item base_url
+
+Lazily built from C<host>: scheme-normalized and stripped of trailing
+slashes so request paths concatenate cleanly.
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item get($path, %opts)
+
+Issue a GET. Accepts C<params> (query hashref) and C<request_options>.
+
+=item post($path, %opts)
+
+Issue a POST. Accepts C<body> (JSON-encoded), C<params>, and
+C<request_options>.
+
+=item put($path, %opts)
+
+Issue a PUT. Accepts C<body> and C<request_options>.
+
+=item patch($path, %opts)
+
+Issue a PATCH. Accepts C<body> and C<request_options>.
+
+=item delete_request($path, %opts)
+
+Issue a DELETE (named C<delete_request> to avoid the reserved-word clash).
+Accepts C<request_options>.
+
+=back
+
+Each verb resolves the effective request options (per-request over
+client-default over built-in), retries a retryable status
+(idempotency-aware) or a transport failure honoring C<Retry-After> then
+exponential backoff, and checks the C<abort_signal> cooperatively before
+every attempt.
+
+=head1 ERRORS
+
+The client raises a typed error family (the Perl analog of
+C<signalwire.rest._base>). A caller catching the base class handles every
+REST failure -- HTTP and transport -- with one C<eval>.
+
+=over 4
+
+=item SignalWireRestError
+
+The base class and the SDK's canonical typed REST error. Raised via C<die>
+on any HTTP response with status E<gt>= 400. Read-only accessors:
+
+=over 4
+
+=item C<status_code> - the HTTP status (e.g. 404, 422, 500).
+
+=item C<body> - the response body, decoded from JSON when possible, else
+the raw string.
+
+=item C<url> - the full request URL (scheme, host, path, and query string).
+
+=item C<method> - the HTTP method.
+
+=item C<headers> - the response header map (C<undef> for a transport error,
+which produced no response).
+
+=item C<request_id> - the platform request id, derived from C<headers>
+(matched case-insensitively against C<x-request-id>,
+C<x-signalwire-request-id>, C<request-id>, C<x-amzn-requestid>, in that
+preference order); C<undef> when absent. Use it to correlate a failure with
+SignalWire's own logs.
+
+=back
+
+The object stringifies (C<use overload '""'>) to a human-readable
+C<< METHOD url returned STATUS: body >> message, with C<< (request-id: ...) >>
+appended when a request id is present.
+
+=item SignalWireRestTransportError
+
+A subclass of C<SignalWireRestError> raised when a request never reached a
+response -- a transport-level failure (connection refused, DNS failure,
+connection reset, TLS error, read timeout, or a set C<abort_signal>).
+HTTP::Tiny synthesizes a status-599 "Internal Exception" for these; the
+client maps that to this typed error so it does not leak through as if the
+server had answered. Its C<status_code> is C<undef> (no HTTP status
+arrived) and C<body> carries the underlying transport message; it
+stringifies to a C<< ... failed to reach the server: body >> message. An
+instance C<< ->isa('SignalWireRestError') >> is true.
+
+=item SignalWire::REST::HttpClient::Error
+
+A back-compat alias: this package's symbol table is aliased to
+C<SignalWireRestError>'s, so the two names are the SAME class. Existing
+C<< isa_ok($e, 'SignalWire::REST::HttpClient::Error') >> checks keep
+passing through the alias.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::REST::RestClient>, L<SignalWire::REST::RequestOptions>,
+L<HTTP::Tiny>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

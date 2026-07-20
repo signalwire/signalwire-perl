@@ -48,3 +48,73 @@ sub delete {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::REST::Namespaces::Base - base classes for REST resource and namespace objects
+
+=head1 SYNOPSIS
+
+    package SignalWire::REST::Namespaces::PhoneNumbers;
+    use Moo;
+    extends 'SignalWire::REST::Namespaces::CrudResource';
+
+    # inherits list / create / get / update / delete over _base_path
+
+=head1 DESCRIPTION
+
+This file defines two base classes shared by the generated REST resource
+tree. They are the Perl analogue of the reference's C<_base> resource
+bases; the generated per-resource classes (emitted by
+C<scripts/generate_rest.py>) extend them.
+
+=head2 SignalWire::REST::Namespaces::Base
+
+The root base for every namespace and resource object. It holds the shared
+L<SignalWire::REST::HttpClient> (C<_http>) and the resource's C<_base_path>,
+both required. Its one helper, C<_path(@parts)>, joins the base path with
+additional segments (e.g. a resource id) using C</>.
+
+=head2 SignalWire::REST::Namespaces::CrudResource
+
+Extends C<Base> with the standard CRUD verbs over C<_base_path>. The update
+HTTP method is C<PATCH> by default; a subclass may set C<_update_method> to
+C<'PUT'>.
+
+=over 4
+
+=item list(%params)
+
+GET the collection, passing any C<%params> as query parameters.
+
+=item create(%kwargs)
+
+POST C<%kwargs> as the JSON body to create a resource.
+
+=item get($resource_id)
+
+GET a single resource by id.
+
+=item update($resource_id, %kwargs)
+
+PATCH (or PUT) C<%kwargs> onto the resource identified by C<$resource_id>.
+
+=item delete($resource_id)
+
+DELETE the resource identified by C<$resource_id>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::REST::RestClient>, L<SignalWire::REST::HttpClient>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

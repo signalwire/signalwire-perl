@@ -81,3 +81,66 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::PlayBackgroundFile - control background-file playback via a DataMap tool
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('play_background_file', {
+        files => [
+            { key => 'hold', description => 'Hold music', url => 'https://.../hold.mp3' },
+        ],
+    });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::PlayBackgroundFile> is the Perl port of the Python
+reference C<signalwire.skills.play_background_file.skill>. It registers a single
+DataMap-based SWAIG tool (default name C<play_background_file>) that lets the
+agent start or stop background audio playback.
+
+The tool's C<action> parameter is an enum built from the configured C<files>: a
+C<start_$key> value per file plus C<stop>. The C<data_map> expressions map the
+C<stop> action to a C<stop_background_file> action. The skill supports multiple
+instances.
+
+=head1 METHODS
+
+=over
+
+=item C<get_tools>
+
+Returns an arrayref of the raw SWAIG tool-definition hash(es) this skill provides
+(the background-playback DataMap tool), with the C<action> enum derived from the
+C<files> param.
+
+=item C<register_tools>
+
+Registers each tool from C<get_tools> with the agent.
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema: C<files> (required array of file objects with
+C<key>/C<description>/C<url>) and C<tool_name>.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::SkillBase>, L<SignalWire::SWAIG::FunctionResult>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

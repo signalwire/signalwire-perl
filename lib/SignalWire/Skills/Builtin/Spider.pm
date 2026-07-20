@@ -198,3 +198,87 @@ sub get_parameter_schema {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Skills::Builtin::Spider - fast web-scraping and crawling skill
+
+=head1 SYNOPSIS
+
+    $agent->add_skill('spider');
+
+    # Optionally prefix the tool names:
+    $agent->add_skill('spider', { tool_prefix => 'web_' });
+
+=head1 DESCRIPTION
+
+L<SignalWire::Skills::Builtin::Spider> is the Perl port of the Python reference
+C<signalwire.skills.spider.skill>. It registers three handler-based SWAIG tools
+(their names optionally prefixed via the C<tool_prefix> param):
+
+=over
+
+=item *
+
+C<scrape_url> - fetch a C<url> and return extracted page text.
+
+=item *
+
+C<crawl_site> - a single-page wrapper around C<scrape_url> for a C<start_url>.
+
+=item *
+
+C<extract_structured_data> - fetch a C<url> and return extracted text.
+
+=back
+
+The handlers issue an outbound GET and strip HTML down to text (the fast-text
+path). Python's lxml-based structured-extraction and multi-page crawl are out of
+scope for the Perl port. The skill supports multiple instances.
+
+=head1 METHODS
+
+=over
+
+=item C<register_tools>
+
+Registers the three scraping tools with the agent.
+
+=item C<scrape_url($url)>
+
+Fetches C<$url> (rewritten through C<base_url> when configured) and returns the
+extracted page text, or an error string.
+
+=item C<get_hints>
+
+Returns speech hints (C<scrape>, C<crawl>, C<extract>, C<web page>, C<website>,
+C<spider>).
+
+=item C<setup>
+
+Instance setup hook; returns true.
+
+=item C<get_parameter_schema>
+
+Returns the configuration schema, adding C<delay>, C<concurrent_requests>,
+C<timeout>, C<max_pages>, and C<max_depth> over the base skill schema.
+
+=back
+
+=head1 ATTRIBUTES
+
+C<base_url> (from the C<SPIDER_BASE_URL> env var when set, else empty).
+
+=head1 SEE ALSO
+
+L<SignalWire::Skills::Builtin::WebSearch>, L<SignalWire::Skills::SkillBase>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

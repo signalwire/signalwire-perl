@@ -31,6 +31,17 @@
 #
 # Flags:
 #   --fail-fast   stop launching new gates at the first failure (local dev loop).
+#
+# GATE-INVENTORY NOTE: porting-sdk/GATE_INVENTORY.md is GENERATED (by
+# gen_gate_inventory.py) from the REFERENCE port's run-ci.sh (signalwire-typescript),
+# NOT from this file. This perl run-ci intentionally deviates from that inventory in a
+# few port-specific ways, each documented at its gate below: the RELAY behavioral rule
+# keeps perl's hyphen spelling BEHAVIORAL-WIRE-RELAY; the SURFACE suite does NOT carry
+# ROUTE-COLLISION (route_collision.py is not yet spec-aware for perl's spec-faithful
+# ROUTE-SPLIT ×2 — see the SURFACE gate note); and the doc suite is POD-aware (perl's
+# reference docs are POD-first). A deviation here is not inventory drift — it is a
+# per-port idiom/disposition recorded in place. Load-bearing env/mode lines are
+# additionally guarded by the WIRED-MODES gate (WIRED_MODES.md).
 
 set -u
 set -o pipefail
@@ -105,6 +116,16 @@ _sw_ensure_perl_tools || exit 1
 # time. (Exported so every scheduler worker subshell inherits it.)
 export SW_WAVE_A_REPORT_ONLY=0
 
+# STRICT-MOCKS (D3): the REST mock (mock_signalwire) 400s any wire violation
+# (unknown body key, malformed value) by DEFAULT instead of silently journaling
+# it — so a wrong wire key surfaces LOUD at PR time (in the TEST gate's own mock
+# and any test/gate that spawns one), not just in the REST-COVERAGE journal
+# post-pass. `:-1` keeps it a DEFAULT a caller can still override to 0 for a
+# deliberate non-strict repro. Exported so every scheduler worker subshell (and
+# every mock they spawn) inherits it. This is a WIRED MODE — see WIRED_MODES.md;
+# check_wired_modes.py fails the gate if this line is ever silently dropped.
+export MOCK_SIGNALWIRE_STRICT="${MOCK_SIGNALWIRE_STRICT:-1}"
+
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
 # ---- Part 5: the per-gate --fn helpers are now DEAD — reproduced in the suites -
@@ -154,13 +175,16 @@ sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t
 #   * mixed tiers are split with --rules: PACKAGE + BEHAVIORAL each schedule a
 #     per-PR line and a nightly line (nightly members broken out below).
 # PERL-SPECIFIC vs the TS reference: perl's behavioral RELAY rule keeps perl's exact
-# spelling BEHAVIORAL-WIRE-RELAY (hyphen, same as ts). perl's SURFACE suite does NOT
-# carry ROUTE-COLLISION (route_collision.py has no default perl registry cmd and,
-# fed route_registry.pl, flags 2 un-approved ROUTE-SPLIT findings — a real
-# disposition held for a follow-up, NOT silenced here), matching perl's prior
-# standalone run-ci which likewise omitted it. DOC-AUDIT + STATUS-CLAIM read perl's
-# on-disk port_surface.json (POD-aware), which the SURFACE suite regenerates+restores
-# — so SURFACE and DOC-TRUTH share res=surface.
+# spelling BEHAVIORAL-WIRE-RELAY (hyphen, same as ts). ROUTE-COLLISION runs as a
+# standalone gate (scripts/route_collision.sh) rather than inside the SURFACE suite —
+# it feeds perl's route_registry.pl to porting-sdk's now-SPEC-AWARE route_collision.py
+# (a ROUTE-SPLIT is a finding ONLY when the dispatched path diverges from the spec
+# path for the method's operationId). perl's 2 splits (callFlows/conferenceRooms
+# list_addresses under the singular call_flow/conference_room sub-paths) are
+# spec-faithful platform routing (fabric/openapi.yaml x-sdk mounts), so the gate is
+# clean with NO allowlist. DOC-AUDIT + STATUS-CLAIM read perl's on-disk
+# port_surface.json (POD-aware), which the SURFACE suite regenerates+restores — so
+# SURFACE, DOC-TRUTH, and ROUTE-COLLISION share res=surface.
 
 # SURFACE (parity spine): SIGNATURES→DRIFT ordered, SURFACE-FRESH regen/restore,
 # SURFACE-DIFF, SEMVER-DIFF, GEN-TYPE-DEGENERACY, GEN-IDIOM — all read the one
@@ -168,6 +192,14 @@ sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t
 # (and restores it), so it must not overlap DOC-TRUTH's DOC-AUDIT/STATUS-CLAIM read.
 sched_gate SURFACE res=surface desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port perl --repo "$PORT_ROOT"
+
+# ROUTE-COLLISION (spec-aware): build perl's route_registry.pl → feed the SPEC-AWARE
+# route_collision.py (a split is a finding only when the dispatched path diverges from
+# the spec path for the method's operationId). perl's 2 callFlows/conferenceRooms
+# splits are spec-faithful (fabric x-sdk mounts) → clean with NO allowlist. res=surface
+# because it reads port_surface.json (must not overlap the SURFACE suite's regen).
+sched_gate ROUTE-COLLISION res=surface desc="no split routes / duplicate CRUD bases (spec-aware; fed by route_registry.pl)" \
+    -- bash scripts/route_collision.sh
 
 # GEN (regen-from-specs family): the 5 GEN-FRESH rules. The perltidy backstop each
 # generator runs needs _env.sh (sourced above, exported into every worker subshell).
@@ -218,7 +250,13 @@ sched_gate NO-CHEAT desc="audit_no_cheat_tests" \
 sched_gate FMT defer=1 res=surface desc="run-format.sh (local: apply; CI: --check)" \
     -- bash scripts/run-format.sh ${CI:+--check}
 
-sched_gate LINT defer=1 desc="run-lint.sh (perlcritic severity 4, zero findings)" \
+# LINT joins res=surface too: run locally, FMT's `perltidy -b` rewrites lib/**/*.pm
+# in place, and perlcritic (run-lint.sh) reads those same files — a concurrent
+# perlcritic reading a file mid-rewrite parse-fails and reds LINT spuriously. Sharing
+# the surface resource serializes LINT against the FMT/SURFACE/TEST mutators while it
+# still overlaps every read-only gate. (Under CI --check FMT is read-only, but the
+# label keeps local and CI scheduling identical.)
+sched_gate LINT defer=1 res=surface desc="run-lint.sh (perlcritic severity 4, zero findings)" \
     -- bash scripts/run-lint.sh
 
 # ---- §C1 doc/example/CLI execution gates ------------------------------------
@@ -255,6 +293,13 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 
 sched_gate PUBLIC-JARGON res=dayone desc="no porting/internal jargon leaked into the public surface" \
     -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port perl --repo .
+
+# WIRED-MODES (Part 1.6 / D7): the merge-coherence guard — greps this run-ci.sh for
+# every load-bearing env/mode line declared in WIRED_MODES.md (strict-mocks exports)
+# and fails loud if a merge ever silently drops one, so a wired mode can't vanish and
+# leave a gate green-but-vacuous.
+sched_gate WIRED-MODES desc="load-bearing run-ci modes (WIRED_MODES.md) all present" \
+    -- python3 "$PORTING_SDK_DIR/scripts/check_wired_modes.py" --port perl --repo .
 
 # ---- summary ----------------------------------------------------------------
 

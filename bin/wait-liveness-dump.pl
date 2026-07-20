@@ -129,11 +129,14 @@ my @CORPUS = (
         terminal => { event_type => 'calling.call.record', state => 'finished' },
     },
     # NESTED wait: wait() called from inside an on_completed callback (re-entrant
-    # _read_once). The first action's completion callback starts a SECOND action and
-    # waits on it — so the inner wait() pumps _read_once WHILE the outer wait()'s
-    # dispatch is on the Perl stack. A wait() that is not re-entrant (shared/guarded
-    # loop state, single-shot pump) deadlocks or early-returns here. Proves the P0
-    # wait fix holds under the documented nested-wait pattern (wait inside on_call).
+    # _read_once). The first action's completion callback starts a SECOND action ON
+    # THE SAME CLIENT and waits on it — so the inner wait() re-enters the SAME
+    # client's _read_once WHILE the outer wait()'s _read_once → dispatch_event →
+    # callback frame is still on the Perl stack. This is the REAL same-client
+    # re-entrancy: a wait() with shared/guarded loop state or a single-shot pump on
+    # the one client object deadlocks or early-returns here (a synthetic second
+    # client would NOT exercise that path). Proves the P0 wait fix holds under the
+    # documented nested-wait pattern (wait inside on_call).
     {
         id       => 'live_nested_wait',
         verb     => 'play',
@@ -168,10 +171,13 @@ sub classify_liveness ( $delay_ms, $t_wait_start, $t_return, $completed_state, $
 }
 
 # Build a fresh Call whose client is a LivenessClient. state='answered' so
-# _start_action proceeds (not ENDED).
+# _start_action proceeds (not ENDED). An existing $client may be passed to build
+# a SECOND call that SHARES that client -- the nested case uses this so the inner
+# action's wait() pumps the SAME client's _read_once re-entrantly (see below).
 sub _make_call {
-    my $client = LivenessClient->new;
-    my $call   = SignalWire::Relay::Call->new(
+    my ($client) = @_;
+    $client //= LivenessClient->new;
+    my $call = SignalWire::Relay::Call->new(
         call_id => $CALL,
         node_id => $NODE,
         context => 'ctx',
@@ -214,9 +220,14 @@ for my $case (@CORPUS) {
         my $inner = $case->{nested};
         my ( $iws, $irt, $istate, $ito );
         my $on_completed = sub ($outer_action) {
-            # Re-entrant: a NEW call+client for the inner action, waited to
-            # completion from WITHIN the outer wait()'s dispatch frame.
-            my ( $icall, $iclient ) = _make_call();
+            # Re-entrant on the SAME client: a second call SHARING the outer's
+            # client drives the inner action, whose wait() re-enters that one
+            # client's _read_once — all from WITHIN the outer wait()'s
+            # _read_once → dispatch → callback frame. Re-arming the shared client
+            # (the outer already emitted, so _emitted is reset) points its
+            # deferred-event slot at the inner call. This is the genuine
+            # same-client _read_once re-entrancy, not a synthetic second client.
+            my ( $icall, $iclient ) = _make_call($client);
             ( $iws, $irt, $istate, $ito ) = _drive_one( $icall, $iclient, $inner );
         };
         my ( $ows, $ort, $ostate, $oto ) =

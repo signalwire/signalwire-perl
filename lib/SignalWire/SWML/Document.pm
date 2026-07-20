@@ -75,3 +75,100 @@ sub to_pretty_json {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::SWML::Document - build and serialize a SWML document
+
+=head1 SYNOPSIS
+
+    use SignalWire::SWML::Document;
+
+    my $doc = SignalWire::SWML::Document->new;
+    $doc->add_verb('main', 'answer', {});
+    $doc->add_verb('main', 'play', { url => 'https://example.com/hi.mp3' });
+
+    my $hash = $doc->to_hash;   # { version => '1.0.0', sections => {...} }
+    my $json = $doc->to_json;
+    print $doc->to_pretty_json;
+
+=head1 DESCRIPTION
+
+L<SignalWire::SWML::Document> is a Moo class that models a SWML document —
+a versioned collection of named sections, each an ordered list of verbs. A
+freshly constructed document carries an empty C<main> section (matching the
+Python reference's C<_create_empty_document>), so C<sections.main> is always
+present even before any verb is added.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<version>
+
+The SWML version string (C<ro>, default C<'1.0.0'>).
+
+=item C<sections>
+
+Hashref of section name to an arrayref of verb hashrefs (C<rw>, default
+C<< { main => [] } >>).
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<add_section($name)>
+
+Ensure a named section exists (as an empty list if new). Returns C<$self>.
+
+=item C<add_verb($section_name, $verb_name, $verb_data)>
+
+Append the verb C<< { $verb_name => $verb_data } >> to the named section
+(creating it if absent). Returns C<$self>.
+
+=item C<add_raw_verb($section_name, $verb_hash)>
+
+Append an already-formed verb hashref to the named section. Returns
+C<$self>.
+
+=item C<get_section($name)>
+
+Return the arrayref of verbs for a section, or undef.
+
+=item C<has_section($name)>
+
+True if the named section exists.
+
+=item C<clear_section($name)>
+
+Reset the named section to an empty list. Returns C<$self>.
+
+=item C<to_hash>
+
+Return the document as a C<< { version, sections } >> hashref.
+
+=item C<to_json>
+
+Serialize C<to_hash> to a compact JSON string.
+
+=item C<to_pretty_json>
+
+Serialize C<to_hash> to a canonical, pretty-printed JSON string.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::SWML::Service>, L<SignalWire::SWML::Schema>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

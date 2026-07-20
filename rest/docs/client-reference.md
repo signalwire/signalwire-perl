@@ -82,14 +82,69 @@ There are 21 namespace accessors on the client. Every API surface is available a
 
 ## Error Handling
 
-REST methods `die` on any non-2xx HTTP response. Trap errors with `eval`:
+REST methods `die` with a **typed error object** on any failure. Trap it with `eval`
+and inspect the object, or just stringify it for a human-readable message:
 
 ```perl
 my $agent = eval { $client->fabric->ai_agents->get('bad-id') };
 if (my $err = $@) {
-    warn "Request failed: $err";
+    warn "Request failed: $err";   # stringifies to "GET <url> returned <code>: <body>"
 }
 ```
+
+### The typed error family
+
+All REST failures are raised as one exception family, so a single `eval` catches
+every kind of failure — HTTP-error responses and transport failures alike:
+
+- **`SignalWireRestError`** — the base class, raised on any HTTP response with
+  status `>= 400`. It carries the full failure envelope as read-only accessors:
+
+  | Accessor        | Meaning                                                        |
+  |-----------------|----------------------------------------------------------------|
+  | `status_code`   | the HTTP status (`404`, `422`, `429`, `500`, …)                |
+  | `body`          | the parsed JSON body (hashref) or the raw string if not JSON   |
+  | `url`           | the full request URL (scheme + host + path + query string)     |
+  | `method`        | the HTTP method (`GET`, `POST`, …)                             |
+  | `headers`       | the response header map (`undef` for a transport error)        |
+  | `request_id`    | the platform request id from the response headers (`x-request-id` / `x-signalwire-request-id` / `request-id` / `x-amzn-requestid`), for correlating with SignalWire's logs; `undef` when absent |
+
+- **`SignalWireRestTransportError`** — a **subclass** of `SignalWireRestError`,
+  raised when the request never reached a response at all (connection refused, DNS
+  failure, connection reset, TLS error, read timeout, or a cancelled
+  `abort_signal`). Its `status_code` is `undef` (no HTTP status ever arrived) and
+  its `body` carries the underlying transport message. Because it is a subclass, an
+  `eval` catching `SignalWireRestError` handles transport failures too.
+
+- **`SignalWire::REST::HttpClient::Error`** — a back-compat alias for
+  `SignalWireRestError` (the same class); older `isa` checks against this name keep
+  working.
+
+```perl
+use Scalar::Util qw(blessed);
+
+my $agent = eval { $client->fabric->ai_agents->get('bad-id') };
+if (my $err = $@) {
+    if ( blessed($err) && $err->isa('SignalWireRestError') ) {
+        if ( $err->isa('SignalWireRestTransportError') ) {
+            # Never reached the server (no status_code).
+            warn "transport failure: " . $err->body;
+        }
+        elsif ( $err->status_code == 404 ) {
+            warn "not found: " . $err->method . ' ' . $err->url;
+        }
+        else {
+            warn "HTTP " . $err->status_code . ": " . encode_json( $err->body );
+        }
+    }
+    else {
+        die $err;   # not one of ours — re-raise
+    }
+}
+```
+
+Distinguishing the two lets a caller retry a transient transport failure while
+surfacing a `422`/`404` to the user, all from one `eval`.
 
 ## Session Behavior
 

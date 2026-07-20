@@ -2449,3 +2449,147 @@ sub extract_sip_username {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::Agent::AgentBase - base class for SignalWire AI agents
+
+=head1 SYNOPSIS
+
+    package MyAgent;
+    use Moo;
+    extends 'SignalWire::Agent::AgentBase';
+
+    sub BUILD {
+        my ($self) = @_;
+        $self->prompt_add_section('Role', 'You are a helpful assistant.');
+        $self->define_tool(          # inherited from SWML::Service
+            name        => 'get_time',
+            description => 'Get the current time',
+            parameters  => { type => 'object', properties => {} },
+            handler     => sub {
+                require SignalWire::SWAIG::FunctionResult;
+                return SignalWire::SWAIG::FunctionResult->new(
+                    'The time is ' . localtime );
+            },
+        );
+    }
+
+    package main;
+    MyAgent->new->run;   # start a Plack HTTP server
+
+=head1 DESCRIPTION
+
+L<SignalWire::Agent::AgentBase> is the Moo base class for all SignalWire AI
+agents -- the Perl port of C<signalwire.agents.agent_base.AgentBase>. A
+subclass configures its prompt, tools, skills, contexts, languages, hints,
+and answer/verb behavior (typically in C<BUILD>), and the base class renders
+the SWML document, exposes the HTTP endpoints (SWML, SWAIG, post-prompt,
+optional MCP and SIP routing), validates inbound webhook auth, and serves
+the agent -- as a Plack app, a standalone server, or a serverless handler.
+
+It C<extends> L<SignalWire::SWML::Service>, from which it inherits the tool
+registry and its C<define_tool> / C<register_swaig_function> / C<define_tools>
+methods, plus the C<name>, C<route>, C<host>, C<port>, and basic-auth
+attributes. This is a large "fat" base class; the sections below group its
+own public surface. Consult the Python reference for the authoritative
+per-argument contract. Setters generally return C<$self> for chaining.
+
+=head1 ATTRIBUTES
+
+Public read/write attributes configure the agent, including: C<auto_answer>,
+C<record_call>, C<record_format>, C<record_stereo>; C<prompt_text>,
+C<post_prompt>, C<use_pom>, C<pom_sections>; C<hints>, C<pattern_hints>,
+C<languages>, C<multilingual>, C<pronunciations>, C<params>, C<global_data>,
+C<native_functions>; C<internal_fillers>, C<debug_events_level>,
+C<function_includes>, C<prompt_llm_params>, C<post_prompt_llm_params>;
+C<pre_answer_verbs>, C<post_answer_verbs>, C<post_ai_verbs>,
+C<answer_config>; C<sip_routing_enabled>, C<sip_auto_map>, C<sip_path>,
+C<sip_usernames>; C<context_builder>, C<dynamic_config_callback>,
+C<summary_callback>, C<debug_event_handler>; C<webhook_url>,
+C<post_prompt_url>, C<proxy_url_base>, C<swaig_query_params>;
+C<session_manager>, C<signing_key>, C<skill_manager>, C<mcp_servers>, and
+C<mcp_server_enabled>. Most have accessors as named above; prefer the
+grouped setter methods below where they exist.
+
+=head1 METHODS
+
+=head2 Prompt
+
+C<set_prompt_text>, C<set_post_prompt>, C<prompt_add_section>,
+C<prompt_add_subsection>, C<prompt_add_to_section>, C<prompt_has_section>,
+C<get_prompt>, C<pom>, C<get_post_prompt>, C<get_raw_prompt>,
+C<set_prompt_pom>, C<set_prompt_llm_params>, C<set_post_prompt_llm_params>.
+
+=head2 Contexts
+
+C<define_contexts>, C<get_contexts>, C<contexts>, C<reset_contexts>.
+
+=head2 Tool tokens
+
+C<create_tool_token>, C<validate_tool_token>, C<list_tool_names>.
+
+=head2 Hints and pronunciations
+
+C<add_hint>, C<add_hints>, C<add_pattern_hint>, C<add_pronunciation>,
+C<set_pronunciations>.
+
+=head2 Languages
+
+C<add_language>, C<set_languages>, C<set_multilingual>,
+C<set_language_params>, C<get_language_params>.
+
+=head2 Params and data
+
+C<set_param>, C<set_params>, C<set_global_data>, C<update_global_data>.
+
+=head2 Functions and fillers
+
+C<set_native_functions>, C<set_internal_fillers>, C<add_internal_filler>,
+C<add_function_include>, C<set_function_includes>, C<enable_debug_events>.
+
+=head2 Answer and verbs
+
+C<add_pre_answer_verb>, C<add_post_answer_verb>, C<add_post_ai_verb>,
+C<add_answer_verb>, C<clear_pre_answer_verbs>, C<clear_post_answer_verbs>,
+C<clear_post_ai_verbs>, C<set_answer_config>.
+
+=head2 SIP routing
+
+C<enable_sip_routing>, C<register_sip_username>, C<auto_map_sip_usernames>,
+C<extract_sip_username>.
+
+=head2 Skills
+
+C<add_skill>, C<remove_skill>, C<list_skills>, C<has_skill>.
+
+=head2 Callbacks and URLs
+
+C<set_dynamic_config_callback>, C<on_summary>, C<on_debug_event>,
+C<set_web_hook_url>, C<set_post_prompt_url>, C<manual_set_proxy_url>,
+C<add_swaig_query_params>, C<clear_swaig_query_params>, C<get_full_url>,
+C<get_name>.
+
+=head2 MCP
+
+C<add_mcp_server>, C<enable_mcp_server>.
+
+=head2 Serving
+
+C<render_swml>, C<psgi_app>, C<handle_request>, C<run>, C<serve>,
+C<handle_serverless_request>.
+
+=head1 SEE ALSO
+
+L<SignalWire::SWML::Service>, L<SignalWire::SWAIG::FunctionResult>,
+L<SignalWire::DataMap>, L<SignalWire::Contexts::ContextBuilder>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut

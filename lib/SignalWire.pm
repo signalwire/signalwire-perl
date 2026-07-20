@@ -135,6 +135,8 @@ sub list_skills_with_params {
 
 __END__
 
+=encoding utf8
+
 =head1 NAME
 
 SignalWire - SDK for building AI agents as microservices on SignalWire

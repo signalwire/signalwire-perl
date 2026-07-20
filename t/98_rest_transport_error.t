@@ -37,6 +37,45 @@ use IO::Socket::INET ();
         'transport error stringifies as "failed to reach the server" (no bogus status)'
     );
     unlike( "$e", qr/returned/, 'transport error does NOT say "returned <status>"' );
+
+    # §6.6: a transport error produced no response, so headers/request_id are undef.
+    is( $e->headers,    undef, 'transport error headers are undef (no response)' );
+    is( $e->request_id, undef, 'transport error request_id is undef' );
+}
+
+# --- §6.6 error-observability: request_id + headers on an HTTP error ---------
+{
+    # request_id is derived from the response headers, case-insensitively, in the
+    # SignalWire/proxy preference order. Construct the error directly to prove the
+    # derivation + stringification without needing a live server header.
+    my $e = SignalWireRestError->new(
+        status_code => 500,
+        body        => { error => 'boom' },
+        url         => 'http://x/api/things',
+        method      => 'POST',
+        headers     => { 'X-Request-Id' => 'req-abc123', 'Content-Type' => 'application/json' },
+    );
+    is( $e->request_id, 'req-abc123',
+        '6.6: request_id is pulled from X-Request-Id (case-insensitive)' );
+    is( $e->headers->{'Content-Type'}, 'application/json',
+        '6.6: the full response header map is exposed' );
+    like( "$e", qr/\(request-id: req-abc123\)/,
+        '6.6: the request id is appended to the stringified error' );
+
+    # Preference order: x-request-id wins over x-amzn-requestid when both present.
+    my $e2 = SignalWireRestError->new(
+        status_code => 502, body => 'bad gateway', url => 'http://x/y', method => 'GET',
+        headers => { 'x-amzn-requestid' => 'amzn-1', 'x-request-id' => 'sw-1' },
+    );
+    is( $e2->request_id, 'sw-1', '6.6: x-request-id takes precedence over x-amzn-requestid' );
+
+    # No matching header → undef request_id, no "(request-id: ...)" suffix.
+    my $e3 = SignalWireRestError->new(
+        status_code => 404, body => 'nope', url => 'http://x/z', method => 'GET',
+        headers => { 'Content-Type' => 'text/plain' },
+    );
+    is( $e3->request_id, undef, '6.6: no request-id header → request_id is undef' );
+    unlike( "$e3", qr/request-id/, '6.6: no request-id suffix when none present' );
 }
 
 # --- _is_transport_failure: classifies the HTTP::Tiny synthetic 599 ---------
@@ -108,6 +147,42 @@ use IO::Socket::INET ();
     isnt( "$err", '599', 'the error is not a bare 599' );
     like( "$err", qr/failed to reach the server/,
         'the raised transport error stringifies as a transport failure' );
+
+    # D1 (owner-approved): error.url is the FULL url (scheme+host+path), not the
+    # bare path — so a caught error tells you exactly which endpoint failed.
+    is( $err->url, "http://127.0.0.1:$dead/api/fabric/addresses",
+        'D1: transport error url is the full absolute URL (scheme+host+path)' );
+}
+
+# --- D1: an HTTP-error (>=400) error carries the FULL url INCLUDING query -----
+# Drive a real 404 through the mock; the raised SignalWireRestError.url must be the
+# absolute URL with the query string preserved (not the bare path).
+{
+    my $sock = IO::Socket::INET->new(
+        LocalAddr => '127.0.0.1',
+        LocalPort => 0,
+        Proto     => 'tcp',
+        Listen    => 1,
+    ) or die "cannot bind a probe port: $!";
+    my $dead = $sock->sockport;
+    $sock->close;
+
+    my $client = SignalWire::REST::RestClient->new(
+        project => 'p',
+        token   => 't',
+        host    => "http://127.0.0.1:$dead",
+    );
+
+    # Even a transport failure goes through the same url-building path; assert the
+    # query is preserved in the error url (the D1 "with query" clause).
+    my $err;
+    eval { $client->_http->get( '/api/things', params => { page => 2, q => 'a b' } ); 1 }
+        or $err = $@;
+    ok( blessed($err), 'query-bearing GET raised a typed error' );
+    like( $err->url, qr{^http://127\.0\.0\.1:\Q$dead\E/api/things\?},
+        'D1: error url is absolute and includes the query string' );
+    like( $err->url, qr/page=2/, 'D1: error url preserves the page query param' );
+    like( $err->url, qr/q=a(?:%20|\+)b/, 'D1: error url preserves + encodes the q param' );
 }
 
 done_testing;

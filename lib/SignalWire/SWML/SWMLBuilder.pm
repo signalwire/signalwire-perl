@@ -205,6 +205,8 @@ sub _sleep_duration (@args) {
 
 __END__
 
+=encoding utf8
+
 =head1 NAME
 
 SignalWire::SWML::SWMLBuilder - fluent builder for SWML documents

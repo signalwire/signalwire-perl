@@ -117,3 +117,133 @@ sub status_is_retryable {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+SignalWire::REST::RequestOptions - per-request transport options for the REST client
+
+=head1 SYNOPSIS
+
+    use SignalWire::REST::RequestOptions;
+
+    my $opts = SignalWire::REST::RequestOptions->new(
+        timeout       => 10,
+        retries       => 3,
+        retry_backoff => 0.5,
+        abort_signal  => sub { $cancelled },
+    );
+
+    # As a client default:
+    my $client = SignalWire::REST::RestClient->new(
+        ..., request_options => $opts,
+    );
+
+    # Or per call, shallow-overriding the client default:
+    $client->phone_numbers->list( request_options => $opts );
+
+=head1 DESCRIPTION
+
+L<SignalWire::REST::RequestOptions> is the Perl mirror of
+C<signalwire.rest._request_options>. It is a value object controlling
+per-request transport behavior: request C<timeout>, C<retries> with an
+idempotency-aware retry policy and exponential backoff, and cooperative
+cancellation via an C<abort_signal>.
+
+Options apply at two levels: a B<client default> passed to
+C<< RestClient->new(request_options => ...) >>, and a B<per-request
+override> passed to a verb that shallow-overrides the client default for
+that one call. All fields are optional; an unset (C<undef>) field means
+"inherit" -- it falls back to the client default, then to the built-in
+default.
+
+The timeout and retry semantics are the reference-pinned, wire-observable
+contract. C<abort_signal> fidelity is per-port idiom: Perl's REST client is
+synchronous (L<HTTP::Tiny>), so -- like the Python sync client -- it cannot
+interrupt an in-flight blocking read; cancellation is checked cooperatively
+between attempts. The C<abort_signal> is any object answering C<< ->is_set >>
+or a plain coderef; a truthy result raises before the send.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item timeout
+
+Per-request wall-clock timeout in seconds. Built-in default: 30.
+
+=item retries
+
+Number of retry attempts after the first (total attempts = retries + 1).
+Built-in default: 0.
+
+=item retry_on_status
+
+An arrayref of HTTP statuses eligible for retry. Built-in default:
+C<[429, 500, 502, 503, 504]>.
+
+=item retry_backoff
+
+The base backoff in seconds; the delay grows exponentially per attempt.
+Built-in default: 0.5.
+
+=item abort_signal
+
+A cooperative cancellation signal (an object with C<is_set>, or a coderef).
+Checked before every attempt; truthy raises a transport error.
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item merge($override)
+
+Return a NEW C<RequestOptions> with each defined field of C<$override>
+applied over C<$self> (an unset field on C<$override> leaves C<$self>'s
+value intact). Returns C<$self> unchanged when C<$override> is C<undef>.
+
+=back
+
+=head1 THE RESOLVER
+
+Module-level free functions live in
+C<SignalWire::REST::RequestOptions::Resolver> (the Perl analog of the
+module-level C<resolve> / C<status_is_retryable> in
+C<signalwire.rest._request_options>), kept in a distinct package so they
+project onto the reference's module-free-function surface rather than the
+C<RequestOptions> class.
+
+=over 4
+
+=item SignalWire::REST::RequestOptions::Resolver::resolve($client_default, $per_request)
+
+Return a plain hashref of the effective options -- per-request over
+client-default over the built-in defaults -- with every field concrete
+(C<timeout>, C<retries>, C<retry_on_status> as a set hashref,
+C<retry_backoff>, C<abort_signal>). The retry loop in
+L<SignalWire::REST::HttpClient> reads this hashref.
+
+=item SignalWire::REST::RequestOptions::Resolver::status_is_retryable($method, $status, $opts)
+
+Return whether an HTTP C<$status> for C<$method> should trigger a retry
+given the resolved C<$opts>. Idempotent methods (GET/PUT/DELETE/HEAD/
+OPTIONS) retry on the full C<retry_on_status> set; non-idempotent methods
+(POST/PATCH) retry only on 429/503 (the Retry-After-bearing throttles),
+never on 500/502/504, to avoid replaying a side effect.
+
+=back
+
+=head1 SEE ALSO
+
+L<SignalWire::REST::HttpClient>, L<SignalWire::REST::RestClient>.
+
+=head1 LICENSE
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+=cut
