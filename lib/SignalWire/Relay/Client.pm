@@ -146,6 +146,28 @@ has '_on_call'    => ( is => 'rw', default => sub { undef } );
 has '_on_message' => ( is => 'rw', default => sub { undef } );
 has '_on_event'   => ( is => 'rw', default => sub { undef } );
 
+# Max concurrent inbound calls (Python parity: RelayClient(max_active_calls=N)).
+# The (N+1)th inbound call while N are active is DROPPED, not accepted. undef =>
+# resolve from RELAY_MAX_ACTIVE_CALLS env, else the built-in default. Clamped to a
+# floor of 1. Public constructor arg mirrors the reference's `max_active_calls`.
+has 'max_active_calls' => ( is => 'ro', default => sub { undef } );
+
+use constant _DEFAULT_MAX_ACTIVE_CALLS => 100;
+
+# Resolved effective cap: constructor > RELAY_MAX_ACTIVE_CALLS env > default,
+# floored at 1 (mirrors the reference's max(1, ...) resolution).
+sub _max_active_calls ($self) {
+    my $v = $self->max_active_calls;
+    if ( defined $v ) {
+        return $v < 1 ? 1 : $v;
+    }
+    my $env = $ENV{RELAY_MAX_ACTIVE_CALLS};
+    if ( defined $env && $env =~ /^\d+$/ && length $env ) {
+        return $env < 1 ? 1 : 0 + $env;
+    }
+    return _DEFAULT_MAX_ACTIVE_CALLS;
+}
+
 # --- UUID generation ---
 sub _generate_uuid {
     my @hex = map { sprintf( '%02x', int( rand(256) ) ) } 1 .. 16;
@@ -848,6 +870,15 @@ sub _handle_event ( $self, $outer_params ) {
 sub _handle_inbound_call ( $self, $event, $params ) {
     my $call_id = $params->{call_id} // '';
     return unless $call_id;
+
+    # Max-active-calls cap (Python parity): when N calls are already active, the
+    # (N+1)th inbound call is DROPPED (never accepted / handed to on_call), so a
+    # runaway inbound rate can't exhaust the process.
+    if ( keys %{ $self->_calls } >= $self->_max_active_calls ) {
+        $logger->error(
+            "Max active calls (" . $self->_max_active_calls . ") reached, dropping inbound call" );
+        return;
+    }
 
     my $call = SignalWire::Relay::Call->new(
         call_id => $call_id,

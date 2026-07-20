@@ -46,6 +46,7 @@ sub BUILD {
     $self->{_items} = [];
     $self->{_index} = 0;
     $self->{_done}  = 0;
+
     # Cycle guard: the set of links.next cursors already followed. A server that
     # keeps returning the SAME links.next would otherwise loop forever (termination
     # is driven only by an ABSENT next link, so a repeating next was an infinite

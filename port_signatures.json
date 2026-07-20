@@ -20389,6 +20389,11 @@
                   "required": false
                 },
                 {
+                  "name": "max_active_calls",
+                  "type": "optional<int>",
+                  "required": false
+                },
+                {
                   "name": "agent",
                   "type": "any",
                   "required": false
@@ -20633,6 +20638,15 @@
               "returns": "any"
             },
             "jwt_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "max_active_calls": {
               "params": [
                 {
                   "name": "self",
