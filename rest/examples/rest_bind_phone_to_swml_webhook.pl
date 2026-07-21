@@ -20,8 +20,12 @@ use lib 'lib';
 use SignalWire::REST::RestClient;
 use SignalWire::REST::PhoneCallHandler;
 
-my $pn_sid      = $ENV{PHONE_NUMBER_SID}     // die "Set PHONE_NUMBER_SID\n";
-my $webhook_url = $ENV{SWML_WEBHOOK_URL}     // die "Set SWML_WEBHOOK_URL\n";
+# PHONE_NUMBER_SID / SWML_WEBHOOK_URL are RESOURCE IDENTIFIERS, not secrets: a
+# real run sets them to a number you own + your backend URL, but they default to
+# demo placeholders so this example loads and drives its REST calls against a
+# local mock (or any test space) without owning a real number first.
+my $pn_sid      = $ENV{PHONE_NUMBER_SID} // 'pn-00000000-0000-0000-0000-000000000000';
+my $webhook_url = $ENV{SWML_WEBHOOK_URL} // 'https://example.test/swml';
 
 my $client = SignalWire::REST::RestClient->new(
     project => $ENV{SIGNALWIRE_PROJECT_ID} // die("Set SIGNALWIRE_PROJECT_ID\n"),
@@ -29,9 +33,10 @@ my $client = SignalWire::REST::RestClient->new(
     host    => $ENV{SIGNALWIRE_SPACE}      // die("Set SIGNALWIRE_SPACE\n"),
 );
 
-# The typed helper — one line:
+# The typed helper — one line. The URL is a positional argument
+# (set_swml_webhook($sid, $url)), matching the generated method signature.
 print "Binding $pn_sid to $webhook_url ...\n";
-$client->phone_numbers->set_swml_webhook($pn_sid, url => $webhook_url);
+$client->phone_numbers->set_swml_webhook($pn_sid, $webhook_url);
 
 # The equivalent wire-level form (use this if you need unusual fields):
 #
@@ -50,9 +55,10 @@ printf "  call_relay_script_url = %s\n",
 printf "  calling_handler_resource_id (server-derived) = %s\n",
     defined $pn->{calling_handler_resource_id} ? "'$pn->{calling_handler_resource_id}'" : 'undef';
 
-# To route to something other than an SWML webhook, use:
-#   $client->phone_numbers->set_cxml_webhook($sid, url => ...);        # LAML / Twilio-compat
-#   $client->phone_numbers->set_ai_agent($sid, agent_id => ...);       # AI Agent
-#   $client->phone_numbers->set_call_flow($sid, flow_id => ...);       # Call Flow
-#   $client->phone_numbers->set_relay_application($sid, name => ...);  # Named RELAY app
-#   $client->phone_numbers->set_relay_topic($sid, topic => ...);       # RELAY topic
+# To route to something other than an SWML webhook, use (each companion value
+# is a positional argument):
+#   $client->phone_numbers->set_cxml_webhook($sid, $url);            # LAML / Twilio-compat
+#   $client->phone_numbers->set_ai_agent($sid, $agent_id);          # AI Agent
+#   $client->phone_numbers->set_call_flow($sid, $flow_id);          # Call Flow
+#   $client->phone_numbers->set_relay_application($sid, $name);     # Named RELAY app
+#   $client->phone_numbers->set_relay_topic($sid, $topic);          # RELAY topic

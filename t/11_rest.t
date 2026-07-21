@@ -19,6 +19,30 @@ use_ok('SignalWire::REST::HttpClient');
     is($http->base_url, 'https://example.signalwire.com', 'base_url built');
 }
 
+# base_url scheme selection: a bare loopback host is a local mock/dev server that
+# speaks plain HTTP, so it gets http://; every other bare host is the real platform
+# over https://. Mirrors the Python reference's _is_loopback_host (rest/_base.py) so a
+# shipped REST example runs verbatim against the loopback mock the audit harness spawns.
+{
+    for my $h ('127.0.0.1', '127.0.0.1:8080', 'localhost', 'localhost:9000',
+               '::1', '[::1]', '[::1]:7000') {
+        my $http = SignalWire::REST::HttpClient->new(
+            project => 'p', token => 't', host => $h,
+        );
+        is($http->base_url, "http://$h", "loopback host $h -> http://");
+    }
+    # A non-loopback bare host still gets production https://.
+    my $prod = SignalWire::REST::HttpClient->new(
+        project => 'p', token => 't', host => 'example.signalwire.com',
+    );
+    is($prod->base_url, 'https://example.signalwire.com', 'non-loopback host -> https://');
+    # A fully-qualified URL is used verbatim regardless of loopback-ness.
+    my $explicit = SignalWire::REST::HttpClient->new(
+        project => 'p', token => 't', host => 'https://127.0.0.1:8080',
+    );
+    is($explicit->base_url, 'https://127.0.0.1:8080', 'explicit scheme preserved verbatim');
+}
+
 # Auth header
 {
     my $http = SignalWire::REST::HttpClient->new(

@@ -103,7 +103,7 @@ safe('Lookup', sub {
 print "\nCreating verified caller...\n";
 my $caller_id;
 safe('Verified caller', sub {
-    my $caller = $client->verified_callers->create(phone_number => '+15125559999');
+    my $caller = $client->verified_callers->create(number => '+15125559999');
     $caller_id = $caller->{id};
     print "  Created verified caller: $caller_id\n";
     $client->verified_callers->submit_verification($caller_id, verification_code => '123456');
@@ -133,12 +133,15 @@ print "\nCreating address...\n";
 my $addr_id;
 safe('Address', sub {
     my $addr = $client->addresses->create(
-        friendly_name => 'HQ Address',
-        street        => '123 Main St',
+        label         => 'HQ Address',
+        first_name    => 'Emmett',
+        last_name     => 'Brown',
+        street_number => '123',
+        street_name   => 'Main St',
         city          => 'Austin',
-        region        => 'TX',
+        state         => 'TX',
         postal_code   => '78701',
-        iso_country   => 'US',
+        country       => 'US',
     );
     $addr_id = $addr->{id};
     print "  Created address: $addr_id\n";
