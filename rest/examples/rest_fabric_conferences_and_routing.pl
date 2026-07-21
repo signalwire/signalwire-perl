@@ -46,8 +46,8 @@ safe('List addresses', sub {
 # 3. Create a cXML script
 print "\nCreating cXML script...\n";
 my $cxml = $client->fabric->cxml_scripts->create(
-    name     => 'Hold Music Script',
-    contents => '<Response><Say>Please hold.</Say><Play>https://example.com/hold.mp3</Play></Response>',
+    display_name => 'Hold Music Script',
+    contents     => '<Response><Say>Please hold.</Say><Play>https://example.com/hold.mp3</Play></Response>',
 );
 my $cxml_id = $cxml->{id};
 print "  Created cXML script: $cxml_id\n";
@@ -96,7 +96,8 @@ if ($resources && $resources->{data} && @{ $resources->{data} }) {
 # 8. Assign a domain application (demo)
 print "\nAssigning domain application (demo)...\n";
 safe('Domain app', sub {
-    $client->fabric->resources->assign_domain_application($relay_id, domain => 'app.example.com');
+    $client->fabric->resources->assign_domain_application(
+        $relay_id, domain_application_id => '993ed018-9e79-4e50-b97b-984bd5534095');
 });
 
 # NOTE: To bind a phone number to a webhook/agent/flow, set call_handler
@@ -106,17 +107,26 @@ safe('Domain app', sub {
 # 9. Generate tokens
 print "\nGenerating tokens...\n";
 safe('Guest token', sub {
-    my $guest = $client->fabric->tokens->create_guest_token(resource_id => $relay_id);
+    # A guest token authorizes access to a set of Fabric addresses (up to 10 UUIDs).
+    my $guest = $client->fabric->tokens->create_guest_token(
+        allowed_addresses => ['3fa85f64-5717-4562-b3fc-2c963f66afa6'],
+    );
     my $t = $guest->{token} // '';
     print "  Guest token: " . substr($t, 0, 40) . "...\n" if $t;
 });
 safe('Invite token', sub {
-    my $invite = $client->fabric->tokens->create_invite_token(resource_id => $relay_id);
+    # An invite token is scoped to a single subscriber address.
+    my $invite = $client->fabric->tokens->create_invite_token(
+        address_id => '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    );
     my $t = $invite->{token} // '';
     print "  Invite token: " . substr($t, 0, 40) . "...\n" if $t;
 });
 safe('Embed token', sub {
-    my $embed = $client->fabric->tokens->create_embed_token(resource_id => $relay_id);
+    # An embed token is minted from a Click-to-Call (c2c) token.
+    my $embed = $client->fabric->tokens->create_embed_token(
+        token => 'c2c_7acc0e5e968706a032983cd80cdca219',
+    );
     my $t = $embed->{token} // '';
     print "  Embed token: " . substr($t, 0, 40) . "...\n" if $t;
 });

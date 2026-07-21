@@ -106,7 +106,7 @@ if ($campaign_id) {
     }
     safe('Update campaign', sub {
         $client->registry->campaigns->update(
-            $campaign_id, description => 'Updated: customer notifications',
+            $campaign_id, name => 'Updated: customer notifications',
         );
     });
 }

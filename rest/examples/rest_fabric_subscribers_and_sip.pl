@@ -31,8 +31,10 @@ sub safe {
 # 1. Create a subscriber
 print "Creating subscriber...\n";
 my $subscriber = $client->fabric->subscribers->create(
-    name  => 'Alice Johnson',
-    email => 'alice@example.com',
+    email        => 'alice@example.com',
+    first_name   => 'Alice',
+    last_name    => 'Johnson',
+    display_name => 'Alice Johnson',
 );
 my $sub_id       = $subscriber->{id};
 my $inner_sub_id = ($subscriber->{subscriber} // {})->{id} // $sub_id;
@@ -92,8 +94,7 @@ safe('List addresses', sub {
 print "\nGenerating subscriber token...\n";
 safe('Subscriber token', sub {
     my $token = $client->fabric->tokens->create_subscriber_token(
-        subscriber_id => $inner_sub_id,
-        reference     => $inner_sub_id,
+        reference => $inner_sub_id,
     );
     my $t = $token->{token} // '';
     print "  Token: " . substr($t, 0, 40) . "...\n" if $t;
