@@ -46,7 +46,7 @@ jobs:
           # oracle + the PAGINATION-CORPUS/RELAY-LIVENESS differs that live on porting-sdk
           # wave/1-aplus, not yet on main (PY-7 request_options is a wave/1-aplus oracle
           # addition). REVERT this ref to main when porting-sdk wave/1-aplus merges.
-          ref: wave/1-aplus
+          ref: main
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 
@@ -62,7 +62,7 @@ jobs:
           # PINNED to wave/1-aplus: the reference SDK carrying PY-7 request_options +
           # the new paginator/relay behavior this PR mirrors. REVERT to main when the
           # python wave/1-aplus work merges.
-          ref: wave/1-aplus
+          ref: main
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1

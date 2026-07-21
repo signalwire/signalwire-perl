@@ -45,7 +45,7 @@ jobs:
           # NEW oracle (python_surface.json / python_signatures.json) carrying PY-7
           # request_options, which lives on porting-sdk wave/1-aplus, not main. REVERT
           # this ref to main when porting-sdk wave/1-aplus merges.
-          ref: wave/1-aplus
+          ref: main
           path: porting-sdk
           fetch-depth: 1
           token: ${{ secrets.PORTING_SDK_TOKEN }}

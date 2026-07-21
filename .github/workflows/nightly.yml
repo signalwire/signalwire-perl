@@ -99,7 +99,7 @@ jobs:
           # oracle + register the new PSDK BEHAVIORAL rules (PAGINATION-CORPUS etc.) that
           # main's porting-sdk rejects. REVERT this ref to main when porting-sdk
           # wave/1-aplus merges.
-          ref: wave/1-aplus
+          ref: main
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 
@@ -113,7 +113,7 @@ jobs:
           repository: signalwire/signalwire-python
           path: signalwire-python
           # PINNED to wave/1-aplus (the PY-7 reference). REVERT to main on merge.
-          ref: wave/1-aplus
+          ref: main
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1
