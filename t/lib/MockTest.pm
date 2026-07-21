@@ -201,25 +201,46 @@ sub _ua {
     return $_UA ||= HTTP::Tiny->new( timeout => 5 );
 }
 
-# Walk this file's directory upward looking for an adjacent
-# ../porting-sdk/test_harness/<name>/<name>/__init__.py.
-#
-# Returns the absolute path to the directory containing the Python package
-# (the value to put on PYTHONPATH so that `python -m <name>` resolves), or
-# undef when no adjacent porting-sdk is reachable.
+# Resolve the directory containing the Python mock package (the value to put on
+# PYTHONPATH so `python -m <name>` resolves), or undef if unreachable. Resolution
+# order mirrors run-ci / the porting-sdk python gates:
+#   1. $PORTING_SDK env var (run-ci exports it; CI checks porting-sdk out at a path
+#      the adjacency walk MISSES — e.g. NESTED at <repo>/porting-sdk rather than a
+#      sibling — so honor the explicit env first);
+#   2. the upward adjacency walk for a SIBLING ../porting-sdk (the ~/src layout);
+#   3. a NESTED <repo>/porting-sdk under each walked dir (the CI checkout layout).
+# Returns the test_harness/<name> dir that holds the <name>/ package.
 sub discover_porting_sdk_package {
     my ($name) = @_;
+
+    my $ok = sub {
+        my ($psdk_root) = @_;
+        return undef unless defined $psdk_root && length $psdk_root;
+        my $candidate = File::Spec->catdir($psdk_root, 'test_harness', $name);
+        my $init = File::Spec->catfile($candidate, $name, '__init__.py');
+        return -f $init ? $candidate : undef;
+    };
+
+    # 1. Explicit PORTING_SDK env (what run-ci + the python gates use).
+    if ( defined $ENV{PORTING_SDK} && length $ENV{PORTING_SDK} ) {
+        my $hit = $ok->($ENV{PORTING_SDK});
+        return $hit if $hit;
+    }
+
     my $here = Cwd::abs_path(__FILE__);
     return undef unless defined $here;
     my $dir = File::Spec->canonpath((File::Spec->splitpath($here))[1]);
     # File::Spec->splitpath returns trailing slash on the directory, strip.
     $dir =~ s{[/\\]$}{};
     while (1) {
+        # 2. SIBLING ../porting-sdk (the ~/src adjacency layout).
         my $parent = File::Spec->canonpath(File::Spec->catdir($dir, File::Spec->updir));
+        my $sib = $ok->(File::Spec->catdir($parent, 'porting-sdk'));
+        return $sib if $sib;
+        # 3. NESTED <dir>/porting-sdk (the CI checkout at path: porting-sdk).
+        my $nested = $ok->(File::Spec->catdir($dir, 'porting-sdk'));
+        return $nested if $nested;
         last if $parent eq $dir;
-        my $candidate = File::Spec->catdir($parent, 'porting-sdk', 'test_harness', $name);
-        my $init = File::Spec->catfile($candidate, $name, '__init__.py');
-        return $candidate if -f $init;
         $dir = $parent;
     }
     return undef;
@@ -251,6 +272,13 @@ sub _ensure_server {
 
     # Try to spawn `python -m mock_signalwire`. On any failure, set the
     # skip reason and leave it to client() to plan(skip_all).
+    #
+    # Spawn via fork+exec with the child's STDIN/STDOUT/STDERR redirected to
+    # /dev/null. Do NOT use IPC::Open3 with the pipes closed right after: the mock
+    # prints a startup banner, and once the read end of a closed pipe is gone that
+    # write raises SIGPIPE and KILLS the mock before it binds — so the health poll
+    # then times out (30s) and the whole thing SKIPs. Redirecting to /dev/null lets
+    # the banner go nowhere harmlessly and the mock comes up.
     my @cmd = (
         'python', '-m', 'mock_signalwire',
         '--host', $HOST,
@@ -258,20 +286,20 @@ sub _ensure_server {
         '--log-level', 'error',
     );
 
-    my ($wtr, $rdr, $err);
-    $err = Symbol::gensym();
-    my $pid = eval {
-        IPC::Open3::open3($wtr, $rdr, $err, @cmd);
-    };
-    if ($@ || !$pid) {
-        $_SKIP_REASON = "could not spawn `@cmd`: $@";
+    my $pid = fork();
+    if ( !defined $pid ) {
+        $_SKIP_REASON = "could not fork to spawn `@cmd`: $!";
         return;
     }
+    if ( $pid == 0 ) {
+        # CHILD: detach the std handles to /dev/null, then exec the mock.
+        open( STDIN,  '<', File::Spec->devnull );
+        open( STDOUT, '>', File::Spec->devnull );
+        open( STDERR, '>', File::Spec->devnull );
+        { exec { $cmd[0] } @cmd; }
+        POSIX::_exit(127);    # exec failed
+    }
     $_MOCK_PID = $pid;
-    # Detach by closing pipes; we only care that the process is alive.
-    close $wtr if $wtr;
-    close $rdr if $rdr;
-    close $err if $err;
 
     # Reap on END to avoid zombies.
     eval {

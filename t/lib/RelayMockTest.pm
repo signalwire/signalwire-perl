@@ -390,18 +390,37 @@ sub _ua {
 # ../porting-sdk/test_harness/mock_relay/mock_relay/__init__.py.
 # Returns the absolute path to the directory containing the Python package,
 # or undef when no adjacent porting-sdk is reachable.
+# Resolve the test_harness/<name> dir holding the Python mock package. Resolution
+# order mirrors run-ci / the python gates: $PORTING_SDK env first (CI checks
+# porting-sdk out NESTED at <repo>/porting-sdk, which the sibling adjacency walk
+# misses), then a SIBLING ../porting-sdk, then a NESTED <dir>/porting-sdk.
 sub discover_porting_sdk_package {
     my ($name) = @_;
+
+    my $ok = sub {
+        my ($psdk_root) = @_;
+        return undef unless defined $psdk_root && length $psdk_root;
+        my $candidate = File::Spec->catdir($psdk_root, 'test_harness', $name);
+        my $init = File::Spec->catfile($candidate, $name, '__init__.py');
+        return -f $init ? $candidate : undef;
+    };
+
+    if ( defined $ENV{PORTING_SDK} && length $ENV{PORTING_SDK} ) {
+        my $hit = $ok->($ENV{PORTING_SDK});
+        return $hit if $hit;
+    }
+
     my $here = Cwd::abs_path(__FILE__);
     return undef unless defined $here;
     my $dir = File::Spec->canonpath((File::Spec->splitpath($here))[1]);
     $dir =~ s{[/\\]$}{};
     while (1) {
         my $parent = File::Spec->canonpath(File::Spec->catdir($dir, File::Spec->updir));
+        my $sib = $ok->(File::Spec->catdir($parent, 'porting-sdk'));
+        return $sib if $sib;
+        my $nested = $ok->(File::Spec->catdir($dir, 'porting-sdk'));
+        return $nested if $nested;
         last if $parent eq $dir;
-        my $candidate = File::Spec->catdir($parent, 'porting-sdk', 'test_harness', $name);
-        my $init = File::Spec->catfile($candidate, $name, '__init__.py');
-        return $candidate if -f $init;
         $dir = $parent;
     }
     return undef;
