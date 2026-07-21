@@ -53,7 +53,7 @@ jobs:
           # PINNED to wave/1-aplus: the doc-audit tooling (DOC-WIRE + the audit scripts)
           # must match the wave/1-aplus oracle + differs this PR targets, not main.
           # REVERT this ref to main when porting-sdk wave/1-aplus merges.
-          ref: wave/1-aplus
+          ref: main
           path: porting-sdk
           fetch-depth: 1
           token: ${{ secrets.PORTING_SDK_TOKEN }}
