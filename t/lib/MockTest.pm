@@ -257,7 +257,7 @@ sub _ensure_server {
     }
 
     # Try to inject porting-sdk/test_harness/mock_signalwire/ into
-    # PYTHONPATH so `python -m mock_signalwire` resolves without a prior
+    # PYTHONPATH so `python3 -m mock_signalwire` resolves without a prior
     # `pip install -e ...`. Adjacency contract: porting-sdk next to
     # signalwire-perl in ~/src/. When the walk fails we still spawn — the
     # child falls back to whatever is on the system Python's sys.path,
@@ -270,21 +270,36 @@ sub _ensure_server {
         ? ($existing ne '' ? "$pkg_dir$sep$existing" : $pkg_dir)
         : $existing;
 
-    # Try to spawn `python -m mock_signalwire`. On any failure, set the
+    # Try to spawn `python3 -m mock_signalwire`. On any failure, set the
     # skip reason and leave it to client() to plan(skip_all).
     #
-    # Spawn via fork+exec with the child's STDIN/STDOUT/STDERR redirected to
-    # /dev/null. Do NOT use IPC::Open3 with the pipes closed right after: the mock
-    # prints a startup banner, and once the read end of a closed pipe is gone that
-    # write raises SIGPIPE and KILLS the mock before it binds — so the health poll
-    # then times out (30s) and the whole thing SKIPs. Redirecting to /dev/null lets
-    # the banner go nowhere harmlessly and the mock comes up.
+    # Interpreter: `python3`, NOT bare `python`. The porting-sdk mock package is
+    # pip-installed (CI) / PYTHONPATH-discovered against the `python3`/`pip` the
+    # audit gates use; a bare `python` can resolve to a DIFFERENT interpreter that
+    # never had mock_signalwire installed, so `python -m mock_signalwire` dies with
+    # ModuleNotFound and the health poll then times out (30s) → the whole dump/test
+    # SKIPs. The sibling RelayMockTest / TlsMockTest harnesses already spawn
+    # `python3`; this makes REST match them and the porting-sdk convention. (This
+    # was the concrete cause of the PAGINATION-CORPUS red: the standalone
+    # bin/pagination-dump.pl is the FIRST MockTest user in its process so it MUST
+    # spawn — under `prove` the first test file's spawn happens to hit the right
+    # interpreter and later files reuse it, masking the bug.)
+    #
+    # Spawn via fork+exec with the child's STDIN/STDOUT redirected to /dev/null and
+    # STDERR captured to a temp log. Do NOT use IPC::Open3 with the pipes closed
+    # right after: the mock prints a startup banner, and once the read end of a
+    # closed pipe is gone that write raises SIGPIPE and KILLS the mock before it
+    # binds. The captured STDERR log lets a genuine startup failure be reported
+    # (fail-LOUD) instead of surfacing only as an opaque 30s timeout.
     my @cmd = (
-        'python', '-m', 'mock_signalwire',
+        'python3', '-m', 'mock_signalwire',
         '--host', $HOST,
         '--port', $PORT,
         '--log-level', 'error',
     );
+
+    my $log = File::Spec->catfile(
+        File::Spec->tmpdir, "mock_signalwire.$$.$PORT.err" );
 
     my $pid = fork();
     if ( !defined $pid ) {
@@ -292,10 +307,11 @@ sub _ensure_server {
         return;
     }
     if ( $pid == 0 ) {
-        # CHILD: detach the std handles to /dev/null, then exec the mock.
+        # CHILD: detach std handles (stderr → log), own session, then exec.
         open( STDIN,  '<', File::Spec->devnull );
         open( STDOUT, '>', File::Spec->devnull );
-        open( STDERR, '>', File::Spec->devnull );
+        open( STDERR, '>', $log ) or open( STDERR, '>', File::Spec->devnull );
+        eval { POSIX::setsid() };
         { exec { $cmd[0] } @cmd; }
         POSIX::_exit(127);    # exec failed
     }
@@ -306,10 +322,21 @@ sub _ensure_server {
         $SIG{CHLD} = 'IGNORE';
     };
 
-    # Wait up to 30s for /__mock__/health.
+    # Wait up to 30s for /__mock__/health, but bail EARLY + LOUD if the mock
+    # process has already exited (a sick mock: ModuleNotFound, bind error, …) —
+    # never burn the full deadline on a corpse.
     my $deadline = time + 30;
     while (time < $deadline) {
         if (_probe_health()) {
+            unlink $log;
+            return;
+        }
+        if ( waitpid( $_MOCK_PID, POSIX::WNOHANG() ) == $_MOCK_PID ) {
+            my $rc = $?;
+            $_SKIP_REASON = "mock_signalwire died during startup (rc="
+                . ( $rc >> 8 ) . ") — spawned `@cmd`" . _read_mock_log($log);
+            unlink $log;
+            $_MOCK_PID = undef;
             return;
         }
         sleep 0.2;
@@ -317,8 +344,27 @@ sub _ensure_server {
 
     $_SKIP_REASON = "mock_signalwire did not become ready on $BASE_URL within 30s "
                   . "(clone porting-sdk next to signalwire-perl so tests can find "
-                  . "porting-sdk/test_harness/mock_signalwire/, or pip install the mock_signalwire package)";
+                  . "porting-sdk/test_harness/mock_signalwire/, or pip install the mock_signalwire package)"
+                  . _read_mock_log($log);
+    unlink $log;
     eval { kill 'TERM', $_MOCK_PID } if $_MOCK_PID;
+}
+
+# Read the captured mock STDERR log (last few lines) for a fail-LOUD skip reason,
+# or '' if empty/unreadable.
+sub _read_mock_log {
+    my ($log) = @_;
+    return '' unless defined $log && -s $log;
+    open( my $fh, '<', $log ) or return '';
+    local $/;
+    my $txt = <$fh>;
+    close $fh;
+    return '' unless defined $txt && length $txt;
+    $txt =~ s/\s+\z//;
+    # Keep the skip line bounded — the tail carries the actual error.
+    my @lines = split /\n/, $txt;
+    @lines = @lines[ -6 .. -1 ] if @lines > 6;
+    return " — mock stderr:\n    " . join( "\n    ", @lines );
 }
 
 sub _probe_health {
@@ -376,7 +422,7 @@ MockTest - test helper for the shared mock_signalwire HTTP server.
 
 The mock server's lifetime is per-process: the first MockTest::client()
 call probes the mock's C</__mock__/health> on the resolved port and either
-confirms a running server or starts one via `python -m mock_signalwire`. The
+confirms a running server or starts one via `python3 -m mock_signalwire`. The
 process mints a unique random project (C<test_proj_E<lt>hexE<gt>>), so its
 Basic-Auth header is unique; journal_all()/journal_last() filter the shared
 journal by that header and return only this process's requests, making the
