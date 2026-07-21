@@ -127,7 +127,7 @@ Agents completing this checklist have historically left gaps by treating ambiguo
 - [ ] BaseSkill with default implementations
 - [ ] SkillManager: LoadSkill, UnloadSkill, ListLoadedSkills, HasSkill, GetSkill
 - [ ] SkillRegistry: RegisterSkill, GetSkillFactory, ListSkills
-- [ ] All 17 built-in skills (see SKILLS_MANIFEST.md for exact specifications):
+- [ ] All 18 built-in skills (see SKILLS_MANIFEST.md for exact specifications):
   - [ ] datetime (get_current_time, get_current_date)
   - [ ] math (calculate — safe evaluator, no eval)
   - [ ] joke (tell_joke)
@@ -474,7 +474,7 @@ Tests are proof of implementation. The port must test **everything the Python SD
   - [ ] DataMap: data_map (all builder methods, serialization)
   - [ ] Contexts: contexts (steps, navigation, validation, gather_info)
   - [ ] Mixins/Config: prompt, tool, web, auth, serverless, state, ai_config, skill
-  - [ ] Skills: registry, manager, each of the 17 built-in skills individually
+  - [ ] Skills: registry, manager, each of the 18 built-in skills individually
   - [ ] Prefabs: each of the 5 prefab agents
   - [ ] AgentServer: registration, routing, SIP, static files
   - [ ] RELAY: client, call, action types, events, messages
@@ -490,7 +490,7 @@ Tests are proof of implementation. The port must test **everything the Python SD
 - [ ] All 38 SWML verb methods present and schema-validated
 - [ ] RELAY client: all 4 correlation mechanisms implemented (JSON-RPC id, call_id, control_id, tag)
 - [ ] REST client: all 20 namespaces initialized with correct paths (see Phase 8 for the enumerated list)
-- [ ] Skills registry: all 17 built-in skills registered (per Phase 4 enumerated list)
+- [ ] Skills registry: all 18 built-in skills registered (per Phase 4 enumerated list)
 - [ ] agent.AddSkill() one-liner integration works (not just manual SkillManager)
 - [ ] SIP username extraction utility exists
 - [ ] Static file serving in AgentServer with path traversal protection

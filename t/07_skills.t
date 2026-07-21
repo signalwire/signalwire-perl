@@ -11,15 +11,15 @@ use_ok('SignalWire::Agent::AgentBase');
 # ============================================================
 # 1. SkillRegistry - list all 17 skills
 # ============================================================
-subtest 'registry lists 17 skills' => sub {
+subtest 'registry lists 18 skills' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 17, '17 built-in skills registered');
+    is(scalar @$skills, 18, '18 built-in skills registered');
 
     my @expected = sort qw(
         api_ninjas_trivia claude_skills datasphere datasphere_serverless
-        datetime google_maps info_gatherer joke math native_vector_search
-        play_background_file spider swml_transfer
+        datetime google_maps info_gatherer joke math mcp_gateway
+        native_vector_search play_background_file spider swml_transfer
         weather_api web_search wikipedia_search custom_skills
     );
     is_deeply($skills, \@expected, 'all expected skills present');

@@ -1714,6 +1714,32 @@ def collect(raw: dict) -> dict:
             if not out_modules["signalwire.core.agent_base"]["classes"]:
                 out_modules.pop("signalwire.core.agent_base")
 
+    # -----------------------------------------------------------------
+    # Reconcile: MCPGatewaySkill.get_prompt_sections. Unlike most builtin
+    # skills (which inherit the SkillBase stub — the oracle records
+    # get_prompt_sections ONLY on SkillBase for them), Python's mcp_gateway
+    # skill OVERRIDES get_prompt_sections, so the oracle records it on
+    # MCPGatewaySkill too. The Perl McpGateway provides the same capability
+    # (the inherited SkillBase::get_prompt_sections, which honours skip_prompt,
+    # dispatching to this class's own `_get_prompt_sections` content) — but the
+    # PARENT_OVERRIDE_FILTER strips the inherited-stub name from subclasses and
+    # the regex parser only sees `_get_prompt_sections`. Project the real
+    # inherited-and-overridden capability (mirror enumerate_surface.pl's
+    # SKILL_INHERITED_PROJECTION for MCPGatewaySkill). Real capability, not
+    # invented surface.
+    mcp_cls = (
+        out_modules.get("signalwire.skills.mcp_gateway.skill", {})
+        .get("classes", {})
+        .get("MCPGatewaySkill")
+    )
+    if mcp_cls is not None:
+        mcp_methods = mcp_cls.setdefault("methods", {})
+        if "get_prompt_sections" not in mcp_methods:
+            mcp_methods["get_prompt_sections"] = {
+                "params": [{"name": "self", "kind": "self"}],
+                "returns": "list<dict<string,any>>",
+            }
+
     # Typed-surface strictness: rename Perl-idiom hand-written params to the
     # reference identifier, THEN re-attach reference-documented concrete param
     # types onto hand-written params the parser recorded as bare ``any``.
