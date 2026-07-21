@@ -55,17 +55,46 @@ sub _build_base_url {
 
     # Allow callers to pass a fully-qualified URL (used by the audit
     # fixture, which serves http://127.0.0.1:NNN). When the value
-    # already carries a scheme we use it verbatim; otherwise we
-    # prepend the production https://. Strip trailing slashes either
-    # way so request paths concatenate cleanly.
+    # already carries a scheme we use it verbatim; otherwise we pick the
+    # scheme from the host: a bare loopback host (127.0.0.1[:port] /
+    # localhost[:port] / [::1][:port]) is a local mock/dev server that
+    # speaks plain HTTP, so it gets http://; every other bare host is the
+    # real platform over https:// (a real SignalWire space is never
+    # loopback, so production is unaffected). Mirrors the Python
+    # reference's _is_loopback_host (rest/_base.py) so a shipped REST
+    # example runs verbatim against the loopback mock. Strip trailing
+    # slashes either way so request paths concatenate cleanly.
     my $base;
     if ( $host =~ m{^https?://} ) {
         $base = $host;
     } else {
-        $base = 'https://' . $host;
+        my $scheme = _is_loopback_host($host) ? 'http' : 'https';
+        $base = $scheme . '://' . $host;
     }
     $base =~ s{/+$}{};
     return $base;
+}
+
+# True if $host (bare host or host:port) is a local loopback address — a local
+# mock/dev server that speaks plain HTTP. Used to pick http:// vs https:// so a
+# shipped example runs verbatim against the local mock; a real SignalWire space
+# (<name>.signalwire.com) is never loopback, so production is unaffected.
+sub _is_loopback_host {
+    my ($host) = @_;
+    return 0 unless defined $host && length $host;
+
+    # Strip a trailing :port, but not the colons inside a bracketed IPv6 literal.
+    my $hostname = $host;
+    if ( $hostname =~ /^(\[[^\]]+\])(?::\d+)?$/ ) {
+        $hostname = $1;    # [::1] or [::1]:port -> [::1]
+    } elsif ( $hostname =~ /^([^:]+):\d+$/ ) {
+        $hostname = $1;    # host:port -> host (bare IPv4/name only)
+    }
+    return
+           $hostname eq '127.0.0.1'
+        || $hostname eq 'localhost'
+        || $hostname eq '::1'
+        || $hostname eq '[::1]' ? 1 : 0;
 }
 
 sub _build__ua {

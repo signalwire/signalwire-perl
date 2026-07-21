@@ -28,6 +28,19 @@ sub safe {
     return $result;
 }
 
+# Normalize a Fabric list response to an arrayref of rows. The Fabric list
+# endpoints are not uniform on the wire: some return a bare JSON array
+# (e.g. list_swml_scripts), others an object envelope { data => [...] }
+# (e.g. list_ai_agents). Handle both so iterating a list never depends on
+# which shape a given endpoint happens to use.
+sub rows {
+    my ($resp) = @_;
+    return []                unless defined $resp;
+    return $resp             if ref $resp eq 'ARRAY';
+    return $resp->{data} // [] if ref $resp eq 'HASH';
+    return [];
+}
+
 # 1. Create a SWML script
 print "Creating SWML script...\n";
 my $swml = $client->fabric->swml_scripts->create(
@@ -44,7 +57,7 @@ print "  Created SWML script: $swml_id\n";
 # 2. List SWML scripts
 print "\nListing SWML scripts...\n";
 my $scripts = $client->fabric->swml_scripts->list;
-for my $s (@{ $scripts->{data} // [] }) {
+for my $s (@{ rows($scripts) }) {
     print "  - $s->{id}: " . ($s->{display_name} // 'unnamed') . "\n";
 }
 
@@ -64,7 +77,7 @@ safe('Deploy version', sub {
 print "\nListing call flow versions...\n";
 safe('List versions', sub {
     my $versions = $client->fabric->call_flows->list_versions($flow_id);
-    for my $v (@{ $versions->{data} // [] }) {
+    for my $v (@{ rows($versions) }) {
         print "  - Version: " . ($v->{label} // $v->{id} // 'unknown') . "\n";
     }
 });
@@ -73,7 +86,7 @@ safe('List versions', sub {
 print "\nListing call flow addresses...\n";
 safe('List addresses', sub {
     my $addrs = $client->fabric->call_flows->list_addresses($flow_id);
-    for my $a (@{ $addrs->{data} // [] }) {
+    for my $a (@{ rows($addrs) }) {
         print "  - " . ($a->{display_name} // $a->{id} // 'unknown') . "\n";
     }
 });
