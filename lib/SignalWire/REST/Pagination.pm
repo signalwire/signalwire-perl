@@ -30,6 +30,11 @@ has 'path'     => ( is => 'ro', required => 1 );
 has 'params'   => ( is => 'rw', default  => sub { {} } );
 has 'data_key' => ( is => 'ro', default  => sub { 'data' } );
 
+# The per-request request_options forwarded to EVERY page fetch (PY-7 parity:
+# PaginatedIterator carries request_options so retry/timeout/abort apply to the
+# whole page walk, not just the first fetch). undef => inherit the client default.
+has 'request_options' => ( is => 'ro', default => sub { undef } );
+
 # Internal mutable state mirrors Python's _items/_index/_done. We store
 # it directly on the blessed hashref under leading-underscore keys
 # (Perl convention for "private") and expose getter/setter methods.
@@ -41,6 +46,13 @@ sub BUILD {
     $self->{_items} = [];
     $self->{_index} = 0;
     $self->{_done}  = 0;
+
+    # Cycle guard: the set of links.next cursors already followed. A server that
+    # keeps returning the SAME links.next would otherwise loop forever (termination
+    # is driven only by an ABSENT next link, so a repeating next was an infinite
+    # loop). Seeing a repeat terminates iteration. Mirrors the Python reference's
+    # PaginatedIterator._seen_next.
+    $self->{_seen_next} = {};
     return;
 }
 
@@ -98,13 +110,33 @@ sub all {
 sub _fetch_next {
     my ($self) = @_;
     my $params = ( keys %{ $self->params || {} } ) ? $self->params : undef;
-    my $resp   = $self->http->get( $self->path, params => $params );
-    my $data   = $resp->{ $self->data_key } || [];
+    my $resp   = $self->http->get(
+        $self->path,
+        params          => $params,
+        request_options => $self->request_options
+    );
+    my $data = $resp->{ $self->data_key } || [];
     push @{ $self->_items }, @$data;
 
     my $links    = $resp->{links} || {};
     my $next_url = $links->{next};
-    if ( $next_url && @$data ) {
+
+    # Termination is driven ONLY by the absence of a next link, NOT by an empty
+    # `data` array on this page. A page can legitimately carry links.next (more
+    # pages exist) while returning zero items on THIS page — the old
+    # `$next_url && @$data` condition stopped on such a page and silently dropped
+    # every subsequent page (the P#1 pagination-killer). Iterate while a next link
+    # exists, empty page or not. Mirrors the Python reference.
+    if ($next_url) {
+
+        # Cycle guard: a links.next we have already followed means the server is
+        # looping (a repeating cursor) — terminate instead of re-fetching the same
+        # page forever.
+        if ( $self->{_seen_next}{$next_url} ) {
+            $self->_done(1);
+            return;
+        }
+        $self->{_seen_next}{$next_url} = 1;
 
         # Parse cursor/page params from next URL query.
         my $u     = URI->new($next_url);

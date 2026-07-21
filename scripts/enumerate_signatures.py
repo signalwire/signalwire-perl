@@ -922,6 +922,27 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
             sidecar = REST_SIDECAR.get(f"{gname}::{name}")
             sig = ({"params": [{"name": "self", "kind": "self"}] + [dict(r) for r in sidecar],
                     "returns": "any"} if sidecar else _sig_from_parsed_method(meth))
+            # The generated base read verbs (ReadResource.paginate,
+            # FabricResource.list_addresses) thread a keyword-only request_options to
+            # the transport (PY-7 parity; the perl source `delete`s it out of the
+            # slurpy, so the regex parser cannot see it). They are not sidecar
+            # methods, so re-attach the oracle-shaped record here to keep DRIFT joined
+            # on the reference's ReadResource.paginate / CrudWithAddresses.list_addresses.
+            if not sidecar and name in ("list_addresses", "paginate") \
+                    and not any(p.get("name") == "request_options" for p in sig["params"]):
+                # Insert BEFORE any trailing var_keyword slurpy so the positional
+                # diff aligns with the reference (request_options is the last real
+                # param; the port's extra `params` tail is the excused extra).
+                ro = {
+                    "name": "request_options", "kind": "keyword",
+                    "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                    "required": False, "default": None,
+                }
+                params = sig["params"]
+                at = len(params)
+                while at > 0 and params[at - 1].get("kind") == "var_keyword":
+                    at -= 1
+                params.insert(at, ro)
             methods[name] = sig
         target_cls = "CrudWithAddresses" if gname == "FabricResource" else "ReadResource"
         if methods:
@@ -965,9 +986,15 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
     # it is NOT one of the crud_base-governed CRUD methods, so DRIFT demands it
     # per-class. Project it onto each ReadResource-based leaf so the method-set joins.
     if _base == "ReadResource":
+        # request_options is keyword-only and precedes the port's extra `params`
+        # var_keyword tail so the positional diff aligns with the reference (whose
+        # paginate is [self, request_options] — the oracle drops the **params tail).
         methods["paginate"] = {
             "params": [
                 {"name": "self", "kind": "self"},
+                {"name": "request_options", "kind": "keyword",
+                 "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                 "required": False, "default": None},
                 {"name": "params", "type": "dict<string,any>", "required": False, "kind": "var_keyword"},
             ],
             "returns": "any",
@@ -1686,6 +1713,32 @@ def collect(raw: dict) -> dict:
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"]["classes"]:
                 out_modules.pop("signalwire.core.agent_base")
+
+    # -----------------------------------------------------------------
+    # Reconcile: MCPGatewaySkill.get_prompt_sections. Unlike most builtin
+    # skills (which inherit the SkillBase stub — the oracle records
+    # get_prompt_sections ONLY on SkillBase for them), Python's mcp_gateway
+    # skill OVERRIDES get_prompt_sections, so the oracle records it on
+    # MCPGatewaySkill too. The Perl McpGateway provides the same capability
+    # (the inherited SkillBase::get_prompt_sections, which honours skip_prompt,
+    # dispatching to this class's own `_get_prompt_sections` content) — but the
+    # PARENT_OVERRIDE_FILTER strips the inherited-stub name from subclasses and
+    # the regex parser only sees `_get_prompt_sections`. Project the real
+    # inherited-and-overridden capability (mirror enumerate_surface.pl's
+    # SKILL_INHERITED_PROJECTION for MCPGatewaySkill). Real capability, not
+    # invented surface.
+    mcp_cls = (
+        out_modules.get("signalwire.skills.mcp_gateway.skill", {})
+        .get("classes", {})
+        .get("MCPGatewaySkill")
+    )
+    if mcp_cls is not None:
+        mcp_methods = mcp_cls.setdefault("methods", {})
+        if "get_prompt_sections" not in mcp_methods:
+            mcp_methods["get_prompt_sections"] = {
+                "params": [{"name": "self", "kind": "self"}],
+                "returns": "list<dict<string,any>>",
+            }
 
     # Typed-surface strictness: rename Perl-idiom hand-written params to the
     # reference identifier, THEN re-attach reference-documented concrete param

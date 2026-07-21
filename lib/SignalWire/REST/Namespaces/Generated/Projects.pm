@@ -19,8 +19,12 @@ around BUILDARGS => sub {
 };
 
 sub rotate_signing_key {
-    my ( $self, $id ) = @_;
-    return $self->_http->post( $self->_path( $id, 'signing-key', 'rotate' ), body => {} );
+    my ( $self, $id, %opts ) = @_;
+    return $self->_http->post(
+        $self->_path( $id, 'signing-key', 'rotate' ),
+        body            => {},
+        request_options => $opts{request_options}
+    );
 }
 
 1;

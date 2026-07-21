@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 3cdc4e7fef43187e0142c16f6fc53868a3de4e31",
+   "generated_from" : "signalwire-perl @ c087451e86745d21f4eb3833c0715e72304d9506",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -2773,6 +2773,19 @@
       "signalwire.skills.math.skill" : {
          "classes" : {
             "MathSkill" : [
+               "get_hints",
+               "get_parameter_schema",
+               "get_prompt_sections",
+               "register_tools",
+               "setup"
+            ]
+         },
+         "functions" : []
+      },
+      "signalwire.skills.mcp_gateway.skill" : {
+         "classes" : {
+            "MCPGatewaySkill" : [
+               "get_global_data",
                "get_hints",
                "get_parameter_schema",
                "get_prompt_sections",

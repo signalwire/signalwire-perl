@@ -2069,7 +2069,44 @@ sub _clone_for_request {
     $init{mcp_servers}        = dclone( $self->mcp_servers );
     $init{mcp_server_enabled} = $self->mcp_server_enabled;
 
+    # ASR-driven multilingual (Mode B) config — a render-relevant attribute
+    # (emitted as the top-level ``multilingual`` object on the AI verb). It was
+    # previously NOT copied, so a dynamic-config-callback request rendered off
+    # the clone silently lost the agent's multilingual config. Mirror python's
+    # ephemeral clone, which deep-copies _multilingual.
+    $init{multilingual} = defined $self->multilingual ? dclone( $self->multilingual ) : undef;
+
     my $clone = ( ref $self )->new(%init);
+
+    # context_builder — the contexts tree is render-relevant (emitted under
+    # ai.prompt.contexts) and was ALSO not carried by the clone, so a
+    # dynamic-config request rendered off the clone lost the ENTIRE contexts
+    # tree. Deep-copy the builder so per-request modifications (reset/rebuild in
+    # a dynamic callback) don't leak into the shared original, mirroring
+    # python's memo'd deepcopy of _contexts_builder. The builder holds a WEAK
+    # backref to its owning agent; detach it across the copy (dclone would
+    # otherwise drag the whole agent graph in) and re-attach the fresh copy to
+    # the clone. Both the fluent builder (context_builder slot) and the
+    # object-form external builder (_external_context_builder slot) are carried.
+    # Read the RAW slots so we don't trigger the lazy builder on an agent that
+    # never defined contexts.
+    for my $slot (qw(context_builder _external_context_builder)) {
+        my $src = $self->{$slot};
+        next unless defined $src && ref $src && $src->can('has_contexts');
+
+        my $has_agent = $src->can('_agent');
+        my $saved_agent;
+        if ($has_agent) {
+            $saved_agent = $src->_agent;
+            $src->_agent(undef);
+        }
+        my $copy = dclone($src);
+        $src->_agent($saved_agent) if $has_agent;
+
+        $clone->{$slot} = $copy;
+        $copy->attach_agent($clone) if $copy->can('attach_agent');
+    }
+
     return $clone;
 }
 

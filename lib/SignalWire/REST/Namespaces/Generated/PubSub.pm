@@ -19,8 +19,10 @@ around BUILDARGS => sub {
 
 sub create_token {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_base_path, body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post( $self->_base_path, body => $body,
+        request_options => $request_options );
 }
 
 1;

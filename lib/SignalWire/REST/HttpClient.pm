@@ -70,6 +70,19 @@ sub _build_base_url {
 
 sub _build__ua {
     my ($self) = @_;
+
+    my %ssl_options;
+
+    # A5 fleet CA-var contract (hard-cut, no aliases): when
+    # SIGNALWIRE_REST_CA_FILE names a custom CA bundle, use it as the REST HTTP
+    # client's TLS trust root — the analog of the python reference's
+    # session.verify = SIGNALWIRE_REST_CA_FILE (rest/_base.py). Unset -> the OS
+    # trust store / SSL_CERT_FILE, unchanged.
+    my $rest_ca_file = $ENV{SIGNALWIRE_REST_CA_FILE};
+    if ( defined $rest_ca_file && length $rest_ca_file ) {
+        $ssl_options{SSL_ca_file} = $rest_ca_file;
+    }
+
     return HTTP::Tiny->new(
         agent           => $USER_AGENT,
         default_headers => {
@@ -85,6 +98,7 @@ sub _build__ua {
         # divergence from Python. Verification honors SSL_CERT_FILE / the OS
         # trust store; plaintext http:// requests are unaffected.
         verify_SSL => 1,
+        ( %ssl_options ? ( SSL_options => \%ssl_options ) : () ),
     );
 }
 
@@ -317,6 +331,16 @@ sub _is_transport_failure {
 # Simple URI encoding
 sub _uri_encode {
     my ($str) = @_;
+    return $str unless defined $str;
+
+    # Percent-encode per RFC 3986: everything outside the unreserved set is
+    # encoded as its UTF-8 BYTES. utf8::encode downgrades the string to its
+    # octet (byte) form first, so a multi-byte character emits the correct
+    # sequence of %XX byte escapes (e.g. "é" -> %C3%A9), not the codepoint.
+    # Without this, ord() on a wide character produced >2 hex digits (query
+    # corruption) and a latin-1 char emitted the wrong single byte (%E9) — a
+    # non-ASCII param silently sent a wrong/injection-shaped request.
+    utf8::encode($str);    # in-place; a copy ($str is already a private param)
     $str =~ s/([^A-Za-z0-9\-_.~])/sprintf("%%%02X", ord($1))/ge;
     return $str;
 }

@@ -20,36 +20,53 @@ around BUILDARGS => sub {
 
 sub list_sip_endpoints {
     my ( $self, $fabric_subscriber_id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $fabric_subscriber_id, 'sip_endpoints' ),
-        params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $fabric_subscriber_id, 'sip_endpoints' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub create_sip_endpoint {
     my ( $self, $fabric_subscriber_id, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_path( $fabric_subscriber_id, 'sip_endpoints' ),
-        body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path( $fabric_subscriber_id, 'sip_endpoints' ),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub get_sip_endpoint {
     my ( $self, $fabric_subscriber_id, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ),
-        params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub update_sip_endpoint {
     my ( $self, $fabric_subscriber_id, $id, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->patch( $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ),
-        body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->patch(
+        $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub delete_sip_endpoint {
-    my ( $self, $fabric_subscriber_id, $id ) = @_;
+    my ( $self, $fabric_subscriber_id, $id, %opts ) = @_;
     return $self->_http->delete_request(
-        $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ) );
+        $self->_path( $fabric_subscriber_id, 'sip_endpoints', $id ),
+        request_options => $opts{request_options} );
 }
 
 1;

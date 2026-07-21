@@ -95,11 +95,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: signalwire/porting-sdk
-          # PINNED to the gate-enforcement plan branch: the ROUTE-COLLISION gate (wired
-          # blocking on this branch) needs the SPEC-AWARE route_collision.py that lives
-          # on porting-sdk plan/a-bar-2026-07-18, not yet on main. REVERT this ref to
-          # main when that porting-sdk branch merges.
-          ref: main
+          # PINNED to wave/1-aplus: this branch's gates diff against the wave/1-aplus
+          # oracle + register the new PSDK BEHAVIORAL rules (PAGINATION-CORPUS etc.) that
+          # main's porting-sdk rejects. REVERT this ref to main when porting-sdk
+          # wave/1-aplus merges.
+          ref: wave/1-aplus
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 
@@ -112,7 +112,8 @@ jobs:
         with:
           repository: signalwire/signalwire-python
           path: signalwire-python
-          ref: main
+          # PINNED to wave/1-aplus (the PY-7 reference). REVERT to main on merge.
+          ref: wave/1-aplus
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1

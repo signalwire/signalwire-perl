@@ -20,20 +20,35 @@ around BUILDARGS => sub {
 
 sub list_members {
     my ( $self, $queue_id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $queue_id, 'members' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $queue_id, 'members' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub get_next_member {
     my ( $self, $queue_id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $queue_id, 'members', 'next' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $queue_id, 'members', 'next' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub get_member {
     my ( $self, $queue_id, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $queue_id, 'members', $id ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $queue_id, 'members', $id ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 1;

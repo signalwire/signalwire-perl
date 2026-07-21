@@ -20,76 +20,88 @@ around BUILDARGS => sub {
 
 sub search {
     my ( $self, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path('search'), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path('search'),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub set_swml_webhook {
     my ( $self, $resource_id, $url, %extra ) = @_;
-    my %body = (
+    my $request_options = delete $extra{request_options};
+    my %body            = (
         call_handler            => 'relay_script',
         'call_relay_script_url' => $url,
     );
-    return $self->update( $resource_id, %body, %extra );
+    return $self->update( $resource_id, %body, %extra, request_options => $request_options );
 }
 
 sub set_cxml_webhook {
     my ( $self, $resource_id, $url, $fallback_url, $status_callback_url, %extra ) = @_;
-    my %body = (
+    my $request_options = delete $extra{request_options};
+    my %body            = (
         call_handler       => 'laml_webhooks',
         'call_request_url' => $url,
     );
     $body{'call_fallback_url'}        = $fallback_url        if defined $fallback_url;
     $body{'call_status_callback_url'} = $status_callback_url if defined $status_callback_url;
-    return $self->update( $resource_id, %body, %extra );
+    return $self->update( $resource_id, %body, %extra, request_options => $request_options );
 }
 
 sub set_cxml_application {
     my ( $self, $resource_id, $application_id, %extra ) = @_;
-    my %body = (
+    my $request_options = delete $extra{request_options};
+    my %body            = (
         call_handler               => 'laml_application',
         'call_laml_application_id' => $application_id,
     );
-    return $self->update( $resource_id, %body, %extra );
+    return $self->update( $resource_id, %body, %extra, request_options => $request_options );
 }
 
 sub set_ai_agent {
     my ( $self, $resource_id, $agent_id, %extra ) = @_;
-    my %body = (
+    my $request_options = delete $extra{request_options};
+    my %body            = (
         call_handler       => 'ai_agent',
         'call_ai_agent_id' => $agent_id,
     );
-    return $self->update( $resource_id, %body, %extra );
+    return $self->update( $resource_id, %body, %extra, request_options => $request_options );
 }
 
 sub set_call_flow {
     my ( $self, $resource_id, $flow_id, $version, %extra ) = @_;
-    my %body = (
+    my $request_options = delete $extra{request_options};
+    my %body            = (
         call_handler   => 'call_flow',
         'call_flow_id' => $flow_id,
     );
     $body{'call_flow_version'} = $version if defined $version;
-    return $self->update( $resource_id, %body, %extra );
+    return $self->update( $resource_id, %body, %extra, request_options => $request_options );
 }
 
 sub set_relay_application {
     my ( $self, $resource_id, $name, %extra ) = @_;
-    my %body = (
+    my $request_options = delete $extra{request_options};
+    my %body            = (
         call_handler             => 'relay_application',
         'call_relay_application' => $name,
     );
-    return $self->update( $resource_id, %body, %extra );
+    return $self->update( $resource_id, %body, %extra, request_options => $request_options );
 }
 
 sub set_relay_topic {
     my ( $self, $resource_id, $topic, $status_callback_url, %extra ) = @_;
-    my %body = (
+    my $request_options = delete $extra{request_options};
+    my %body            = (
         call_handler       => 'relay_topic',
         'call_relay_topic' => $topic,
     );
     $body{'call_relay_topic_status_callback_url'} = $status_callback_url
         if defined $status_callback_url;
-    return $self->update( $resource_id, %body, %extra );
+    return $self->update( $resource_id, %body, %extra, request_options => $request_options );
 }
 
 1;

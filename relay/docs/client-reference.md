@@ -48,7 +48,12 @@ $client->authenticate;
 ### `run`
 
 Blocking entry point. Drives the event loop, reading frames and dispatching
-events until the connection closes. Call it after connecting.
+events. Call it after connecting.
+
+On an UNEXPECTED connection drop, `run` auto-reconnects with exponential backoff
+(via `reconnect`), bounded by a maximum consecutive-attempt cap so it never
+reconnects forever. An INTENTIONAL `disconnect` (which sets the internal closing
+flag) makes `run` return cleanly without reconnecting.
 
 ```perl
 $client->run;

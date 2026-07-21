@@ -19,14 +19,23 @@ around BUILDARGS => sub {
 };
 
 sub redial_verification {
-    my ( $self, $id ) = @_;
-    return $self->_http->post( $self->_path( $id, 'verification' ), body => {} );
+    my ( $self, $id, %opts ) = @_;
+    return $self->_http->post(
+        $self->_path( $id, 'verification' ),
+        body            => {},
+        request_options => $opts{request_options}
+    );
 }
 
 sub submit_verification {
     my ( $self, $id, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->put( $self->_path( $id, 'verification' ), body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->put(
+        $self->_path( $id, 'verification' ),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 1;

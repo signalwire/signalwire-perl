@@ -19,20 +19,35 @@ around BUILDARGS => sub {
 
 sub sms {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_path('sms'), body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path('sms'),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub call {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_path('call'), body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path('call'),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub verify {
     my ( $self, $mfa_request_id, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_path( $mfa_request_id, 'verify' ), body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path( $mfa_request_id, 'verify' ),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 1;

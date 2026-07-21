@@ -20,31 +20,51 @@ extends 'SignalWire::REST::Namespaces::Base';
 # Subclasses can override: 'PATCH' (default) or 'PUT'
 has '_update_method' => ( is => 'ro', default => sub { 'PATCH' } );
 
+# Every CRUD verb accepts a keyword-only request_options (PY-7 parity): it is
+# stripped from the slurpy args and threaded to the HttpClient verb, NEVER folded
+# into the wire body/query. undef => inherit the client-level default.
 sub list {
     my ( $self, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_base_path, params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_base_path,
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub create {
     my ( $self, %kwargs ) = @_;
-    return $self->_http->post( $self->_base_path, body => \%kwargs );
+    my $request_options = delete $kwargs{request_options};
+    return $self->_http->post(
+        $self->_base_path,
+        body            => \%kwargs,
+        request_options => $request_options
+    );
 }
 
 sub get {
-    my ( $self, $resource_id ) = @_;
-    return $self->_http->get( $self->_path($resource_id) );
+    my ( $self, $resource_id, %opts ) = @_;
+    return $self->_http->get( $self->_path($resource_id),
+        request_options => $opts{request_options} );
 }
 
 sub update {
     my ( $self, $resource_id, %kwargs ) = @_;
-    my $method = lc( $self->_update_method );
-    return $self->_http->$method( $self->_path($resource_id), body => \%kwargs );
+    my $request_options = delete $kwargs{request_options};
+    my $method          = lc( $self->_update_method );
+    return $self->_http->$method(
+        $self->_path($resource_id),
+        body            => \%kwargs,
+        request_options => $request_options
+    );
 }
 
 sub delete {
-    my ( $self, $resource_id ) = @_;
-    return $self->_http->delete_request( $self->_path($resource_id) );
+    my ( $self, $resource_id, %opts ) = @_;
+    return $self->_http->delete_request( $self->_path($resource_id),
+        request_options => $opts{request_options} );
 }
 
 1;

@@ -64,7 +64,29 @@ sub _execute ( $self, $method, %extra ) {
     my $client = $self->_client;
     die "No client attached to call" unless $client;
     my %params = ( $self->_base_params, %extra );
-    return $client->execute( $method, \%params );
+    my $result = $client->execute( $method, \%params );
+    return _apply_a2_contract( $self, $method, $result );
+}
+
+# A2 relay-contract (the documented behavior — only "call gone" is swallowed):
+# a verb RPC whose result carries a non-2xx `code` is a server-side status. A
+# 404/410 means the call no longer exists, so the verb is a no-op (swallowed,
+# returns the result). ANY OTHER non-2xx code (e.g. 500) is a real server-side
+# failure the caller MUST see, so it RAISES a RelayError. Mirrors the python
+# reference (relay/call.py _execute: swallow 404/410, raise everything else).
+sub _apply_a2_contract ( $self, $method, $result ) {
+    return $result unless ref $result eq 'HASH';
+    my $code = $result->{code};
+    return $result unless defined $code && $code =~ /^[0-9]+$/;
+    return $result if $code >= 200 && $code < 300;     # success
+    return $result if $code == 404 || $code == 410;    # call gone -> swallow (no-op)
+
+    # Real server-side failure -> raise, so a caller's eval sees it.
+    my $message = $result->{message} // $result->{error} // "RELAY $method failed";
+    die SignalWire::Relay::Client::RelayError->new(
+        code    => $code,
+        message => "$message (code=$code)",
+    );
 }
 
 # Start an action-based method: creates the Action, registers it, executes the RPC
@@ -84,7 +106,15 @@ sub _start_action ( $self, $method, $action_class, %extra ) {
     if ($client) {
         my $result = $client->execute( $method, \%params );
 
-        # If call is gone (404/410), resolve action immediately
+        # A2 contract: a 500-class result raises (server-side failure the caller
+        # must see); 404/410 (call gone) resolves the action as a no-op. On a
+        # raise, drop the just-registered action so it is not left dangling.
+        my $ok = eval { _apply_a2_contract( $self, $method, $result ); 1 };
+        unless ($ok) {
+            my $err = $@;
+            delete $self->_actions->{$control_id};
+            die $err;
+        }
         if ( ref $result eq 'HASH' && $result->{code} && $result->{code} =~ /^(404|410)$/ ) {
             $action->_resolve(undef);
         }

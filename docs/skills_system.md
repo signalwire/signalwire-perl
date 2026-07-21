@@ -45,12 +45,13 @@ The skills system consists of:
 - **Validation** - Checks required Perl packages and environment variables
 
 ### Built-in Skills
-The SDK ships 17 built-in skills under `lib/SignalWire/Skills/Builtin/`:
+The SDK ships 18 built-in skills under `lib/SignalWire/Skills/Builtin/`:
 
 `datetime`, `math`, `web_search`, `weather_api`, `wikipedia_search`, `joke`,
 `google_maps`, `spider`, `native_vector_search`, `datasphere`,
 `datasphere_serverless`, `play_background_file`, `swml_transfer`,
-`api_ninjas_trivia`, `claude_skills`, `custom_skills`, `info_gatherer`.
+`api_ninjas_trivia`, `claude_skills`, `custom_skills`, `info_gatherer`,
+`mcp_gateway`.
 
 ## Available Skills
 

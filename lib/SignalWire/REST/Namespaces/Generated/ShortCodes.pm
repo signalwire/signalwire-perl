@@ -19,20 +19,26 @@ around BUILDARGS => sub {
 
 sub list {
     my ( $self, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_base_path, params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get( $self->_base_path, params => $p,
+        request_options => $request_options );
 }
 
 sub get {
     my ( $self, $id, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path($id), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get( $self->_path($id), params => $p,
+        request_options => $request_options );
 }
 
 sub update {
     my ( $self, $id, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->put( $self->_path($id), body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->put( $self->_path($id), body => $body,
+        request_options => $request_options );
 }
 
 1;

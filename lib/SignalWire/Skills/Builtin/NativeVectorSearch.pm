@@ -43,8 +43,9 @@ has '_http' => (
     lazy    => 1,
     default => sub {
         HTTP::Tiny->new(
-            agent   => 'SignalWire-Perl-NativeVectorSearch/1.0',
-            timeout => 30,
+            agent      => 'SignalWire-Perl-NativeVectorSearch/1.0',
+            timeout    => 30,
+            verify_SSL => 1,
         );
     },
 );

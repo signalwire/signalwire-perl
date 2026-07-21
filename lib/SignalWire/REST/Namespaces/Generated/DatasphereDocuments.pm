@@ -20,25 +20,43 @@ around BUILDARGS => sub {
 
 sub search {
     my ( $self, %args ) = @_;
-    my $body = {%args};
-    return $self->_http->post( $self->_path('search'), body => $body );
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path('search'),
+        body            => $body,
+        request_options => $request_options
+    );
 }
 
 sub list_chunks {
     my ( $self, $documentId, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $documentId, 'chunks' ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $documentId, 'chunks' ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub get_chunk {
     my ( $self, $documentId, $chunkId, %params ) = @_;
-    my $p = %params ? \%params : undef;
-    return $self->_http->get( $self->_path( $documentId, 'chunks', $chunkId ), params => $p );
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $documentId, 'chunks', $chunkId ),
+        params          => $p,
+        request_options => $request_options
+    );
 }
 
 sub delete_chunk {
-    my ( $self, $documentId, $chunkId ) = @_;
-    return $self->_http->delete_request( $self->_path( $documentId, 'chunks', $chunkId ) );
+    my ( $self, $documentId, $chunkId, %opts ) = @_;
+    return $self->_http->delete_request(
+        $self->_path( $documentId, 'chunks', $chunkId ),
+        request_options => $opts{request_options}
+    );
 }
 
 1;

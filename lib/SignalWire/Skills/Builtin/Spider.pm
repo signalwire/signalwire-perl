@@ -40,8 +40,9 @@ has '_http' => (
     lazy    => 1,
     default => sub {
         HTTP::Tiny->new(
-            agent   => 'SignalWire-Perl-Spider/1.0',
-            timeout => 15,
+            agent      => 'SignalWire-Perl-Spider/1.0',
+            timeout    => 15,
+            verify_SSL => 1,
         );
     },
 );

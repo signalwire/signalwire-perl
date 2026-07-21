@@ -526,9 +526,36 @@ def ordered_fields(fields: list[tuple[str, dict, bool]]) -> list[tuple[str, dict
 # Sidecar accumulator: (ClassName, perlMethodName) -> [param records without self].
 _SIDECAR: dict[tuple[str, str], list[dict]] = {}
 
+# The keyword-only per-call `request_options` param the reference (PY-7) added to
+# EVERY REST resource verb. It is threaded to the HttpClient verb
+# (`request_options => $ro`) and NEVER folded into the wire body/query — the perl
+# templates `delete` it out of the slurpy before building body/params. Its sidecar
+# record mirrors the oracle exactly (kind=keyword, optional<RequestOptions>), so
+# DRIFT joins the port to the reference on this param.
+REQUEST_OPTIONS_TYPE = "optional<class:signalwire.rest._request_options.RequestOptions>"
+REQUEST_OPTIONS_RECORD = {
+    "name": "request_options", "kind": "keyword",
+    "type": REQUEST_OPTIONS_TYPE, "required": False, "default": None,
+}
+
+
+def _ro_record() -> dict:
+    return dict(REQUEST_OPTIONS_RECORD)
+
 
 def _register_sidecar(cls: str, method: str, records: list[dict]) -> None:
-    _SIDECAR[(cls, method)] = records
+    # Every generated verb gains the keyword-only request_options door. The
+    # reference (oracle) records request_options as the LAST param and DROPS the
+    # method's trailing **kwargs/**params var_keyword entirely, so to keep the
+    # positional diff aligned we insert request_options BEFORE any trailing
+    # var_keyword slurpy the port keeps (the slurpy then becomes the port's extra
+    # optional tail, which DRIFT already excuses).
+    recs = list(records)
+    insert_at = len(recs)
+    while insert_at > 0 and recs[insert_at - 1].get("kind") == "var_keyword":
+        insert_at -= 1
+    recs.insert(insert_at, _ro_record())
+    _SIDECAR[(cls, method)] = recs
 
 
 def body_field_records(spec: Spec, fields: list[tuple[str, dict, bool]],
@@ -639,9 +666,11 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
             _register_sidecar(cls, name, body_field_records(spec, fields, id_records))
             lines.append(f"sub {name} {{")
             lines.append(f"    my ( $self{id_unpack}, %args ) = @_;")
+            lines.append("    my $request_options = delete $args{request_options};")
             lines.append("    my $body = {%args};")
             verb_fn = {"post": "post", "put": "put", "patch": "patch"}[verb]
-            lines.append(f"    return $self->_http->{verb_fn}( {path_expr}, body => $body );")
+            lines.append(f"    return $self->_http->{verb_fn}( {path_expr}, body => $body,"
+                         " request_options => $request_options );")
             lines.append("}")
         else:
             # §5.2 union body → a single positional `body` param.
@@ -650,16 +679,18 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
             ])
             verb_fn = {"post": "post", "put": "put", "patch": "patch"}[verb]
             lines.append(f"sub {name} {{")
-            lines.append(f"    my ( $self{id_unpack}, $body ) = @_;")
-            lines.append(f"    return $self->_http->{verb_fn}( {path_expr}, body => $body );")
+            lines.append(f"    my ( $self{id_unpack}, $body, %opts ) = @_;")
+            lines.append(f"    return $self->_http->{verb_fn}( {path_expr}, body => $body,"
+                         " request_options => $opts{request_options} );")
             lines.append("}")
     elif write_verb:
         # write verb, no body → empty body.
         _register_sidecar(cls, name, list(id_records))
         verb_fn = {"post": "post", "put": "put", "patch": "patch"}[verb]
         lines.append(f"sub {name} {{")
-        lines.append(f"    my ( $self{id_unpack} ) = @_;")
-        lines.append(f"    return $self->_http->{verb_fn}( {path_expr}, body => {{}} );")
+        lines.append(f"    my ( $self{id_unpack}, %opts ) = @_;")
+        lines.append(f"    return $self->_http->{verb_fn}( {path_expr}, body => {{}},"
+                     " request_options => $opts{request_options} );")
         lines.append("}")
     elif verb == "get":
         # §5.3 GET query door — a trailing var_keyword `params` map.
@@ -668,14 +699,17 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
         ])
         lines.append(f"sub {name} {{")
         lines.append(f"    my ( $self{id_unpack}, %params ) = @_;")
+        lines.append("    my $request_options = delete $params{request_options};")
         lines.append("    my $p = %params ? \\%params : undef;")
-        lines.append(f"    return $self->_http->get( {path_expr}, params => $p );")
+        lines.append(f"    return $self->_http->get( {path_expr}, params => $p,"
+                     " request_options => $request_options );")
         lines.append("}")
     else:  # delete
         _register_sidecar(cls, name, list(id_records))
         lines.append(f"sub {name} {{")
-        lines.append(f"    my ( $self{id_unpack} ) = @_;")
-        lines.append(f"    return $self->_http->delete_request( {path_expr} );")
+        lines.append(f"    my ( $self{id_unpack}, %opts ) = @_;")
+        lines.append(f"    return $self->_http->delete_request( {path_expr},"
+                     " request_options => $opts{request_options} );")
         lines.append("}")
     return "\n".join(lines) + "\n"
 
@@ -800,6 +834,7 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
     lines: list[str] = []
     lines.append(f"sub {sm_name} {{")
     lines.append(f"    my ( {sig} ) = @_;")
+    lines.append("    my $request_options = delete $extra{request_options};")
     lines.append("    my %body = (")
     lines.append(f"        call_handler => {perl_str(handler)},")
     for a, field in required_names:
@@ -807,7 +842,8 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
     lines.append("    );")
     for a, field in optional_names:
         lines.append(f"    $body{{{perl_str(field)}}} = ${a} if defined ${a};")
-    lines.append("    return $self->update( $resource_id, %body, %extra );")
+    lines.append("    return $self->update( $resource_id, %body, %extra,")
+    lines.append("        request_options => $request_options );")
     lines.append("}")
     return "\n".join(lines) + "\n"
 
@@ -866,11 +902,15 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
     out += "};\n"
     out += "\n"
     out += "# Each method POSTs { command, params, id? } to the resource base path.\n"
+    out += "# request_options is keyword-only: stripped from the command params and\n"
+    out += "# threaded to the transport, never folded into the wire body.\n"
     out += "sub _execute {\n"
     out += "    my ( $self, $command, $call_id, %params ) = @_;\n"
+    out += "    my $request_options = delete $params{request_options};\n"
     out += "    my %body = ( command => $command, params => \\%params );\n"
     out += "    $body{id} = $call_id if defined $call_id;\n"
-    out += "    return $self->_http->post( $self->_base_path, body => \\%body );\n"
+    out += "    return $self->_http->post( $self->_base_path, body => \\%body,\n"
+    out += "        request_options => $request_options );\n"
     out += "}\n"
 
     mapping = (spec.schemas.get(request).get("discriminator") or {}).get("mapping") or {}
@@ -1004,27 +1044,34 @@ def emit_read_resource_base() -> str:
     out += "extends 'SignalWire::REST::Namespaces::Base';\n\n"
     out += "sub list {\n"
     out += "    my ( $self, %params ) = @_;\n"
+    out += "    my $request_options = delete $params{request_options};\n"
     out += "    my $p = %params ? \\%params : undef;\n"
-    out += "    return $self->_http->get( $self->_base_path, params => $p );\n"
+    out += "    return $self->_http->get( $self->_base_path, params => $p,\n"
+    out += "        request_options => $request_options );\n"
     out += "}\n\n"
     out += "# Iterate every item across all pages of this resource's list endpoint.\n"
     out += "# list() returns a single raw page; paginate() follows the wire cursor\n"
     out += "# (links.next / page_token) and returns a PaginatedIterator that yields\n"
     out += "# each item, so callers no longer hand-build the token loop. Mirrors the\n"
-    out += "# Python reference ReadResource.paginate(**params) -> PaginatedIterator.\n"
+    out += "# Python reference ReadResource.paginate(request_options=...) ->\n"
+    out += "# PaginatedIterator; request_options is keyword-only and forwarded to the\n"
+    out += "# paginator so every page fetch carries it (never a query param).\n"
     out += "sub paginate {\n"
     out += "    my ( $self, %params ) = @_;\n"
+    out += "    my $request_options = delete $params{request_options};\n"
     out += "    my $p = %params ? \\%params : undef;\n"
     out += "    return SignalWire::REST::Pagination::PaginatedIterator->new(\n"
-    out += "        http     => $self->_http,\n"
-    out += "        path     => $self->_base_path,\n"
-    out += "        params   => $p,\n"
-    out += "        data_key => 'data',\n"
+    out += "        http            => $self->_http,\n"
+    out += "        path            => $self->_base_path,\n"
+    out += "        params          => $p,\n"
+    out += "        data_key        => 'data',\n"
+    out += "        request_options => $request_options,\n"
     out += "    );\n"
     out += "}\n\n"
     out += "sub get {\n"
-    out += "    my ( $self, $resource_id ) = @_;\n"
-    out += "    return $self->_http->get( $self->_path($resource_id) );\n"
+    out += "    my ( $self, $resource_id, %opts ) = @_;\n"
+    out += "    return $self->_http->get( $self->_path($resource_id),\n"
+    out += "        request_options => $opts{request_options} );\n"
     out += "}\n\n"
     out += "1;\n"
     return out
@@ -1040,8 +1087,10 @@ def emit_fabric_resource_base() -> str:
     out += "extends 'SignalWire::REST::Namespaces::CrudResource';\n\n"
     out += "sub list_addresses {\n"
     out += "    my ( $self, $resource_id, %params ) = @_;\n"
+    out += "    my $request_options = delete $params{request_options};\n"
     out += "    my $p = %params ? \\%params : undef;\n"
-    out += "    return $self->_http->get( $self->_path( $resource_id, 'addresses' ), params => $p );\n"
+    out += "    return $self->_http->get( $self->_path( $resource_id, 'addresses' ), params => $p,\n"
+    out += "        request_options => $request_options );\n"
     out += "}\n\n"
     out += "1;\n"
     return out

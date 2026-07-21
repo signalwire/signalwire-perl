@@ -47,6 +47,22 @@ HTTPS is served directly only when `SWML_SSL_ENABLED` is truthy AND both cert an
 key paths resolve. Alternatively, passing `ssl_cert` and `ssl_key` to
 `run`/`serve` always enables TLS.
 
+#### Custom CA bundles for outbound TLS (REST + RELAY clients)
+
+The SDK's outbound clients verify server certificates by default. To trust a
+custom / private CA (e.g. an internal proxy or a self-signed test CA), point the
+matching transport at a PEM CA bundle via its env var — the two fleet-standard
+names, spelled exactly:
+
+| Variable | Transport | Description |
+|----------|-----------|-------------|
+| `SIGNALWIRE_REST_CA_FILE` | REST HTTP client | CA bundle used as the TLS trust root for `SignalWire::REST` requests |
+| `SIGNALWIRE_RELAY_CA_FILE` | RELAY WebSocket client | CA bundle used as the TLS trust root for the `SignalWire::Relay::Client` connection |
+
+When unset, each client uses the system trust store (and `SSL_CERT_FILE`, per
+`IO::Socket::SSL`). These are the trust root only — verification stays ON; they
+do not disable certificate checking.
+
 ### Authentication
 
 | Variable | Default | Description |

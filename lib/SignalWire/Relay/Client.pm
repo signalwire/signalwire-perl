@@ -30,6 +30,25 @@ use SignalWire::Logging;
 
 my $logger = SignalWire::Logging->get_logger('relay_client');
 
+# SECRET-SCRUB (A6/enterprise): raw RELAY frames carry the connect authentication
+# (project/token/jwt_token) and the server's encrypted authorization_state re-auth
+# blob. A verbatim debug dump of a frame leaks live credentials. _scrub_frame masks
+# the string VALUES of those keys wherever they appear in the JSON frame, keeping the
+# frame diagnostic (method/id/structure intact) but credential-free. Mirrors the
+# python reference's _scrub_frame (relay/client.py).
+my @_SCRUB_KEYS = qw(token project jwt_token authorization_state);
+my $_SCRUB_RE   = do {
+    my $keys = join '|', @_SCRUB_KEYS;
+    qr/("(?:$keys)"\s*:\s*)"(?:\\.|[^"\\])*"/;
+};
+
+sub _scrub_frame ($raw) {
+    return '' unless defined $raw;
+    my $text = "$raw";
+    $text =~ s/$_SCRUB_RE/$1"***"/g;
+    return $text;
+}
+
 # Derive the RELAY User-Agent from the distribution $VERSION -- the single source
 # of truth in lib/SignalWire.pm (same approach as REST/HttpClient.pm) -- so it can
 # never go stale against the released version. Resolve the version WITHOUT loading
@@ -112,10 +131,42 @@ has '_ws'     => ( is => 'rw', default => sub { undef } );
 has '_reconnect_attempts' => ( is => 'rw', default => sub { 0 } );
 has '_max_backoff'        => ( is => 'ro', default => sub { 30 } );
 
+# Set true by disconnect_ws() so run()'s auto-reconnect loop distinguishes an
+# INTENTIONAL teardown (do NOT reconnect, exit cleanly) from an unexpected drop
+# (reconnect). Mirrors the python reference's _closing guard.
+has '_closing' => ( is => 'rw', default => sub { 0 } );
+
+# Bound the auto-reconnect loop: after this many CONSECUTIVE failed reconnect
+# attempts run() gives up and exits rather than spinning forever (A6: never
+# infinite-reconnect). Reset to 0 on a successful (re)connect.
+has '_max_reconnect_attempts' => ( is => 'rw', default => sub { 10 } );
+
 # Callbacks
 has '_on_call'    => ( is => 'rw', default => sub { undef } );
 has '_on_message' => ( is => 'rw', default => sub { undef } );
 has '_on_event'   => ( is => 'rw', default => sub { undef } );
+
+# Max concurrent inbound calls (Python parity: RelayClient(max_active_calls=N)).
+# The (N+1)th inbound call while N are active is DROPPED, not accepted. undef =>
+# resolve from RELAY_MAX_ACTIVE_CALLS env, else the built-in default. Clamped to a
+# floor of 1. Public constructor arg mirrors the reference's `max_active_calls`.
+has 'max_active_calls' => ( is => 'ro', default => sub { undef } );
+
+use constant _DEFAULT_MAX_ACTIVE_CALLS => 100;
+
+# Resolved effective cap: constructor > RELAY_MAX_ACTIVE_CALLS env > default,
+# floored at 1 (mirrors the reference's max(1, ...) resolution).
+sub _max_active_calls ($self) {
+    my $v = $self->max_active_calls;
+    if ( defined $v ) {
+        return $v < 1 ? 1 : $v;
+    }
+    my $env = $ENV{RELAY_MAX_ACTIVE_CALLS};
+    if ( defined $env && $env =~ /^\d+$/ && length $env ) {
+        return $env < 1 ? 1 : 0 + $env;
+    }
+    return _DEFAULT_MAX_ACTIVE_CALLS;
+}
 
 # --- UUID generation ---
 sub _generate_uuid {
@@ -157,8 +208,22 @@ sub on_event ( $self, $cb ) {
 # handshake in one call (matches Python RelayClient.connect()). Returns
 # the authenticate result hashref on success, dies on failure.
 sub connect ($self) {
-    die "project and token are required (or jwt_token)"
-        unless ( $self->project && $self->token ) || $self->jwt_token || $self->_jwt_token;
+
+    # A6 credential contract: fail fast PRE-CONNECT with a PER-VARIABLE
+    # actionable error naming exactly which credential is missing and the env
+    # var that supplies it (a combined "project and token" message misleads when
+    # only one is absent). JWT is the alternative for both. Mirrors the python
+    # reference (relay/client.py __init__ A6 validation).
+    unless ( $self->jwt_token || $self->_jwt_token ) {
+        die "project is required. Pass project => ... or set the "
+            . "SIGNALWIRE_PROJECT_ID env var (or use jwt_token / "
+            . "SIGNALWIRE_JWT_TOKEN for JWT auth).\n"
+            unless $self->project;
+        die "token is required. Pass token => ... or set the "
+            . "SIGNALWIRE_API_TOKEN env var (or use jwt_token / "
+            . "SIGNALWIRE_JWT_TOKEN for JWT auth).\n"
+            unless $self->token;
+    }
     my $ok = $self->connect_ws;
     die "WebSocket connect failed" unless $ok;
     return $self->authenticate;
@@ -205,11 +270,24 @@ sub connect_ws ($self) {
             return 0;
         }
     } else {
+
+        # A5 fleet CA-var contract (hard-cut, no aliases): when
+        # SIGNALWIRE_RELAY_CA_FILE names a custom CA bundle, use it as the RELAY
+        # WebSocket transport's TLS trust root — the analog of the python
+        # reference's _build_relay_ssl_context (relay/client.py) trusting
+        # SIGNALWIRE_RELAY_CA_FILE. Unset -> the OS trust store, unchanged.
+        my %ssl_ca;
+        my $relay_ca_file = $ENV{SIGNALWIRE_RELAY_CA_FILE};
+        if ( defined $relay_ca_file && length $relay_ca_file ) {
+            $ssl_ca{SSL_ca_file} = $relay_ca_file;
+        }
+
         $socket = IO::Socket::SSL->new(
             PeerHost        => $host,
             PeerPort        => $port,
             SSL_verify_mode => SSL_VERIFY_PEER,
             Timeout         => 10,
+            %ssl_ca,
         );
         unless ($socket) {
             $logger->error("SSL connection failed: $! $IO::Socket::SSL::SSL_ERROR");
@@ -569,7 +647,7 @@ sub dial ( $self, %opts ) {
 
 sub _send ( $self, $msg ) {
     my $json = encode_json($msg);
-    $logger->debug("SEND: $json");
+    $logger->debug( "SEND: " . _scrub_frame($json) );
     my $ws = $self->_ws;
     if ($ws) {
         $ws->write($json);
@@ -630,7 +708,7 @@ sub _reject_all_pending ( $self, $reason ) {
 # --- Internal: handle an incoming WebSocket message ---
 
 sub _handle_message ( $self, $raw ) {
-    $logger->debug("RECV: $raw");
+    $logger->debug( "RECV: " . _scrub_frame($raw) );
 
     # Skip non-JSON-text frames. Protocol::WebSocket::Client doesn't
     # surface frame opcode in on_read, so we sniff: a JSON-RPC frame
@@ -793,6 +871,15 @@ sub _handle_inbound_call ( $self, $event, $params ) {
     my $call_id = $params->{call_id} // '';
     return unless $call_id;
 
+    # Max-active-calls cap (Python parity): when N calls are already active, the
+    # (N+1)th inbound call is DROPPED (never accepted / handed to on_call), so a
+    # runaway inbound rate can't exhaust the process.
+    if ( keys %{ $self->_calls } >= $self->_max_active_calls ) {
+        $logger->error(
+            "Max active calls (" . $self->_max_active_calls . ") reached, dropping inbound call" );
+        return;
+    }
+
     my $call = SignalWire::Relay::Call->new(
         call_id => $call_id,
         node_id => $params->{node_id}    // '',
@@ -869,7 +956,9 @@ sub _handle_disconnect ( $self, $params ) {
 
     $self->connected(0);
 
-    # The client should reconnect (handled by the event loop)
+    # Marking connected(0) drops out of run()'s inner read loop; run() then
+    # performs the actual bounded auto-reconnect (unless _closing). This is NOT
+    # a no-op: the reconnect is driven by run(), not "the event loop".
     return;
 }
 
@@ -909,6 +998,7 @@ sub reconnect ($self) {
 # --- Disconnect ---
 
 sub disconnect_ws ($self) {
+    $self->_closing(1);
     $self->connected(0);
 
     # Fail any in-flight requests so a synchronous waiter returns immediately
@@ -926,8 +1016,35 @@ sub disconnect_ws ($self) {
 # --- Run event loop ---
 
 sub run ($self) {
-    while ( $self->connected ) {
-        $self->_read_once();
+
+    # Blocking event loop with AUTO-RECONNECT. On an unexpected socket drop
+    # (_read_once flips connected(0) on EOF), the loop attempts a bounded,
+    # backing-off reconnect instead of silently falling out of run() — the
+    # behavior the README advertises ("Auto-reconnect with exponential
+    # backoff"). An INTENTIONAL disconnect_ws() sets _closing so we exit cleanly
+    # and never reconnect. Reconnect gives up after _max_reconnect_attempts
+    # consecutive failures (never infinite-reconnect, A6).
+    while (1) {
+        while ( $self->connected ) {
+            $self->_read_once();
+        }
+
+        # Left the inner loop because connected went false. If this was an
+        # intentional teardown, or auto-reconnect is exhausted, stop.
+        last if $self->_closing;
+        last if $self->_reconnect_attempts >= $self->_max_reconnect_attempts;
+
+        # Attempt a real reconnect (backoff + fresh connect + authenticate).
+        my $ok = eval { $self->reconnect; 1 };
+        if ( $ok && $self->connected ) {
+            $self->_reconnect_attempts(0);    # success: reset the backoff counter
+            next;
+        }
+
+        # Reconnect attempt failed; loop will back off again (reconnect already
+        # incremented _reconnect_attempts) until the cap, then exit.
+        $logger->warn( "Reconnect attempt failed: " . ( $@ || 'not connected' ) )
+            if $logger->can('warn');
     }
     return;
 }

@@ -9,12 +9,12 @@ use SignalWire::Skills::SkillRegistry;
 use SignalWire::Agent::AgentBase;
 
 # ============================================================
-# 1. list_skills returns all 17
+# 1. list_skills returns all 18
 # ============================================================
 subtest 'list all skills' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 17, '17 skills');
+    is(scalar @$skills, 18, '18 skills');
 };
 
 # ============================================================
@@ -24,7 +24,7 @@ subtest 'get_factory all skills' => sub {
     my @expected = qw(
         api_ninjas_trivia claude_skills custom_skills datasphere
         datasphere_serverless datetime google_maps info_gatherer
-        joke math native_vector_search
+        joke math mcp_gateway native_vector_search
         play_background_file spider swml_transfer weather_api
         web_search wikipedia_search
     );
@@ -49,7 +49,7 @@ subtest 'clear_registry' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     # After clearing, list_skills will re-load all builtins
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 17, 're-loaded after clear');
+    is(scalar @$skills, 18, 're-loaded after clear');
 };
 
 # ============================================================
@@ -72,7 +72,9 @@ subtest 'all skills instantiate' => sub {
     # claude_skills now requires a skills_path (real SKILL.md discovery,
     # #72) and returns false from setup() without it — matches Python
     # ClaudeSkillsSkill.setup.
-    my %requires_config = ( native_vector_search => 1, claude_skills => 1 );
+    # mcp_gateway is a CLIENT that requires gateway_url + auth; setup()
+    # returns false without them (matches the Python reference).
+    my %requires_config = ( native_vector_search => 1, claude_skills => 1, mcp_gateway => 1 );
 
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
     for my $name (@$skills) {

@@ -57,8 +57,9 @@ has '_http' => (
     lazy    => 1,
     default => sub {
         HTTP::Tiny->new(
-            agent   => 'SignalWire-Perl-WikipediaSearch/1.0',
-            timeout => 10,
+            agent      => 'SignalWire-Perl-WikipediaSearch/1.0',
+            timeout    => 10,
+            verify_SSL => 1,
         );
     },
 );
