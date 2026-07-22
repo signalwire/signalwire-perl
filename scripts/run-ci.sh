@@ -193,6 +193,14 @@ sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t
 sched_gate SURFACE res=surface desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port perl --repo "$PORT_ROOT"
 
+# PREDICATE-SELFTEST (Wave-2 C1-V8, GATE-SELFTEST doctrine): the field-surface predicate
+# that decides which generated-payload fields are cross-port surface (enumerate_signatures.py
+# _field_is_surface) must hold its locked anchor counts (AIParams 92/60, AIObject 9/7, 155
+# classes). A predicate change that silently trims or inflates payload surface — the exact
+# vacuity this locks — shifts these counts and reds here. Cheap; per-PR.
+sched_gate PREDICATE-SELFTEST desc="field-surface predicate at locked anchors (AIParams 92/60) — GATE-SELFTEST" \
+    -- python3 scripts/enumerate_signatures.py --selftest
+
 # ROUTE-COLLISION (spec-aware): build perl's route_registry.pl → feed the SPEC-AWARE
 # route_collision.py (a split is a finding only when the dispatched path diverges from
 # the spec path for the method's operationId). perl's 2 callFlows/conferenceRooms
