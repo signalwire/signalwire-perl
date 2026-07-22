@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ c087451e86745d21f4eb3833c0715e72304d9506",
+   "generated_from" : "signalwire-perl @ 44a5996323cde672a110eb983a992f2c72206727",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -126,6 +126,11 @@
       },
       "signalwire.core.auth_handler" : {
          "classes" : {
+            "AuthError" : [
+               "__init__",
+               "message",
+               "response"
+            ],
             "AuthHandler" : [
                "__init__",
                "flask_decorator",
@@ -136,6 +141,15 @@
                "verify_api_key",
                "verify_basic_auth",
                "verify_bearer_token"
+            ],
+            "BasicCredentials" : [
+               "__init__",
+               "password",
+               "username"
+            ],
+            "BearerCredentials" : [
+               "__init__",
+               "credentials"
             ]
          },
          "functions" : []
@@ -310,12 +324,40 @@
                "update_global_data",
                "update_settings",
                "wait_for_user"
+            ],
+            "JoinConference" : [
+               "beeps",
+               "is_beep",
+               "is_method",
+               "is_record",
+               "is_trim",
+               "methods",
+               "records",
+               "trims"
+            ],
+            "RecordCall" : [
+               "directions",
+               "formats",
+               "is_direction",
+               "is_format"
+            ],
+            "Tap" : [
+               "codecs",
+               "directions",
+               "is_codec",
+               "is_direction"
             ]
          },
          "functions" : []
       },
       "signalwire.core.logging_config" : {
-         "classes" : {},
+         "classes" : {
+            "LogLevel" : [
+               "all",
+               "is_valid",
+               "severity"
+            ]
+         },
          "functions" : [
             "configure_logging",
             "debug",
@@ -658,6 +700,19 @@
       },
       "signalwire.core.swml_service" : {
          "classes" : {
+            "ParameterSchema" : [
+               "__init__",
+               "array",
+               "boolean",
+               "enum",
+               "integer",
+               "number",
+               "object",
+               "required",
+               "string",
+               "to_dict",
+               "to_hash"
+            ],
             "SWMLService" : [
                "__getattr__",
                "__init__",
@@ -1070,6 +1125,16 @@
          },
          "functions" : []
       },
+      "signalwire.relay.call_state" : {
+         "classes" : {
+            "CallState" : [
+               "is_state",
+               "is_terminal",
+               "states"
+            ]
+         },
+         "functions" : []
+      },
       "signalwire.relay.client" : {
          "classes" : {
             "Constants" : [],
@@ -1096,6 +1161,25 @@
                "__init__",
                "code",
                "message"
+            ]
+         },
+         "functions" : []
+      },
+      "signalwire.relay.device" : {
+         "classes" : {
+            "Device" : [
+               "__init__",
+               "to_hash"
+            ]
+         },
+         "functions" : []
+      },
+      "signalwire.relay.dial_state" : {
+         "classes" : {
+            "DialState" : [
+               "is_state",
+               "is_terminal",
+               "states"
             ]
          },
          "functions" : []
@@ -1200,6 +1284,16 @@
                "on_completed",
                "result",
                "wait"
+            ]
+         },
+         "functions" : []
+      },
+      "signalwire.relay.message_state" : {
+         "classes" : {
+            "MessageState" : [
+               "is_state",
+               "is_terminal",
+               "states"
             ]
          },
          "functions" : []
@@ -2841,6 +2935,15 @@
                "list_all_skill_sources",
                "list_skills",
                "register_skill"
+            ]
+         },
+         "functions" : []
+      },
+      "signalwire.skills.skill_name" : {
+         "classes" : {
+            "SkillName" : [
+               "all",
+               "is_builtin"
             ]
          },
          "functions" : []
