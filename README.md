@@ -37,6 +37,13 @@ _Build AI voice agents, control live calls over WebSocket, and manage every Sign
 cpanm SignalWire
 ```
 
+> **Version note:** until the next CPAN cut lands, `cpanm SignalWire` may resolve
+> an older published release. To track the code in this repository, install from
+> source (see [Installation](#installation)). You will need SignalWire API
+> credentials (Project ID + API token) from your
+> [SignalWire Dashboard](https://signalwire.com/signin) — see
+> [Environment variables](#environment-variables).
+
 ---
 
 ## AI Agents
@@ -82,6 +89,22 @@ swaig-test --file my_agent.pl --list-tools
 swaig-test --file my_agent.pl --dump-swml
 swaig-test --file my_agent.pl --exec get_time
 ```
+
+**In-process agent-file contract (guard + return the agent).** `swaig-test
+--file` loads your script with `do` to introspect its tools/SWML, so the script
+must yield the built agent and must **not** block on a server. Two things make
+this automatic:
+
+- **Return the agent as the file's last value.** End your script with the agent
+  object (`$agent;`) — or define a `build_service` sub (your own, in the script)
+  that returns one, or a package that `extends SignalWire::Agent::AgentBase`.
+  `swaig-test` resolves any of these.
+- **`$agent->run` is safe to leave in.** When `swaig-test` loads the file it sets
+  `SWAIG_TEST_INPROCESS=1`; under that flag `run()`/`serve()` no-op and return the
+  agent instead of binding a socket. So the same `$agent->run;` that serves in
+  production is harmless under the test harness — you do **not** need a hand-written
+  `unless caller` guard. (The quickstart above ends in `$agent->run;` and works with
+  `swaig-test --file` unchanged.)
 
 ### Agent Features
 
@@ -204,10 +227,12 @@ See the **[REST documentation](rest/README.md)** for the full guide, API referen
 Requires **Perl 5.36+**.
 
 ```bash
-# From CPAN
+# From CPAN (may resolve an older published release until the next cut)
 cpanm SignalWire
 
-# From source
+# From source (tracks this repository — recommended for the latest code)
+git clone https://github.com/signalwire/signalwire-perl.git
+cd signalwire-perl
 cpanm --installdeps .
 perl Makefile.PL
 make test

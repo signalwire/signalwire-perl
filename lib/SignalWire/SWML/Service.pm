@@ -778,6 +778,13 @@ sub setup_graceful_shutdown {
 # Parity with SWMLService.serve(host, port).
 sub serve {
     my ( $self, %opts ) = @_;
+
+    # In-process test guard (swaig-test --file, SWAIG_TEST_INPROCESS): never
+    # bind/serve when the harness is loading this file to introspect it —
+    # return $self so a file ending in `$svc->serve` yields the service instead
+    # of blocking on a listen socket.
+    return $self if $ENV{SWAIG_TEST_INPROCESS};
+
     my $host = $opts{host} // $self->host;
     my $port = $opts{port} // $self->port;
     require Plack::Runner;

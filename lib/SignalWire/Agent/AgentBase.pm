@@ -2114,6 +2114,18 @@ sub _clone_for_request {
 
 sub run {
     my ( $self, %opts ) = @_;
+
+    # In-process test guard (swaig-test --file): when SWAIG_TEST_INPROCESS is
+    # set, `run()` must NOT start the blocking HTTP server — swaig-test loads
+    # the agent file with `do` to introspect its tools/SWML, and a quickstart
+    # that ends in `$agent->run` would otherwise bind a socket and serve
+    # forever (README file-mode workflow hung on all unguarded examples). Under
+    # the flag, return $self so the loaded file yields the built agent to the
+    # harness. This makes the "guard + return-the-agent" contract automatic for
+    # EVERY agent file (user agents included), not just the few examples that
+    # hand-wrote an `unless caller` guard.
+    return $self if $ENV{SWAIG_TEST_INPROCESS};
+
     return $self->serve(%opts);
 }
 
@@ -2362,6 +2374,12 @@ sub _join_psgi_body {
 
 sub serve {
     my ( $self, %opts ) = @_;
+
+    # In-process test guard (swaig-test --file, SWAIG_TEST_INPROCESS): a file
+    # loaded for introspection must not bind a listen socket. Return $self so
+    # `$agent->serve` (or run→serve) yields the agent instead of blocking.
+    return $self if $ENV{SWAIG_TEST_INPROCESS};
+
     my $app  = $self->psgi_app;
     my $host = $opts{host} // $self->host;
     my $port = $opts{port} // $self->port;

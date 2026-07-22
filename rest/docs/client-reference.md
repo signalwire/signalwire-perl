@@ -146,6 +146,37 @@ if (my $err = $@) {
 Distinguishing the two lets a caller retry a transient transport failure while
 surfacing a `422`/`404` to the user, all from one `eval`.
 
+## Request options (per-call timeout, retries)
+
+Transport behavior — request timeout, retries with exponential backoff, and
+cooperative cancellation — is controlled by
+[`SignalWire::REST::RequestOptions`](../../lib/SignalWire/REST/RequestOptions.pm),
+set as a **client default** or **overridden per call**:
+
+```perl
+use SignalWire::REST::RequestOptions;
+
+my $opts = SignalWire::REST::RequestOptions->new(
+    timeout       => 10,     # per-request wall-clock seconds (default 30)
+    retries       => 3,      # retry attempts (default 0)
+    retry_backoff => 0.5,    # exponential backoff base, seconds
+    abort_signal  => sub { $cancelled },   # checked cooperatively between attempts
+);
+
+# Client default for every request:
+my $client = SignalWire::REST::RestClient->new( ..., request_options => $opts );
+
+# Or per call, shallow-overriding the client default:
+$client->phone_numbers->list( request_options => $opts );
+```
+
+Every field is optional; an unset field inherits (per-call → client default →
+built-in default). The retry policy is idempotency-aware: `GET`/`PUT`/`DELETE`
+retry the full transient set, while `POST`/`PATCH` retry only `429`/`503`
+(honoring `Retry-After`). Pass a `RequestOptions` object — the full field
+reference and semantics are in the module's POD (`perldoc
+SignalWire::REST::RequestOptions`).
+
 ## Session Behavior
 
 - A single HTTP client is shared across all namespaces for connection reuse.

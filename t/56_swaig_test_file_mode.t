@@ -97,4 +97,41 @@ subtest '--parse-only validates without loading the agent' => sub {
     unlike($bad, qr/^parse OK\s*$/m, 'no "parse OK" success line on the error path');
 };
 
+subtest 'README quickstart pattern ($agent->run) does NOT hang under --file' => sub {
+    # r5 P#4: the README file-mode workflow hung because examples ending in
+    # `$agent->run` (the quickstart) started a blocking HTTP server. The
+    # SWAIG_TEST_INPROCESS guard now makes run()/serve() no-op + return the
+    # agent under swaig-test --file. Prove an AgentBase example that ends in
+    # `$agent->run` lists its tools within a hard deadline (a hang = the guard
+    # regressed).
+    my $quickstart = File::Spec->catfile('examples', 'quickstart_agent.pl');
+    plan skip_all => "$quickstart not found" unless -f $quickstart;
+
+    # Confirm the fixture really ends in a bare $agent->run (the hang trigger).
+    open my $fh, '<', $quickstart or die "open $quickstart: $!";
+    my $src = do { local $/; <$fh> };
+    close $fh;
+    like($src, qr/->run\s*;/, 'fixture ends in $agent->run (the P#4 hang pattern)');
+
+    my $cmd = qq{PERL5LIB="lib:\$PERL5LIB" $perl $script --file $quickstart --list-tools 2>&1};
+    my $out = '';
+    my $timed_out = 0;
+    my $rc;
+    eval {
+        local $SIG{ALRM} = sub { die "TIMEOUT\n" };
+        alarm 30;
+        $out = scalar `$cmd`;
+        $rc  = $? >> 8;
+        alarm 0;
+        1;
+    } or do {
+        $timed_out = 1 if ($@ // '') eq "TIMEOUT\n";
+    };
+
+    ok(!$timed_out, 'swaig-test --file on the $agent->run quickstart did NOT hang');
+    is($rc, 0, 'exited 0 (no server bound, no blocking serve)') unless $timed_out;
+    like($out, qr/Found \d+ SWAIG function/, 'listed the tool count in-process')
+        unless $timed_out;
+};
+
 done_testing;

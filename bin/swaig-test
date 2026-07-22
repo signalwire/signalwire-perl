@@ -241,8 +241,13 @@ sub do_file_mode {
         print STDERR ">>> do '$abs'\n";
     }
 
-    # Run the file. The example scripts guard their server-start with
-    # `unless caller`, so loading via `do` does NOT spin a server.
+    # Run the file WITHOUT letting it spin a blocking HTTP server. AgentBase::run
+    # / SWMLService::run honor SWAIG_TEST_INPROCESS: under it they no-op and
+    # return the agent instead of serving. So a quickstart ending in
+    # `$agent->run` loads cleanly and yields the agent as the file's last value
+    # (see _resolve_service_instance). This works for any agent file, not just
+    # examples that hand-wrote an `unless caller` guard.
+    local $ENV{SWAIG_TEST_INPROCESS} = 1;
     my $rv = do $abs;
     if ( my $e = $@ ) {
         die "Error: failed to compile '$file': $e\n";
