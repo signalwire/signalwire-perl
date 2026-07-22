@@ -118,12 +118,15 @@ reference). The SURFACE gate is clean for all of them (they match the
 reference surface, hence not in PORT_ADDITIONS.md). Excused as a
 reference-oracle gap, not port-invented surface.
 
-signalwire.agents.bedrock.BedrockAgent.set_inference_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_llm_model: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_llm_temperature: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_post_prompt_llm_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_prompt_llm_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_voice: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+# C2-BEDROCK (2026-07-22): the six BedrockAgent.set_* entries were REMOVED here.
+# Cluster-1 C1-O1 enumerated BedrockAgent into python_signatures.json (the
+# __init__ full params + set_inference_params/set_llm_model/set_llm_temperature/
+# set_post_prompt_llm_params/set_prompt_llm_params/set_voice), closing the
+# signature-oracle blind spot these excused. They now compare directly against
+# the reference (DRIFT clean), so the excuse is inert and — per the rule that an
+# omission is a permanent blind spot — is deleted, not left to rot. BedrockAgent
+# __init__'s Perl Moo keyword-constructor idiom is covered by the loose-param
+# section above; it matches the reference param set (DRIFT exit 0).
 signalwire.core.swml_handler.AIVerbHandler.validate_config: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
 signalwire.list_skills: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
 signalwire.prefabs.concierge.ConciergeAgent.on_summary: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
