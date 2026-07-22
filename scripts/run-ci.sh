@@ -250,6 +250,14 @@ sched_gate PACKAGE-NIGHTLY tier=nightly defer=1 res=dayone desc="package suite, 
 sched_gate NO-CHEAT desc="audit_no_cheat_tests" \
     -- python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
 
+# COORDINATED-PASS: if porting-sdk was checked out at a NON-main ref (a coordinated
+# pass via the PORTING_SDK_REF repo variable), the PR must declare it (a
+# `Coordinated-With: porting-sdk@<branch>` line in the PR body, or the
+# `coordinated-pass` label) — else this gate fails, so a pin is never silent.
+# Local/push (no PR) is a no-op PASS. See porting-sdk/COORDINATED_PASS.md.
+sched_gate COORDINATED-PASS desc="a non-main porting-sdk pin must be declared on the PR (Coordinated-With: line or coordinated-pass label)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/coordinated_pass.py" --porting-sdk "$PORTING_SDK_DIR"
+
 # FMT joins res=surface: run locally (no CI) it rewrites lib/**/*.pm in place via
 # `perltidy -b`, which a concurrent TEST (`perl -c` / module load) or the surface
 # enumerator (loads lib/) would otherwise read mid-write. Under CI (--check) it's
