@@ -153,7 +153,9 @@ cooperative cancellation — is controlled by
 [`SignalWire::REST::RequestOptions`](../../lib/SignalWire/REST/RequestOptions.pm),
 set as a **client default** or **overridden per call**:
 
+<!-- snippet: no-run makes a live REST GET (phone_numbers->list); the SDK REST base is https://{space} with no mock override, so it 401s standalone — same live-call class as the README quickstart -->
 ```perl
+use SignalWire::REST::RestClient;
 use SignalWire::REST::RequestOptions;
 
 my $opts = SignalWire::REST::RequestOptions->new(
@@ -164,7 +166,12 @@ my $opts = SignalWire::REST::RequestOptions->new(
 );
 
 # Client default for every request:
-my $client = SignalWire::REST::RestClient->new( ..., request_options => $opts );
+my $client = SignalWire::REST::RestClient->new(
+    project         => $ENV{SIGNALWIRE_PROJECT_ID},
+    token           => $ENV{SIGNALWIRE_API_TOKEN},
+    host            => $ENV{SIGNALWIRE_SPACE},
+    request_options => $opts,
+);
 
 # Or per call, shallow-overriding the client default:
 $client->phone_numbers->list( request_options => $opts );
