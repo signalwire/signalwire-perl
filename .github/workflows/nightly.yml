@@ -112,7 +112,7 @@ jobs:
           repository: signalwire/signalwire-python
           path: signalwire-python
           # PINNED to wave/1-aplus (the PY-7 reference). REVERT to main on merge.
-          ref: main
+          ref: ${{ vars.PORTING_SDK_REF || 'main' }}
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1
