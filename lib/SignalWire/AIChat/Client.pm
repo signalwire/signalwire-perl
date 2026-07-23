@@ -288,6 +288,16 @@ sub summarize {
     return defined $summary ? ( ref $summary ? "$summary" : $summary ) : '';
 }
 
+# Release any transport resources the client holds. HTTP::Tiny opens a fresh
+# connection per request and keeps no persistent session, so there is nothing
+# to tear down — close() is a well-defined no-op that completes the client's
+# lifecycle contract (the analog of the python reference's close(), which
+# closes its persistent aiohttp.ClientSession). Safe + idempotent to call.
+sub close {    ## no critic (ProhibitBuiltinHomonyms)
+    my ($self) = @_;
+    return;
+}
+
 # ── Response models ──────────────────────────────────────────────────
 
 package SignalWire::AIChat::ConversationInfo;    ## no critic (ProhibitMultiplePackages)

@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ ab4d62ee167902fd40f4191f9b98377cc4f9f968",
+   "generated_from" : "signalwire-perl @ f73d663824071f8fb1636a07479d79d49c9d29d0",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -51,6 +51,7 @@
             "AIChatClient" : [
                "__init__",
                "chat",
+               "close",
                "create_conversation",
                "delete",
                "end",

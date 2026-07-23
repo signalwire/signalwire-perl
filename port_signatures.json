@@ -922,6 +922,15 @@
               ],
               "returns": "any"
             },
+            "close": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "create_conversation": {
               "params": [
                 {

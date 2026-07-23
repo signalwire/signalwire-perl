@@ -259,4 +259,15 @@ for my $case (@CASES) {
     ok( ref $err && $err->isa('SignalWire::AIChat::Error'), 'non-JSON body -> AIChatError' );
 }
 
+# close() — the client lifecycle contract. HTTP::Tiny is stateless, so
+# close() is a well-defined no-op; it must exist, return cleanly, and be
+# idempotent (mirrors the python reference's close()).
+{
+    my ($ua) = stub_ua( \&mock_responder );
+    my $client = new_client($ua);
+    can_ok( $client, 'close' );
+    is( $client->close, undef, 'close() returns cleanly (no-op)' );
+    is( $client->close, undef, 'close() is idempotent' );
+}
+
 done_testing();
