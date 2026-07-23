@@ -40,9 +40,10 @@ use Moo;
 use feature 'signatures';
 no warnings 'experimental::signatures';
 
-use JSON           ();
-use File::Basename ();
-use File::Spec     ();
+use JSON                               ();
+use File::Basename                     ();
+use File::Spec                         ();
+use SignalWire::Utils::SchemaValidator ();
 
 # SchemaUtils — Perl port of signalwire.utils.schema_utils.SchemaUtils
 # (mirrors the Ruby SignalWire::Utils::SchemaUtils). Loads the SWML JSON
@@ -349,15 +350,97 @@ sub _entry_schema_name ($entry) {
 
 sub _init_full_validator ($self) {
 
-    # Reserved for full-validator wiring (a JSON-Schema validator gem/module).
-    $self->_full_validator(undef);
+    # Wire the focused SWML JSON-Schema evaluator (the Perl analogue of the
+    # python reference's jsonschema-rs full validator). It enforces the
+    # closed-object / typed-key semantics that make a misspelled / unknown /
+    # wrong-typed verb config an ERROR — the Wave-2 P#5 STRICT-RENDER contract.
+    # Only wire it when a real schema (with $defs) is loaded; a partial / test
+    # schema leaves the validator unset so validate_verb falls back to the
+    # lightweight required-property check (python parity).
+    my $schema = $self->schema;
+    if ( ref $schema eq 'HASH' && ref $schema->{'$defs'} eq 'HASH' ) {
+        $self->_full_validator( SignalWire::Utils::SchemaValidator->new( schema => $schema ) );
+    } else {
+        $self->_full_validator(undef);
+    }
     return;
 }
 
 sub _validate_verb_full ( $self, $verb_name, $verb_config ) {
+    my $validator = $self->_full_validator;
+    return $self->_validate_verb_lightweight( $verb_name, $verb_config )
+        unless defined $validator;
 
-    # Reserved for full-validator wiring; falls back to lightweight check.
-    return $self->_validate_verb_lightweight( $verb_name, $verb_config );
+    # Validate the verb entry { verb_name => config } against the verb's own
+    # schema definition (the SWMLMethod anyOf branch for this verb). This is
+    # the single-verb equivalent of the python reference wrapping the verb in a
+    # minimal document and validating the whole doc: only this verb's branch
+    # can match an entry keyed by $verb_name, so validating against the branch
+    # directly is equivalent and closes the same key/type gaps.
+    my $entry = $self->verbs->{$verb_name};
+    my $defn  = ref $entry eq 'HASH' ? $entry->{definition} : undef;
+    return $self->_validate_verb_lightweight( $verb_name, $verb_config )
+        unless ref $defn eq 'HASH';
+
+    # The ai verb is validated TOP-LEVEL-KEYS only (STRICT-RENDER contract):
+    # reject an unknown/misspelled top-level ai key and a missing required
+    # prompt, but do NOT deep-validate the prompt / SWAIG shapes. The reference
+    # emits legitimate deep shapes (empty prompt.pom [], SWAIG.defaults,
+    # functions[].web_hook_url / __token) the bundled JSON-schema does not fully
+    # accept — deep-validating the ai verb would FALSE-REJECT valid documents.
+    # ai.params stays OPEN. Matches the python reference (jsonschema-rs closes
+    # the AIObject's top-level keys via unevaluatedProperties, and ai.params is
+    # its own open door).
+    if ( $verb_name eq 'ai' ) {
+        return $self->_validate_ai_top_level($verb_config);
+    }
+
+    my @errs = $validator->validate( { $verb_name => $verb_config }, $defn );
+    return @errs
+        ? ( 0, [ "Schema validation error for '$verb_name': " . join( '; ', @errs ) ] )
+        : ( 1, [] );
+}
+
+# Shallow validation for the ai verb: the config must be a hashref, must carry
+# the required `prompt`, and every top-level key must be a known AIObject
+# property (so a misspelled/unknown top-level key is rejected). The property
+# VALUES are not validated (the deep prompt/SWAIG shapes are the reference's
+# domain and are intentionally not schema-checked here). Returns
+# ($valid, $errors_arrayref).
+sub _validate_ai_top_level ( $self, $verb_config ) {
+    my @errors;
+    if ( ref $verb_config ne 'HASH' ) {
+        return ( 0, ["Schema validation error for 'ai': config must be an object"] );
+    }
+
+    # Known top-level AIObject property names + required list, read from the
+    # bundled schema (AIObject def) so this tracks the schema, not a hardcode.
+    my $ai_obj   = $self->_ai_object_schema;
+    my %known    = map { $_ => 1 } keys %{ $ai_obj->{properties} // {} };
+    my @required = ref $ai_obj->{required} eq 'ARRAY' ? @{ $ai_obj->{required} } : ('prompt');
+
+    for my $r (@required) {
+        push @errors, "missing required property '$r'"
+            unless exists $verb_config->{$r};
+    }
+    if (%known) {
+        for my $k ( sort keys %$verb_config ) {
+            push @errors, "unknown/unexpected top-level property '$k'"
+                unless $known{$k};
+        }
+    }
+    return @errors
+        ? ( 0, [ "Schema validation error for 'ai': " . join( '; ', @errors ) ] )
+        : ( 1, [] );
+}
+
+# The AIObject definition from the bundled schema (resolved from the ai verb's
+# `ai` property $ref). Returns {} when the schema is partial/absent.
+sub _ai_object_schema ($self) {
+    my $defs = $self->schema->{'$defs'};
+    return {} unless ref $defs eq 'HASH';
+    my $ai_obj = $defs->{AIObject};
+    return ref $ai_obj eq 'HASH' ? $ai_obj : {};
 }
 
 sub _validate_verb_lightweight ( $self, $verb_name, $verb_config ) {

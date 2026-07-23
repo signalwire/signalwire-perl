@@ -84,6 +84,15 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.utils.schema_utils', class => 'SchemaUtils' },
     'SignalWire::Utils::SchemaValidationError' =>
         { module => 'signalwire.utils.schema_utils', class => 'SchemaValidationError' },
+
+    # Internal SWML JSON-Schema evaluator — the Perl analogue of the python
+    # reference's FULL validator, which is the EXTERNAL jsonschema-rs library
+    # (not SDK surface). It therefore has no public reference class; route it to
+    # the schema_utils module with class => undef and mark its public subs as
+    # private-parity skips (SKIP_SUB_IN_PKG) so it emits zero surface. Hiding no
+    # reference symbol, this is not a PORT_OMISSION.
+    'SignalWire::Utils::SchemaValidator' =>
+        { module => 'signalwire.utils.schema_utils', class => undef },
     'SignalWire::DataMap' => { module => 'signalwire.core.data_map', class => 'DataMap' },
     'SignalWire::Security::SessionManager' =>
         { module => 'signalwire.core.security.session_manager', class => 'SessionManager' },
@@ -1097,8 +1106,14 @@ my %AGENTBASE_METHOD_TO_PY = (
 # below). Its `parse_skill_md`/`discover_sections` exports mirror Python's
 # PRIVATE `_parse_skill_md`/`_discover_sections` on the claude_skills skill —
 # private-parity, skipped (they carry no public reference surface).
-my %SKIP_SUB_IN_PKG =
-    ( 'SignalWire::Skills::SkillDiscovery' => { parse_skill_md => 1, discover_sections => 1 }, );
+my %SKIP_SUB_IN_PKG = (
+    'SignalWire::Skills::SkillDiscovery' => { parse_skill_md => 1, discover_sections => 1 },
+
+    # SchemaValidator's public methods realize the EXTERNAL jsonschema-rs
+    # validator the python reference uses (not SDK surface) — private-parity,
+    # skipped so the internal evaluator emits no public surface.
+    'SignalWire::Utils::SchemaValidator' => { validate => 1, is_valid => 1 },
+);
 
 my %METHOD_OVERRIDES = (
 

@@ -909,6 +909,41 @@ sub validate {
                 . "tool(s) to avoid the collision.";
         }
     }
+
+    # STRICT-RENDER GAP2 (r5 F3): a step's set_functions([...]) whitelist entry
+    # that is neither a registered SWAIG tool nor a reserved native tool is a
+    # DANGLING reference — the step would render an active-function set pointing
+    # at nothing (get_datetime vs get_current_time). Only enforce when a real
+    # tool registry is present (an agent that can list its tools); a builder
+    # with no agent cannot know the tool universe and must not red a valid
+    # document. "none"/[] (disable-all) are not lists of references to resolve.
+    if ( defined $self->_agent && $self->_agent->can('list_tool_names') ) {
+        my %known = map { $_ => 1 } $self->_agent->list_tool_names;
+        $known{$_} = 1 for keys %SignalWire::Contexts::RESERVED_NATIVE_TOOL_NAMES;
+        for my $cname ( keys %{ $self->_contexts } ) {
+            my $ctx = $self->_contexts->{$cname};
+            for my $sname ( keys %{ $ctx->_steps } ) {
+                my $step  = $ctx->_steps->{$sname};
+                my $funcs = $step->_functions;
+
+                # Only an explicit arrayref whitelist is a list of references.
+                # undef (inherit), "none", or a scalar disable-all are skipped.
+                next unless ref $funcs eq 'ARRAY';
+                for my $fn (@$funcs) {
+                    next if $known{$fn};
+                    my @available = sort keys %known;
+                    die "Step '$sname' in context '$cname' whitelists function "
+                        . "'$fn' via set_functions(), but no such SWAIG tool is "
+                        . "registered on the agent and it is not a reserved native "
+                        . "tool. This would emit a dangling function reference. "
+                        . "Register the tool (define_tool / a skill) or remove it "
+                        . "from the step. Available: ["
+                        . join( ', ', map { "'$_'" } @available ) . "]";
+                }
+            }
+        }
+    }
+    return;
 }
 
 sub to_hash {
