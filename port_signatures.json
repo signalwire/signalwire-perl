@@ -921,12 +921,12 @@
                 },
                 {
                   "name": "timeout",
-                  "type": "optional<integer>",
+                  "type": "optional<int>",
                   "required": false
                 },
                 {
                   "name": "reinit",
-                  "type": "boolean",
+                  "type": "bool",
                   "required": false
                 }
               ],
