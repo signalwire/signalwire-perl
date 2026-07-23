@@ -918,6 +918,16 @@
                   "name": "user_metadata",
                   "type": "optional<dict<string,any>>",
                   "required": false
+                },
+                {
+                  "name": "timeout",
+                  "type": "optional<integer>",
+                  "required": false
+                },
+                {
+                  "name": "reinit",
+                  "type": "boolean",
+                  "required": false
                 }
               ],
               "returns": "any"
