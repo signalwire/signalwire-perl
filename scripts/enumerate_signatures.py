@@ -618,6 +618,16 @@ PERL_HASHREF_KWARG_METHODS = {
     # the oracle (mirroring the class-method kwargs idiom) so the decomposed
     # validate core drifts 0 on the cross-port contract.
     ("signalwire.core.security.webhook_middleware", None, "validate"),
+    # AIChat client: chat / create_conversation / summarize take a trailing
+    # ``%opts`` slurpy that carries the reference's named keyword params
+    # (chat: role/config_url/user_metadata; create_conversation:
+    # config_url/user_message/timeout/user_metadata/reinit; summarize:
+    # summary_prompt). Whitelisting them unfolds the slurpy into those named
+    # kwargs from the oracle so the decomposed methods drift 0 (the same
+    # kwargs-idiom fold as the AIConfigMixin/webhook_middleware methods above).
+    ("signalwire.ai_chat.client", "AIChatClient", "chat"),
+    ("signalwire.ai_chat.client", "AIChatClient", "create_conversation"),
+    ("signalwire.ai_chat.client", "AIChatClient", "summarize"),
 }
 
 

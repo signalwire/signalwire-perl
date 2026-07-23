@@ -225,6 +225,44 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Prefabs::Survey' =>
         { module => 'signalwire.prefabs.survey', class => 'SurveyAgent' },
 
+    # AI Chat client. The python reference lives in signalwire.ai_chat.client
+    # (AIChatClient + the AIChatError typed-error family + the ConversationInfo/
+    # ChatResponse/ChatLog data carriers). Perl mirrors the same shape under
+    # SignalWire::AIChat::* and projects every package onto that one oracle
+    # module so SURFACE-DIFF lines them up by capability, not by Perl spelling.
+    #   Client: SignalWire::AIChat::Client -> AIChatClient (a Moo root; its
+    #   implicit __init__ folds onto the reference __init__, and its API subs
+    #   chat/create_conversation/delete/end/log/summarize project verbatim).
+    'SignalWire::AIChat::Client' =>
+        { module => 'signalwire.ai_chat.client', class => 'AIChatClient' },
+
+    #   Error family: base Error -> AIChatError (Moo root -> implicit __init__,
+    #   matching the reference AIChatError.__init__); the five typed subclasses
+    #   `extends` the base (not Moo roots) so they surface as empty classes,
+    #   matching the reference (each Python subclass adds no own members).
+    'SignalWire::AIChat::Error' =>
+        { module => 'signalwire.ai_chat.client', class => 'AIChatError' },
+    'SignalWire::AIChat::AuthenticationError' =>
+        { module => 'signalwire.ai_chat.client', class => 'AuthenticationError' },
+    'SignalWire::AIChat::ConversationNotFoundError' =>
+        { module => 'signalwire.ai_chat.client', class => 'ConversationNotFoundError' },
+    'SignalWire::AIChat::RateLimitError' =>
+        { module => 'signalwire.ai_chat.client', class => 'RateLimitError' },
+    'SignalWire::AIChat::ChatInProgressError' =>
+        { module => 'signalwire.ai_chat.client', class => 'ChatInProgressError' },
+    'SignalWire::AIChat::SummaryError' =>
+        { module => 'signalwire.ai_chat.client', class => 'SummaryError' },
+
+    #   Data carriers: the reference records these as @dataclass with NO
+    #   __init__ on the surface, so the Perl Moo-root implicit __init__ is
+    #   suppressed (%SKIP_IMPLICIT_INIT) to match — they surface as empty
+    #   classes, exactly like the reference.
+    'SignalWire::AIChat::ConversationInfo' =>
+        { module => 'signalwire.ai_chat.client', class => 'ConversationInfo' },
+    'SignalWire::AIChat::ChatResponse' =>
+        { module => 'signalwire.ai_chat.client', class => 'ChatResponse' },
+    'SignalWire::AIChat::ChatLog' => { module => 'signalwire.ai_chat.client', class => 'ChatLog' },
+
     # RELAY client
     'SignalWire::Relay::Client'  => { module => 'signalwire.relay.client', class => 'RelayClient' },
     'SignalWire::Relay::Call'    => { module => 'signalwire.relay.call',   class => 'Call' },
@@ -1427,6 +1465,16 @@ my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
     # python @dataclass's auto-generated __init__ is not recorded as surface, so
     # the Perl Moo root's implicit __init__ is suppressed to match.
     'SignalWire::REST::RequestOptions',
+
+    # AI Chat data carriers: the reference records ConversationInfo /
+    # ChatResponse / ChatLog as @dataclass whose surface is EMPTY (no
+    # __init__ recorded). Each Perl package is a Moo root, which would
+    # otherwise emit an implicit __init__ — suppress it so they surface as
+    # empty classes, matching the reference. (AIChatClient + the base
+    # AIChatError DO expose __init__ in the oracle, so they are NOT listed.)
+    'SignalWire::AIChat::ConversationInfo',
+    'SignalWire::AIChat::ChatResponse',
+    'SignalWire::AIChat::ChatLog',
 
     # SWML helper classes whose Python reference class does NOT expose an
     # __init__ in the surface oracle: SwmlRenderer (staticmethod-only) and the

@@ -405,6 +405,11 @@
                   "required": false
                 },
                 {
+                  "name": "schema_validator",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "proxy_url_base",
                   "type": "any",
                   "required": false
@@ -818,6 +823,443 @@
               "returns": "any"
             },
             "voice_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.ai_chat.client": {
+      "classes": {
+        "AIChatClient": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "project",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "token",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "space",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "url",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "read_idle_timeout_seconds",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "ua",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "auth_header",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "request_counter",
+                  "type": "any",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "chat": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "conversation_id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "message",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "role",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "config_url",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "user_metadata",
+                  "type": "optional<dict<string,any>>",
+                  "required": false
+                }
+              ],
+              "returns": "any"
+            },
+            "create_conversation": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "conversation_id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "config_url",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "user_message",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "timeout",
+                  "type": "optional<int>",
+                  "required": false
+                },
+                {
+                  "name": "user_metadata",
+                  "type": "optional<dict<string,any>>",
+                  "required": false
+                },
+                {
+                  "name": "reinit",
+                  "type": "bool",
+                  "required": false
+                }
+              ],
+              "returns": "any"
+            },
+            "delete": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "conversation_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "end": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "conversation_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "log": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "conversation_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "project": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "read_idle_timeout_seconds": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "space": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "summarize": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "conversation_id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "summary_prompt",
+                  "type": "optional<string>",
+                  "required": false
+                }
+              ],
+              "returns": "any"
+            },
+            "token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "ua": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        },
+        "AIChatError": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "code",
+                  "type": "optional<int>",
+                  "required": false
+                },
+                {
+                  "name": "message",
+                  "type": "string",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "message": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        },
+        "ChatLog": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "messages",
+                  "type": "list<dict<string,any>>",
+                  "required": false
+                },
+                {
+                  "name": "call_timeline",
+                  "type": "list<dict<string,any>>",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "call_timeline": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "messages": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        },
+        "ChatResponse": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "text",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "conversation_id",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "user_event",
+                  "type": "optional<dict<string,any>>",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "conversation_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "text": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "user_event": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        },
+        "ConversationInfo": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "id",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "initial_message",
+                  "type": "optional<string>",
+                  "required": false
+                }
+              ],
+              "returns": "void"
+            },
+            "id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "initial_message": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status": {
               "params": [
                 {
                   "name": "self",
@@ -1381,6 +1823,11 @@
                 },
                 {
                   "name": "full_validation",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "schema_validator",
                   "type": "any",
                   "required": false
                 },
@@ -11219,6 +11666,11 @@
                   "required": false
                 },
                 {
+                  "name": "schema_validator",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "proxy_url_base",
                   "type": "any",
                   "required": false
@@ -16143,6 +16595,11 @@
                   "required": false
                 },
                 {
+                  "name": "schema_validator",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "proxy_url_base",
                   "type": "any",
                   "required": false
@@ -16586,6 +17043,11 @@
                   "required": false
                 },
                 {
+                  "name": "schema_validator",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "proxy_url_base",
                   "type": "any",
                   "required": false
@@ -16969,6 +17431,11 @@
                 },
                 {
                   "name": "full_validation",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "schema_validator",
                   "type": "any",
                   "required": false
                 },
@@ -17418,6 +17885,11 @@
                   "required": false
                 },
                 {
+                  "name": "schema_validator",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "proxy_url_base",
                   "type": "any",
                   "required": false
@@ -17802,6 +18274,11 @@
                 },
                 {
                   "name": "full_validation",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "schema_validator",
                   "type": "any",
                   "required": false
                 },
