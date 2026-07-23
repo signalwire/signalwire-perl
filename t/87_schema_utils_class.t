@@ -66,7 +66,7 @@ subtest 'validate_verb unknown verb' => sub {
 subtest 'validate_verb missing required property' => sub {
     my ( $valid, $errors ) = utils()->validate_verb( 'execute', {} );
     ok( !$valid, 'missing required => invalid' );
-    ok( ( grep { /Missing required property 'dest'/ } @$errors ), 'names the missing property' );
+    ok( ( grep { /required property 'dest'/i } @$errors ), 'names the missing property' );
 };
 
 subtest 'validate_verb passes when required present' => sub {
@@ -92,12 +92,55 @@ subtest 'env var disables validation' => sub {
 # ------------------------------------------------------------------
 # validate_document + full_validation_available
 # ------------------------------------------------------------------
-subtest 'full validation not wired in' => sub {
+subtest 'full validation is wired in' => sub {
     my $u = utils();
-    ok( !$u->full_validation_available, 'no full validator' );
-    my ( $valid, $errors ) = $u->validate_document( { version => '1.0.0' } );
-    ok( !$valid, 'document validation reports uninitialised validator' );
-    ok( ( grep { /Schema validator not initialized/ } @$errors ), 'names the reason' );
+    ok( $u->full_validation_available, 'full validator wired in' );
+};
+
+# ------------------------------------------------------------------
+# STRICT-RENDER: the full validator rejects misshapen verb configs
+# (Wave-2 P#5). Unknown verb, misspelled/unknown key on a closed verb,
+# wrong-typed value, and missing required property all fail; valid
+# configs (and the deliberate ai.params open door) pass.
+# ------------------------------------------------------------------
+subtest 'strict validate_verb — invalid configs fail' => sub {
+    my $u = utils();
+    my @bad = (
+        [ 'foobar', {} ],                                            # unknown verb
+        [ 'answer', { maxduration   => 5 } ],                        # misspelled key
+        [ 'answer', { wibble        => 1 } ],                        # unknown key
+        [ 'answer', { max_duration  => 'notanumber' } ],            # wrong type
+        [ 'play',   { urlz          => ['say:hi'] } ],              # misspelled key
+        [ 'play',   { url => 'say:hi', foo => 1 } ],                # valid + unknown key
+        [ 'record', { formatt       => 'wav' } ],                   # misspelled key
+        [ 'ai',     { prompt => { text => 'hi' }, temperatur => 0.5 } ],  # misspelled top key
+        [ 'ai',     { prompt => { text => 'hi' }, zzz => 1 } ],     # unknown top key
+        [ 'ai',     { post_prompt => { text => 'bye' } } ],         # missing required prompt
+    );
+    for my $c (@bad) {
+        my ( $verb, $config ) = @$c;
+        my ( $valid, $errors ) = $u->validate_verb( $verb, $config );
+        ok( !$valid, "invalid $verb config is rejected" );
+        ok( scalar @$errors, "  ... with a diagnostic" );
+    }
+};
+
+subtest 'strict validate_verb — valid configs pass' => sub {
+    my $u = utils();
+    my @good = (
+        [ 'answer', { max_duration => 5 } ],
+        [ 'play',   { url => 'say:hi' } ],
+        [ 'ai',     { prompt => { text => 'hi' } } ],
+        # ai.params is the DELIBERATE open door — a key inside it is not a
+        # misspelling and must NOT be rejected.
+        [ 'ai',     { prompt => { text => 'hi' }, params => { some_future_param => 1 } } ],
+    );
+    for my $c (@good) {
+        my ( $verb, $config ) = @$c;
+        my ( $valid, $errors ) = $u->validate_verb( $verb, $config );
+        ok( $valid, "valid $verb config passes" )
+            or diag( "errors: " . join( '; ', @{ $errors // [] } ) );
+    }
 };
 
 # ------------------------------------------------------------------

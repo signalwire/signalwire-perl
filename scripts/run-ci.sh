@@ -193,6 +193,14 @@ sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t
 sched_gate SURFACE res=surface desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port perl --repo "$PORT_ROOT"
 
+# PREDICATE-SELFTEST (Wave-2 C1-V8, GATE-SELFTEST doctrine): the field-surface predicate
+# that decides which generated-payload fields are cross-port surface (enumerate_signatures.py
+# _field_is_surface) must hold its locked anchor counts (AIParams 92/60, AIObject 9/7, 155
+# classes). A predicate change that silently trims or inflates payload surface — the exact
+# vacuity this locks — shifts these counts and reds here. Cheap; per-PR.
+sched_gate PREDICATE-SELFTEST desc="field-surface predicate at locked anchors (AIParams 92/60) — GATE-SELFTEST" \
+    -- python3 scripts/enumerate_signatures.py --selftest
+
 # ROUTE-COLLISION (spec-aware): build perl's route_registry.pl → feed the SPEC-AWARE
 # route_collision.py (a split is a finding only when the dispatched path diverges from
 # the spec path for the method's operationId). perl's 2 callFlows/conferenceRooms
@@ -210,7 +218,7 @@ sched_gate GEN defer=1 desc="generated-code freshness suite (GEN-FRESH/-TESTS/-R
 # is the separate line below. NOTE perl's hyphen spelling BEHAVIORAL-WIRE-RELAY.
 sched_gate BEHAVIORAL defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERROR-ENVELOPE/PAGINATION-WIRED/PAGINATION-CORPUS/DOC-WIRE/REST-COVERAGE/SPEC-PARITY/SKILL-CONTRACT/SWAIG-COVERAGE/SWAIG-CLI)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port perl --repo "$PORT_ROOT" \
-        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI
+        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI
 
 sched_gate BEHAVIORAL-NIGHTLY tier=nightly defer=1 desc="behavioral suite, nightly rules (WAIT-LIVENESS/RELAY-LIVENESS)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port perl --repo "$PORT_ROOT" \
@@ -241,6 +249,17 @@ sched_gate PACKAGE-NIGHTLY tier=nightly defer=1 res=dayone desc="package suite, 
 # ---- gates that stay standalone (native toolchains + singletons) -------------
 sched_gate NO-CHEAT desc="audit_no_cheat_tests" \
     -- python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
+
+# COORDINATED-PASS: if porting-sdk was checked out at a NON-main ref (a coordinated
+# pass via the PORTING_SDK_REF repo variable), the PR must declare it (a
+# `Coordinated-With: porting-sdk@<branch>` line in the PR body, or the
+# `coordinated-pass` label) — else this gate fails, so a pin is never silent.
+# Local/push (no PR) is a no-op PASS. See porting-sdk/COORDINATED_PASS.md.
+sched_gate COORDINATED-PASS desc="a non-main porting-sdk pin must be declared on the PR (Coordinated-With: line or coordinated-pass label)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/coordinated_pass.py" --porting-sdk "$PORTING_SDK_DIR"
+
+sched_gate COORDINATED-REFS desc="every coordinated-set checkout (porting-sdk + python oracle + matrix ports) uses PORTING_SDK_REF, not a literal ref" \
+    -- python3 "$PORTING_SDK_DIR/scripts/check_coordinated_refs.py" --repo "$PORT_ROOT"
 
 # FMT joins res=surface: run locally (no CI) it rewrites lib/**/*.pm in place via
 # `perltidy -b`, which a concurrent TEST (`perl -c` / module load) or the surface

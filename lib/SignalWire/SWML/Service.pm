@@ -8,6 +8,7 @@ use MIME::Base64 ();
 use Scalar::Util ();
 use SignalWire::SWML::Document;
 use SignalWire::SWML::Schema;
+use SignalWire::Utils::SchemaUtils ();
 use SignalWire::Logging;
 
 has 'name' => (
@@ -55,6 +56,16 @@ has 'verb_handlers' => (
 has 'full_validation' => (
     is      => 'rw',
     default => sub { 0 },
+);
+
+# SWML schema validator (verb existence + closed-key + type checks). Lazily
+# built; used by add_verb / add_verb_to_section when full_validation is on to
+# enforce the STRICT-RENDER contract (an unknown/misspelled/wrong-typed verb
+# config must die, not be appended silently). Mirrors the python reference's
+# SWMLService.schema_utils.validate_verb schema pass.
+has '_schema_validator' => (
+    is      => 'lazy',
+    default => sub { SignalWire::Utils::SchemaUtils->new( schema_validation => 1 ) },
 );
 
 # External base URL override for webhook URLs behind a proxy
@@ -654,8 +665,32 @@ sub add_verb {
         my ( $ok, $errors ) = $handler->validate_config($config);
         die "SWML verb '$verb_name' validation failed: @{ $errors // [] }\n" unless $ok;
     }
+
+    # STRICT-RENDER: when full validation is on, run the schema pass. It rejects
+    # an unknown verb, a misspelled/unknown key on a closed verb, a wrong-typed
+    # value, or a missing required property — the r5 silent-drop family. A
+    # registered handler's validate_config carries verb-specific diagnostics but
+    # does NOT perform the schema's closed-key check, so run the schema pass too
+    # (mirrors the python reference's add_verb: handler THEN schema pass).
+    $self->_validate_verb_strict( $verb_name, $config );
+
     $self->document->add_verb( 'main', $verb_name, $config );
     return 1;
+}
+
+# Run the SWML schema validation for a verb config and die on failure, but only
+# when full_validation is enabled. Off by default, so the non-strict path is
+# unchanged (parity with the python schema pass being a no-op when validation
+# is disabled).
+sub _validate_verb_strict {
+    my ( $self, $verb_name, $config ) = @_;
+    return unless $self->full_validation;
+    my ( $ok, $errors ) = $self->_schema_validator->validate_verb( $verb_name, $config );
+    return if $ok;
+    die SignalWire::Utils::SchemaValidationError->new(
+        verb_name => $verb_name,
+        errors    => $errors // [],
+    );
 }
 
 # add_section(section_name) — create a new named section. Returns false if
@@ -676,6 +711,15 @@ sub add_verb_to_section {
         return 1;
     }
     return 0 unless defined $config && ref $config eq 'HASH';
+    if ( my $handler = $self->verb_handlers->{$verb_name} ) {
+        my ( $ok, $errors ) = $handler->validate_config($config);
+        die "SWML verb '$verb_name' validation failed: @{ $errors // [] }\n" unless $ok;
+    }
+
+    # STRICT-RENDER: same schema pass as add_verb (see there). No-op when
+    # full_validation is off.
+    $self->_validate_verb_strict( $verb_name, $config );
+
     $self->document->add_verb( $section_name, $verb_name, $config );
     return 1;
 }
@@ -778,6 +822,13 @@ sub setup_graceful_shutdown {
 # Parity with SWMLService.serve(host, port).
 sub serve {
     my ( $self, %opts ) = @_;
+
+    # In-process test guard (swaig-test --file, SWAIG_TEST_INPROCESS): never
+    # bind/serve when the harness is loading this file to introspect it —
+    # return $self so a file ending in `$svc->serve` yields the service instead
+    # of blocking on a listen socket.
+    return $self if $ENV{SWAIG_TEST_INPROCESS};
+
     my $host = $opts{host} // $self->host;
     my $port = $opts{port} // $self->port;
     require Plack::Runner;

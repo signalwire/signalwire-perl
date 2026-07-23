@@ -51,7 +51,6 @@ signalwire.prefabs.survey.SurveyAgent.__init__: Perl SurveyAgent uses `survey_qu
 ## Idiom: Perl event-class attribute coverage
 
 signalwire.relay.event.CallReceiveEvent.__init__: Perl CallReceive doesn't model `direction`, `project_id`, or `segment_id` as Moo attrs; the Perl event objects expose only the subset the SDK actively consumes
-signalwire.relay.event.CollectEvent.__init__: Perl CollectEvent doesn't model `final` flag as a Moo attr; the Perl SDK reads completion state from the underlying CallCollect payload
 signalwire.relay.event.ConferenceEvent.__init__: Perl ConferenceEvent doesn't model `name` / `status` as Moo attrs; the Perl SDK reads them from the conference payload directly
 signalwire.relay.event.MessageReceiveEvent.__init__: Perl MessageReceive doesn't model the base RelayEvent `call_id` (messaging events are call-id-less)
 signalwire.relay.event.MessageStateEvent.__init__: Perl MessageState doesn't model the base RelayEvent `call_id` (messaging events are call-id-less)
@@ -103,8 +102,6 @@ signalwire.core.agent_base.AgentBase.register_sip_username: Perl method takes an
 signalwire.core.auth_handler.AuthHandler.flask_decorator: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
 signalwire.core.mixins.web_mixin.WebMixin.register_routing_callback: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
 signalwire.core.security_config.SecurityConfig.__init__: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
-signalwire.core.swml_renderer.SwmlRenderer.render_function_response_swml: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
-signalwire.core.swml_renderer.SwmlRenderer.render_swml: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
 signalwire.web.web_service.WebService.__init__: Perl method takes an idiomatic %opts/positional signature; params surface as untyped `any` (Perl signatures aren't introspectable) vs the reference's concrete types — loose-param idiom, PORT_SIGNATURE_OMISSIONS.
 
 
@@ -118,12 +115,15 @@ reference). The SURFACE gate is clean for all of them (they match the
 reference surface, hence not in PORT_ADDITIONS.md). Excused as a
 reference-oracle gap, not port-invented surface.
 
-signalwire.agents.bedrock.BedrockAgent.set_inference_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_llm_model: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_llm_temperature: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_post_prompt_llm_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_prompt_llm_params: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
-signalwire.agents.bedrock.BedrockAgent.set_voice: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
+# C2-BEDROCK (2026-07-22): the six BedrockAgent.set_* entries were REMOVED here.
+# Cluster-1 C1-O1 enumerated BedrockAgent into python_signatures.json (the
+# __init__ full params + set_inference_params/set_llm_model/set_llm_temperature/
+# set_post_prompt_llm_params/set_prompt_llm_params/set_voice), closing the
+# signature-oracle blind spot these excused. They now compare directly against
+# the reference (DRIFT clean), so the excuse is inert and — per the rule that an
+# omission is a permanent blind spot — is deleted, not left to rot. BedrockAgent
+# __init__'s Perl Moo keyword-constructor idiom is covered by the loose-param
+# section above; it matches the reference param set (DRIFT exit 0).
 signalwire.core.swml_handler.AIVerbHandler.validate_config: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
 signalwire.list_skills: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
 signalwire.prefabs.concierge.ConciergeAgent.on_summary: reference-oracle gap — present in python_surface.json (port matches the reference surface) but not enumerated in python_signatures.json; real capability, signature-oracle blind spot.
@@ -139,7 +139,6 @@ signalwire.utils.schema_utils.SchemaUtils.generate_method_signature: reference-o
 signalwire.core.data_map.create_expression_tool: Perl `create_expression_tool` is a module free function taking a single `%opts`/`$opts` hash carrying every reference kwarg (name/patterns/parameters); the slurpy sink surfaces as one param vs the reference's 3 named args — loose-param idiom.
 signalwire.core.data_map.create_simple_api_tool: Perl `create_simple_api_tool` is a module free function taking a single `%opts`/`$opts` hash carrying every reference kwarg (name/url/response_template/...); the slurpy sink surfaces as one param vs the reference's 8 named args — loose-param idiom.
 signalwire.core.logging_config.strip_control_chars: Perl `strip_control_chars($event_dict)` takes just the payload to sanitize; the reference is a structlog processor with the `(logger, method_name, event_dict)` processor-protocol arity — Perl's logging pipeline doesn't use structlog's 3-arg processor contract.
-signalwire.core.pom_builder.PomBuilder.from_sections: Perl `from_sections($class_or_self, $sections)` is a dual-invocant classmethod; the `$class_or_self` receiver is stripped as a @staticmethod-style receiver, leaving `sections` vs the reference classmethod's `(cls, sections)` — classmethod-receiver idiom.
 signalwire.relay.event.DenoiseEvent.__init__: Perl DenoiseEvent doesn't model the base RelayEvent `call_id` as a Moo attr (this event carries no call_id in the Perl port); Python keeps `call_id` on the base with `''` default.
 signalwire.relay.event.EchoEvent.__init__: Perl EchoEvent doesn't model the base RelayEvent `call_id` as a Moo attr; Python keeps `call_id` on the base with `''` default.
 signalwire.relay.event.HoldEvent.__init__: Perl HoldEvent doesn't model the base RelayEvent `call_id` as a Moo attr; Python keeps `call_id` on the base with `''` default.
@@ -177,8 +176,6 @@ signalwire.relay.call.StandaloneCollectAction.__init__: Perl Moo constructor idi
 signalwire.relay.call.StreamAction.__init__: Perl Moo constructor idiom — StreamAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
 signalwire.relay.call.TapAction.__init__: Perl Moo constructor idiom — TapAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
 signalwire.relay.call.TranscribeAction.__init__: Perl Moo constructor idiom — TranscribeAction is built via Moo `has` attributes (control_id, call_id, node_id, state) in declaration order; Python's positional __init__(call, control_id, terminal_event, terminal_states) does not align positionally with the keyword-constructed Perl object. Same action contract, Moo keyword construction
-signalwire.relay.client.RelayClient.__init__: Perl Moo constructor idiom — RelayClient Moo `has` attributes vs Python positional __init__; `max_active_calls` is a Moo keyword attr, positional slot differs
-signalwire.relay.event.CallStateEvent.__init__: Perl Moo constructor idiom — CallStateEvent models only the event fields the Perl SDK consumes as `has` attrs; the reference dataclass __init__ enumerates the full field set. Moo keyword construction, positional comparison is an artifact
 signalwire.relay.event.CallingErrorEvent.__init__: Perl Moo constructor idiom — CallingErrorEvent models only the event fields the Perl SDK consumes as `has` attrs; the reference dataclass __init__ enumerates the full field set. Moo keyword construction, positional comparison is an artifact
 signalwire.relay.event.DialEvent.__init__: Perl Moo constructor idiom — DialEvent models only the event fields the Perl SDK consumes as `has` attrs; the reference dataclass __init__ enumerates the full field set. Moo keyword construction, positional comparison is an artifact
 signalwire.rest.client.RestClient.__init__: Perl Moo constructor idiom — RestClient Moo `has` attributes (project, token, host) vs Python positional __init__; `host` is a Moo keyword attr, positional slot differs

@@ -84,6 +84,15 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.utils.schema_utils', class => 'SchemaUtils' },
     'SignalWire::Utils::SchemaValidationError' =>
         { module => 'signalwire.utils.schema_utils', class => 'SchemaValidationError' },
+
+    # Internal SWML JSON-Schema evaluator — the Perl analogue of the python
+    # reference's FULL validator, which is the EXTERNAL jsonschema-rs library
+    # (not SDK surface). It therefore has no public reference class; route it to
+    # the schema_utils module with class => undef and mark its public subs as
+    # private-parity skips (SKIP_SUB_IN_PKG) so it emits zero surface. Hiding no
+    # reference symbol, this is not a PORT_OMISSION.
+    'SignalWire::Utils::SchemaValidator' =>
+        { module => 'signalwire.utils.schema_utils', class => undef },
     'SignalWire::DataMap' => { module => 'signalwire.core.data_map', class => 'DataMap' },
     'SignalWire::Security::SessionManager' =>
         { module => 'signalwire.core.security.session_manager', class => 'SessionManager' },
@@ -130,6 +139,14 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.core.skill_manager', class => 'SkillManager' },
     'SignalWire::Skills::SkillRegistry' =>
         { module => 'signalwire.skills.registry', class => 'SkillRegistry' },
+
+    # SkillDiscovery — the shared SKILL.md walker (Exporter, no class). Its
+    # `discover_skills` free function routes (via METHOD_OVERRIDES) onto the
+    # reference's public SkillRegistry.discover_skills; parse_skill_md /
+    # discover_sections are private-parity skips (SKIP_SUB_IN_PKG). class=>undef
+    # so the sub-loop reaches per-sub routing.
+    'SignalWire::Skills::SkillDiscovery' =>
+        { module => 'signalwire.skills.registry', class => undef },
 
     # Built-in skills: each Perl package maps to the equivalent
     # signalwire.skills.<name>.skill module + Skill class.
@@ -212,7 +229,59 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Relay::Client'  => { module => 'signalwire.relay.client', class => 'RelayClient' },
     'SignalWire::Relay::Call'    => { module => 'signalwire.relay.call',   class => 'Call' },
     'SignalWire::Relay::Message' => { module => 'signalwire.relay.message', class => 'Message' },
-    'SignalWire::Relay::Action'  => { module => 'signalwire.relay.call',    class => 'Action' },
+
+    # ---- Documented perl-idiom port-additions (PORT_ADDITIONS.md) ----
+    # These packages surfaced the enumerator and ARE public; each is already
+    # documented as a PORT_ADDITION at the oracle module/class below. Routing
+    # them (rather than dropping them) is what makes the fail-closed predicate
+    # (die on unclassified) correct: an addition EMITS at its documented path
+    # and the SURFACE-DIFF checker accepts it against PORT_ADDITIONS.md.
+    #   Tier-3 typed-state / typed-shape (relay lifecycle):
+    'SignalWire::Relay::Device'    => { module => 'signalwire.relay.device', class => 'Device' },
+    'SignalWire::Relay::DialState' =>
+        { module => 'signalwire.relay.dial_state', class => 'DialState' },
+    'SignalWire::Relay::CallState' =>
+        { module => 'signalwire.relay.call_state', class => 'CallState' },
+    'SignalWire::Relay::MessageState' =>
+        { module => 'signalwire.relay.message_state', class => 'MessageState' },
+
+    #   Tier-1 constants (closed-set string params single-sourced):
+    'SignalWire::Logging::LogLevel' =>
+        { module => 'signalwire.core.logging_config', class => 'LogLevel' },
+    'SignalWire::SWAIG::RecordCall' =>
+        { module => 'signalwire.core.function_result', class => 'RecordCall' },
+    'SignalWire::SWAIG::Tap' => { module => 'signalwire.core.function_result', class => 'Tap' },
+
+    # JoinConference — the same Tier-1 constants idiom as RecordCall/Tap: the
+    # four closed-set string params of FunctionResult->join_conference
+    # (beep/record/trim/method), single-sourced. A genuine perl-idiom addition
+    # (Python validates these inline with no constants class), documented in
+    # PORT_ADDITIONS.md alongside RecordCall/Tap on function_result.
+    'SignalWire::SWAIG::JoinConference' =>
+        { module => 'signalwire.core.function_result', class => 'JoinConference' },
+    'SignalWire::Skills::SkillName' =>
+        { module => 'signalwire.skills.skill_name', class => 'SkillName' },
+
+    #   Tier-2 typed builder:
+    'SignalWire::SWAIG::ParameterSchema' =>
+        { module => 'signalwire.core.swml_service', class => 'ParameterSchema' },
+
+    #   AuthHandler credential/error companions. Python binds FastAPI's
+    #   HTTPBasicCredentials / bearer + returns a bare 401 response inline with
+    #   no error class; perl re-expresses these as its own typed classes
+    #   (BasicCredentials/BearerCredentials data carriers) and THROWS a typed
+    #   AuthError carrying the 401 — genuine perl-idiom additions on
+    #   signalwire.core.auth_handler (documented in PORT_ADDITIONS.md).
+    'SignalWire::Core::AuthHandler::BasicCredentials' =>
+        { module => 'signalwire.core.auth_handler', class => 'BasicCredentials' },
+    'SignalWire::Core::AuthHandler::BearerCredentials' =>
+        { module => 'signalwire.core.auth_handler', class => 'BearerCredentials' },
+    'SignalWire::Core::AuthError' =>
+        { module => 'signalwire.core.auth_handler', class => 'AuthError' },
+
+    # ---- end documented port-additions ----
+
+    'SignalWire::Relay::Action'     => { module => 'signalwire.relay.call', class => 'Action' },
     'SignalWire::Relay::Action::AI' => { module => 'signalwire.relay.call', class => 'AIAction' },
     'SignalWire::Relay::Action::Collect' =>
         { module => 'signalwire.relay.call', class => 'CollectAction' },
@@ -1030,7 +1099,37 @@ my %AGENTBASE_METHOD_TO_PY = (
 # mappings. Used when the default (which preserves the sub's name and class
 # membership) needs to be rerouted, e.g. Perl helpers that live in a different
 # Python home, or when Perl had to rename to avoid a builtin.
+# Per-package sub skips: a Perl-public sub whose reference counterpart is
+# PRIVATE (underscore) in Python, so it must not surface. SkillDiscovery is the
+# shared SKILL.md walker (Exporter @EXPORT_OK); only `discover_skills` has a
+# public reference (SkillRegistry.discover_skills, routed via METHOD_OVERRIDES
+# below). Its `parse_skill_md`/`discover_sections` exports mirror Python's
+# PRIVATE `_parse_skill_md`/`_discover_sections` on the claude_skills skill —
+# private-parity, skipped (they carry no public reference surface).
+my %SKIP_SUB_IN_PKG = (
+    'SignalWire::Skills::SkillDiscovery' => { parse_skill_md => 1, discover_sections => 1 },
+
+    # SchemaValidator's public methods realize the EXTERNAL jsonschema-rs
+    # validator the python reference uses (not SDK surface) — private-parity,
+    # skipped so the internal evaluator emits no public surface.
+    'SignalWire::Utils::SchemaValidator' => { validate => 1, is_valid => 1 },
+);
+
 my %METHOD_OVERRIDES = (
+
+    # SkillDiscovery::discover_skills is the perl-idiom module-level
+    # (Exporter @EXPORT_OK) realization of the reference's public
+    # `discover_skills` — Python exposes it as SkillRegistry.discover_skills.
+    # Route the free function onto that class method so it COMPARES AS the
+    # reference feature (a rename reconciled in the enumerator, per RULES §2 —
+    # NOT a PORT_OMISSIONS entry, which would blind the diff to it).
+    'SignalWire::Skills::SkillDiscovery' => {
+        'discover_skills' => {
+            module => 'signalwire.skills.registry',
+            class  => 'SkillRegistry',
+            method => 'discover_skills',
+        },
+    },
 
     # SWAIGFunction: Perl `call` is the callable-protocol analog of the Python
     # reference's __call__ dunder (mirrors Ruby's call -> __call__ mapping).
@@ -1391,7 +1490,26 @@ sub parse_file {
     open my $fh, '<', $path or die "open $path: $!";
     my @packages;    # list of { name => ..., subs => [...], _seen => {...} }
     my $current;
+    my $in_pod = 0;
     while ( my $line = <$fh> ) {
+
+        # Skip POD blocks entirely. A `=pod`/`=head`/`=item`/`=over`/`=for`/
+        # `=begin` directive at column 0 opens POD; `=cut` closes it. The
+        # SYNOPSIS/EXAMPLE POD sections carry illustrative `package MyAgent;` /
+        # `package main;` / `package ...::MySkill;` code samples that are NOT
+        # real SDK surface — parsing them would leak the doc-example scaffolding
+        # (MyAgent / main / MySkill) as packages. Skipping POD is the root fix
+        # (they were never code); the fail-closed predicate below then never
+        # sees them.
+        if ( !$in_pod && $line =~ /^=(?:pod|head\d|item|over|back|for|begin|encoding)\b/ ) {
+            $in_pod = 1;
+            next;
+        }
+        if ($in_pod) {
+            $in_pod = 0 if $line =~ /^=cut\b/;
+            next;
+        }
+
         if ( $line =~ /^\s*package\s+([A-Za-z_][\w:]*)\s*;/ ) {
             my $pkg = $1;
             $current = {
@@ -1617,8 +1735,20 @@ sub collect_surface {
 
             my $info = $PACKAGE_TO_PY{$pkg_name};
             if ( !$info ) {
-                warn "enumerate_surface: package $pkg_name not in translation map (file: $file)\n";
-                next;
+
+                # FAIL-CLOSED (C1-V7). A package that reached the enumerator IS
+                # public surface by definition; silently skipping an
+                # unclassifiable one is a blind spot (a real addition/rename
+                # would vanish from the diff). Every real package must be routed
+                # here or in a path-routed block above; a documented port-idiom
+                # addition emits at its oracle path (PORT_ADDITIONS.md); the only
+                # legitimately-absent packages are POD code-example scaffolding,
+                # which the POD skip in parse_file() already strips before this
+                # point. So an unclassifiable package now ABORTS LOUD.
+                die "enumerate_surface: package $pkg_name not in translation map "
+                    . "(file: $file) — fail-closed (C1-V7): route it in "
+                    . "\%PACKAGE_TO_PY / a path-routed block, or document it as a "
+                    . "PORT_ADDITION. Unclassifiable public surface is not skippable.\n";
             }
             my $mod   = $info->{module};
             my $class = $info->{class};
@@ -1668,6 +1798,10 @@ sub collect_surface {
                     }
                     next;
                 }
+
+                # Per-package private-parity skips (Perl-public sub whose
+                # reference counterpart is underscore-private in Python).
+                next if $SKIP_SUB_IN_PKG{$pkg_name}{$sub};
 
                 # Per-package overrides
                 if ( my $ov = $METHOD_OVERRIDES{$pkg_name}{$sub} ) {

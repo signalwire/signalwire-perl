@@ -1838,11 +1838,73 @@ def augment_with_bareword_has(raw: dict) -> None:
                     existing.add(n)
 
 
+# GATE-SELFTEST anchors for the field-surface predicate (_field_is_surface /
+# _surface_fields_by_class). These lock the predicate against silent drift: a change that
+# makes it over- or under-count generated-payload surface fields (the "trims real API" or
+# "mirrors the oracle" failure modes the predicate exists to avoid) shifts these counts and
+# fails the selftest. AIParams is the richest generated payload (92 raw fields → 60 with a
+# $ref-carrying schema); AIObject is a small cross-check (9 → 7). Values verified live and
+# recorded in r5/perl_R5.md.
+_PREDICATE_ANCHORS = {
+    "AIParams": (92, 60),   # (total fields, surface fields)
+    "AIObject": (9, 7),
+}
+_PREDICATE_MIN_CLASSES = 100  # 155 today; a big drop = the replay broke → vacuous predicate
+
+
+def run_predicate_selftest() -> int:
+    """Assert the field-surface predicate yields its locked anchor counts + is fail-CLOSED
+    toward visibility. Exit 0 = predicate intact; 1 = drifted (silently trimming/adding
+    surface, or the schema replay broke)."""
+    sf = _surface_fields_by_class()
+    ok = True
+    if len(sf) < _PREDICATE_MIN_CLASSES:
+        print(f"[predicate-selftest] FAIL: only {len(sf)} classes classified "
+              f"(< {_PREDICATE_MIN_CLASSES}) — the generator schema replay likely broke, "
+              f"so the predicate is vacuous.", file=sys.stderr)
+        ok = False
+    for cls, (want_total, want_surface) in _PREDICATE_ANCHORS.items():
+        fields = sf.get(cls)
+        if fields is None:
+            print(f"[predicate-selftest] FAIL: anchor class {cls} absent from the "
+                  f"predicate output — replay broke or the class was renamed.", file=sys.stderr)
+            ok = False
+            continue
+        total = len(fields)
+        surface = sum(1 for v in fields.values() if v)
+        if (total, surface) != (want_total, want_surface):
+            print(f"[predicate-selftest] FAIL: {cls} = {total}/{surface} surface fields, "
+                  f"expected {want_total}/{want_surface} — the field-surface predicate "
+                  f"DRIFTED (it is silently trimming or adding generated payload surface). "
+                  f"If this is an intentional schema change, update _PREDICATE_ANCHORS.",
+                  file=sys.stderr)
+            ok = False
+    # Fail-CLOSED check: a schema-less field must default to KEEP (surface toward
+    # visibility), never silently drop. _field_is_surface returns False only for a
+    # concrete no-$ref schema; the CALLER defaults unknown/schema-less fields to keep.
+    # Verify the primitive-vs-$ref discrimination directly.
+    defs: dict = {}
+    assert _field_is_surface({"$ref": "#/$defs/Foo"}, defs) is True
+    assert _field_is_surface({"type": "string"}, defs) is False
+    assert _field_is_surface({"anyOf": [{"type": "boolean"}, {"$ref": "#/$defs/SWMLVar"}]}, defs) is True
+    if ok:
+        print("[predicate-selftest] PASS: field-surface predicate at locked anchors "
+              f"(AIParams 92/60, AIObject 9/7, {len(sf)} classes) + $ref discrimination intact.")
+        return 0
+    return 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=PORT_ROOT / "port_signatures.json")
+    parser.add_argument("--selftest", action="store_true",
+                        help="GATE-SELFTEST: assert the field-surface predicate holds its "
+                             "locked anchor counts (AIParams 92/60, AIObject 9/7). Exit 0 = intact.")
     args = parser.parse_args()
+
+    if args.selftest:
+        return run_predicate_selftest()
 
     if args.raw and args.raw.is_file():
         raw = json.loads(args.raw.read_text(encoding="utf-8"))
