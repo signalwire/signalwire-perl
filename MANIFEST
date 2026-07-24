@@ -91,6 +91,8 @@ examples/web_search_agent.pl
 examples/web_search_multi_instance_demo.pl
 examples/wikipedia_demo.pl
 lib/SignalWire.pm
+lib/SignalWire/AIChat/Client.pm
+lib/SignalWire/AIChat/Error.pm
 lib/SignalWire/Agent/AgentBase.pm
 lib/SignalWire/Agents/Bedrock.pm
 lib/SignalWire/Contexts.pm
@@ -1340,6 +1342,7 @@ rest/examples/rest_video_rooms.pl
 rest/README.md
 scripts/_env.sh
 scripts/_perltidy_gen.py
+scripts/ai-chat-dump.pl
 scripts/doc_wire_runner.pl
 scripts/enumerate_signatures.py
 scripts/enumerate_surface.pl
@@ -1366,6 +1369,7 @@ t/07_skills.t
 t/08_prefabs.t
 t/09_server.t
 t/10_relay.t
+t/110_ai_chat_client.t
 t/11_rest.t
 t/12_cli.t
 t/13_prompt.t

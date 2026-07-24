@@ -299,6 +299,17 @@ sched_gate DOC-CLI desc="documented swaig-test invocations parse against the rea
 sched_gate DEAD-PUBLIC-ERROR desc="exported error types are raised/caught/user-signalled (no dead error surface)" \
     -- python3 "$PORTING_SDK_DIR/scripts/dead_public_error.py" --port perl --repo "$PORT_ROOT"
 
+# AI-CHAT (COORDINATED pass perl:ai-chat-client <-> porting-sdk:ai-chat-client):
+# wire-behavioral gate for the SignalWire::AIChat::Client. Drives
+# scripts/ai-chat-dump.pl through the shared ai_chat_corpus against porting-sdk's
+# in-process mock_ai_chat and asserts the client speaks the AI Chat JSON-RPC
+# protocol per the vendored spec (ai-chat-specs/ai-chat.yaml). The gate script
+# (diff_port_ai_chat.py) + mock live on the porting-sdk `ai-chat-client` branch,
+# so during the coordinated pass PORTING_SDK_REF pins that branch; until the gate
+# lands on porting-sdk main this skip-passes (coordinated-branch dep).
+sched_gate AI-CHAT desc="SignalWire::AIChat::Client speaks the AI Chat protocol per the vendored spec (mock_ai_chat wire-behavioral)" \
+    -- bash -c 'if [ -f "$1/scripts/diff_port_ai_chat.py" ]; then python3 "$1/scripts/diff_port_ai_chat.py" --port perl --dump-cmd "perl $2/scripts/ai-chat-dump.pl"; else echo "[ai-chat] diff_port_ai_chat.py not on porting-sdk main yet — skip-pass (coordinated-branch dep: porting-sdk ai-chat-client)"; fi' _ "$PORTING_SDK_DIR" "$PORT_ROOT"
+
 sched_gate EXAMPLES-RUN tier=nightly defer=1 desc="shipped examples load/start against the mock (modulo EXAMPLES_RUN_ALLOW.md; STRICT-MOCKS: MOCK_RELAY_STRICT=1)" \
     -- env MOCK_RELAY_STRICT=1 python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port perl --repo .
 
