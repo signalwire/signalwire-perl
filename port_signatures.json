@@ -25625,30 +25625,9 @@
                   "required": true
                 },
                 {
-                  "name": "opts",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
-                }
-              ],
-              "returns": "any"
-            },
-            "delete_request": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "path",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "opts",
-                  "type": "dict<string,any>",
-                  "required": false,
-                  "kind": "var_keyword"
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false
                 }
               ],
               "returns": "any"

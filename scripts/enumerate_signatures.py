@@ -469,13 +469,6 @@ PERL_METHOD_ALIASES = {
     # Perl uses ``hash`` for the dict-like data structure; Python uses
     # ``dict``. The serialization helper is named accordingly.
     "to_hash": ["to_dict"],
-    # The low-level HTTP transport method is named ``delete_request`` on
-    # HttpClient (paired with get/post/put/patch) to read as an HTTP verb
-    # helper; it is the same operation as Python's ``HttpClient.delete``.
-    # (The resource-level CRUD ``delete`` needs no alias — CrudResource and
-    # every generated resource class expose ``delete`` natively, matching the
-    # Python name exactly.)
-    "delete_request": ["delete"],
 }
 
 # Per-(package, native-sub) method RENAMES: the Perl idiomatic sub name is
@@ -491,6 +484,13 @@ PERL_METHOD_ALIASES = {
 PERL_METHOD_RENAMES = {
     ("SignalWire::Relay::Call", "pass"): "pass_",
     ("SignalWire::SWAIG::SWAIGFunction", "call"): "__call__",
+    # Perl `delete` is a core builtin; HttpClient names the low-level DELETE
+    # transport verb `delete_request` (paired with get/post/put/patch). Project
+    # it to Python's canonical `HttpClient.delete` and DROP the native name
+    # (rename, not a both-names alias) so SURFACE and SIGNATURE agree — the
+    # port exposes only `delete`, matching the reference exactly. (The
+    # resource-level CRUD `delete` is native on CrudResource; unaffected.)
+    ("SignalWire::REST::HttpClient", "delete_request"): "delete",
 }
 
 

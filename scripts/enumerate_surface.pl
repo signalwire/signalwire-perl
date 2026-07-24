@@ -45,6 +45,87 @@ Getopt::Long::GetOptions(
 ) or die "usage: $0 [--output PATH] [--stdout]\n";
 
 # -------------------------------------------------------------------------
+# Reference surface member index (composition-attr / generated-model DTO-field
+# emission gate).
+#
+# The reference (porting-sdk/python_surface.json) records, for each generated
+# model class (SWML verb configs, SWAIG payloads, REST namespace containers) and
+# each hand class with composition attributes (AgentBase.skill_manager,
+# SWMLService.security, AgentServer.agents, ...), exactly the CLASS-TYPED member
+# accessors that are cross-port surface -- it EXCLUDES scalar payload fields
+# (union<int,SWMLVar> setters, str/bool state) which are wire-only, not API.
+#
+# Perl exposes every one of those members as a Moo `has` accessor (a real public
+# getter sub) but the enumerator's `sub`-only parser never saw them, so they read
+# as omissions. We EMIT them by INTERSECTION: for a (module, class) the reference
+# surfaces, a perl `has NAME` accessor is emitted iff NAME is in the reference's
+# recorded member set. The reference is the authority on which fields are
+# class-typed surface, and perl's wire is byte-identical -- so the intersection
+# can neither over-emit a scalar field perl holds (not in the ref set) nor emit a
+# phantom the reference has but perl lacks (not a perl `has`). This is the surface
+# analogue of the reference's own _enrich_composition_attributes pass and matches
+# what the SIGNATURE enumerator already emits (AIParams 60 fields, FabricNamespace
+# 17 accessors). Degrades to a no-op if the reference is absent (first-gen env).
+my %REF_SURFACE_MEMBERS;    # "module.Class" => { member => 1, ... }
+{
+    my @cands;
+    push @cands, File::Spec->catfile( $ENV{PORTING_SDK}, 'python_surface.json' )
+        if $ENV{PORTING_SDK};
+
+    # Adjacent layout: <repo>/../porting-sdk (the run-ci contract — run-ci's
+    # PORT_ROOT is never a worktree, so this is what the real gate uses).
+    push @cands,
+        File::Spec->catfile( File::Spec->catdir( $REPO_ROOT, '..', 'porting-sdk' ),
+        'python_surface.json' );
+
+    # Worktree fallback: a `.git` FILE (not dir) means $REPO_ROOT is a linked
+    # worktree; resolve the main checkout via its gitdir and try ITS sibling
+    # porting-sdk, so an editing worktree resolves the oracle just like the real
+    # checkout does. (Belt-and-braces; the scheduled gate uses the adjacent path.)
+    {
+        my $dotgit = File::Spec->catfile( $REPO_ROOT, '.git' );
+        if ( -f $dotgit && open my $gfh, '<', $dotgit ) {
+            my $line = <$gfh>;
+            close $gfh;
+            if ( $line && $line =~ /^gitdir:\s*(.+?)\s*$/ ) {
+                my $gitdir = $1;
+                $gitdir = File::Spec->rel2abs( $gitdir, $REPO_ROOT )
+                    unless File::Spec->file_name_is_absolute($gitdir);
+
+                # .../<main>/.git/worktrees/<name> -> up 3 -> <main>; its parent
+                # is the src/ dir holding porting-sdk.
+                my @p = File::Spec->splitdir($gitdir);
+                if ( @p >= 3 ) {
+                    my $main = File::Spec->catdir( @p[ 0 .. $#p - 3 ] );
+                    push @cands,
+                        File::Spec->catfile( File::Spec->catdir( $main, '..', 'porting-sdk' ),
+                        'python_surface.json' );
+                }
+            }
+        }
+    }
+    for my $cand (@cands) {
+        next unless -f $cand;
+        open my $rfh, '<', $cand or next;
+        local $/;
+        my $raw = <$rfh>;
+        close $rfh;
+        my $ref = eval { JSON->new->utf8->decode($raw) };
+        last unless $ref && ref $ref->{modules} eq 'HASH';
+        for my $mod ( keys %{ $ref->{modules} } ) {
+            my $classes = $ref->{modules}{$mod}{classes} // {};
+            next unless ref $classes eq 'HASH';
+            for my $cls ( keys %$classes ) {
+                my $members = $classes->{$cls};
+                next unless ref $members eq 'ARRAY' && @$members;
+                $REF_SURFACE_MEMBERS{"$mod.$cls"} = { map { $_ => 1 } @$members };
+            }
+        }
+        last;
+    }
+}
+
+# -------------------------------------------------------------------------
 # Package -> Python module/class translation
 # -------------------------------------------------------------------------
 #
@@ -1563,11 +1644,33 @@ sub parse_file {
             $current = {
                 name        => $pkg,
                 subs        => [],
+                attrs       => [],
                 _seen       => {},
+                _seen_attr  => {},
                 uses_moo    => 0,
                 has_extends => 0,
             };
             push @packages, $current;
+            next;
+        }
+
+        # Detect `has 'name' => (...)` / `has name => (...)` Moo accessor
+        # declarations at column 0. A Moo `has` generates a PUBLIC accessor sub
+        # of the same name -- it IS surface even though it is not a `sub` decl
+        # (the reference's griffe/AST oracle records these composition/DTO-field
+        # accessors, and every getter-idiom port emits them). We collect the
+        # NAMES here; the intersection with the reference surface (below, in
+        # collect_surface) gates which are emitted, so a scalar payload field
+        # perl holds but the reference doesn't surface is never over-emitted.
+        if ( $line =~ /^\s*has\s+(?:'([^']+)'|"([^"]+)"|([A-Za-z_]\w*))\s*=>/ ) {
+            my $attr = defined $1 ? $1 : ( defined $2 ? $2 : $3 );
+            if (   $current
+                && $attr
+                && $attr =~ /^[A-Za-z_]\w*$/
+                && !$current->{_seen_attr}{$attr}++ )
+            {
+                push @{ $current->{attrs} }, $attr;
+            }
             next;
         }
 
@@ -1642,6 +1745,23 @@ sub collect_surface {
         $bucket->{classes}{$class} //= [];
     };
 
+    # Emit a package's Moo `has` accessors onto (mod, class) as surface members,
+    # gated by the reference surface: only NAMES the reference records for this
+    # class are emitted (class-typed composition/DTO-field accessors), so scalar
+    # payload fields perl also holds are never over-emitted. No-op when the
+    # reference lacks the class or perl has no matching `has` (see the
+    # %REF_SURFACE_MEMBERS docstring). $attrs is the package's collected `has`
+    # names.
+    my $emit_ref_attrs = sub {
+        my ( $mod, $class, $attrs ) = @_;
+        return unless defined $class && $attrs && @$attrs;
+        my $allow = $REF_SURFACE_MEMBERS{"$mod.$class"} or return;
+        for my $a (@$attrs) {
+            next unless $allow->{$a};
+            $record_class_method->( $mod, $class, $a );
+        }
+    };
+
     my @pm_files;
     File::Find::find(
         {
@@ -1675,6 +1795,7 @@ sub collect_surface {
                 }
                 my $tmod = "signalwire.rest.namespaces.${ns}_types_generated";
                 $record_class_only->( $tmod, $tname );
+                $emit_ref_attrs->( $tmod, $tname, $pkg->{attrs} );
                 next;
             }
 
@@ -1698,6 +1819,7 @@ sub collect_surface {
                     next;
                 }
                 $record_class_only->( $smod, $tname );
+                $emit_ref_attrs->( $smod, $tname, $pkg->{attrs} );
                 next;
             }
 
@@ -1724,6 +1846,7 @@ sub collect_surface {
             if ( $pkg_name =~ /^SignalWire::SWML::Generated::(\w+)$/ ) {
                 my $tname = $1;
                 $record_class_only->( 'signalwire.core.swml_verbs_generated', $tname );
+                $emit_ref_attrs->( 'signalwire.core.swml_verbs_generated', $tname, $pkg->{attrs} );
                 next;
             }
 
@@ -1778,6 +1901,11 @@ sub collect_surface {
                 for my $bm ( @{ $GENERATED_BASE_SURFACE{ $proj->{base} } // [] } ) {
                     $record_class_method->( $gmod, $gname, $bm );
                 }
+
+                # _client_tree namespace containers expose their sub-resource
+                # accessors as Moo `has ... lazy` attrs (FabricNamespace.ai_agents,
+                # ...); emit the ones the reference records as members.
+                $emit_ref_attrs->( $gmod, $gname, $pkg->{attrs} );
                 next;
             }
 
@@ -1805,6 +1933,15 @@ sub collect_surface {
             # consistent with Python's output for empty-class definitions.
             $record_class_only->( $mod, $class ) if defined $class;
 
+            # Emit this class's Moo `has` COMPOSITION accessors (SWMLService.security
+            # / .verb_registry / .schema_utils, AgentServer.agents, SkillManager.
+            # loaded_skills, RequestOptions.abort_signal, PomBuilder.pom,
+            # PromptObjectModel.sections, Section.subsections, Action.result, ...) —
+            # gated by the reference surface member set so scalar `has` state is
+            # never over-emitted. AgentBase is special-cased below.
+            $emit_ref_attrs->( $mod, $class, $pkg->{attrs} )
+                if defined $class && $pkg_name ne 'SignalWire::Agent::AgentBase';
+
             # Emit implicit `__init__` only when the Perl class is a Moo root
             # (use Moo; with no extends) — that matches Python's AST-based
             # enumerator which records `__init__` on the class that defines
@@ -1828,6 +1965,14 @@ sub collect_surface {
                         $record_class_method->( $mod, $class, '__init__' );
                     }
                 }
+            }
+
+            # AgentBase composition attrs (skill_manager, ...): AgentBase is the
+            # flat Moo class Python splits across mixins; its `has` accessors that
+            # the reference records on AgentBase are emitted here (the diff's
+            # agentbase-family fold makes AgentBase-vs-mixin filing compare equal).
+            if ( $pkg_name eq 'SignalWire::Agent::AgentBase' ) {
+                $emit_ref_attrs->( 'signalwire.core.agent_base', 'AgentBase', $pkg->{attrs} );
             }
 
             for my $sub ( @{ $pkg->{subs} } ) {
