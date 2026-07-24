@@ -1,5 +1,53 @@
 # PORT_ADDITIONS.md
 
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+BEFORE YOU ADD AN ENTRY TO THIS FILE — READ THIS.
+
+Every entry here is a place the parity checker STOPS comparing. That is a real cost:
+a divergence you list is a divergence no gate will ever catch again. So entries must
+be RARE, and each one must earn its place. Default to skepticism: assume the entry is
+NOT needed and make the case that it is.
+
+The order of preference, always:
+  1. FIX THE PORT so it matches the reference (add the missing member; make the
+     signature match).
+  2. FIX THE EMISSION so idiom folds onto the reference shape — the enumerator/emitter
+     canonicalizes your language's spelling onto the oracle's (builder → __init__,
+     getters → attributes, Result<T,E> → the plain return, CamelCase → the reference
+     name, options-object/kwargs → the expanded param list, RAII/dispose → close).
+     MOST divergences are idiom and belong here, not in this file.
+  3. FIX THE REFERENCE if the oracle itself is wrong or stale (a Python-only symbol
+     that leaked into the contract, a param the reference added and the oracle never
+     re-enumerated). Fix Python / the oracle, then re-drift — do not paper over a
+     broken reference with a per-port entry.
+  4. Only when 1–3 genuinely cannot apply does an entry here become justified.
+
+An entry is JUSTIFIED ONLY IF it is irreducible after correct emission — i.e. the
+divergence survives because the two languages genuinely cannot express the same thing,
+not because the emitter hasn't folded the idiom yet. If emission COULD fold it, the
+entry is a bug in this file; go fix the emitter.
+
+Each entry MUST state WHY, concretely, in one of these forms:
+  • ADDITION — this symbol exists in the port but not the reference. Answer: is it
+    genuine port-only surface with NO reference twin (say what it is and why the
+    reference has no equivalent), or is it IDIOM the emitter should have folded (then
+    it does not belong here — fold it)? A convenience/alias/back-compat wrapper is NOT
+    a justification.
+  • OMISSION — this reference symbol has no port member. Answer: WHY can it not exist
+    here — what specific language feature is absent (e.g. no async-context-manager
+    protocol, no __init__ method protocol)? "impossible:" means the construct cannot
+    be expressed at all; if it merely LOOKS different, that's idiom → fold it, don't
+    omit it. Cite a precedent when one exists (e.g. RelayClient omits the same dunder).
+  • SIGNATURE — the symbol matches by name but its parameters differ. Answer: is the
+    difference a foldable idiom collapse (options-object, leading context/self,
+    builder) — then EXPAND it in the signature emitter so names+count match, don't list
+    it — or a genuine reference-only parameter with no cross-language analogue?
+
+If you cannot write a crisp, specific WHY that survives the "could emission fold this?"
+test, the entry is not ready. Prove it's needed before you add it.
+═══════════════════════════════════════════════════════════════════════════════ -->
+
 Symbols the Perl port ships that have no Python-reference equivalent.
 One line per symbol: `<fully.qualified.symbol>: <one-sentence rationale>`.
 Checked by `scripts/diff_port_surface.py` against `python_surface.json`.
@@ -11,22 +59,8 @@ See also: PORT_OMISSIONS.md for Python-reference symbols the port does not imple
 signalwire.agent_server.AgentServer.list_agents: port-only accessor: Perl convention surfaces a list-style getter where Python uses a generator or direct attribute access
 signalwire.agent_server.AgentServer.psgi_app: port-only: Perl ports use Plack/PSGI; psgi_app returns a coderef any Plack handler consumes
 signalwire.agents.bedrock.BedrockAgent.render_swml: port-only public alias: BedrockAgent overrides the public render_swml (Perl's user-facing SWML dump) to swap the ai verb for amazon_bedrock; Python keeps this internal as _render_swml (mirrors AgentBase.render_swml addition)
-signalwire.core.agent_base.AgentBase.create_tool_token: prompt_mixin_lifted: Perl rolls up StateMixin / SessionManager onto AgentBase so callers don't reach into a sub-object — mirrors the documented tool_mixin_lifted pattern
-signalwire.core.agent_base.AgentBase.get_contexts: prompt_mixin_lifted: Perl AgentBase exposes a get_contexts() accessor for the contexts list; Python uses PromptMixin.contexts (attribute access)
-signalwire.core.agent_base.AgentBase.get_post_prompt: prompt_mixin_lifted: Perl rolls up PromptMixin onto AgentBase; Python keeps these on PromptMixin (mirrors tool_mixin_lifted pattern)
-signalwire.core.agent_base.AgentBase.get_raw_prompt: prompt_mixin_lifted: Perl rolls up PromptMixin onto AgentBase; Python keeps these on PromptMixin (mirrors tool_mixin_lifted pattern)
-signalwire.core.agent_base.AgentBase.list_tool_names: port-only helper used by ContextBuilder->validate to surface reserved-name collisions
-signalwire.core.agent_base.AgentBase.pom: port-only Perl accessor returning the underlying SignalWire::POM::PromptObjectModel instance; Python keeps the POM private inside PromptMixin
-signalwire.core.agent_base.AgentBase.psgi_app: port-only: Perl ports use Plack/PSGI; psgi_app returns a coderef any Plack handler consumes
-signalwire.core.agent_base.AgentBase.record_format: port-only accessor: Perl declares `has record_format => (is => 'rw')` so callers read/set the recording format as `$agent->record_format('wav')`; Python models record_format as a set_answer_config constructor param with no surface accessor
-signalwire.core.agent_base.AgentBase.record_stereo: port-only accessor: Perl declares `has record_stereo => (is => 'rw')` so callers read/set stereo recording as `$agent->record_stereo(1)`; Python models record_stereo as a set_answer_config constructor param with no surface accessor
-signalwire.core.agent_base.AgentBase.render_swml: port-only public alias: Perl exposes render_swml as the method users call to dump SWML; Python keeps this internal
-signalwire.core.agent_base.AgentBase.set_answer_config: port-only helper: wires AnswerConfig into SWML rendering; Python threads these through AIConfigMixin
-signalwire.core.agent_base.AgentBase.set_prompt_pom: prompt_mixin_lifted: Perl rolls up PromptMixin onto AgentBase; Python keeps these on PromptMixin (mirrors tool_mixin_lifted pattern)
-signalwire.core.agent_base.AgentBase.validate_tool_token: prompt_mixin_lifted: Perl rolls up StateMixin onto AgentBase; Python keeps validate_tool_token on StateMixin (mirrors tool_mixin_lifted pattern)
 signalwire.core.contexts.ContextBuilder.attach_agent: port-only: weak-ref back to agent so validate() can check reserved tool-name collisions; Python avoids this via Python-level closures
 signalwire.core.contexts.ContextBuilder.has_contexts: port-only: explicit presence check used in AgentBase build path; Python uses `if cb.contexts` idiom
-signalwire.core.contexts.ContextBuilder.to_hashref: port-only: alias to to_dict that returns the nested hashref explicitly (Perl idiom)
 signalwire.core.function_result.FunctionResult.to_json: port-only: convenience serializer; Python uses json.dumps(result.to_dict())
 signalwire.core.function_result.RecordCall: perl_constants_idiom: SignalWire::SWAIG::RecordCall is a constants package single-sourcing the two closed-set string params record_call already validates inline — FORMAT (wav/mp3) and the write-side record DIRECTION (speak/listen/both). record_call still takes plain strings (the constants ARE the wire strings) so Python parity + custom callers are unchanged; this is the accepted-values source of truth + autocomplete, not a new compile-time check (record_call's own `die` still rejects bad values).
 signalwire.core.function_result.RecordCall.directions: perl_constants_idiom: RecordCall->directions returns the accepted record-direction set [speak,listen,both] (see RecordCall).
@@ -77,17 +111,13 @@ signalwire.core.swml_service.ParameterSchema.string: perl_tier2_builder_idiom: P
 signalwire.core.swml_service.ParameterSchema.to_dict: perl_tier2_builder_idiom: ParameterSchema->to_dict is an alias for ->to_hash (SDK serialiser naming), identical output (see ParameterSchema).
 signalwire.core.swml_service.ParameterSchema.to_hash: perl_tier2_builder_idiom: ParameterSchema->to_hash renders the JSON-Schema `parameters` hashref define_tool() takes — byte-identical to the hand-written literal, required omitted when empty (see ParameterSchema).
 signalwire.core.swml_service.SWMLService.can: port-only: Perl can() accessor (Moo plumbing) — surfaced because SWMLService defines it; harmless but recorded
-signalwire.core.swml_service.SWMLService.define_tool: tool_mixin_lifted: Perl folds Python's ToolMixin (which Python composes into AgentBase) directly into SWMLService — so SWMLService standalone can host SWAIG tools without subclassing AgentBase. Mirrors Python's ToolMixin.define_tool exactly; just lives on a different class.
-signalwire.core.swml_service.SWMLService.define_tools: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.define_tools.
 signalwire.core.swml_service.SWMLService.get_all_functions: tool_mixin_lifted: Perl exposes the tool registry's accessors directly on SWMLService; Python keeps these on ToolRegistry (accessed via agent.tool_registry.get_all_functions()).
 signalwire.core.swml_service.SWMLService.get_basic_auth_credentials_with_source: port-only: Perl exposes a "with-source" variant that also returns where the credentials came from (env vs config vs explicit), used by debug routes; Python uses get_basic_auth_credentials() and infers source from logs.
 signalwire.core.swml_service.SWMLService.get_function: tool_mixin_lifted: Perl exposes the tool registry's accessors directly on SWMLService; Python keeps these on ToolRegistry (accessed via agent.tool_registry.get_function()).
 signalwire.core.swml_service.SWMLService.handle_additional_route: port-only: Perl exposes a hook for subclasses to mount extra routes onto the inherited PSGI app; Python achieves this via @app.route decorators.
 signalwire.core.swml_service.SWMLService.has_function: tool_mixin_lifted: Perl exposes the tool registry's accessors directly on SWMLService; Python keeps these on ToolRegistry (accessed via agent.tool_registry.has_function()).
 signalwire.core.swml_service.SWMLService.list_tool_names: port-only convenience accessor: returns the registered tool names in insertion order. Used by ContextBuilder->validate to surface reserved-name collisions; Python uses `cb._tools.keys()` directly.
-signalwire.core.swml_service.SWMLService.on_function_call: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.on_function_call.
 signalwire.core.swml_service.SWMLService.on_swml_request: web_mixin_lifted: Perl rolls up WebMixin onto SWMLService so subclasses (notably AgentBase) can override the SWML-request hook directly; Python keeps on_swml_request on WebMixin (mirrors tool_mixin_lifted pattern).
-signalwire.core.swml_service.SWMLService.register_swaig_function: tool_mixin_lifted: see SWMLService.define_tool note. Mirrors Python's ToolMixin.register_swaig_function.
 signalwire.core.swml_service.SWMLService.remove_function: tool_mixin_lifted: Perl exposes the tool registry's mutators directly on SWMLService; Python keeps these on ToolRegistry (accessed via agent.tool_registry.remove_function()).
 signalwire.core.swml_service.SWMLService.render_main_swml: port-only public hook: Perl exposes the main-section render path so subclasses can override; Python achieves this via _render_document overrides.
 signalwire.core.swml_service.SWMLService.render_swml: port-only public alias: Perl exposes render_swml as the method users call to dump SWML; Python keeps this internal
@@ -101,7 +131,6 @@ signalwire.relay.call.Action.stop: port-only Action/Message helper; Python packs
 signalwire.relay.call.Call.current_state: tier3-typed-state port-only: SignalWire::Relay::CallState-typed view of the call lifecycle state, alongside the bare-string ``state`` accessor (parity). Returns the same wire string ``state`` does (the CallState constants ARE the wire strings); the typed companion to CallState->is_state/->is_terminal. Python reads the bare ``state`` attribute.
 signalwire.relay.call.Call.dispatch_event: port-only dispatcher/passthrough helper for Perl-idiomatic event plumbing
 signalwire.relay.call.Call.is_terminal: tier3-typed-state port-only: true once the call reached a terminal lifecycle state (CallState terminal set = {ended}); delegates to SignalWire::Relay::CallState so the terminal definition is single-sourced. Returns false (never dies) on an unknown/forward-compat state. Python checks ``state == 'ended'`` inline.
-signalwire.relay.call.Call.pass: port-only dispatcher/passthrough helper for Perl-idiomatic event plumbing
 signalwire.relay.call.CollectAction.collect_result: port-only: strongly-typed Perl accessor for the result payload on each Action subclass
 signalwire.relay.call.DetectAction.detect_result: port-only: strongly-typed Perl accessor for the result payload on each Action subclass
 signalwire.relay.call.FaxAction.fax_result: port-only: strongly-typed Perl accessor for the result payload on each Action subclass
@@ -129,7 +158,6 @@ signalwire.relay.dial_state.DialState.states: tier3-typed-state port-only: DialS
 signalwire.relay.event.AuthorizationStateEvent: port-only event subclass Perl emits explicitly; Python folds these into RelayEvent/CallState
 signalwire.relay.event.CallDisconnectEvent: port-only event subclass Perl emits explicitly; Python folds these into RelayEvent/CallState
 signalwire.relay.event.DisconnectEvent: port-only event subclass Perl emits explicitly; Python folds these into RelayEvent/CallState
-signalwire.relay.event.RelayEvent.parse_event: port-only: Perl uses a class-method parser; Python uses the module-level parse_event() function
 signalwire.relay.message.Message.current_state: tier3-typed-state port-only: SignalWire::Relay::MessageState-typed view of the delivery state, alongside the bare-string ``state`` accessor (parity). Returns the same wire string ``state`` does (the MessageState constants ARE the wire strings); the typed companion to MessageState->is_state/->is_terminal. Python reads the bare ``state`` attribute.
 signalwire.relay.message.Message.dispatch_event: port-only dispatcher/passthrough helper for Perl-idiomatic event plumbing
 signalwire.relay.message.Message.is_terminal: tier3-typed-state port-only: true when the current ``state`` is a terminal delivery state (MessageState terminal set = {delivered,undelivered,failed}); delegates to SignalWire::Relay::MessageState (single-sourced). Distinct from is_done (the resolved ``completed`` flag). Returns false (never dies) on an unknown/forward-compat state.
@@ -140,14 +168,6 @@ signalwire.relay.message_state.MessageState.is_terminal: tier3-typed-state port-
 signalwire.relay.message_state.MessageState.states: tier3-typed-state port-only: MessageState->states is the ordered arrayref of message-delivery states (see MessageState).
 signalwire.rest._pagination.PaginatedIterator.all: port-only: drains the iterator into a list (Perl idiom for `list(iter)`); Python uses `list(it)` directly
 signalwire.rest.namespaces.relay_rest_types_generated.PhoneCallHandler.values: port-only: authoritative list accessor for the call_handler enum; Python uses the type/enum class directly (the REST-generated oracle houses PhoneCallHandler as a relay-rest generated type)
-signalwire.rest.namespaces.calling.CallingNamespace.update_call: port-only helper for updating an in-flight call; Python clients use client.calls(sid).update()
-signalwire.rest.namespaces.fabric.AddressesResource: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
-signalwire.rest.namespaces.fabric.AddressesResource.get: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
-signalwire.rest.namespaces.fabric.AddressesResource.list: port-only: Perl Fabric::Addresses is a resource class that extends Base; Python uses FabricAddresses (under a different name) or folds addresses into Resource
-signalwire.rest.namespaces.fabric.FabricResource.list_addresses: crud_with_addresses_lifted: Perl folds Python's CrudWithAddresses.list_addresses mixin onto the FabricResource base class so all fabric resource classes inherit it; Python keeps it on the abstract CrudWithAddresses parent.
-signalwire.rest.namespaces.fabric.Resource: port-only: internal helper class for the Fabric resource indirection; Python does not expose a top-level Resource class
-signalwire.rest.namespaces.fabric.Resource.list_addresses: port-only: internal helper class for the Fabric resource indirection; Python does not expose a top-level Resource class
-signalwire.rest.namespaces.fabric.ResourcePUT: port-only: internal helper class for the Fabric resource indirection; Python does not expose a top-level Resource class
 signalwire.skills.registry.CustomSkills: port-only: SignalWire::Skills::Builtin::CustomSkills is the Perl harness for loading user-supplied skill packages; Python has no equivalent class
 signalwire.skills.registry.CustomSkills.get_parameter_schema: port-only: SignalWire::Skills::Builtin::CustomSkills is the Perl harness for loading user-supplied skill packages; Python has no equivalent class
 signalwire.skills.registry.CustomSkills.register_tools: port-only: SignalWire::Skills::Builtin::CustomSkills is the Perl harness for loading user-supplied skill packages; Python has no equivalent class
@@ -164,7 +184,6 @@ signalwire.utils.schema_utils.SchemaUtils.instance: port-only: Perl SchemaUtils 
 signalwire.utils.schema_utils.SchemaUtils.verb_count: port-only: Perl SchemaUtils exposes verb-introspection helpers (get_verb, get_verb_names, has_verb, verb_count, instance); Python keeps these internal
 signalwire.web.web_service.WebService.file_allowed: port-only public helper: Perl exposes the size+extension filter as a callable predicate (Ruby's file_allowed?); Python keeps it private as _is_file_allowed
 signalwire.web.web_service.WebService.psgi_app: port-only: Perl ports use Plack/PSGI; WebService.psgi_app returns the static-file-serving coderef any Plack handler consumes; Python builds a FastAPI app internally
-signalwire.rest._base.HttpClient.delete_request: perl-idiom port-only: the low-level HTTP transport method is named ``delete_request`` on HttpClient to read as an HTTP-verb helper (paired with get/post/put/patch); the Python parity name ``delete`` is also exposed via the enumerator alias
 signalwire.core.security.webhook_middleware.wrap: perl-idiom port-only: Plack middleware wrap() instance method (Plack convention) — Python uses make_webhook_validation_dependency factory function instead
 
 # --- item H/I surface-align additions ---
@@ -199,3 +218,22 @@ signalwire.relay.client.RelayError.message: port-only: Perl RelayError exposes m
 signalwire.relay.event.AuthorizationStateEvent.from_payload: port-only: from_payload inherited from the base Event onto the Perl-only AuthorizationStateEvent
 signalwire.relay.event.CallDisconnectEvent.from_payload: port-only: from_payload inherited from the base Event onto the Perl-only CallDisconnectEvent
 signalwire.relay.event.DisconnectEvent.from_payload: port-only: from_payload inherited from the base Event onto the Perl-only DisconnectEvent
+
+## Mixin-flatten folded additions (agentbase-family keys)
+
+agentbase-family.list_tool_names: port-only helper used by ContextBuilder->validate to surface reserved-name collisions; no Python twin (folds to agentbase-family via the mixin-flatten fold).
+agentbase-family.psgi_app: port-only: Perl ports use Plack/PSGI; psgi_app returns a coderef any Plack handler consumes; no Python twin (folds to agentbase-family).
+agentbase-family.record_format: port-only accessor: Perl declares `has record_format => (is => 'rw')` so callers read/set the recording format; Python models record_format as a set_answer_config constructor param with no surface accessor (folds to agentbase-family).
+agentbase-family.record_stereo: port-only accessor: Perl declares `has record_stereo => (is => 'rw')` so callers read/set stereo recording; Python models record_stereo as a set_answer_config constructor param with no surface accessor (folds to agentbase-family).
+agentbase-family.set_answer_config: port-only helper: wires AnswerConfig into SWML rendering; Python threads these through AIConfigMixin (folds to agentbase-family).
+agentbase-family.create_tool_token: composition-delegate: Perl rolls SessionManager.create_tool_token up onto AgentBase; Python houses it on the SessionManager helper (reference twin signalwire.core.security.session_manager.SessionManager.create_tool_token). The mixin-flatten fold spans inheritance, not composition delegates (ALLOWLIST_DISCIPLINE.md §4c cat 1), so it surfaces here until that fold is extended.
+agentbase-family.get_contexts: composition-delegate: Perl exposes get_contexts() on AgentBase; Python houses it on the PromptManager helper (signalwire.core.agent.prompt.manager.PromptManager.get_contexts). Same §4c cat-1 composition-delegate rationale as create_tool_token.
+agentbase-family.get_raw_prompt: composition-delegate: Perl exposes get_raw_prompt() on AgentBase; Python houses it on PromptManager (PromptManager.get_raw_prompt). §4c cat-1 composition-delegate.
+agentbase-family.render_swml: composition-delegate: Perl exposes render_swml() on AgentBase; Python houses it on the SwmlRenderer helper (signalwire.core.swml_renderer.SwmlRenderer.render_swml). §4c cat-1 composition-delegate.
+
+## Raw-key twins for the SIGNATURE diff (dual-key convention; folded twins above)
+
+signalwire.core.agent_base.AgentBase.create_tool_token: composition-delegate raw key for the SIGNATURE diff (folds to agentbase-family for SURFACE): Perl rolls SessionManager.create_tool_token up onto AgentBase; Python houses it on SessionManager.
+signalwire.core.agent_base.AgentBase.render_swml: raw key for the SIGNATURE diff (folds to agentbase-family for SURFACE): Perl exposes render_swml() on AgentBase as the user-facing SWML dump; Python keeps it on the SwmlRenderer helper / internal _render_swml.
+signalwire.core.agent_base.AgentBase.set_answer_config: raw key for the SIGNATURE diff (folds to agentbase-family for SURFACE): port-only helper wiring AnswerConfig into SWML rendering; Python threads these through AIConfigMixin.
+signalwire.rest._base.HttpClient.delete_request: perl-idiom port-only: the low-level HTTP transport method is named delete_request on HttpClient to read as an HTTP-verb helper (paired with get/post/put/patch); the Python parity name delete is also exposed via the enumerator alias.
