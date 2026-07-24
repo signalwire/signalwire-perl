@@ -8,6 +8,9 @@ use Moo;
 use feature 'signatures';
 
 # Base event class -- all relay events inherit from this.
+# Python parity: RelayEvent base carries call_id (dataclass field), populated
+# from params.call_id by from_payload for every subclass.
+has 'call_id'    => ( is => 'ro', default => sub { '' } );
 has 'event_type' => ( is => 'ro', default => sub { '' } );
 has 'timestamp'  => ( is => 'ro', default => sub { 0 } );
 has 'params'     => ( is => 'ro', default => sub { {} } );
@@ -57,6 +60,11 @@ has 'tag'        => ( is => 'ro', default => sub { '' } );
 has 'call_state' => ( is => 'ro', default => sub { '' } );
 has 'device'     => ( is => 'ro', default => sub { {} } );
 has 'context'    => ( is => 'ro', default => sub { '' } );
+
+# Python parity: CallReceiveEvent.direction/project_id/segment_id
+has 'direction'  => ( is => 'ro', default => sub { '' } );
+has 'project_id' => ( is => 'ro', default => sub { '' } );
+has 'segment_id' => ( is => 'ro', default => sub { '' } );
 
 # Dial completion
 package SignalWire::Relay::Event::CallDial;
@@ -161,6 +169,7 @@ has 'node_id'    => ( is => 'ro', default => sub { '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
 has 'tap'        => ( is => 'ro', default => sub { {} } );
+has 'device'     => ( is => 'ro', default => sub { {} } );    # Python parity: TapEvent.device
 
 # Stream state
 package SignalWire::Relay::Event::CallStream;
@@ -171,6 +180,10 @@ has 'node_id'    => ( is => 'ro', default => sub { '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
 
+# Python parity: StreamEvent.name/url
+has 'name' => ( is => 'ro', default => sub { '' } );
+has 'url'  => ( is => 'ro', default => sub { '' } );
+
 # Transcribe state
 package SignalWire::Relay::Event::CallTranscribe;
 use Moo;
@@ -179,6 +192,12 @@ has 'call_id'    => ( is => 'ro', default => sub { '' } );
 has 'node_id'    => ( is => 'ro', default => sub { '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
+
+# Python parity: TranscribeEvent.url/recording_id/duration/size
+has 'url'          => ( is => 'ro', default => sub { '' } );
+has 'recording_id' => ( is => 'ro', default => sub { '' } );
+has 'duration'     => ( is => 'ro', default => sub { 0 } );
+has 'size'         => ( is => 'ro', default => sub { 0 } );
 
 # Pay state
 package SignalWire::Relay::Event::CallPay;
@@ -207,6 +226,12 @@ has 'call_id'     => ( is => 'ro', default => sub { '' } );
 has 'node_id'     => ( is => 'ro', default => sub { '' } );
 has 'refer_state' => ( is => 'ro', default => sub { '' } );
 
+# Python parity: ReferEvent.state/sip_refer_to/sip_refer_response_code/sip_notify_response_code
+has 'state'                    => ( is => 'ro', default => sub { '' } );
+has 'sip_refer_to'             => ( is => 'ro', default => sub { '' } );
+has 'sip_refer_response_code'  => ( is => 'ro', default => sub { '' } );
+has 'sip_notify_response_code' => ( is => 'ro', default => sub { '' } );
+
 # Conference event
 package SignalWire::Relay::Event::Conference;
 use Moo;
@@ -215,13 +240,21 @@ has 'call_id'       => ( is => 'ro', default => sub { '' } );
 has 'node_id'       => ( is => 'ro', default => sub { '' } );
 has 'conference_id' => ( is => 'ro', default => sub { '' } );
 
-# AI event
+# Python parity: ConferenceEvent.name/status
+has 'name'   => ( is => 'ro', default => sub { '' } );
+has 'status' => ( is => 'ro', default => sub { '' } );
+
+# AI event (routed to the reference's CallingErrorEvent surface)
 package SignalWire::Relay::Event::CallAI;
 use Moo;
 extends 'SignalWire::Relay::Event';
 has 'call_id'    => ( is => 'ro', default => sub { '' } );
 has 'node_id'    => ( is => 'ro', default => sub { '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
+
+# Python parity: CallingErrorEvent.code/message
+has 'code'    => ( is => 'ro', default => sub { '' } );
+has 'message' => ( is => 'ro', default => sub { '' } );
 
 # Denoise state change (calling.call.denoise)
 package SignalWire::Relay::Event::CallDenoise;

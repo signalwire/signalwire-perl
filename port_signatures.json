@@ -22492,6 +22492,11 @@
                   "required": false
                 },
                 {
+                  "name": "direction",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "device",
                   "type": "dict<string,any>",
                   "required": false
@@ -22502,7 +22507,17 @@
                   "required": false
                 },
                 {
+                  "name": "project_id",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "context",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "segment_id",
                   "type": "string",
                   "required": false
                 },
@@ -22550,6 +22565,15 @@
               ],
               "returns": "any"
             },
+            "direction": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "from_payload": {
               "params": [
                 {
@@ -22565,6 +22589,24 @@
               "returns": "any"
             },
             "node_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "project_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "segment_id": {
               "params": [
                 {
                   "name": "self",
@@ -22767,6 +22809,16 @@
                   "required": false
                 },
                 {
+                  "name": "code",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "message",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "node_id",
                   "type": "any",
                   "required": false
@@ -22780,6 +22832,15 @@
               "returns": "void"
             },
             "call_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "code": {
               "params": [
                 {
                   "name": "self",
@@ -22807,6 +22868,15 @@
                   "name": "payload",
                   "type": "dict<string,any>",
                   "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "message": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
                 }
               ],
               "returns": "any"
@@ -22982,6 +23052,16 @@
                   "required": false
                 },
                 {
+                  "name": "name",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "node_id",
                   "type": "any",
                   "required": false
@@ -23021,7 +23101,25 @@
               ],
               "returns": "any"
             },
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "node_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status": {
               "params": [
                 {
                   "name": "self",
@@ -23146,6 +23244,11 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
+                  "required": false
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
                   "required": false
                 },
                 {
@@ -23303,6 +23406,11 @@
                   "required": false
                 },
                 {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "timestamp",
                   "type": "float",
                   "required": false
@@ -23425,6 +23533,11 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
+                  "required": false
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
                   "required": false
                 },
                 {
@@ -23582,6 +23695,11 @@
                   "required": false
                 },
                 {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "timestamp",
                   "type": "float",
                   "required": false
@@ -23635,6 +23753,11 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
+                  "required": false
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
                   "required": false
                 },
                 {
@@ -23817,6 +23940,11 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
+                  "required": false
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
                   "required": false
                 },
                 {
@@ -24226,6 +24354,11 @@
                   "required": false
                 },
                 {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "timestamp",
                   "type": "float",
                   "required": false
@@ -24516,6 +24649,26 @@
                   "required": false
                 },
                 {
+                  "name": "state",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "sip_refer_to",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "sip_refer_response_code",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "sip_notify_response_code",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "node_id",
                   "type": "any",
                   "required": false
@@ -24568,6 +24721,42 @@
                 }
               ],
               "returns": "any"
+            },
+            "sip_notify_response_code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "sip_refer_response_code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "sip_refer_to": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
@@ -24590,12 +24779,26 @@
                   "required": false
                 },
                 {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "timestamp",
                   "type": "float",
                   "required": false
                 }
               ],
               "returns": "void"
+            },
+            "call_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             },
             "event_type": {
               "params": [
@@ -24777,6 +24980,16 @@
                   "required": false
                 },
                 {
+                  "name": "url",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": false
+                },
+                {
                   "name": "node_id",
                   "type": "any",
                   "required": false
@@ -24816,6 +25029,15 @@
               ],
               "returns": "any"
             },
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "node_id": {
               "params": [
                 {
@@ -24826,6 +25048,15 @@
               "returns": "any"
             },
             "state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "url": {
               "params": [
                 {
                   "name": "self",
@@ -24880,6 +25111,11 @@
                   "required": false
                 },
                 {
+                  "name": "device",
+                  "type": "dict<string,any>",
+                  "required": false
+                },
+                {
                   "name": "node_id",
                   "type": "any",
                   "required": false
@@ -24897,6 +25133,15 @@
               "returns": "any"
             },
             "control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "device": {
               "params": [
                 {
                   "name": "self",
@@ -24987,6 +25232,26 @@
                   "required": false
                 },
                 {
+                  "name": "url",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "recording_id",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "duration",
+                  "type": "float",
+                  "required": false
+                },
+                {
+                  "name": "size",
+                  "type": "int",
+                  "required": false
+                },
+                {
                   "name": "node_id",
                   "type": "any",
                   "required": false
@@ -25004,6 +25269,15 @@
               "returns": "any"
             },
             "control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "duration": {
               "params": [
                 {
                   "name": "self",
@@ -25035,7 +25309,34 @@
               ],
               "returns": "any"
             },
+            "recording_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "size": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "url": {
               "params": [
                 {
                   "name": "self",
