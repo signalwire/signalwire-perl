@@ -137,7 +137,29 @@ sub parse_file {
         # Moo/Moose attribute: has 'name' => ( ... );
         if ( $line =~ /^\s*has\s+(?:'([^']+)'|"([^"]+)")\s*=>/ ) {
             my $attr = $1 // $2;
-            push @attrs, { name => $attr };
+
+            # ``required => 1`` is part of the CONSTRUCTION CONTRACT
+            # (porting-sdk ALLOWLIST_DISCIPLINE.md §10: ``required`` is
+            # contract and must not vary between ports), so it has to be
+            # recovered from the declaration, not defaulted. A ``has``
+            # spans multiple lines whenever the option hash is wrapped, so
+            # scan forward to the end of the declaration (balanced parens,
+            # or the terminating ``;`` for the single-line form).
+            # ``init_arg`` is Moo's CONSTRUCTOR-ARGUMENT name, and it is the
+            # authority on what a caller may pass:
+            #   * ``init_arg => 'project'`` renames the constructor arg (the
+            #     attribute is stored as ``_project_id`` but built as
+            #     ``->new( project => ... )``);
+            #   * ``init_arg => undef`` removes the attribute from the
+            #     constructor entirely (the lazy resource-tree accessors).
+            # Both are construction contract, so record them alongside the name.
+            my ( $init_arg, $has_init_arg ) = attr_init_arg( $lines, $i );
+            push @attrs,
+                {
+                name     => $attr,
+                required => attr_required( $lines, $i ),
+                ( $has_init_arg ? ( init_arg => $init_arg ) : () ),
+                };
             $i++;
             next;
         }
@@ -155,6 +177,77 @@ sub parse_file {
             };
     }
     return @entries;
+}
+
+# Does the Moo/Moose ``has`` declaration starting at $lines->[$start] carry
+# ``required => 1``?
+#
+# Moo's auto-generated ``new`` accepts EVERY attribute as a named constructor
+# argument, and ``required => 1`` is what makes one mandatory — i.e. it is the
+# Perl spelling of a reference constructor param with no default. The
+# construction contract compares ``required`` by name across ports
+# (ALLOWLIST_DISCIPLINE.md §10), so it must be read from the source rather than
+# assumed; without this, every required Perl attribute reports as optional.
+#
+# A ``has`` runs from its declaration line to the end of the option list. Track
+# paren depth from the ``=>`` onward and stop at depth 0 — that handles both the
+# single-line ``has 'x' => ( is => 'ro', required => 1 );`` and the wrapped
+# multi-line form. The paren-less shorthand (``has 'x' => ( ... )`` is the only
+# form this SDK uses) terminates at the first ``;`` seen at depth 0.
+sub attr_required {
+    my ( $lines, $start ) = @_;
+    my $decl = attr_decl_text( $lines, $start );
+    return $decl =~ /\brequired\s*=>\s*1\b/ ? 1 : 0;
+}
+
+# The ``init_arg`` of the ``has`` declaration at $lines->[$start], as
+# ``($value, $present)``. ``$value`` is undef for ``init_arg => undef`` (the
+# attribute is NOT a constructor argument) and the quoted string otherwise (the
+# constructor argument is spelled differently from the attribute).
+sub attr_init_arg {
+    my ( $lines, $start ) = @_;
+    my $decl = attr_decl_text( $lines, $start );
+    if ( $decl =~ /\binit_arg\s*=>\s*(?:'([^']*)'|"([^"]*)")/ ) {
+        return ( ( $1 // $2 ), 1 );
+    }
+    if ( $decl =~ /\binit_arg\s*=>\s*undef\b/ ) {
+        return ( undef, 1 );
+    }
+    return ( undef, 0 );
+}
+
+# The source text of the Moo/Moose ``has`` declaration starting at
+# $lines->[$start] — from its ``=>`` to the end of the option list.
+#
+# A ``has`` spans multiple lines whenever the option hash is wrapped, so track
+# paren depth and stop at depth 0; the paren-less single-line form terminates at
+# the first ``;``. Everything before the first ``=>`` is dropped so a word in a
+# preceding comment, or in the attribute NAME itself, can't be misread as an
+# option.
+sub attr_decl_text {
+    my ( $lines, $start ) = @_;
+
+    my @collected;
+    my $depth     = 0;
+    my $seen_open = 0;
+    for my $j ( $start .. $#$lines ) {
+        my $text = $lines->[$j];
+        $text =~ s/^.*?=>// if $j == $start;
+        push @collected, $text;
+
+        $depth += ( $text =~ tr/\(// ) - ( $text =~ tr/\)// );
+        $seen_open = 1 if $text =~ /\(/;
+
+        # End of the declaration: balanced parens after having opened one, or a
+        # statement terminator before any paren opened.
+        last if $seen_open  && $depth <= 0;
+        last if !$seen_open && $text =~ /;/;
+
+        # Defensive bound — a runaway scan would leak into the next declaration
+        # and mis-attribute its options.
+        last if $j - $start > 30;
+    }
+    return join( '', @collected );
 }
 
 # Parse a Perl 5.20+ subroutine signature parenthetical, e.g.

@@ -1426,23 +1426,57 @@ def collect(raw: dict) -> dict:
             init_params: list[dict] = [{"name": "self", "kind": "self"}]
             inherited = collect_inherited_attrs(type_entry, set())
             seen_names: set = set()
+            by_canonical: dict = {}
             for a in inherited:
-                pname = a.get("name", "").lstrip("+")
+                raw_name = a.get("name", "")
+                pname = raw_name.lstrip("+")
                 if not pname:
                     continue
-                canonical = pname.lstrip("_")
+                # ``init_arg`` is Moo's CONSTRUCTOR-ARGUMENT name and outranks
+                # the attribute name for construction purposes — it is literally
+                # what the caller passes to ``new``.
+                #   * ``init_arg => undef`` means the attribute is NOT a
+                #     constructor argument at all (the lazy resource-tree
+                #     accessors: ``has 'phone_numbers' => (is => 'lazy',
+                #     init_arg => undef)``), so it is not a configurable.
+                #   * a string renames it: RestClient stores ``_project_id`` but
+                #     is constructed as ``->new( project => ... )``, which is
+                #     exactly the reference's ``project`` param — a RENAME to
+                #     fold (§7), not a missing capability.
+                if "init_arg" in a:
+                    init_arg = a["init_arg"]
+                    if init_arg is None:
+                        continue
+                    canonical = init_arg.lstrip("_")
+                else:
+                    canonical = pname.lstrip("_")
                 if not canonical or canonical.startswith("_"):
                     continue
                 if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", canonical):
                     continue
+                # ``has '+attr' => (...)`` is a Moo ATTRIBUTE OVERRIDE: the
+                # subclass re-specifies the inherited attribute's options, and
+                # Moo's constructor honours the OVERRIDE, not the parent's
+                # original. collect_inherited_attrs concatenates parent-first,
+                # so a plain first-wins dedupe would keep the parent's options
+                # and silently discard the child's — which is what made
+                # SignalWireRestTransportError report ``status_code`` as
+                # required even though it declares
+                # ``has '+status_code' => ( required => 0, default => undef )``
+                # precisely because a transport failure has no HTTP status.
+                # Let a later declaration supersede an earlier one.
+                required = not a.get("default") and a.get("required", False)
                 if canonical in seen_names:
+                    by_canonical[canonical]["required"] = required
                     continue
                 seen_names.add(canonical)
-                init_params.append({
+                param = {
                     "name": canonical,
                     "type": "any",
-                    "required": not a.get("default") and a.get("required", False),
-                })
+                    "required": required,
+                }
+                by_canonical[canonical] = param
+                init_params.append(param)
             # Project the synthesized __init__ to Python's reference shape
             # when the Perl Moo class declares every Python positional arg
             # as a Moo attribute. Moo accepts every attribute as a named
@@ -1499,9 +1533,36 @@ def collect(raw: dict) -> dict:
                 # extras (more params than Python), the diff already
                 # tolerates them as "port-side optional extras" so
                 # long as they're optional.
+                # A ``required`` Perl attribute that the reference does NOT take
+                # as a constructor parameter is a SUBCLASS-supplied slot, not a
+                # caller-supplied one — the Perl spelling of a reference CLASS
+                # ATTRIBUTE. ``SkillBase`` is the case: the reference declares
+                # ``SKILL_NAME: str = None`` / ``SKILL_DESCRIPTION: str = None``
+                # at class level and raises in ``__init__`` if a subclass left
+                # them unset, while its ``__init__`` signature is only
+                # ``(agent, params)``. Perl/Moo has no class-attribute-override
+                # mechanism, so the same contract is expressed as
+                # ``has skill_name => ( required => 1 )`` on the abstract base
+                # with every concrete skill overriding
+                # ``has '+skill_name' => ( default => ... )`` — the source
+                # comment says so verbatim ("Required class-level constants
+                # (subclasses override via 'has' or '+')").
+                #
+                # From the CALLER's side these are therefore not required, which
+                # is what ``required`` means in the construction contract
+                # (ALLOWLIST_DISCIPLINE.md §10) and what the reference records.
+                # Folding it here — rather than excusing the class — keeps every
+                # other parameter of these classes under comparison.
+                py_param_names = {
+                    pyp.get("name") for pyp in py_params
+                    if pyp.get("kind") not in ("self", "cls")
+                }
                 for p in init_params[1:]:
                     if p["name"] not in used_perl_names:
                         port_param = dict(p)
+                        if port_param.get("required") and \
+                                port_param["name"] not in py_param_names:
+                            port_param["required"] = False
                         projected.append(port_param)
                 init_params = projected
             methods_out["__init__"] = {
@@ -1774,7 +1835,80 @@ def collect(raw: dict) -> dict:
         "version": "2",
         "generated_from": "signalwire-perl via best-effort regex parser",
         "modules": sorted_modules,
+        "construction": build_construction(sorted_modules),
     }
+
+
+# ---------------------------------------------------------------------------
+# Construction contract (porting-sdk ALLOWLIST_DISCIPLINE.md §10)
+# ---------------------------------------------------------------------------
+
+# Moo/Moose members that are the OBJECT MECHANISM, not construction parameters.
+# ``new``/``BUILD``/``BUILDARGS`` are Moo's constructor plumbing; they are never
+# a configurable the caller passes in.
+_CONSTRUCTION_NON_PARAMS = frozenset({"new", "BUILD", "BUILDARGS", "meta"})
+
+
+def build_construction(modules: dict) -> dict:
+    """Return ``{"module.Class": {"params": {name: {type, required}}}}``.
+
+    A NAME-KEYED, unordered set of the configurables a caller may supply when
+    constructing the class — see porting-sdk ALLOWLIST_DISCIPLINE.md §10. It
+    replaces the blanket ``__init__`` signature omission (33 of this port's 60,
+    the fleet's highest share) with a real per-parameter comparison: order,
+    arity, and mechanism are precisely the parts idiom is entitled to vary, so
+    matching by POSITION — which is what ``compare_param`` does and why a wide
+    kwargs constructor could only ever be excused wholesale — is replaced by
+    matching by NAME.
+
+    **Perl's construction mechanism is Moo's auto-generated ``new``.** Moo
+    accepts EVERY declared ``has`` attribute (own and inherited) as a named
+    constructor argument, so the attribute set IS the construction parameter set
+    — the direct analogue of java's builder setters. This port already
+    synthesizes exactly that set as ``__init__`` (attributes walked up the
+    ``extends`` chain, private ``_``-prefixed names canonicalized, reference
+    types projected onto the otherwise-untyped params), so construction is a
+    PROJECTION of that existing work rather than a second, separately-maintained
+    table. That is deliberate: a hand-maintained parallel table is exactly the
+    kind of thing that drifts out of lockstep with the surface enumerator.
+
+    ``required`` comes from Moo's ``required => 1`` (recovered by
+    signature_dump.pl's ``attr_required`` / ``_has_decl_required``). It is
+    compared and is contract — a port defaulting a required reference param
+    silently accepts an under-specified construction — so where this port gives
+    a reference-required attribute a ``default``, the diff raises
+    ``construction-required-flip`` rather than quietly matching.
+    """
+    out: dict = {}
+
+    for mod, entry in modules.items():
+        for cls, cinfo in entry.get("classes", {}).items():
+            init = cinfo.get("methods", {}).get("__init__")
+            if not isinstance(init, dict):
+                continue
+            params: dict = {}
+            for p in init.get("params", []):
+                if not isinstance(p, dict):
+                    continue
+                # ``self``/``cls`` are the invocant; ``var_keyword`` /
+                # ``var_positional`` are the open-hash TAIL, not a named
+                # configurable — the named set is what the contract compares.
+                if (p.get("kind") or "positional") in (
+                        "self", "cls", "var_keyword", "var_positional"):
+                    continue
+                name = p.get("name")
+                if not name or name.startswith("_"):
+                    continue
+                if name in _CONSTRUCTION_NON_PARAMS:
+                    continue
+                params[name] = {
+                    "type": p.get("type", "any"),
+                    "required": bool(p.get("required", False)),
+                }
+            if params:
+                out[f"{mod}.{cls}"] = {"params": dict(sorted(params.items()))}
+
+    return dict(sorted(out.items()))
 
 
 def run_dump() -> dict:
@@ -1787,6 +1921,55 @@ def run_dump() -> dict:
     raw = json.loads(cp.stdout)
     augment_with_bareword_has(raw)
     return raw
+
+
+def _has_decl_text(block: str, start: int) -> str:
+    """The source text of the Moo ``has`` declaration whose ``=>`` ends at
+    ``start`` — the Python twin of signature_dump.pl's ``attr_decl_text``, same
+    scan and same stop conditions, so the quoted and bareword ``has`` spellings
+    are read identically.
+    """
+    collected: list[str] = []
+    depth = 0
+    seen_open = False
+    for line in block[start:].splitlines():
+        collected.append(line)
+        depth += line.count("(") - line.count(")")
+        if "(" in line:
+            seen_open = True
+        if seen_open and depth <= 0:
+            break
+        if not seen_open and ";" in line:
+            break
+        if len(collected) > 30:
+            break
+    return "".join(collected)
+
+
+def _has_decl_required(block: str, start: int) -> bool:
+    """Does this ``has`` declaration set ``required => 1``?
+
+    Moo accepts every attribute as a named constructor arg; ``required => 1`` is
+    the Perl spelling of a reference constructor param with no default, and
+    ``required`` is contract under ALLOWLIST_DISCIPLINE.md §10.
+    """
+    return bool(re.search(r"\brequired\s*=>\s*1\b", _has_decl_text(block, start)))
+
+
+def _has_decl_init_arg(block: str, start: int) -> tuple[str | None, bool]:
+    """This ``has`` declaration's ``init_arg`` as ``(value, present)``.
+
+    ``init_arg`` is Moo's constructor-ARGUMENT name and is the authority on what
+    a caller may pass: ``init_arg => 'project'`` renames the argument, and
+    ``init_arg => undef`` removes the attribute from the constructor entirely.
+    """
+    text = _has_decl_text(block, start)
+    m = re.search(r"\binit_arg\s*=>\s*(?:'([^']*)'|\"([^\"]*)\")", text)
+    if m:
+        return (m.group(1) if m.group(1) is not None else m.group(2)), True
+    if re.search(r"\binit_arg\s*=>\s*undef\b", text):
+        return None, True
+    return None, False
 
 
 def augment_with_bareword_has(raw: dict) -> None:
@@ -1826,8 +2009,16 @@ def augment_with_bareword_has(raw: dict) -> None:
             start = pkg_m.end()
             end = pkg_matches[i + 1].start() if i + 1 < len(pkg_matches) else len(text)
             block = text[start:end]
-            # Collect bareword has-decls in this block.
-            new_attrs = bareword_has.findall(block)
+            # Collect bareword has-decls in this block, carrying ``required``
+            # the same way signature_dump.pl's attr_required does for the
+            # quoted form — ``required`` is part of the construction contract
+            # (ALLOWLIST_DISCIPLINE.md §10) and must not depend on which of the
+            # two ``has`` spellings a class happens to use.
+            new_attrs = [
+                (m.group(1), _has_decl_required(block, m.end()),
+                 _has_decl_init_arg(block, m.end()))
+                for m in bareword_has.finditer(block)
+            ]
             if not new_attrs:
                 continue
             entry = by_full_name.get(pkg_name)
@@ -1842,9 +2033,12 @@ def augment_with_bareword_has(raw: dict) -> None:
                 by_full_name[pkg_name] = entry
                 raw.setdefault("types", []).append(entry)
             existing = {a.get("name") for a in entry.get("attributes", [])}
-            for n in new_attrs:
+            for n, required, (init_arg, has_init_arg) in new_attrs:
                 if n not in existing:
-                    entry.setdefault("attributes", []).append({"name": n})
+                    attr = {"name": n, "required": required}
+                    if has_init_arg:
+                        attr["init_arg"] = init_arg
+                    entry.setdefault("attributes", []).append(attr)
                     existing.add(n)
 
 
