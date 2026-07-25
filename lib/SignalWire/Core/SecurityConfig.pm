@@ -76,6 +76,14 @@ has basic_auth_password => ( is => 'rw' );
 
 has _basic_auth_autogen_warned => ( is => 'rw', default => sub { 0 } );
 
+# Python parity: SecurityConfig.__init__(config_file=None, service_name=None).
+# These are genuine construction parameters — BUILD reads them to locate and
+# layer the config file over the environment defaults. Declared as real
+# attributes (rather than only read out of ``$args``) so the constructor
+# surface is introspectable and the values are readable after construction.
+has config_file  => ( is => 'ro', default => sub { undef } );
+has service_name => ( is => 'ro', default => sub { undef } );
+
 # ---------- construction ----------
 
 # Python signature: ``__init__(self, config_file=None, service_name=None)``.
@@ -84,7 +92,7 @@ has _basic_auth_autogen_warned => ( is => 'rw', default => sub { 0 } );
 sub BUILD ( $self, $args ) {
     $self->_set_defaults;
     $self->load_from_env;
-    $self->_load_config_file( $args->{config_file}, $args->{service_name} );
+    $self->_load_config_file( $self->config_file, $self->service_name );
     return;
 }
 

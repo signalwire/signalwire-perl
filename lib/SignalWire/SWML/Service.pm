@@ -41,6 +41,64 @@ has 'basic_auth_password' => (
     default => sub { $ENV{SWML_BASIC_AUTH_PASSWORD} // _random_hex(32) },
 );
 
+# Python parity: SWMLService.__init__(basic_auth=(user, password)) takes the
+# credential as ONE (user, password) tuple. Perl models the two halves as the
+# separate ``basic_auth_user`` / ``basic_auth_password`` attributes, so accept
+# the reference's pair form as an arrayref and FORWARD it to those two
+# attributes in BUILDARGS (an explicitly-passed half still wins). Reads back as
+# the pair so ``$svc->basic_auth`` mirrors the reference's ``_basic_auth``.
+has 'basic_auth' => (
+    is      => 'rw',
+    lazy    => 1,
+    builder => '_build_basic_auth',
+);
+
+sub _build_basic_auth {
+    my ($self) = @_;
+    return [ $self->basic_auth_user, $self->basic_auth_password ];
+}
+
+# Unfold the reference's ``basic_auth => (user, password)`` pair onto the two
+# Perl credential attributes. An explicitly-supplied basic_auth_user /
+# basic_auth_password still wins, matching the reference's precedence (an
+# explicit value beats the derived one).
+sub BUILDARGS {
+    my ( $class, @args ) = @_;
+    my $args = ( @args == 1 && ref $args[0] eq 'HASH' ) ? { %{ $args[0] } } : {@args};
+
+    if ( ref $args->{basic_auth} eq 'ARRAY' ) {
+        my ( $user, $password ) = @{ $args->{basic_auth} };
+        $args->{basic_auth_user}     //= $user     if defined $user;
+        $args->{basic_auth_password} //= $password if defined $password;
+    }
+
+    return $args;
+}
+
+# Python parity: SWMLService.__init__(schema_path=None) — the path of the
+# SWML JSON Schema to validate against. undef selects the bundled schema.
+# FORWARDED to the SchemaUtils collaborator (``schema_validator``).
+has 'schema_path' => (
+    is      => 'rw',
+    default => sub { undef },
+);
+
+# Python parity: SWMLService.__init__(schema_validation=True) — enable SWML
+# schema validation. FORWARDED to the SchemaUtils collaborator, which also
+# honours SWML_SKIP_SCHEMA_VALIDATION.
+has 'schema_validation' => (
+    is      => 'rw',
+    default => sub { 1 },
+);
+
+# Python parity: SWMLService.__init__(config_file=None) — path to a JSON/YAML
+# config file. FORWARDED to the SecurityConfig collaborator, which layers the
+# file's ``security`` section over the environment defaults.
+has 'config_file' => (
+    is      => 'rw',
+    default => sub { undef },
+);
+
 has 'document' => (
     is      => 'rw',
     default => sub { SignalWire::SWML::Document->new() },
@@ -65,7 +123,18 @@ has 'full_validation' => (
 # SWMLService.schema_utils.validate_verb schema pass.
 has '_schema_validator' => (
     is      => 'lazy',
-    default => sub { SignalWire::Utils::SchemaUtils->new( schema_validation => 1 ) },
+    default => sub {
+        my ($self) = @_;
+
+        # FORWARD the construction params to the collaborator, exactly as the
+        # reference's SWMLService.__init__ does (swml_service.py:181-183):
+        #   self.schema_utils = SchemaUtils(schema_path,
+        #                                   schema_validation=self._schema_validation)
+        return SignalWire::Utils::SchemaUtils->new(
+            schema_path       => $self->schema_path,
+            schema_validation => $self->schema_validation ? 1 : 0,
+        );
+    },
 );
 
 # External base URL override for webhook URLs behind a proxy
@@ -112,11 +181,18 @@ has '_logger' => (
 
 # Python parity: schema_utils / verb_registry / security accessors.
 # In Python these are instance attributes set in __init__; cross-language
-# audit treats them as zero-arg getters. The Perl singletons / lazy-built
-# objects expose the same accessor surface.
+# audit treats them as zero-arg getters.
+#
+# ``schema_utils`` is the reference's per-instance SchemaUtils built FROM the
+# construction params (swml_service.py:181-183) — NOT a process-wide singleton.
+# It is the same object as ``_schema_validator``; the two names are the
+# reference's spelling and this port's internal spelling of one collaborator.
 has 'schema_utils' => (
     is      => 'lazy',
-    default => sub { SignalWire::SWML::Schema->instance },
+    default => sub {
+        my ($self) = @_;
+        return $self->_schema_validator;
+    },
 );
 
 has 'verb_registry' => (
@@ -140,15 +216,18 @@ has 'security' => (
     default => sub {
         my ($self) = @_;
 
-        # Python's SWMLService.security is a SecurityConfig instance that
-        # bundles SSL + basic-auth + CORS knobs. Perl SWMLService models
-        # those as direct ``has`` attributes (basic_auth_user, etc.); the
-        # ``security`` accessor returns a hashref view of the same data so
-        # cross-port code that reaches into ``$svc->security->{...}`` keeps
-        # working. Wrap in a blessed Moo-ish object so introspection still
-        # sees it as an object (Python parity).
-        require SignalWire::Security::SessionManager;
-        return $self->{_session_manager} //= SignalWire::Security::SessionManager->new();
+        # Python parity: SWMLService.__init__ builds
+        #   self.security = SecurityConfig(config_file=config_file,
+        #                                  service_name=name)
+        # (swml_service.py:139) and then exposes ssl_enabled / domain /
+        # ssl_cert_path / ssl_key_path off it. FORWARD the construction params
+        # to that collaborator so a config_file passed to ->new actually
+        # reaches the security configuration.
+        require SignalWire::Core::SecurityConfig;
+        return SignalWire::Core::SecurityConfig->new(
+            config_file  => $self->config_file,
+            service_name => $self->name,
+        );
     },
 );
 

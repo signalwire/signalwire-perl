@@ -390,6 +390,26 @@
                   "required": 0
                 },
                 {
+                  "name": "basic_auth",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_path",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_validation",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "config_file",
+                  "type": "any",
+                  "required": 0
+                },
+                {
                   "name": "document",
                   "type": "any",
                   "required": 0
@@ -640,7 +660,42 @@
                   "required": false
                 },
                 {
+                  "name": "token_expiry_secs",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "session_manager",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "agent_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "default_webhook_url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "suppress_logs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "enable_post_prompt_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "check_for_input_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "trust_proxy_for_signature",
                   "type": "any",
                   "required": false
                 },
@@ -1786,8 +1841,18 @@
                   "required": 0
                 },
                 {
+                  "name": "basic_auth",
+                  "type": "optional<tuple<string,string>>",
+                  "required": 0
+                },
+                {
                   "name": "use_pom",
                   "type": "bool",
+                  "required": false
+                },
+                {
+                  "name": "token_expiry_secs",
+                  "type": "int",
                   "required": false
                 },
                 {
@@ -1811,13 +1876,58 @@
                   "required": false
                 },
                 {
+                  "name": "default_webhook_url",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "agent_id",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
                   "name": "native_functions",
                   "type": "optional<list<string>>",
                   "required": false
                 },
                 {
+                  "name": "schema_path",
+                  "type": "optional<string>",
+                  "required": 0
+                },
+                {
+                  "name": "suppress_logs",
+                  "type": "bool",
+                  "required": false
+                },
+                {
+                  "name": "enable_post_prompt_override",
+                  "type": "bool",
+                  "required": false
+                },
+                {
+                  "name": "check_for_input_override",
+                  "type": "bool",
+                  "required": false
+                },
+                {
+                  "name": "config_file",
+                  "type": "optional<string>",
+                  "required": 0
+                },
+                {
+                  "name": "schema_validation",
+                  "type": "bool",
+                  "required": 0
+                },
+                {
                   "name": "signing_key",
                   "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "trust_proxy_for_signature",
+                  "type": "bool",
                   "required": false
                 },
                 {
@@ -2158,6 +2268,15 @@
               ],
               "returns": "any"
             },
+            "agent_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "answer_config": {
               "params": [
                 {
@@ -2195,6 +2314,15 @@
               "returns": "any"
             },
             "basic_auth_user": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "check_for_input_override": {
               "params": [
                 {
                   "name": "self",
@@ -2285,7 +2413,25 @@
               ],
               "returns": "any"
             },
+            "default_webhook_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "dynamic_config_callback": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "enable_post_prompt_override": {
               "params": [
                 {
                   "name": "self",
@@ -2791,7 +2937,34 @@
               ],
               "returns": "any"
             },
+            "suppress_logs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "swaig_query_params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "token_expiry_secs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "trust_proxy_for_signature": {
               "params": [
                 {
                   "name": "self",
@@ -9388,6 +9561,16 @@
                   "kind": "self"
                 },
                 {
+                  "name": "config_file",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
+                  "name": "service_name",
+                  "type": "optional<string>",
+                  "required": false
+                },
+                {
                   "name": "ssl_enabled",
                   "type": "any",
                   "required": false
@@ -9484,6 +9667,15 @@
               "returns": "any"
             },
             "basic_auth_user": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "config_file": {
               "params": [
                 {
                   "name": "self",
@@ -9611,6 +9803,15 @@
               "returns": "any"
             },
             "request_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "service_name": {
               "params": [
                 {
                   "name": "self",
@@ -11660,6 +11861,26 @@
                   "required": 0
                 },
                 {
+                  "name": "basic_auth",
+                  "type": "optional<tuple<string,string>>",
+                  "required": 0
+                },
+                {
+                  "name": "schema_path",
+                  "type": "optional<string>",
+                  "required": 0
+                },
+                {
+                  "name": "config_file",
+                  "type": "optional<string>",
+                  "required": 0
+                },
+                {
+                  "name": "schema_validation",
+                  "type": "bool",
+                  "required": 0
+                },
+                {
                   "name": "basic_auth_user",
                   "type": "any",
                   "required": 0
@@ -11808,6 +12029,15 @@
               ],
               "returns": "class:signalwire.core.web.HostAppRouter"
             },
+            "basic_auth": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "basic_auth_password": {
               "params": [
                 {
@@ -11818,6 +12048,15 @@
               "returns": "any"
             },
             "basic_auth_user": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "config_file": {
               "params": [
                 {
                   "name": "self",
@@ -12132,7 +12371,25 @@
               ],
               "returns": "any"
             },
+            "schema_path": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "schema_utils": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "schema_validation": {
               "params": [
                 {
                   "name": "self",
@@ -16599,6 +16856,26 @@
                   "required": 0
                 },
                 {
+                  "name": "basic_auth",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_path",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_validation",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "config_file",
+                  "type": "any",
+                  "required": 0
+                },
+                {
                   "name": "document",
                   "type": "any",
                   "required": 0
@@ -16849,7 +17126,42 @@
                   "required": false
                 },
                 {
+                  "name": "token_expiry_secs",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "session_manager",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "agent_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "default_webhook_url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "suppress_logs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "enable_post_prompt_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "check_for_input_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "trust_proxy_for_signature",
                   "type": "any",
                   "required": false
                 },
@@ -17047,6 +17359,26 @@
                   "required": 0
                 },
                 {
+                  "name": "basic_auth",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_path",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_validation",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "config_file",
+                  "type": "any",
+                  "required": 0
+                },
+                {
                   "name": "document",
                   "type": "any",
                   "required": 0
@@ -17297,7 +17629,42 @@
                   "required": false
                 },
                 {
+                  "name": "token_expiry_secs",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "session_manager",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "agent_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "default_webhook_url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "suppress_logs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "enable_post_prompt_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "check_for_input_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "trust_proxy_for_signature",
                   "type": "any",
                   "required": false
                 },
@@ -17439,6 +17806,26 @@
                   "required": 0
                 },
                 {
+                  "name": "basic_auth",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_path",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_validation",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "config_file",
+                  "type": "any",
+                  "required": 0
+                },
+                {
                   "name": "document",
                   "type": "any",
                   "required": 0
@@ -17689,7 +18076,42 @@
                   "required": false
                 },
                 {
+                  "name": "token_expiry_secs",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "session_manager",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "agent_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "default_webhook_url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "suppress_logs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "enable_post_prompt_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "check_for_input_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "trust_proxy_for_signature",
                   "type": "any",
                   "required": false
                 },
@@ -17889,6 +18311,26 @@
                   "required": 0
                 },
                 {
+                  "name": "basic_auth",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_path",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_validation",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "config_file",
+                  "type": "any",
+                  "required": 0
+                },
+                {
                   "name": "document",
                   "type": "any",
                   "required": 0
@@ -18139,7 +18581,42 @@
                   "required": false
                 },
                 {
+                  "name": "token_expiry_secs",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "session_manager",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "agent_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "default_webhook_url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "suppress_logs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "enable_post_prompt_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "check_for_input_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "trust_proxy_for_signature",
                   "type": "any",
                   "required": false
                 },
@@ -18282,6 +18759,26 @@
                   "required": 0
                 },
                 {
+                  "name": "basic_auth",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_path",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "schema_validation",
+                  "type": "any",
+                  "required": 0
+                },
+                {
+                  "name": "config_file",
+                  "type": "any",
+                  "required": 0
+                },
+                {
                   "name": "document",
                   "type": "any",
                   "required": 0
@@ -18532,7 +19029,42 @@
                   "required": false
                 },
                 {
+                  "name": "token_expiry_secs",
+                  "type": "any",
+                  "required": false
+                },
+                {
                   "name": "session_manager",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "agent_id",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "default_webhook_url",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "suppress_logs",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "enable_post_prompt_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "check_for_input_override",
+                  "type": "any",
+                  "required": false
+                },
+                {
+                  "name": "trust_proxy_for_signature",
                   "type": "any",
                   "required": false
                 },
@@ -35535,6 +36067,10 @@
     },
     "signalwire.core.agent_base.AgentBase": {
       "params": {
+        "agent_id": {
+          "type": "optional<string>",
+          "required": false
+        },
         "answer_config": {
           "type": "any",
           "required": false
@@ -35543,12 +36079,24 @@
           "type": "bool",
           "required": false
         },
+        "basic_auth": {
+          "type": "optional<tuple<string,string>>",
+          "required": false
+        },
         "basic_auth_password": {
           "type": "any",
           "required": false
         },
         "basic_auth_user": {
           "type": "any",
+          "required": false
+        },
+        "check_for_input_override": {
+          "type": "bool",
+          "required": false
+        },
+        "config_file": {
+          "type": "optional<string>",
           "required": false
         },
         "context_builder": {
@@ -35567,12 +36115,20 @@
           "type": "any",
           "required": false
         },
+        "default_webhook_url": {
+          "type": "optional<string>",
+          "required": false
+        },
         "document": {
           "type": "any",
           "required": false
         },
         "dynamic_config_callback": {
           "type": "any",
+          "required": false
+        },
+        "enable_post_prompt_override": {
+          "type": "bool",
           "required": false
         },
         "full_validation": {
@@ -35703,8 +36259,16 @@
           "type": "any",
           "required": false
         },
+        "schema_path": {
+          "type": "optional<string>",
+          "required": false
+        },
         "schema_utils": {
           "type": "any",
+          "required": false
+        },
+        "schema_validation": {
+          "type": "bool",
           "required": false
         },
         "schema_validator": {
@@ -35751,8 +36315,16 @@
           "type": "any",
           "required": false
         },
+        "suppress_logs": {
+          "type": "bool",
+          "required": false
+        },
         "swaig_query_params": {
           "type": "any",
+          "required": false
+        },
+        "token_expiry_secs": {
+          "type": "int",
           "required": false
         },
         "tool_order": {
@@ -35761,6 +36333,10 @@
         },
         "tools": {
           "type": "any",
+          "required": false
+        },
+        "trust_proxy_for_signature": {
+          "type": "bool",
           "required": false
         },
         "use_pom": {
@@ -36123,6 +36699,10 @@
           "type": "any",
           "required": false
         },
+        "config_file": {
+          "type": "optional<string>",
+          "required": false
+        },
         "cors_origins": {
           "type": "any",
           "required": false
@@ -36145,6 +36725,10 @@
         },
         "request_timeout": {
           "type": "any",
+          "required": false
+        },
+        "service_name": {
+          "type": "optional<string>",
           "required": false
         },
         "ssl_cert_path": {
@@ -36295,12 +36879,20 @@
     },
     "signalwire.core.swml_service.SWMLService": {
       "params": {
+        "basic_auth": {
+          "type": "optional<tuple<string,string>>",
+          "required": false
+        },
         "basic_auth_password": {
           "type": "any",
           "required": false
         },
         "basic_auth_user": {
           "type": "any",
+          "required": false
+        },
+        "config_file": {
+          "type": "optional<string>",
           "required": false
         },
         "debug_routes_enabled": {
@@ -36343,8 +36935,16 @@
           "type": "any",
           "required": false
         },
+        "schema_path": {
+          "type": "optional<string>",
+          "required": false
+        },
         "schema_utils": {
           "type": "any",
+          "required": false
+        },
+        "schema_validation": {
+          "type": "bool",
           "required": false
         },
         "schema_validator": {

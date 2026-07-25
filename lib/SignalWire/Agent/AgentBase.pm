@@ -96,8 +96,58 @@ has post_prompt_url    => ( is => 'rw', default => sub { undef } );
 has proxy_url_base     => ( is => 'rw', lazy    => 1, builder => '_build_proxy_url_base' );
 has swaig_query_params => ( is => 'rw', default => sub { {} } );
 
-# Session manager (built in BUILD)
-has session_manager => ( is => 'rw' );
+# Python parity: AgentBase.__init__(token_expiry_secs=3600). The reference does
+# NOT store this on self — it FORWARDS it to the SessionManager collaborator
+# (agent_base.py:247: SessionManager(token_expiry_secs=token_expiry_secs)).
+has token_expiry_secs => ( is => 'rw', default => sub { 3600 } );
+
+# Session manager — built lazily so it picks up token_expiry_secs.
+has session_manager => (
+    is      => 'rw',
+    lazy    => 1,
+    builder => '_build_session_manager',
+);
+
+sub _build_session_manager {
+    my ($self) = @_;
+    require SignalWire::Security::SessionManager;
+    return SignalWire::Security::SessionManager->new(
+        token_expiry_secs => $self->token_expiry_secs );
+}
+
+# Python parity: AgentBase.__init__(agent_id=None) — "Optional unique ID for
+# this agent, generated if not provided" (agent_base.py:229:
+# self.agent_id = agent_id or str(uuid.uuid4())).
+has agent_id => (
+    is      => 'rw',
+    lazy    => 1,
+    builder => '_build_agent_id',
+);
+
+sub _build_agent_id {
+    return _generate_uuid4();
+}
+
+# Python parity: AgentBase.__init__(default_webhook_url=None) — "Optional
+# default webhook URL for all SWAIG functions". Stored on the agent
+# (agent_base.py:225: self._default_webhook_url = default_webhook_url).
+has default_webhook_url => ( is => 'rw', default => sub { undef } );
+
+# Python parity: AgentBase.__init__(suppress_logs=False) — "Whether to suppress
+# structured logs" (agent_base.py:226). Consulted on the request-handling path.
+has suppress_logs => ( is => 'rw', default => sub { 0 } );
+
+# Python parity: AgentBase.__init__(enable_post_prompt_override=False) /
+# (check_for_input_override=False). The reference accepts and documents both;
+# neither is consulted elsewhere in the reference, so they are stored verbatim.
+has enable_post_prompt_override => ( is => 'rw', default => sub { 0 } );
+has check_for_input_override    => ( is => 'rw', default => sub { 0 } );
+
+# Python parity: AgentBase.__init__(trust_proxy_for_signature=False) — "If True,
+# honor X-Forwarded-Proto / X-Forwarded-Host when reconstructing the URL during
+# signature validation. Default False — proxy headers are spoofable, so opt in
+# only when you control the proxy chain." FORWARDED to WebhookMiddleware.
+has trust_proxy_for_signature => ( is => 'rw', default => sub { 0 } );
 
 # Webhook signature validation. When set (or SIGNALWIRE_SIGNING_KEY env
 # is non-empty), the PSGI app auto-mounts SignalWire::Security::WebhookMiddleware
@@ -175,11 +225,78 @@ sub BUILD {
     $r =~ s{/+$}{} if $r ne '/';
     $self->route($r);
 
-    # Initialize session manager
-    require SignalWire::Security::SessionManager;
-    $self->session_manager(
-        SignalWire::Security::SessionManager->new( token_expiry_secs => 3600 ) );
     return;
+}
+
+# Python parity: AgentBase.__init__ loads the config file's ``service`` section
+# BEFORE initializing the base service, and applies route/host/port/name from it
+# with CONSTRUCTOR PARAMETERS TAKING PRECEDENCE (agent_base.py:189-196):
+#
+#   final_route = route if route != "/" else service_config.get("route", route)
+#   final_host  = host  if host  != "0.0.0.0" else service_config.get("host", host)
+#   final_port  = port if port is not None else service_config.get("port", None)
+#   final_name  = service_config.get("name", name)
+#
+# Perl's construction is Moo's generated ``new``, so the equivalent hook is
+# BUILDARGS: fold the config values into the argument hash before the
+# attributes are built. Service::BUILDARGS (which unfolds the ``basic_auth``
+# pair) runs as part of the same chain via SUPER.
+sub BUILDARGS {
+    my ( $class, @args ) = @_;
+    my $args = $class->SUPER::BUILDARGS(@args);
+
+    my $service_config = _load_service_config( $args->{config_file}, $args->{name} );
+    return $args unless %$service_config;
+
+    # Constructor parameters take precedence over the config file; the config
+    # file supplies the value only where the caller did not (matching the
+    # reference's default-sentinel comparisons).
+    $args->{route} = $service_config->{route}
+        if !defined $args->{route} && defined $service_config->{route};
+    $args->{host} = $service_config->{host}
+        if !defined $args->{host} && defined $service_config->{host};
+    $args->{port} = $service_config->{port}
+        if !defined $args->{port} && defined $service_config->{port};
+    $args->{name} = $service_config->{name} if defined $service_config->{name};
+
+    return $args;
+}
+
+# Python parity: AgentBase._load_service_config(config_file, service_name) —
+# a @staticmethod that finds the config file (falling back to
+# ConfigLoader.find_config_file when none was passed), loads it, and returns
+# its ``service`` section, or {} (agent_base.py:358-382).
+sub _load_service_config {
+    my ( $config_file, $service_name ) = @_;
+
+    require SignalWire::Core::ConfigLoader;
+
+    $config_file //= SignalWire::Core::ConfigLoader->find_config_file($service_name);
+    return {} unless $config_file;
+
+    my $loader = SignalWire::Core::ConfigLoader->new( [$config_file] );
+    return {} unless $loader->has_config;
+
+    my $section = $loader->get_section('service');
+    return ref $section eq 'HASH' ? $section : {};
+}
+
+# RFC 4122 version-4 UUID (Python parity: str(uuid.uuid4())). Uses the same
+# CSPRNG source as the credential generator.
+sub _generate_uuid4 {
+    my @octets = map { int( rand 256 ) } 1 .. 16;
+    if ( open my $fh, '<:raw', '/dev/urandom' ) {
+        my $bytes = '';
+        if ( read( $fh, $bytes, 16 ) == 16 ) {
+            @octets = unpack 'C16', $bytes;
+        }
+        close $fh;
+    }
+    $octets[6] = ( $octets[6] & 0x0f ) | 0x40;    # version 4
+    $octets[8] = ( $octets[8] & 0x3f ) | 0x80;    # variant 10xx
+    my $hex = join '', map { sprintf '%02x', $_ } @octets;
+    return join '-', substr( $hex, 0, 8 ), substr( $hex, 8, 4 ), substr( $hex, 12, 4 ),
+        substr( $hex, 16, 4 ), substr( $hex, 20, 12 );
 }
 
 # ---------- Prompt methods ----------
@@ -1841,7 +1958,11 @@ sub _build_psgi_app {
             signing_key => $signing_key,
             paths       => \@gated_paths,
             methods     => ['POST'],
-            trust_proxy => 1,
+
+            # Python parity: web_mixin.py:450 passes
+            # trust_proxy=getattr(self, "_trust_proxy_for_signature", False).
+            # Proxy headers are spoofable, so this is OPT-IN, not always-on.
+            trust_proxy => $self->trust_proxy_for_signature ? 1 : 0,
         );
         return $signed_app;
     } else {
