@@ -86,15 +86,29 @@ my $app = $service->to_psgi_app;
 
 `SignalWire::SWML::Service` uses `SignalWire::Logging`. Each service instance
 holds a logger bound to a service-scoped channel. The logger is available
-internally to the SDK; services and subclasses can obtain one via
-`SignalWire::Logging->get_logger($name)`:
+internally to the SDK; services and subclasses obtain one from the
+module-level `get_logger` in `SignalWire::Core::LoggingConfig` — the same
+free-function entry point the Python reference exposes as
+`signalwire.core.logging_config.get_logger`:
 
 ```perl
-use SignalWire::Logging;
-my $log = SignalWire::Logging->get_logger('signalwire.my_service');
-$log->info('service_started');
-$log->debug('document_created');
+use SignalWire::Core::LoggingConfig qw(get_logger);
+my $log = get_logger('signalwire.my_service');
 ```
+
+The returned handle is a `SignalWire::Logging` object with the four
+severity-named level methods — `debug`, `info`, `warn`, `error` — each taking
+the message string(s) to emit. These are methods on the returned logger, not
+module-level surface (Python's `get_logger` likewise returns the structlog
+logger rather than re-exporting the level functions). Emit a message by calling
+the level you want on `$log`, e.g. the `info` method for `service_started` or
+the `debug` method for `document_created`.
+
+Configuration is module-level too: `configure_logging` (idempotent one-time
+setup), `reset_logging_configuration`, `get_execution_mode`, and
+`strip_control_chars` are all exported by `SignalWire::Core::LoggingConfig`.
+The threshold comes from `SIGNALWIRE_LOG_LEVEL` and `SIGNALWIRE_LOG_MODE`;
+`SignalWire::Logging::LogLevel` single-sources the four level strings.
 
 ## SWML Document Creation
 

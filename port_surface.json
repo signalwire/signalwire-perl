@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 719d379925e42ae76b6d5c2c24953e88b5631a19",
+   "generated_from" : "signalwire-perl @ 5550892710ebef897ae6f4835d76ed30bde04abd",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -399,14 +399,10 @@
          },
          "functions" : [
             "configure_logging",
-            "debug",
-            "error",
             "get_execution_mode",
             "get_logger",
-            "info",
             "reset_logging_configuration",
-            "strip_control_chars",
-            "warn"
+            "strip_control_chars"
          ]
       },
       "signalwire.core.mixins.ai_config_mixin" : {

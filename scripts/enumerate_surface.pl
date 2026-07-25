@@ -1604,6 +1604,33 @@ my %SKIP_SUB = map { $_ => 1 } qw(
     AUTOLOAD
 );
 
+# Perl packages routed with `class => undef` whose subs project onto the
+# reference module's FREE FUNCTIONS. Lockstep twin of FREE_FN_PACKAGES in
+# scripts/enumerate_signatures.py — keep the two lists identical.
+#
+# A `class => undef` route alone does NOT make a package's subs free
+# functions. Some packages map that way for a different reason: they are Moo
+# OBJECT classes whose instances are handed back by a reference free function,
+# so the package needs a module home but its INSTANCE methods are not
+# module-level surface. SignalWire::Logging is exactly that — it is the object
+# `get_logger()` returns (Python: the structlog logger, typed `Any`, so the
+# oracle records no members on it). Without this gate its `debug`/`info`/
+# `warn`/`error` instance methods leak upward as four phantom module-level free
+# functions in signalwire.core.logging_config, which is what they were
+# previously excused as PORT_ADDITIONS. The reference's logging_config free
+# functions all come from SignalWire::Core::LoggingConfig (which exports all
+# five: get_logger, configure_logging, get_execution_mode,
+# reset_logging_configuration, strip_control_chars).
+my %FREE_FN_PACKAGES = map { $_ => 1 } (
+    'SignalWire',                                    'SignalWire::Contexts',
+    'SignalWire::Core::Agent::Tools::TypeInference', 'SignalWire::Core::LoggingConfig',
+    'SignalWire::REST::Namespaces::Resources',       'SignalWire::REST::Pagination',
+    'SignalWire::REST::RequestOptions::Resolver',    'SignalWire::Security::SecurityUtils',
+    'SignalWire::Security::WebhookMiddleware',       'SignalWire::Security::WebhookValidator',
+    'SignalWire::Skills::SkillDiscovery',            'SignalWire::Utils',
+    'SignalWire::Utils::SchemaValidator',            'SignalWire::Utils::UrlValidator',
+);
+
 # Filenames to exclude from the walk.
 my %SKIP_FILE = ();
 
@@ -2006,9 +2033,14 @@ sub collect_surface {
                 my $method = ( $sub eq 'new' ) ? '__init__' : $sub;
                 if ( defined $class ) {
                     $record_class_method->( $mod, $class, $method );
-                } else {
+                } elsif ( $FREE_FN_PACKAGES{$pkg_name} ) {
 
-                    # Module-level (no class)
+                    # Module-level free function (no class). Gated by
+                    # %FREE_FN_PACKAGES — a `class => undef` route alone is not
+                    # enough (see that hash's docstring): an object class like
+                    # SignalWire::Logging routes with class => undef only to
+                    # get a module home, and its instance methods must NOT leak
+                    # upward as phantom module-level free functions.
                     $record_function->( $mod, $method );
                 }
             }

@@ -81,10 +81,6 @@ signalwire.core.function_result.JoinConference.is_beep: perl_constants_idiom: Jo
 signalwire.core.function_result.JoinConference.is_record: perl_constants_idiom: JoinConference->is_record($v) membership check over the recording-mode set (see JoinConference).
 signalwire.core.function_result.JoinConference.is_trim: perl_constants_idiom: JoinConference->is_trim($v) membership check over the silence-trim set (see JoinConference).
 signalwire.core.function_result.JoinConference.is_method: perl_constants_idiom: JoinConference->is_method($v) membership check over the callback HTTP-method set (see JoinConference).
-signalwire.core.logging_config.debug: port-only: Perl exports package-level logging functions; Python uses a logger handle (get_logger().debug(...))
-signalwire.core.logging_config.error: port-only: Perl exports package-level logging functions; Python uses a logger handle (get_logger().debug(...))
-signalwire.core.logging_config.info: port-only: Perl exports package-level logging functions; Python uses a logger handle (get_logger().debug(...))
-signalwire.core.logging_config.warn: port-only: Perl exports package-level logging functions; Python uses a logger handle (get_logger().debug(...))
 signalwire.core.logging_config.LogLevel: perl_constants_idiom: SignalWire::Logging::LogLevel is a constants package single-sourcing the four log levels (debug/info/warn/error, ascending severity) that otherwise live only in SignalWire::Logging's private %LEVELS table. The logger's `level` attribute, SIGNALWIRE_LOG_LEVEL, and debug/info/warn/error still take/emit plain strings (the constants ARE the level strings) so Python stdlib-level-name parity is unchanged; this is the source of truth + autocomplete + a validation/severity helper, not a compile-time check.
 signalwire.core.logging_config.LogLevel.all: perl_constants_idiom: LogLevel->all returns the four levels as an arrayref in ascending severity (see LogLevel).
 signalwire.core.logging_config.LogLevel.is_valid: perl_constants_idiom: LogLevel->is_valid($level) membership check over the log-level set (see LogLevel).

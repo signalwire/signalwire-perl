@@ -78,10 +78,6 @@ Excused divergences fall into:
 ## Idiom: Perl logger / app accessor naming
 
 signalwire.agent_server.AgentServer.app: Perl AgentServer wraps a Plack/PSGI coderef accessible via psgi_app(); Python's `.app` attribute is a Flask app instance — no direct equivalent in Plack land
-signalwire.agent_server.AgentServer.logger: Perl uses SignalWire::Logging->get_logger(...) directly rather than a per-class logger attribute; Python keeps a `.logger` accessor on every class
-signalwire.core.skill_base.SkillBase.logger: Perl SkillBase doesn't expose a logger attribute; subclasses use SignalWire::Logging directly when they need to log
-signalwire.core.skill_manager.SkillManager.logger: Perl SkillManager doesn't expose a logger attribute; logging happens through SignalWire::Logging
-signalwire.skills.registry.SkillRegistry.logger: Perl SkillRegistry doesn't expose a logger attribute; logging happens through SignalWire::Logging
 
 
 ## Idiom: Perl method-name renames
