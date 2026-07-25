@@ -41,23 +41,27 @@ has agent => (
 
 # The backing POM. A fresh, empty PromptObjectModel by default.
 has pom => (
-    is      => 'rw',
-    default => sub { SignalWire::POM::PromptObjectModel->new },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { SignalWire::POM::PromptObjectModel->new },
 );
 
 has _prompt_text => (
-    is      => 'rw',
-    default => sub { undef },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { undef },
 );
 
 has _post_prompt_text => (
-    is      => 'rw',
-    default => sub { undef },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { undef },
 );
 
 has _contexts => (
-    is      => 'rw',
-    default => sub { undef },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { undef },
 );
 
 # ---------- public methods ----------

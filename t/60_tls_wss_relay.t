@@ -45,8 +45,6 @@ subtest 'relay client connects + authenticates over wss://' => sub {
         project  => $TlsMockTest::PROJECT,
         token    => $TlsMockTest::TOKEN,
         host     => "$TlsMockTest::HOST:$TlsMockTest::WSS_PORT",
-        scheme   => 'wss',                 # real TLS transport
-        path     => '/api/relay/ws',
         contexts => ['default'],
     );
 

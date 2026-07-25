@@ -9,8 +9,9 @@ use File::Basename ();
 my $instance;
 
 has 'verbs' => (
-    is      => 'ro',
-    default => sub { {} },
+    init_arg => undef,
+    is       => 'ro',
+    default  => sub { {} },
 );
 
 has 'schema_data' => (

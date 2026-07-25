@@ -48,9 +48,10 @@ has bullets => (
 );
 
 has subsections => (
-    is      => 'rw',
-    default => sub { [] },
-    isa     => sub { croak("subsections must be an arrayref") unless ref $_[0] eq 'ARRAY' },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { [] },
+    isa      => sub { croak("subsections must be an arrayref") unless ref $_[0] eq 'ARRAY' },
 );
 
 # Whether this section should be auto-numbered when rendered alongside

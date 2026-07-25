@@ -359,13 +359,13 @@ use_ok('SignalWire::Relay::Action');
 {
     my $send_action = SignalWire::Relay::Action::Fax->new(
         control_id => 'fax-s',
-        _fax_type  => 'send',
+        method_prefix => 'send_fax',
     );
     is($send_action->_stop_method, 'calling.send_fax.stop', 'send fax stop method');
 
     my $recv_action = SignalWire::Relay::Action::Fax->new(
         control_id => 'fax-r',
-        _fax_type  => 'receive',
+        method_prefix => 'receive_fax',
     );
     is($recv_action->_stop_method, 'calling.receive_fax.stop', 'receive fax stop method');
 }

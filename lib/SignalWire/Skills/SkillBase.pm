@@ -25,14 +25,40 @@ my $HashRef  = sub { croak("must be a hashref")   unless ref $_[0] eq 'HASH' };
 # not a plain string/hashref.
 my $Object = sub { croak("must be an object") unless Scalar::Util::blessed( $_[0] ) };
 
-# Required class-level constants (subclasses override via 'has' or '+')
-has skill_name        => ( is => 'ro', required => 1, isa => $NonEmptyStr );
-has skill_description => ( is => 'ro', required => 1, isa => $NonEmptyStr );
-has skill_version     => ( is => 'ro', default  => sub { '1.0.0' }, isa => $NonEmptyStr );
+# Required class-level constants. These are the Perl spelling of the reference's
+# CLASS attributes ``SKILL_NAME`` / ``SKILL_DESCRIPTION`` (skill_base.py:24-25),
+# which a concrete skill sets on the class and a caller never passes to the
+# constructor — the reference raises ``ValueError`` when SKILL_NAME is unset
+# (skill_base.py:34). ``init_arg => undef`` keeps that shape: a subclass supplies
+# the value with ``has '+skill_name' => ( default => ... )``, and a subclass that
+# forgets croaks from the builder on first use, which is the Moo equivalent of
+# the reference's constructor-time ValueError.
+has skill_name => (
+    init_arg => undef,
+    is       => 'lazy',
+    isa      => $NonEmptyStr,
+    builder  => '_build_skill_name',
+);
+has skill_description => (
+    init_arg => undef,
+    is       => 'lazy',
+    isa      => $NonEmptyStr,
+    builder  => '_build_skill_description',
+);
 
-has supports_multiple_instances => ( is => 'ro', default => sub { 0 } );
-has required_packages           => ( is => 'ro', default => sub { [] }, isa => $ArrayRef );
-has required_env_vars           => ( is => 'ro', default => sub { [] }, isa => $ArrayRef );
+sub _build_skill_name ($self) {
+    croak( ref($self) . ' must define skill_name' );
+}
+
+sub _build_skill_description ($self) {
+    croak( ref($self) . ' must define skill_description' );
+}
+has skill_version =>
+    ( init_arg => undef, is => 'ro', default => sub { '1.0.0' }, isa => $NonEmptyStr );
+
+has supports_multiple_instances => ( init_arg => undef, is => 'ro', default => sub { 0 } );
+has required_packages => ( init_arg => undef, is => 'ro', default => sub { [] }, isa => $ArrayRef );
+has required_env_vars => ( init_arg => undef, is => 'ro', default => sub { [] }, isa => $ArrayRef );
 
 # The agent this skill is attached to
 has agent => ( is => 'ro', required => 1, weak_ref => 1, isa => $Object );
@@ -41,7 +67,7 @@ has agent => ( is => 'ro', required => 1, weak_ref => 1, isa => $Object );
 has params => ( is => 'rw', default => sub { {} }, isa => $HashRef );
 
 # Extra SWAIG fields to merge into tool definitions
-has swaig_fields => ( is => 'rw', default => sub { {} }, isa => $HashRef );
+has swaig_fields => ( init_arg => undef, is => 'rw', default => sub { {} }, isa => $HashRef );
 
 sub BUILD ( $self, @ ) {
 

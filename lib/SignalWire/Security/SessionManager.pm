@@ -18,8 +18,9 @@ has 'secret_key' => (
 );
 
 has '_debug_mode' => (
-    is      => 'rw',
-    default => sub { 0 },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { 0 },
 );
 
 sub _random_hex {

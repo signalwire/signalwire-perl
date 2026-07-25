@@ -79,11 +79,11 @@ package SignalWire::Contexts::GatherInfo;
 use Moo;
 use JSON ();
 
-has '_questions'         => ( is => 'rw', default => sub { [] } );
-has '_output_key'        => ( is => 'rw', default => sub { undef } );
-has '_completion_action' => ( is => 'rw', default => sub { undef } );
-has '_prompt'            => ( is => 'rw', default => sub { undef } );
-has '_isolated'          => ( is => 'rw', default => sub { 0 } );
+has '_questions'         => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has '_output_key'        => ( is       => 'rw',  default => sub { undef } );
+has '_completion_action' => ( is       => 'rw',  default => sub { undef } );
+has '_prompt'            => ( is       => 'rw',  default => sub { undef } );
+has '_isolated'          => ( is       => 'rw',  default => sub { 0 } );
 
 sub add_question {
     my ( $self, %opts ) = @_;
@@ -120,21 +120,21 @@ use JSON ();
 
 has 'name' => ( is => 'ro', required => 1 );
 
-has '_text'                => ( is => 'rw', default => sub { undef } );
-has '_step_criteria'       => ( is => 'rw', default => sub { undef } );
-has '_functions'           => ( is => 'rw', default => sub { undef } );
-has '_valid_steps'         => ( is => 'rw', default => sub { undef } );
-has '_valid_contexts'      => ( is => 'rw', default => sub { undef } );
-has '_sections'            => ( is => 'rw', default => sub { [] } );
-has '_gather_info'         => ( is => 'rw', default => sub { undef } );
-has '_end'                 => ( is => 'rw', default => sub { 0 } );
-has '_skip_user_turn'      => ( is => 'rw', default => sub { 0 } );
-has '_skip_to_next_step'   => ( is => 'rw', default => sub { 0 } );
-has '_reset_system_prompt' => ( is => 'rw', default => sub { undef } );
-has '_reset_user_prompt'   => ( is => 'rw', default => sub { undef } );
-has '_reset_consolidate'   => ( is => 'rw', default => sub { 0 } );
-has '_reset_full_reset'    => ( is => 'rw', default => sub { 0 } );
-has '_history'             => ( is => 'rw', default => sub { undef } );
+has '_text'                => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_step_criteria'       => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_functions'           => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_valid_steps'         => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_valid_contexts'      => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_sections'            => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has '_gather_info'         => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_end'                 => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_skip_user_turn'      => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_skip_to_next_step'   => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_reset_system_prompt' => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_reset_user_prompt'   => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_reset_consolidate'   => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_reset_full_reset'    => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_history'             => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 sub set_text {
     my ( $self, $text ) = @_;
@@ -399,23 +399,23 @@ use JSON ();
 
 has 'name' => ( is => 'ro', required => 1 );
 
-has '_steps'                  => ( is => 'rw', default => sub { {} } );
-has '_step_order'             => ( is => 'rw', default => sub { [] } );
-has '_valid_contexts'         => ( is => 'rw', default => sub { undef } );
-has '_valid_steps'            => ( is => 'rw', default => sub { undef } );
-has '_initial_step'           => ( is => 'rw', default => sub { undef } );
-has '_post_prompt'            => ( is => 'rw', default => sub { undef } );
-has '_system_prompt'          => ( is => 'rw', default => sub { undef } );
-has '_system_prompt_sections' => ( is => 'rw', default => sub { [] } );
-has '_consolidate'            => ( is => 'rw', default => sub { 0 } );
-has '_full_reset'             => ( is => 'rw', default => sub { 0 } );
-has '_user_prompt'            => ( is => 'rw', default => sub { undef } );
-has '_isolated'               => ( is => 'rw', default => sub { 0 } );
-has '_prompt_text'            => ( is => 'rw', default => sub { undef } );
-has '_prompt_sections'        => ( is => 'rw', default => sub { [] } );
-has '_enter_fillers'          => ( is => 'rw', default => sub { undef } );
-has '_exit_fillers'           => ( is => 'rw', default => sub { undef } );
-has '_history'                => ( is => 'rw', default => sub { undef } );
+has '_steps'                  => ( init_arg => undef, is => 'rw', default => sub { {} } );
+has '_step_order'             => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has '_valid_contexts'         => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_valid_steps'            => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_initial_step'           => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_post_prompt'            => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_system_prompt'          => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_system_prompt_sections' => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has '_consolidate'            => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_full_reset'             => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_user_prompt'            => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_isolated'               => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_prompt_text'            => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_prompt_sections'        => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has '_enter_fillers'          => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_exit_fillers'           => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_history'                => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 sub add_step {
     my ( $self, $name, %opts ) = @_;
@@ -729,8 +729,8 @@ use Moo;
 use JSON         ();
 use Scalar::Util ();
 
-has '_contexts'      => ( is => 'rw', default => sub { {} } );
-has '_context_order' => ( is => 'rw', default => sub { [] } );
+has '_contexts'      => ( init_arg => undef, is => 'rw', default => sub { {} } );
+has '_context_order' => ( init_arg => undef, is => 'rw', default => sub { [] } );
 
 # Weak reference to the owning agent so validate() can check
 # user-defined tool names against RESERVED_NATIVE_TOOL_NAMES. Set via

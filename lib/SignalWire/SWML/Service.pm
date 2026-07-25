@@ -100,20 +100,23 @@ has 'config_file' => (
 );
 
 has 'document' => (
-    is      => 'rw',
-    default => sub { SignalWire::SWML::Document->new() },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { SignalWire::SWML::Document->new() },
 );
 
 # Specialized SWML verb handlers keyed by verb name (register_verb_handler).
 has 'verb_handlers' => (
-    is      => 'rw',
-    default => sub { {} },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { {} },
 );
 
 # Strict-schema-validation flag (full_validation_enabled).
 has 'full_validation' => (
-    is      => 'rw',
-    default => sub { 0 },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { 0 },
 );
 
 # SWML schema validator (verb existence + closed-key + type checks). Lazily
@@ -122,8 +125,9 @@ has 'full_validation' => (
 # config must die, not be appended silently). Mirrors the python reference's
 # SWMLService.schema_utils.validate_verb schema pass.
 has '_schema_validator' => (
-    is      => 'lazy',
-    default => sub {
+    init_arg => undef,
+    is       => 'lazy',
+    default  => sub {
         my ($self) = @_;
 
         # FORWARD the construction params to the collaborator, exactly as the
@@ -140,43 +144,50 @@ has '_schema_validator' => (
 # External base URL override for webhook URLs behind a proxy
 # (manual_set_proxy_url / SWML_PROXY_URL_BASE).
 has 'proxy_url_base' => (
-    is      => 'rw',
-    default => sub { $ENV{SWML_PROXY_URL_BASE} // '' },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { $ENV{SWML_PROXY_URL_BASE} // '' },
 );
 
 # Set while serve() is running; cleared by stop().
 has '_server_running' => (
-    is      => 'rw',
-    default => sub { 0 },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { 0 },
 );
 
 # Toggled by enable_debug_routes(); when true the service exposes its
 # debug endpoints (Python WebMixin debug-route parity).
 has '_debug_routes_enabled' => (
-    is      => 'rw',
-    default => sub { 0 },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { 0 },
 );
 
 # SWAIG tool registry — lifted from AgentBase so any Service (sidecar,
 # non-agent verb host) can register and dispatch SWAIG functions.
 has 'tools' => (
-    is      => 'rw',
-    default => sub { {} },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { {} },
 );
 
 has 'tool_order' => (
-    is      => 'rw',
-    default => sub { [] },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { [] },
 );
 
 has 'routing_callbacks' => (
-    is      => 'rw',
-    default => sub { {} },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { {} },
 );
 
 has '_logger' => (
-    is      => 'ro',
-    default => sub { SignalWire::Logging->get_logger('signalwire.swml_service') },
+    init_arg => undef,
+    is       => 'ro',
+    default  => sub { SignalWire::Logging->get_logger('signalwire.swml_service') },
 );
 
 # Python parity: schema_utils / verb_registry / security accessors.
@@ -196,8 +207,9 @@ has 'schema_utils' => (
 );
 
 has 'verb_registry' => (
-    is      => 'lazy',
-    default => sub {
+    init_arg => undef,
+    is       => 'lazy',
+    default  => sub {
 
         # Tiny stand-in registry for verb-handler dispatch. The Perl SDK
         # uses AUTOLOAD against the schema for verb lookup; this hashref
@@ -212,8 +224,9 @@ has 'verb_registry' => (
 );
 
 has 'security' => (
-    is      => 'lazy',
-    default => sub {
+    init_arg => undef,
+    is       => 'lazy',
+    default  => sub {
         my ($self) = @_;
 
         # Python parity: SWMLService.__init__ builds

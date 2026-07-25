@@ -88,27 +88,60 @@ has 'contexts' => (
     default => sub { [] },
     isa     => sub { Carp::croak("contexts must be an arrayref") unless ref $_[0] eq 'ARRAY' },
 );
-has 'agent' => ( is => 'ro', default => sub { $USER_AGENT } );
+has 'agent' => ( init_arg => undef, is => 'ro', default => sub { $USER_AGENT } );
 
 # Optional JWT-based authentication (alternative to project/token).
 has 'jwt_token'  => ( is => 'ro', default => sub { '' } );
 has '_jwt_token' => ( is => 'rw', default => sub { '' } );
 
-# Scheme: "wss" (production, TLS — the default) or "ws" (plain, used by
-# the local audit fixture in audit_relay_handshake.py). Keeping this
-# explicit lets the same client drive both real RELAY and a 127.0.0.1
-# fixture without forking the transport.
-has 'scheme' => ( is => 'ro', default => sub { 'wss' } );
+# Scheme: DERIVED from the host, never a constructor argument. The python
+# reference hardcodes ``wss://{host}`` (relay/client.py:354) and offers no
+# scheme knob, so accepting one here would be invented surface. Instead the
+# scheme follows the same loopback rule the REST half already uses
+# (REST/HttpClient::_is_loopback_host): a bare loopback host
+# (127.0.0.1[:port] / localhost[:port] / [::1][:port]) is a local mock/dev
+# fixture that speaks plain WebSocket, so it gets ws://; every other host is
+# the real platform over wss://. A real SignalWire space is never loopback,
+# so production is unaffected, and the local fixture works with no knob.
+has 'scheme' => (
+    init_arg => undef,
+    is       => 'lazy',
+    builder  => '_build_scheme',
+);
 
-# Path component appended to the host. Defaults to '/api/relay/ws' (the
-# documented production endpoint per RELAY_IMPLEMENTATION_GUIDE).
-has 'path' => ( is => 'ro', default => sub { '/api/relay/ws' } );
+sub _build_scheme ($self) {
+
+    # A configured RELAY CA bundle means the caller has a TLS endpoint to
+    # verify against — that is the reference's own signal
+    # (SIGNALWIRE_RELAY_CA_FILE, relay/client.py::_build_relay_ssl_context),
+    # and it holds for a loopback TLS fixture just as it does in production.
+    return 'wss' if $ENV{SIGNALWIRE_RELAY_CA_FILE} || $ENV{SSL_CERT_FILE};
+
+    require SignalWire::REST::HttpClient;
+    return SignalWire::REST::HttpClient::_is_loopback_host( $self->host )
+        ? 'ws'
+        : 'wss';
+}
+
+# Path component appended to the host. Derived, not a constructor argument:
+# the reference has no path knob. Production is the documented
+# '/api/relay/ws' endpoint (RELAY_IMPLEMENTATION_GUIDE); a loopback fixture
+# serves the handshake at the root, matching how the scheme is derived above.
+has 'path' => (
+    init_arg => undef,
+    is       => 'lazy',
+    builder  => '_build_path',
+);
+
+sub _build_path ($self) {
+    return $self->scheme eq 'ws' ? '' : '/api/relay/ws';
+}
 
 # Connection state
-has 'protocol'            => ( is => 'rw', default => sub { '' } );
-has 'authorization_state' => ( is => 'rw', default => sub { '' } );
-has 'connected'           => ( is => 'rw', default => sub { 0 } );
-has 'session_id'          => ( is => 'rw', default => sub { '' } );
+has 'protocol'            => ( init_arg => undef, is => 'rw', default => sub { '' } );
+has 'authorization_state' => ( init_arg => undef, is => 'rw', default => sub { '' } );
+has 'connected'           => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has 'session_id'          => ( init_arg => undef, is => 'rw', default => sub { '' } );
 
 # Aliases for Python parity (same value, different names).
 sub relay_protocol       { my ($self) = @_; return $self->protocol }
@@ -116,35 +149,35 @@ sub _connected           { my ($self) = @_; return $self->connected }
 sub _authorization_state { my ($self) = @_; return $self->authorization_state }
 
 # Correlation maps
-has '_pending' => ( is => 'rw', default => sub { {} } )
+has '_pending' => ( init_arg => undef, is => 'rw', default => sub { {} } )
     ;    # rpc_id => { resolve => sub, reject => sub }
-has '_calls' => ( is => 'rw', default => sub { {} } );    # call_id => Call
-has '_pending_dials' => ( is => 'rw', default => sub { {} } )
-    ;                                                     # tag => { resolve => sub, reject => sub }
-has '_messages' => ( is => 'rw', default => sub { {} } ); # message_id => Message
+has '_calls' => ( init_arg => undef, is => 'rw', default => sub { {} } );    # call_id => Call
+has '_pending_dials' => ( init_arg => undef, is => 'rw', default => sub { {} } )
+    ;    # tag => { resolve => sub, reject => sub }
+has '_messages' => ( init_arg => undef, is => 'rw', default => sub { {} } ); # message_id => Message
 
 # WebSocket internals
-has '_socket' => ( is => 'rw', default => sub { undef } );
-has '_ws'     => ( is => 'rw', default => sub { undef } );
+has '_socket' => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_ws'     => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # Reconnect state
-has '_reconnect_attempts' => ( is => 'rw', default => sub { 0 } );
-has '_max_backoff'        => ( is => 'ro', default => sub { 30 } );
+has '_reconnect_attempts' => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has '_max_backoff'        => ( init_arg => undef, is => 'ro', default => sub { 30 } );
 
 # Set true by disconnect_ws() so run()'s auto-reconnect loop distinguishes an
 # INTENTIONAL teardown (do NOT reconnect, exit cleanly) from an unexpected drop
 # (reconnect). Mirrors the python reference's _closing guard.
-has '_closing' => ( is => 'rw', default => sub { 0 } );
+has '_closing' => ( init_arg => undef, is => 'rw', default => sub { 0 } );
 
 # Bound the auto-reconnect loop: after this many CONSECUTIVE failed reconnect
 # attempts run() gives up and exits rather than spinning forever (A6: never
 # infinite-reconnect). Reset to 0 on a successful (re)connect.
-has '_max_reconnect_attempts' => ( is => 'rw', default => sub { 10 } );
+has '_max_reconnect_attempts' => ( init_arg => undef, is => 'rw', default => sub { 10 } );
 
 # Callbacks
-has '_on_call'    => ( is => 'rw', default => sub { undef } );
-has '_on_message' => ( is => 'rw', default => sub { undef } );
-has '_on_event'   => ( is => 'rw', default => sub { undef } );
+has '_on_call'    => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_on_message' => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_on_event'   => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # Max concurrent inbound calls (Python parity: RelayClient(max_active_calls=N)).
 # The (N+1)th inbound call while N are active is DROPPED, not accepted. undef =>

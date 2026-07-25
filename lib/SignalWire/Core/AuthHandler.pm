@@ -37,7 +37,7 @@ use SignalWire::Logging;
 has security_config => ( is => 'ro', required => 1 );
 
 # Enabled auth methods, keyed by name ('basic'/'bearer'/'api_key').
-has auth_methods => ( is => 'rw', default => sub { {} } );
+has auth_methods => ( init_arg => undef, is => 'rw', default => sub { {} } );
 
 # ---------- construction ----------
 

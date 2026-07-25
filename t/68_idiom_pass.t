@@ -89,7 +89,9 @@ subtest 'isa: Relay::Call requires non-empty call_id' => sub {
 subtest 'isa: Relay::Action requires non-empty control_id' => sub {
     throws_ok { SignalWire::Relay::Action->new(control_id => '') }
         qr/non-empty string/, 'empty control_id dies';
-    throws_ok { SignalWire::Relay::Action->new(control_id => 'a1', payload => []) }
+    # payload is SDK-written state, not a constructor argument (the reference
+    # sets it from the event pipeline), so the isa guard fires on the writer.
+    throws_ok { SignalWire::Relay::Action->new(control_id => 'a1')->payload([]) }
         qr/hashref/, 'arrayref payload dies';
 
     my $action = SignalWire::Relay::Action->new(control_id => 'ctl-1');
@@ -143,7 +145,9 @@ subtest 'isa: SkillBase rejects bad metadata and non-object agent' => sub {
         has '+skill_description' => (default => sub { 'x' });
         sub setup          { 1 }
         sub register_tools { 1 }
-        T::EmptyNameSkill->new(agent => $agent);
+        # skill_name is a class-level constant (init_arg => undef, lazy), so
+        # the non-empty guard fires when the value is first read, not at new().
+        T::EmptyNameSkill->new(agent => $agent)->skill_name;
     } qr/non-empty string/, 'empty skill_name dies';
 
     # Good construction with a real agent succeeds.
@@ -154,9 +158,12 @@ subtest 'isa: SkillBase rejects bad metadata and non-object agent' => sub {
 };
 
 subtest 'isa: POM::Section rejects non-arrayref subsections' => sub {
-    throws_ok { SignalWire::POM::Section->new(subsections => 'oops') }
+    # subsections is not a constructor argument (the reference's
+    # Section.__init__ takes title/body/bullets/numbered/numberedBullets and
+    # grows nested sections via add_subsection), so the guard is on the writer.
+    throws_ok { SignalWire::POM::Section->new(title => 'T')->subsections('oops') }
         qr/subsections must be an arrayref/, 'string subsections dies';
-    my $sec = SignalWire::POM::Section->new(title => 'T', subsections => []);
+    my $sec = SignalWire::POM::Section->new(title => 'T');
     isa_ok($sec, 'SignalWire::POM::Section');
 };
 

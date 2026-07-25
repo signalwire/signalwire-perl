@@ -22,9 +22,9 @@ use overload
     'bool'   => sub { 1 },
     fallback => 1;
 
-has 'verb_name' => ( is => 'ro' );
-has 'errors'    => ( is => 'ro', default => sub { [] } );
-has 'message'   => ( is => 'lazy' );
+has 'verb_name' => ( is       => 'ro' );
+has 'errors'    => ( is       => 'ro',  default => sub { [] } );
+has 'message'   => ( init_arg => undef, is      => 'lazy' );
 
 sub _build_message ($self) {
     my $errs = join( '; ', @{ $self->errors // [] } );
@@ -80,13 +80,13 @@ has 'schema_path' => ( is => 'ro', default => sub { undef } );
 has 'schema_validation' => ( is => 'ro', default => sub { 1 } );
 
 # Parsed JSON Schema document (Python parity: schema).
-has 'schema' => ( is => 'lazy' );
+has 'schema' => ( init_arg => undef, is => 'lazy' );
 
 # Verb-name -> {name, schema_name, definition} map (Python parity: verbs).
-has 'verbs' => ( is => 'lazy' );
+has 'verbs' => ( init_arg => undef, is => 'lazy' );
 
-has '_validation_enabled' => ( is => 'lazy' );
-has '_full_validator'     => ( is => 'rw', default => sub { undef } );
+has '_validation_enabled' => ( init_arg => undef, is => 'lazy' );
+has '_full_validator' => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 sub BUILD ( $self, $args ) {
 

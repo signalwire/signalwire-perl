@@ -71,7 +71,7 @@ has 'is_typed_handler' => ( is => 'ro', default => sub { 0 } );
 has 'extra_swaig_fields' => ( is => 'ro', default => sub { {} } );
 
 # Whether this function is external (a webhook_url was provided).
-has 'is_external' => ( is => 'lazy' );
+has 'is_external' => ( init_arg => undef, is => 'lazy' );
 
 sub _build_is_external ($self) {
     return defined $self->webhook_url ? 1 : 0;

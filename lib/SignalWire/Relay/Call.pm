@@ -25,19 +25,21 @@ my $ArrayRef = sub {
     Carp::croak("must be an arrayref") unless ref $_[0] eq 'ARRAY';
 };
 
-has 'call_id'     => ( is => 'ro', required => 1, isa => $NonEmptyStr );
-has 'node_id'     => ( is => 'rw', default  => sub { '' } );
-has 'tag'         => ( is => 'ro', default  => sub { '' } );
-has 'state'       => ( is => 'rw', default  => sub { 'created' } );
-has 'device'      => ( is => 'rw', default  => sub { {} }, isa => $HashRef );
-has 'end_reason'  => ( is => 'rw', default  => sub { '' } );
-has 'peer'        => ( is => 'rw', default  => sub { {} }, isa => $HashRef );
-has 'context'     => ( is => 'rw', default  => sub { '' } );
-has 'dial_winner' => ( is => 'rw', default  => sub { 0 } );
+has 'call_id'     => ( is       => 'ro',  required => 1, isa => $NonEmptyStr );
+has 'node_id'     => ( is       => 'rw',  default  => sub { '' } );
+has 'tag'         => ( is       => 'ro',  default  => sub { '' } );
+has 'state'       => ( is       => 'rw',  default  => sub { 'created' } );
+has 'device'      => ( is       => 'rw',  default  => sub { {} }, isa => $HashRef );
+has 'end_reason'  => ( init_arg => undef, is       => 'rw', default => sub { '' } );
+has 'peer'        => ( init_arg => undef, is      => 'rw', default => sub { {} }, isa => $HashRef );
+has 'context'     => ( is       => 'rw',  default => sub { '' } );
+has 'dial_winner' => ( init_arg => undef, is      => 'rw', default => sub { 0 } );
 
-has '_client'   => ( is => 'rw', default => sub { undef } );
-has '_actions'  => ( is => 'rw', default => sub { {} }, isa => $HashRef );    # control_id => Action
-has '_on_event' => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );   # event callbacks
+has '_client' => ( is => 'rw', default => sub { undef } );
+has '_actions' => ( init_arg => undef, is => 'rw', default => sub { {} }, isa => $HashRef )
+    ;    # control_id => Action
+has '_on_event' => ( init_arg => undef, is => 'rw', default => sub { [] }, isa => $ArrayRef )
+    ;    # event callbacks
 
 # Helper to generate a UUID-like control_id
 sub _generate_uuid {
@@ -94,11 +96,11 @@ sub _start_action ( $self, $method, $action_class, %extra ) {
     my $control_id = _generate_uuid();
     my %params     = ( $self->_base_params, control_id => $control_id, %extra );
 
+    # The Action derives call_id / node_id / client from the call handle, the
+    # same way the reference's Action.__init__(call, control_id, ...) does.
     my $action = $action_class->new(
+        call       => $self,
         control_id => $control_id,
-        call_id    => $self->call_id,
-        node_id    => $self->node_id,
-        _client    => $self->_client,
     );
     $self->_actions->{$control_id} = $action;
 
@@ -593,11 +595,9 @@ sub receive_fax ( $self, %opts ) {
     my %params     = ( $self->_base_params, control_id => $control_id, %opts );
 
     my $action = SignalWire::Relay::Action::Fax->new(
-        control_id => $control_id,
-        call_id    => $self->call_id,
-        node_id    => $self->node_id,
-        _client    => $self->_client,
-        _fax_type  => 'receive',
+        call          => $self,
+        control_id    => $control_id,
+        method_prefix => 'receive_fax',
     );
     $self->_actions->{$control_id} = $action;
 

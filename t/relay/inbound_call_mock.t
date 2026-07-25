@@ -331,8 +331,6 @@ subtest 'inbound without handler does not crash' => sub {
         project  => 'test_proj',
         token    => 'test_tok',
         host     => "127.0.0.1:$RelayMockTest::WS_PORT",
-        scheme   => 'ws',
-        path     => '',
         contexts => ['default'],
     );
     $client->connect;

@@ -48,16 +48,19 @@ has 'space' => ( is => 'ro', default => sub { $ENV{SIGNALWIRE_SPACE} // '' } );
 has 'url' => ( is => 'lazy' );
 
 # Idle read timeout in seconds (byte-silence, NOT total turn length). 0 disables.
-has 'read_idle_timeout_seconds' =>
-    ( is => 'ro', default => sub { $DEFAULT_READ_IDLE_TIMEOUT_SECONDS } );
+has 'read_idle_timeout_seconds' => (
+    init_arg => undef,
+    is       => 'ro',
+    default  => sub { $DEFAULT_READ_IDLE_TIMEOUT_SECONDS }
+);
 
 # The HTTP transport. Injectable for tests (a stub answering ->request); defaults
 # to a configured HTTP::Tiny. Any object answering
 # ->request($method,$url,\%opts) and returning HTTP::Tiny's response hashref works.
 has 'ua' => ( is => 'lazy' );
 
-has '_auth_header'     => ( is => 'lazy' );
-has '_request_counter' => ( is => 'rw', default => sub { 0 } );
+has '_auth_header' => ( init_arg => undef, is => 'lazy' );
+has '_request_counter' => ( init_arg => undef, is => 'rw', default => sub { 0 } );
 
 sub BUILD {
     my ($self) = @_;

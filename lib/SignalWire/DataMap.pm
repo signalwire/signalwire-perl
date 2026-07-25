@@ -10,38 +10,45 @@ has 'function_name' => (
 );
 
 has '_purpose' => (
-    is      => 'rw',
-    default => sub { '' },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { '' },
 );
 
 has '_parameters' => (
-    is      => 'rw',
-    default => sub { {} },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { {} },
 );
 
 has '_required_params' => (
-    is      => 'rw',
-    default => sub { [] },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { [] },
 );
 
 has '_expressions' => (
-    is      => 'rw',
-    default => sub { [] },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { [] },
 );
 
 has '_webhooks' => (
-    is      => 'rw',
-    default => sub { [] },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { [] },
 );
 
 has '_output' => (
-    is      => 'rw',
-    default => sub { undef },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { undef },
 );
 
 has '_error_keys' => (
-    is      => 'rw',
-    default => sub { [] },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { [] },
 );
 
 # Constructor shortcut: DataMap->new("name") or DataMap->new(function_name => "name")

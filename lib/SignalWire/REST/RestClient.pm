@@ -59,7 +59,7 @@ sub BUILD {
 # The HTTP client the whole resource tree shares. Declared BEFORE composing the
 # ResourceTree role below, because the role `requires '_http'` and Moo checks that
 # requirement at `with`-time.
-has '_http' => ( is => 'lazy' );
+has '_http' => ( init_arg => undef, is => 'lazy' );
 
 # The resource object tree (flat resources + namespace containers) is GENERATED
 # from the specs: scripts/generate_rest.py emits the per-resource classes, the

@@ -27,16 +27,49 @@ my $HashRef = sub {
 };
 
 has 'control_id' => ( is => 'ro', required => 1, isa => $NonEmptyStr );
-has 'call_id'    => ( is => 'ro', default  => sub { '' } );
-has 'node_id'    => ( is => 'ro', default  => sub { '' } );
-has 'state'      => ( is => 'rw', default  => sub { 'created' } );
-has 'completed'  => ( is => 'rw', default  => sub { 0 } );                    # boolean
-has 'result'     => ( is => 'rw', default  => sub { undef } );
-has 'events'     => ( is => 'rw', default  => sub { [] }, isa => $ArrayRef );
-has 'payload'    => ( is => 'rw', default  => sub { {} }, isa => $HashRef );  # latest event payload
 
-has '_on_completed' => ( is => 'rw', default => sub { undef } );
-has '_client'       => ( is => 'rw', default => sub { undef } );
+# The Call this action belongs to. This is the reference's construction
+# contract — ``Action.__init__(call, control_id, terminal_event,
+# terminal_states)`` (relay/call.py:75-82) stores ``self.call = call`` and
+# reads the call's identity off it. Perl now takes the same handle instead of
+# the three separately-passed identity fields it used to accept, so the
+# constructor surface matches the reference and the identity can never
+# disagree with the call it came from.
+has 'call' => ( is => 'ro', default => sub { undef }, weak_ref => 1 );
+
+# Identity + transport, DERIVED from ``call`` (never constructor arguments):
+# the reference reads these through ``self.call``, so there is nothing for a
+# caller to supply and no way for them to drift from the owning call.
+has 'call_id' => ( init_arg => undef, is => 'lazy', builder => '_build_call_id' );
+has 'node_id' => ( init_arg => undef, is => 'lazy', builder => '_build_node_id' );
+has '_client' => ( init_arg => undef, is => 'lazy', builder => '_build_client' );
+
+sub _build_call_id ($self) {
+    my $call = $self->call or return '';
+    return $call->call_id // '';
+}
+
+sub _build_node_id ($self) {
+    my $call = $self->call or return '';
+    return $call->node_id // '';
+}
+
+sub _build_client ($self) {
+    my $call = $self->call;
+    return unless $call;
+    return $call->_client;
+}
+
+# Live state, written by the event pipeline (_check_event/_resolve), exactly
+# as the reference sets self.result / self.completed after construction.
+has 'state'     => ( init_arg => undef, is => 'rw', default => sub { 'created' } );
+has 'completed' => ( init_arg => undef, is => 'rw', default => sub { 0 } );           # boolean
+has 'result'    => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has 'events'    => ( init_arg => undef, is => 'rw', default => sub { [] }, isa => $ArrayRef );
+has 'payload' => ( init_arg => undef, is => 'rw', default => sub { {} }, isa => $HashRef )
+    ;    # latest event payload
+
+has '_on_completed' => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # Register on_completed callback
 sub on_completed ( $self, $cb = undef ) {
@@ -312,12 +345,14 @@ package SignalWire::Relay::Action::Fax;
 use Moo;
 extends 'SignalWire::Relay::Action';
 
-has '_fax_type' => ( is => 'ro', default => sub { 'send' } );
+# The stop-verb prefix (``send_fax`` / ``receive_fax``), set per instance at
+# construction. This IS the reference's contract — ``FaxAction.__init__(call,
+# control_id, method_prefix)`` (relay/call.py:275) — so it stays a constructor
+# argument under the reference's name.
+has 'method_prefix' => ( is => 'ro', default => sub { 'send_fax' } );
 
 sub _stop_method ($self) {
-    return $self->_fax_type eq 'receive'
-        ? 'calling.receive_fax.stop'
-        : 'calling.send_fax.stop';
+    return 'calling.' . $self->method_prefix . '.stop';
 }
 
 sub fax_result { my ($self) = @_; return $self->payload->{fax} // {} }
@@ -429,7 +464,7 @@ C<volume($vol)> (act on the embedded play leg of play_and_collect),
 C<start_input_timers>, C<collect_result>; filters stray
 C<calling.call.play> events. B<::StandaloneCollect> inherits these.
 
-=item * B<::Fax> — C<fax_result>; stop verb depends on C<_fax_type>.
+=item * B<::Fax> — C<fax_result>; stop verb depends on C<method_prefix>.
 
 =item * B<::Tap>, B<::Stream>, B<::Transcribe>, B<::AI> — stop-verb-only
 specialisations.

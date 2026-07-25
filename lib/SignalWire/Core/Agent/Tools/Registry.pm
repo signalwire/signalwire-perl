@@ -42,8 +42,9 @@ has agent => (
 
 # name => definition hashref (string keys).
 has _swaig_functions => (
-    is      => 'rw',
-    default => sub { {} },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { {} },
 );
 
 # ---------- public methods ----------

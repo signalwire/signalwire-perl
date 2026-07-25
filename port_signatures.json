@@ -76,31 +76,6 @@
                   "name": "log_level",
                   "type": "string",
                   "required": false
-                },
-                {
-                  "name": "agents",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_routing_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_username_mapping",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_route",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "static_routes",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -410,72 +385,7 @@
                   "required": 0
                 },
                 {
-                  "name": "document",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_handlers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validation",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "schema_validator",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "proxy_url_base",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "server_running",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "debug_routes_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tools",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tool_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "routing_callbacks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "logger",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "schema_utils",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_registry",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "security",
                   "type": "any",
                   "required": 0
                 },
@@ -500,57 +410,7 @@
                   "required": false
                 },
                 {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "use_pom",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pom_sections",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pattern_hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "languages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "multilingual",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pronunciations",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "global_data",
                   "type": "any",
                   "required": false
                 },
@@ -560,112 +420,7 @@
                   "required": false
                 },
                 {
-                  "name": "internal_fillers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_events_level",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "function_includes",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pre_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_ai_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "answer_config",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_routing_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_auto_map",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_usernames",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "context_builder",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "dynamic_config_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "summary_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_event_handler",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "webhook_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_query_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "token_expiry_secs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "session_manager",
                   "type": "any",
                   "required": false
                 },
@@ -706,16 +461,6 @@
                 },
                 {
                   "name": "skill_manager",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_servers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_server_enabled",
                   "type": "any",
                   "required": false
                 }
@@ -921,22 +666,7 @@
                   "required": 0
                 },
                 {
-                  "name": "read_idle_timeout_seconds",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "ua",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "auth_header",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "request_counter",
                   "type": "any",
                   "required": 0
                 }
@@ -1360,26 +1090,6 @@
                   "name": "agent",
                   "type": "any",
                   "required": false
-                },
-                {
-                  "name": "pom",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "contexts",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -1621,11 +1331,6 @@
                 },
                 {
                   "name": "agent",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_functions",
                   "type": "any",
                   "required": false
                 }
@@ -1941,242 +1646,12 @@
                   "required": 0
                 },
                 {
-                  "name": "document",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_handlers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validation",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "schema_validator",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "proxy_url_base",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "server_running",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "debug_routes_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tools",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tool_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "routing_callbacks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "logger",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "schema_utils",
                   "type": "any",
                   "required": 0
                 },
                 {
-                  "name": "verb_registry",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "security",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pom_sections",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pattern_hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "languages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "multilingual",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pronunciations",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "global_data",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "internal_fillers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_events_level",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "function_includes",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pre_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_ai_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "answer_config",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_routing_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_auto_map",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_usernames",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "context_builder",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "dynamic_config_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "summary_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_event_handler",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "webhook_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_query_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "session_manager",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "skill_manager",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_servers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_server_enabled",
                   "type": "any",
                   "required": false
                 }
@@ -3031,11 +2506,6 @@
                   "name": "security_config",
                   "type": "class:signalwire.core.security_config.SecurityConfig",
                   "required": true
-                },
-                {
-                  "name": "auth_methods",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -3219,16 +2689,6 @@
                   "name": "config_paths",
                   "type": "optional<list<string>>",
                   "required": false
-                },
-                {
-                  "name": "config",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "config_file",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -3368,91 +2828,6 @@
                   "name": "name",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "steps",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "step_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "valid_contexts",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "valid_steps",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "initial_step",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "post_prompt",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "system_prompt",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "system_prompt_sections",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "consolidate",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_reset",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "user_prompt",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "isolated",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "prompt_sections",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "enter_fillers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "exit_fillers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "history",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -3885,16 +3260,6 @@
                   "name": "agent",
                   "type": "any",
                   "required": 0
-                },
-                {
-                  "name": "contexts",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "context_order",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -4014,11 +3379,6 @@
                 {
                   "name": "isolated",
                   "type": "bool",
-                  "required": 0
-                },
-                {
-                  "name": "questions",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -4204,81 +3564,6 @@
                   "name": "name",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "text",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "step_criteria",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "functions",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "valid_steps",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "valid_contexts",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "sections",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "gather_info",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "end",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "skip_user_turn",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "skip_to_next_step",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "reset_system_prompt",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "reset_user_prompt",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "reset_consolidate",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "reset_full_reset",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "history",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -4642,41 +3927,6 @@
                   "name": "function_name",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "purpose",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "parameters",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "required_params",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "expressions",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "webhooks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "output",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "error_keys",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -4987,11 +4237,6 @@
                 {
                   "name": "post_process",
                   "type": "bool",
-                  "required": 0
-                },
-                {
-                  "name": "action",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -9233,11 +8478,6 @@
                   "name": "secret_key",
                   "type": "optional<string>",
                   "required": 0
-                },
-                {
-                  "name": "debug_mode",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -9569,81 +8809,6 @@
                   "name": "service_name",
                   "type": "optional<string>",
                   "required": false
-                },
-                {
-                  "name": "ssl_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "ssl_cert_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "ssl_key_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "domain",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "ssl_verify_mode",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "allowed_hosts",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "cors_origins",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "max_request_size",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "rate_limit",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "request_timeout",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "use_hsts",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "hsts_max_age",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "basic_auth_user",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "basic_auth_password",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "basic_auth_autogen_warned",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -9911,41 +9076,6 @@
                   "name": "params",
                   "type": "optional<dict<string,any>>",
                   "required": false
-                },
-                {
-                  "name": "skill_name",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "skill_description",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "skill_version",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "supports_multiple_instances",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "required_packages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "required_env_vars",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_fields",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -10187,11 +9317,6 @@
                   "name": "agent",
                   "type": "class:signalwire.core.agent_base.AgentBase",
                   "required": true
-                },
-                {
-                  "name": "loaded_skills",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -10488,11 +9613,6 @@
                 },
                 {
                   "name": "extra_swaig_fields",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "is_external",
                   "type": "any",
                   "required": 0
                 }
@@ -11891,72 +11011,7 @@
                   "required": 0
                 },
                 {
-                  "name": "document",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_handlers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validation",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "schema_validator",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "proxy_url_base",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "server_running",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "debug_routes_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tools",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tool_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "routing_callbacks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "logger",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "schema_utils",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_registry",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "security",
                   "type": "any",
                   "required": 0
                 }
@@ -16386,11 +15441,6 @@
                   "name": "debug",
                   "type": "bool",
                   "required": false
-                },
-                {
-                  "name": "sections",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -16596,11 +15646,6 @@
                   "type": "bool",
                   "required": false,
                   "kind": "keyword"
-                },
-                {
-                  "name": "subsections",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -16876,72 +15921,7 @@
                   "required": 0
                 },
                 {
-                  "name": "document",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_handlers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validation",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "schema_validator",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "proxy_url_base",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "server_running",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "debug_routes_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tools",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tool_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "routing_callbacks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "logger",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "schema_utils",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_registry",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "security",
                   "type": "any",
                   "required": 0
                 },
@@ -16966,57 +15946,7 @@
                   "required": false
                 },
                 {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "use_pom",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pom_sections",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pattern_hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "languages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "multilingual",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pronunciations",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "global_data",
                   "type": "any",
                   "required": false
                 },
@@ -17026,112 +15956,7 @@
                   "required": false
                 },
                 {
-                  "name": "internal_fillers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_events_level",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "function_includes",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pre_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_ai_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "answer_config",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_routing_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_auto_map",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_usernames",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "context_builder",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "dynamic_config_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "summary_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_event_handler",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "webhook_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_query_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "token_expiry_secs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "session_manager",
                   "type": "any",
                   "required": false
                 },
@@ -17172,16 +15997,6 @@
                 },
                 {
                   "name": "skill_manager",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_servers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_server_enabled",
                   "type": "any",
                   "required": false
                 }
@@ -17379,72 +16194,7 @@
                   "required": 0
                 },
                 {
-                  "name": "document",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_handlers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validation",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "schema_validator",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "proxy_url_base",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "server_running",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "debug_routes_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tools",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tool_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "routing_callbacks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "logger",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "schema_utils",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_registry",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "security",
                   "type": "any",
                   "required": 0
                 },
@@ -17469,57 +16219,7 @@
                   "required": false
                 },
                 {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "use_pom",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pom_sections",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pattern_hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "languages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "multilingual",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pronunciations",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "global_data",
                   "type": "any",
                   "required": false
                 },
@@ -17529,112 +16229,7 @@
                   "required": false
                 },
                 {
-                  "name": "internal_fillers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_events_level",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "function_includes",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pre_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_ai_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "answer_config",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_routing_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_auto_map",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_usernames",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "context_builder",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "dynamic_config_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "summary_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_event_handler",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "webhook_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_query_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "token_expiry_secs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "session_manager",
                   "type": "any",
                   "required": false
                 },
@@ -17675,16 +16270,6 @@
                 },
                 {
                   "name": "skill_manager",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_servers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_server_enabled",
                   "type": "any",
                   "required": false
                 }
@@ -17826,72 +16411,7 @@
                   "required": 0
                 },
                 {
-                  "name": "document",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_handlers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validation",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "schema_validator",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "proxy_url_base",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "server_running",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "debug_routes_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tools",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tool_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "routing_callbacks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "logger",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "schema_utils",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_registry",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "security",
                   "type": "any",
                   "required": 0
                 },
@@ -17916,57 +16436,7 @@
                   "required": false
                 },
                 {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "use_pom",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pom_sections",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pattern_hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "languages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "multilingual",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pronunciations",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "global_data",
                   "type": "any",
                   "required": false
                 },
@@ -17976,112 +16446,7 @@
                   "required": false
                 },
                 {
-                  "name": "internal_fillers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_events_level",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "function_includes",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pre_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_ai_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "answer_config",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_routing_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_auto_map",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_usernames",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "context_builder",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "dynamic_config_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "summary_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_event_handler",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "webhook_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_query_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "token_expiry_secs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "session_manager",
                   "type": "any",
                   "required": false
                 },
@@ -18122,26 +16487,6 @@
                 },
                 {
                   "name": "skill_manager",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_servers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_server_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "question_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "static_questions",
                   "type": "any",
                   "required": false
                 }
@@ -18331,72 +16676,7 @@
                   "required": 0
                 },
                 {
-                  "name": "document",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_handlers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validation",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "schema_validator",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "proxy_url_base",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "server_running",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "debug_routes_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tools",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tool_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "routing_callbacks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "logger",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "schema_utils",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_registry",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "security",
                   "type": "any",
                   "required": 0
                 },
@@ -18421,57 +16701,7 @@
                   "required": false
                 },
                 {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "use_pom",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pom_sections",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pattern_hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "languages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "multilingual",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pronunciations",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "global_data",
                   "type": "any",
                   "required": false
                 },
@@ -18481,112 +16711,7 @@
                   "required": false
                 },
                 {
-                  "name": "internal_fillers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_events_level",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "function_includes",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pre_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_ai_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "answer_config",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_routing_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_auto_map",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_usernames",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "context_builder",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "dynamic_config_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "summary_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_event_handler",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "webhook_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_query_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "token_expiry_secs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "session_manager",
                   "type": "any",
                   "required": false
                 },
@@ -18627,16 +16752,6 @@
                 },
                 {
                   "name": "skill_manager",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_servers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_server_enabled",
                   "type": "any",
                   "required": false
                 }
@@ -18779,72 +16894,7 @@
                   "required": 0
                 },
                 {
-                  "name": "document",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_handlers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validation",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "schema_validator",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "proxy_url_base",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "server_running",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "debug_routes_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tools",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tool_order",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "routing_callbacks",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "logger",
-                  "type": "any",
-                  "required": 0
-                },
-                {
                   "name": "schema_utils",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verb_registry",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "security",
                   "type": "any",
                   "required": 0
                 },
@@ -18869,57 +16919,7 @@
                   "required": false
                 },
                 {
-                  "name": "prompt_text",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "use_pom",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pom_sections",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pattern_hints",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "languages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "multilingual",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pronunciations",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "global_data",
                   "type": "any",
                   "required": false
                 },
@@ -18929,112 +16929,7 @@
                   "required": false
                 },
                 {
-                  "name": "internal_fillers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_events_level",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "function_includes",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_llm_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "pre_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_answer_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_ai_verbs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "answer_config",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_routing_enabled",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_auto_map",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_path",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "sip_usernames",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "context_builder",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "dynamic_config_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "summary_callback",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "debug_event_handler",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "webhook_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "post_prompt_url",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_query_params",
-                  "type": "any",
-                  "required": false
-                },
-                {
                   "name": "token_expiry_secs",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "session_manager",
                   "type": "any",
                   "required": false
                 },
@@ -19075,16 +16970,6 @@
                 },
                 {
                   "name": "skill_manager",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_servers",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "mcp_server_enabled",
                   "type": "any",
                   "required": false
                 },
@@ -19222,54 +17107,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -19294,57 +17139,26 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
+            },
+            "call": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             },
             "call_id": {
               "params": [
@@ -19511,31 +17325,6 @@
                   "type": "string",
                   "required": 0,
                   "kind": "keyword"
-                },
-                {
-                  "name": "end_reason",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "peer",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "dial_winner",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "actions",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_event",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -21340,54 +19129,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -21467,54 +19216,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -21548,64 +19257,33 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
                 },
                 {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "fax_type",
-                  "type": "any",
+                  "name": "method_prefix",
+                  "type": "string",
                   "required": 0
                 }
               ],
               "returns": "void"
             },
             "fax_result": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "method_prefix": {
               "params": [
                 {
                   "name": "self",
@@ -21634,54 +19312,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -21715,54 +19353,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -21824,54 +19422,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -21946,54 +19504,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -22027,54 +19545,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -22099,54 +19577,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -22171,54 +19609,14 @@
                   "kind": "self"
                 },
                 {
+                  "name": "call",
+                  "type": "class:signalwire.relay.call.Call",
+                  "required": 0
+                },
+                {
                   "name": "control_id",
                   "type": "string",
                   "required": 1
-                },
-                {
-                  "name": "call_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "events",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "payload",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "client",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -22319,106 +19717,6 @@
                 {
                   "name": "max_active_calls",
                   "type": "optional<int>",
-                  "required": 0
-                },
-                {
-                  "name": "agent",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "scheme",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "path",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "protocol",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "authorization_state",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "connected",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "session_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "pending",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "calls",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "pending_dials",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "messages",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "socket",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "ws",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "reconnect_attempts",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "max_backoff",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "closing",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "max_reconnect_attempts",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_call",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_message",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_event",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -23205,21 +20503,6 @@
                   "name": "device",
                   "type": "dict<string,any>",
                   "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "tag",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "peer",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -23349,16 +20632,6 @@
                   "name": "message",
                   "type": "string",
                   "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "control_id",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -23470,11 +20743,6 @@
                 {
                   "name": "final",
                   "type": "optional<bool>",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -23592,11 +20860,6 @@
                   "name": "status",
                   "type": "string",
                   "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -23698,11 +20961,6 @@
                 {
                   "name": "peer",
                   "type": "dict<string,any>",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -23858,11 +21116,6 @@
                   "name": "detect",
                   "type": "dict<string,any>",
                   "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -23960,11 +21213,6 @@
                 {
                   "name": "call",
                   "type": "dict<string,any>",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -24146,11 +21394,6 @@
                 {
                   "name": "fax",
                   "type": "dict<string,any>",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -24694,16 +21937,6 @@
                   "name": "state",
                   "type": "string",
                   "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -24805,11 +22038,6 @@
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -25055,11 +22283,6 @@
                   "name": "record",
                   "type": "dict<string,any>",
                   "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -25198,16 +22421,6 @@
                 {
                   "name": "sip_notify_response_code",
                   "type": "string",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "refer_state",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -25412,11 +22625,6 @@
                   "name": "state",
                   "type": "string",
                   "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -25519,11 +22727,6 @@
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -25645,11 +22848,6 @@
                 {
                   "name": "device",
                   "type": "dict<string,any>",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -25781,11 +22979,6 @@
                 {
                   "name": "size",
                   "type": "int",
-                  "required": 0
-                },
-                {
-                  "name": "node_id",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -25968,26 +23161,6 @@
                   "type": "optional<list<string>>",
                   "required": 0,
                   "kind": "keyword"
-                },
-                {
-                  "name": "completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "result",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_completed",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "on_event",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -26418,21 +23591,6 @@
                   "name": "request_options",
                   "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": 0
-                },
-                {
-                  "name": "base_url",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "ua",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "auth_header",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -26697,11 +23855,6 @@
                   "name": "headers",
                   "type": "optional<dict<string,string>>",
                   "required": 0
-                },
-                {
-                  "name": "request_id",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -26792,11 +23945,6 @@
                 },
                 {
                   "name": "headers",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "request_id",
                   "type": "any",
                   "required": 0
                 }
@@ -27078,11 +24226,6 @@
                 {
                   "name": "request_options",
                   "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-                  "required": 0
-                },
-                {
-                  "name": "http",
-                  "type": "any",
                   "required": 0
                 }
               ],
@@ -34952,51 +32095,6 @@
                   "name": "params",
                   "type": "dict<string,any>",
                   "required": false
-                },
-                {
-                  "name": "skill_name",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "skill_description",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "skill_version",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "supports_multiple_instances",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "required_packages",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "required_env_vars",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "swaig_fields",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "base_url",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "http",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -35305,26 +32403,6 @@
                   "name": "schema_validation",
                   "type": "bool",
                   "required": 0
-                },
-                {
-                  "name": "schema",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "verbs",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "validation_enabled",
-                  "type": "any",
-                  "required": 0
-                },
-                {
-                  "name": "full_validator",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -35578,11 +32656,6 @@
                   "name": "errors",
                   "type": "list<string>",
                   "required": 0
-                },
-                {
-                  "name": "message",
-                  "type": "any",
-                  "required": 0
                 }
               ],
               "returns": "void"
@@ -35686,21 +32759,6 @@
                 {
                   "name": "enable_cors",
                   "type": "bool",
-                  "required": false
-                },
-                {
-                  "name": "pid",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "bound_port",
-                  "type": "any",
-                  "required": false
-                },
-                {
-                  "name": "basic_auth_arg",
-                  "type": "any",
                   "required": false
                 }
               ],
@@ -35871,10 +32929,6 @@
   "construction": {
     "signalwire.agent_server.AgentServer": {
       "params": {
-        "agents": {
-          "type": "any",
-          "required": false
-        },
         "host": {
           "type": "string",
           "required": false
@@ -35885,22 +32939,6 @@
         },
         "port": {
           "type": "int",
-          "required": false
-        },
-        "sip_route": {
-          "type": "any",
-          "required": false
-        },
-        "sip_routing_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "sip_username_mapping": {
-          "type": "any",
-          "required": false
-        },
-        "static_routes": {
-          "type": "any",
           "required": false
         }
       }
@@ -35939,20 +32977,8 @@
     },
     "signalwire.ai_chat.client.AIChatClient": {
       "params": {
-        "auth_header": {
-          "type": "any",
-          "required": false
-        },
         "project": {
           "type": "optional<string>",
-          "required": false
-        },
-        "read_idle_timeout_seconds": {
-          "type": "any",
-          "required": false
-        },
-        "request_counter": {
-          "type": "any",
           "required": false
         },
         "space": {
@@ -36034,32 +33060,12 @@
         "agent": {
           "type": "any",
           "required": false
-        },
-        "contexts": {
-          "type": "any",
-          "required": false
-        },
-        "pom": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.core.agent.tools.registry.ToolRegistry": {
       "params": {
         "agent": {
-          "type": "any",
-          "required": false
-        },
-        "swaig_functions": {
           "type": "any",
           "required": false
         }
@@ -36069,10 +33075,6 @@
       "params": {
         "agent_id": {
           "type": "optional<string>",
-          "required": false
-        },
-        "answer_config": {
-          "type": "any",
           "required": false
         },
         "auto_answer": {
@@ -36099,80 +33101,16 @@
           "type": "optional<string>",
           "required": false
         },
-        "context_builder": {
-          "type": "any",
-          "required": false
-        },
-        "debug_event_handler": {
-          "type": "any",
-          "required": false
-        },
-        "debug_events_level": {
-          "type": "any",
-          "required": false
-        },
-        "debug_routes_enabled": {
-          "type": "any",
-          "required": false
-        },
         "default_webhook_url": {
           "type": "optional<string>",
-          "required": false
-        },
-        "document": {
-          "type": "any",
-          "required": false
-        },
-        "dynamic_config_callback": {
-          "type": "any",
           "required": false
         },
         "enable_post_prompt_override": {
           "type": "bool",
           "required": false
         },
-        "full_validation": {
-          "type": "any",
-          "required": false
-        },
-        "function_includes": {
-          "type": "any",
-          "required": false
-        },
-        "global_data": {
-          "type": "any",
-          "required": false
-        },
-        "hints": {
-          "type": "any",
-          "required": false
-        },
         "host": {
           "type": "string",
-          "required": false
-        },
-        "internal_fillers": {
-          "type": "any",
-          "required": false
-        },
-        "languages": {
-          "type": "any",
-          "required": false
-        },
-        "logger": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_server_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_servers": {
-          "type": "any",
-          "required": false
-        },
-        "multilingual": {
-          "type": "any",
           "required": false
         },
         "name": {
@@ -36183,60 +33121,8 @@
           "type": "optional<list<string>>",
           "required": false
         },
-        "params": {
-          "type": "any",
-          "required": false
-        },
-        "pattern_hints": {
-          "type": "any",
-          "required": false
-        },
-        "pom_sections": {
-          "type": "any",
-          "required": false
-        },
         "port": {
           "type": "optional<int>",
-          "required": false
-        },
-        "post_ai_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_url": {
-          "type": "any",
-          "required": false
-        },
-        "pre_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "pronunciations": {
-          "type": "any",
-          "required": false
-        },
-        "proxy_url_base": {
-          "type": "any",
           "required": false
         },
         "record_call": {
@@ -36255,10 +33141,6 @@
           "type": "string",
           "required": false
         },
-        "routing_callbacks": {
-          "type": "any",
-          "required": false
-        },
         "schema_path": {
           "type": "optional<string>",
           "required": false
@@ -36271,47 +33153,11 @@
           "type": "bool",
           "required": false
         },
-        "schema_validator": {
-          "type": "any",
-          "required": false
-        },
-        "security": {
-          "type": "any",
-          "required": false
-        },
-        "server_running": {
-          "type": "any",
-          "required": false
-        },
-        "session_manager": {
-          "type": "any",
-          "required": false
-        },
         "signing_key": {
           "type": "optional<string>",
           "required": false
         },
-        "sip_auto_map": {
-          "type": "any",
-          "required": false
-        },
-        "sip_path": {
-          "type": "any",
-          "required": false
-        },
-        "sip_routing_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "sip_usernames": {
-          "type": "any",
-          "required": false
-        },
         "skill_manager": {
-          "type": "any",
-          "required": false
-        },
-        "summary_callback": {
           "type": "any",
           "required": false
         },
@@ -36319,20 +33165,8 @@
           "type": "bool",
           "required": false
         },
-        "swaig_query_params": {
-          "type": "any",
-          "required": false
-        },
         "token_expiry_secs": {
           "type": "int",
-          "required": false
-        },
-        "tool_order": {
-          "type": "any",
-          "required": false
-        },
-        "tools": {
-          "type": "any",
           "required": false
         },
         "trust_proxy_for_signature": {
@@ -36342,27 +33176,11 @@
         "use_pom": {
           "type": "bool",
           "required": false
-        },
-        "verb_handlers": {
-          "type": "any",
-          "required": false
-        },
-        "verb_registry": {
-          "type": "any",
-          "required": false
-        },
-        "webhook_url": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.core.auth_handler.AuthHandler": {
       "params": {
-        "auth_methods": {
-          "type": "any",
-          "required": false
-        },
         "security_config": {
           "type": "class:signalwire.core.security_config.SecurityConfig",
           "required": true
@@ -36371,14 +33189,6 @@
     },
     "signalwire.core.config_loader.ConfigLoader": {
       "params": {
-        "config": {
-          "type": "any",
-          "required": false
-        },
-        "config_file": {
-          "type": "any",
-          "required": false
-        },
         "config_paths": {
           "type": "optional<list<string>>",
           "required": false
@@ -36387,91 +33197,15 @@
     },
     "signalwire.core.contexts.Context": {
       "params": {
-        "consolidate": {
-          "type": "any",
-          "required": false
-        },
-        "enter_fillers": {
-          "type": "any",
-          "required": false
-        },
-        "exit_fillers": {
-          "type": "any",
-          "required": false
-        },
-        "full_reset": {
-          "type": "any",
-          "required": false
-        },
-        "history": {
-          "type": "any",
-          "required": false
-        },
-        "initial_step": {
-          "type": "any",
-          "required": false
-        },
-        "isolated": {
-          "type": "any",
-          "required": false
-        },
         "name": {
           "type": "string",
           "required": true
-        },
-        "post_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_sections": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "step_order": {
-          "type": "any",
-          "required": false
-        },
-        "steps": {
-          "type": "any",
-          "required": false
-        },
-        "system_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "system_prompt_sections": {
-          "type": "any",
-          "required": false
-        },
-        "user_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "valid_contexts": {
-          "type": "any",
-          "required": false
-        },
-        "valid_steps": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.core.contexts.ContextBuilder": {
       "params": {
         "agent": {
-          "type": "any",
-          "required": false
-        },
-        "context_order": {
-          "type": "any",
-          "required": false
-        },
-        "contexts": {
           "type": "any",
           "required": false
         }
@@ -36493,10 +33227,6 @@
         },
         "prompt": {
           "type": "optional<string>",
-          "required": false
-        },
-        "questions": {
-          "type": "any",
           "required": false
         }
       }
@@ -36535,114 +33265,22 @@
     },
     "signalwire.core.contexts.Step": {
       "params": {
-        "end": {
-          "type": "any",
-          "required": false
-        },
-        "functions": {
-          "type": "any",
-          "required": false
-        },
-        "gather_info": {
-          "type": "any",
-          "required": false
-        },
-        "history": {
-          "type": "any",
-          "required": false
-        },
         "name": {
           "type": "string",
           "required": true
-        },
-        "reset_consolidate": {
-          "type": "any",
-          "required": false
-        },
-        "reset_full_reset": {
-          "type": "any",
-          "required": false
-        },
-        "reset_system_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "reset_user_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "sections": {
-          "type": "any",
-          "required": false
-        },
-        "skip_to_next_step": {
-          "type": "any",
-          "required": false
-        },
-        "skip_user_turn": {
-          "type": "any",
-          "required": false
-        },
-        "step_criteria": {
-          "type": "any",
-          "required": false
-        },
-        "text": {
-          "type": "any",
-          "required": false
-        },
-        "valid_contexts": {
-          "type": "any",
-          "required": false
-        },
-        "valid_steps": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.core.data_map.DataMap": {
       "params": {
-        "error_keys": {
-          "type": "any",
-          "required": false
-        },
-        "expressions": {
-          "type": "any",
-          "required": false
-        },
         "function_name": {
           "type": "string",
           "required": true
-        },
-        "output": {
-          "type": "any",
-          "required": false
-        },
-        "parameters": {
-          "type": "any",
-          "required": false
-        },
-        "purpose": {
-          "type": "any",
-          "required": false
-        },
-        "required_params": {
-          "type": "any",
-          "required": false
-        },
-        "webhooks": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.core.function_result.FunctionResult": {
       "params": {
-        "action": {
-          "type": "any",
-          "required": false
-        },
         "post_process": {
           "type": "bool",
           "required": false
@@ -36667,10 +33305,6 @@
     },
     "signalwire.core.security.session_manager.SessionManager": {
       "params": {
-        "debug_mode": {
-          "type": "any",
-          "required": false
-        },
         "secret_key": {
           "type": "optional<string>",
           "required": false
@@ -36683,72 +33317,12 @@
     },
     "signalwire.core.security_config.SecurityConfig": {
       "params": {
-        "allowed_hosts": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_autogen_warned": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_password": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_user": {
-          "type": "any",
-          "required": false
-        },
         "config_file": {
           "type": "optional<string>",
           "required": false
         },
-        "cors_origins": {
-          "type": "any",
-          "required": false
-        },
-        "domain": {
-          "type": "any",
-          "required": false
-        },
-        "hsts_max_age": {
-          "type": "any",
-          "required": false
-        },
-        "max_request_size": {
-          "type": "any",
-          "required": false
-        },
-        "rate_limit": {
-          "type": "any",
-          "required": false
-        },
-        "request_timeout": {
-          "type": "any",
-          "required": false
-        },
         "service_name": {
           "type": "optional<string>",
-          "required": false
-        },
-        "ssl_cert_path": {
-          "type": "any",
-          "required": false
-        },
-        "ssl_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "ssl_key_path": {
-          "type": "any",
-          "required": false
-        },
-        "ssl_verify_mode": {
-          "type": "any",
-          "required": false
-        },
-        "use_hsts": {
-          "type": "any",
           "required": false
         }
       }
@@ -36762,34 +33336,6 @@
         "params": {
           "type": "optional<dict<string,any>>",
           "required": false
-        },
-        "required_env_vars": {
-          "type": "any",
-          "required": false
-        },
-        "required_packages": {
-          "type": "any",
-          "required": false
-        },
-        "skill_description": {
-          "type": "any",
-          "required": false
-        },
-        "skill_name": {
-          "type": "any",
-          "required": false
-        },
-        "skill_version": {
-          "type": "any",
-          "required": false
-        },
-        "supports_multiple_instances": {
-          "type": "any",
-          "required": false
-        },
-        "swaig_fields": {
-          "type": "any",
-          "required": false
         }
       }
     },
@@ -36798,10 +33344,6 @@
         "agent": {
           "type": "class:signalwire.core.agent_base.AgentBase",
           "required": true
-        },
-        "loaded_skills": {
-          "type": "any",
-          "required": false
         }
       }
     },
@@ -36822,10 +33364,6 @@
         "handler": {
           "type": "callable<list<any>,any>",
           "required": true
-        },
-        "is_external": {
-          "type": "any",
-          "required": false
         },
         "is_typed_handler": {
           "type": "bool",
@@ -36895,24 +33433,8 @@
           "type": "optional<string>",
           "required": false
         },
-        "debug_routes_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "document": {
-          "type": "any",
-          "required": false
-        },
-        "full_validation": {
-          "type": "any",
-          "required": false
-        },
         "host": {
           "type": "string",
-          "required": false
-        },
-        "logger": {
-          "type": "any",
           "required": false
         },
         "name": {
@@ -36923,16 +33445,8 @@
           "type": "optional<int>",
           "required": false
         },
-        "proxy_url_base": {
-          "type": "any",
-          "required": false
-        },
         "route": {
           "type": "string",
-          "required": false
-        },
-        "routing_callbacks": {
-          "type": "any",
           "required": false
         },
         "schema_path": {
@@ -36946,34 +33460,6 @@
         "schema_validation": {
           "type": "bool",
           "required": false
-        },
-        "schema_validator": {
-          "type": "any",
-          "required": false
-        },
-        "security": {
-          "type": "any",
-          "required": false
-        },
-        "server_running": {
-          "type": "any",
-          "required": false
-        },
-        "tool_order": {
-          "type": "any",
-          "required": false
-        },
-        "tools": {
-          "type": "any",
-          "required": false
-        },
-        "verb_handlers": {
-          "type": "any",
-          "required": false
-        },
-        "verb_registry": {
-          "type": "any",
-          "required": false
         }
       }
     },
@@ -36981,10 +33467,6 @@
       "params": {
         "debug": {
           "type": "bool",
-          "required": false
-        },
-        "sections": {
-          "type": "any",
           "required": false
         }
       }
@@ -37005,10 +33487,6 @@
         },
         "numberedBullets": {
           "type": "bool",
-          "required": false
-        },
-        "subsections": {
-          "type": "any",
           "required": false
         },
         "title": {
@@ -37083,20 +33561,12 @@
           "type": "string",
           "required": false
         },
-        "question_callback": {
-          "type": "any",
-          "required": false
-        },
         "questions": {
           "type": "optional<list<dict<string,string>>>",
           "required": false
         },
         "route": {
           "type": "string",
-          "required": false
-        },
-        "static_questions": {
-          "type": "any",
           "required": false
         }
       }
@@ -37163,6 +33633,10 @@
     },
     "signalwire.relay.call.AIAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37171,54 +33645,18 @@
     },
     "signalwire.relay.call.Action": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
           "required": false
         },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.Call": {
       "params": {
-        "actions": {
-          "type": "any",
-          "required": false
-        },
         "call_id": {
           "type": "string",
           "required": true
@@ -37235,24 +33673,8 @@
           "type": "optional<dict<string,any>>",
           "required": false
         },
-        "dial_winner": {
-          "type": "any",
-          "required": false
-        },
-        "end_reason": {
-          "type": "any",
-          "required": false
-        },
         "node_id": {
           "type": "string",
-          "required": false
-        },
-        "on_event": {
-          "type": "any",
-          "required": false
-        },
-        "peer": {
-          "type": "any",
           "required": false
         },
         "state": {
@@ -37267,6 +33689,10 @@
     },
     "signalwire.relay.call.CollectAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37275,6 +33701,10 @@
     },
     "signalwire.relay.call.DetectAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37283,18 +33713,26 @@
     },
     "signalwire.relay.call.FaxAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
         },
-        "fax_type": {
-          "type": "any",
+        "method_prefix": {
+          "type": "string",
           "required": false
         }
       }
     },
     "signalwire.relay.call.PayAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37303,6 +33741,10 @@
     },
     "signalwire.relay.call.PlayAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37311,6 +33753,10 @@
     },
     "signalwire.relay.call.RecordAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37319,50 +33765,22 @@
     },
     "signalwire.relay.call.StandaloneCollectAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
           "required": false
         },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.StreamAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37371,6 +33789,10 @@
     },
     "signalwire.relay.call.TapAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37379,6 +33801,10 @@
     },
     "signalwire.relay.call.TranscribeAction": {
       "params": {
+        "call": {
+          "type": "class:signalwire.relay.call.Call",
+          "required": false
+        },
         "control_id": {
           "type": "string",
           "required": true
@@ -37387,26 +33813,6 @@
     },
     "signalwire.relay.client.RelayClient": {
       "params": {
-        "agent": {
-          "type": "any",
-          "required": false
-        },
-        "authorization_state": {
-          "type": "any",
-          "required": false
-        },
-        "calls": {
-          "type": "any",
-          "required": false
-        },
-        "closing": {
-          "type": "any",
-          "required": false
-        },
-        "connected": {
-          "type": "any",
-          "required": false
-        },
         "contexts": {
           "type": "optional<list<string>>",
           "required": false
@@ -37423,72 +33829,12 @@
           "type": "optional<int>",
           "required": false
         },
-        "max_backoff": {
-          "type": "any",
-          "required": false
-        },
-        "max_reconnect_attempts": {
-          "type": "any",
-          "required": false
-        },
-        "messages": {
-          "type": "any",
-          "required": false
-        },
-        "on_call": {
-          "type": "any",
-          "required": false
-        },
-        "on_event": {
-          "type": "any",
-          "required": false
-        },
-        "on_message": {
-          "type": "any",
-          "required": false
-        },
-        "path": {
-          "type": "any",
-          "required": false
-        },
-        "pending": {
-          "type": "any",
-          "required": false
-        },
-        "pending_dials": {
-          "type": "any",
-          "required": false
-        },
         "project": {
           "type": "optional<string>",
           "required": false
         },
-        "protocol": {
-          "type": "any",
-          "required": false
-        },
-        "reconnect_attempts": {
-          "type": "any",
-          "required": false
-        },
-        "scheme": {
-          "type": "any",
-          "required": false
-        },
-        "session_id": {
-          "type": "any",
-          "required": false
-        },
-        "socket": {
-          "type": "any",
-          "required": false
-        },
         "token": {
           "type": "optional<string>",
-          "required": false
-        },
-        "ws": {
-          "type": "any",
           "required": false
         }
       }
@@ -37583,20 +33929,8 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
-          "required": false
-        },
-        "peer": {
-          "type": "any",
-          "required": false
-        },
-        "tag": {
-          "type": "any",
           "required": false
         },
         "timestamp": {
@@ -37615,20 +33949,12 @@
           "type": "string",
           "required": false
         },
-        "control_id": {
-          "type": "any",
-          "required": false
-        },
         "event_type": {
           "type": "string",
           "required": false
         },
         "message": {
           "type": "string",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
           "required": false
         },
         "params": {
@@ -37657,10 +33983,6 @@
         },
         "final": {
           "type": "optional<bool>",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
           "required": false
         },
         "params": {
@@ -37699,10 +34021,6 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
           "required": false
@@ -37729,10 +34047,6 @@
         },
         "event_type": {
           "type": "string",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
           "required": false
         },
         "params": {
@@ -37791,10 +34105,6 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
           "required": false
@@ -37821,10 +34131,6 @@
         },
         "event_type": {
           "type": "string",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
           "required": false
         },
         "params": {
@@ -37881,10 +34187,6 @@
         },
         "fax": {
           "type": "dict<string,any>",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
           "required": false
         },
         "params": {
@@ -38059,16 +34361,8 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
-          "required": false
-        },
-        "result": {
-          "type": "any",
           "required": false
         },
         "state": {
@@ -38093,10 +34387,6 @@
         },
         "event_type": {
           "type": "string",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
           "required": false
         },
         "params": {
@@ -38175,10 +34465,6 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
           "required": false
@@ -38215,16 +34501,8 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
-          "required": false
-        },
-        "refer_state": {
-          "type": "any",
           "required": false
         },
         "sip_notify_response_code": {
@@ -38283,10 +34561,6 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
           "required": false
@@ -38317,10 +34591,6 @@
         },
         "name": {
           "type": "string",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
           "required": false
         },
         "params": {
@@ -38359,10 +34629,6 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
           "required": false
@@ -38399,10 +34665,6 @@
           "type": "string",
           "required": false
         },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
           "required": false
@@ -38435,10 +34697,6 @@
           "type": "string",
           "required": false
         },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "context": {
           "type": "string",
           "required": false
@@ -38459,20 +34717,8 @@
           "type": "string",
           "required": true
         },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "on_event": {
-          "type": "any",
-          "required": false
-        },
         "reason": {
           "type": "string",
-          "required": false
-        },
-        "result": {
-          "type": "any",
           "required": false
         },
         "segments": {
@@ -38507,14 +34753,6 @@
     },
     "signalwire.rest._base.HttpClient": {
       "params": {
-        "auth_header": {
-          "type": "any",
-          "required": false
-        },
-        "base_url": {
-          "type": "any",
-          "required": false
-        },
         "host": {
           "type": "string",
           "required": true
@@ -38530,10 +34768,6 @@
         "token": {
           "type": "string",
           "required": true
-        },
-        "ua": {
-          "type": "any",
-          "required": false
         }
       }
     },
@@ -38549,10 +34783,6 @@
         },
         "method": {
           "type": "string",
-          "required": false
-        },
-        "request_id": {
-          "type": "any",
           "required": false
         },
         "status_code": {
@@ -38633,10 +34863,6 @@
       "params": {
         "host": {
           "type": "optional<string>",
-          "required": false
-        },
-        "http": {
-          "type": "any",
           "required": false
         },
         "project": {
@@ -39099,72 +35325,20 @@
           "type": "class:signalwire.core.agent_base.AgentBase",
           "required": true
         },
-        "base_url": {
-          "type": "any",
-          "required": false
-        },
-        "http": {
-          "type": "any",
-          "required": false
-        },
         "params": {
           "type": "dict<string,any>",
-          "required": false
-        },
-        "required_env_vars": {
-          "type": "any",
-          "required": false
-        },
-        "required_packages": {
-          "type": "any",
-          "required": false
-        },
-        "skill_description": {
-          "type": "any",
-          "required": false
-        },
-        "skill_name": {
-          "type": "any",
-          "required": false
-        },
-        "skill_version": {
-          "type": "any",
-          "required": false
-        },
-        "supports_multiple_instances": {
-          "type": "any",
-          "required": false
-        },
-        "swaig_fields": {
-          "type": "any",
           "required": false
         }
       }
     },
     "signalwire.utils.schema_utils.SchemaUtils": {
       "params": {
-        "full_validator": {
-          "type": "any",
-          "required": false
-        },
-        "schema": {
-          "type": "any",
-          "required": false
-        },
         "schema_path": {
           "type": "optional<string>",
           "required": false
         },
         "schema_validation": {
           "type": "bool",
-          "required": false
-        },
-        "validation_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "verbs": {
-          "type": "any",
           "required": false
         }
       }
@@ -39173,10 +35347,6 @@
       "params": {
         "errors": {
           "type": "list<string>",
-          "required": false
-        },
-        "message": {
-          "type": "any",
           "required": false
         },
         "verb_name": {
@@ -39195,16 +35365,8 @@
           "type": "optional<tuple<string,string>>",
           "required": false
         },
-        "basic_auth_arg": {
-          "type": "any",
-          "required": false
-        },
         "blocked_extensions": {
           "type": "optional<list<string>>",
-          "required": false
-        },
-        "bound_port": {
-          "type": "any",
           "required": false
         },
         "directories": {
@@ -39221,10 +35383,6 @@
         },
         "max_file_size": {
           "type": "int",
-          "required": false
-        },
-        "pid": {
-          "type": "any",
           "required": false
         },
         "port": {

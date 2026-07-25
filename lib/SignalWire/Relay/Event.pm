@@ -41,14 +41,15 @@ sub from_payload ( $class, $payload = undef ) {
 package SignalWire::Relay::Event::CallState;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
-has 'tag'        => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
+has 'tag' => ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{tag} // '' } );
 has 'call_state' => ( is => 'ro', default => sub { '' } );
 has 'direction'  => ( is => 'ro', default => sub { '' } ); # Python parity: CallStateEvent.direction
 has 'device'     => ( is => 'ro', default => sub { {} } );
 has 'end_reason' => ( is => 'ro', default => sub { '' } );
-has 'peer'       => ( is => 'ro', default => sub { {} } );
+has 'peer' => ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{peer} // {} } );
 
 # Inbound call offer
 package SignalWire::Relay::Event::CallReceive;
@@ -70,8 +71,9 @@ has 'segment_id' => ( is => 'ro', default => sub { '' } );
 package SignalWire::Relay::Event::CallDial;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'tag'        => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'tag' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'dial_state' => ( is => 'ro', default => sub { '' } );
 has 'call'       => ( is => 'ro', default => sub { {} } );
 
@@ -79,8 +81,9 @@ has 'call'       => ( is => 'ro', default => sub { {} } );
 package SignalWire::Relay::Event::CallConnect;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'       => ( is => 'ro', default => sub { '' } );
-has 'node_id'       => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'connect_state' => ( is => 'ro', default => sub { '' } );
 has 'peer'          => ( is => 'ro', default => sub { {} } );
 
@@ -95,8 +98,9 @@ has 'node_id' => ( is => 'ro', default => sub { '' } );
 package SignalWire::Relay::Event::CallPlay;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
 
@@ -105,8 +109,9 @@ package SignalWire::Relay::Event::CallRecord;
 use Moo;
 use feature 'signatures';
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
 has 'url'        => ( is => 'ro', default => sub { '' } );
@@ -131,8 +136,9 @@ sub from_payload ( $class, $payload = undef ) {
 package SignalWire::Relay::Event::CallCollect;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );    # Python parity: CollectEvent.state
 has 'result'     => ( is => 'ro', default => sub { {} } );
@@ -146,8 +152,9 @@ has 'final' => ( is => 'ro', default => sub { undef } );
 package SignalWire::Relay::Event::CallDetect;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'detect'     => ( is => 'ro', default => sub { {} } );
 
@@ -155,8 +162,9 @@ has 'detect'     => ( is => 'ro', default => sub { {} } );
 package SignalWire::Relay::Event::CallFax;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'fax'        => ( is => 'ro', default => sub { {} } );
 
@@ -164,8 +172,9 @@ has 'fax'        => ( is => 'ro', default => sub { {} } );
 package SignalWire::Relay::Event::CallTap;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
 has 'tap'        => ( is => 'ro', default => sub { {} } );
@@ -175,8 +184,9 @@ has 'device'     => ( is => 'ro', default => sub { {} } );    # Python parity: T
 package SignalWire::Relay::Event::CallStream;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
 
@@ -188,8 +198,9 @@ has 'url'  => ( is => 'ro', default => sub { '' } );
 package SignalWire::Relay::Event::CallTranscribe;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
 
@@ -203,18 +214,21 @@ has 'size'         => ( is => 'ro', default => sub { 0 } );
 package SignalWire::Relay::Event::CallPay;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
-has 'result'     => ( is => 'ro', default => sub { {} } );
+has 'result' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{result} // {} } );
 
 # Send digits event
 package SignalWire::Relay::Event::CallSendDigits;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'control_id' => ( is => 'ro', default => sub { '' } );
 has 'state'      => ( is => 'ro', default => sub { '' } );
 
@@ -222,9 +236,11 @@ has 'state'      => ( is => 'ro', default => sub { '' } );
 package SignalWire::Relay::Event::CallRefer;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'     => ( is => 'ro', default => sub { '' } );
-has 'node_id'     => ( is => 'ro', default => sub { '' } );
-has 'refer_state' => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
+has 'refer_state' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{refer_state} // '' } );
 
 # Python parity: ReferEvent.state/sip_refer_to/sip_refer_response_code/sip_notify_response_code
 has 'state'                    => ( is => 'ro', default => sub { '' } );
@@ -236,8 +252,9 @@ has 'sip_notify_response_code' => ( is => 'ro', default => sub { '' } );
 package SignalWire::Relay::Event::Conference;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'       => ( is => 'ro', default => sub { '' } );
-has 'node_id'       => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
 has 'conference_id' => ( is => 'ro', default => sub { '' } );
 
 # Python parity: ConferenceEvent.name/status
@@ -248,9 +265,11 @@ has 'status' => ( is => 'ro', default => sub { '' } );
 package SignalWire::Relay::Event::CallAI;
 use Moo;
 extends 'SignalWire::Relay::Event';
-has 'call_id'    => ( is => 'ro', default => sub { '' } );
-has 'node_id'    => ( is => 'ro', default => sub { '' } );
-has 'control_id' => ( is => 'ro', default => sub { '' } );
+has 'call_id' => ( is => 'ro', default => sub { '' } );
+has 'node_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{node_id} // '' } );
+has 'control_id' =>
+    ( init_arg => undef, is => 'lazy', builder => sub { $_[0]->params->{control_id} // '' } );
 
 # Python parity: CallingErrorEvent.code/message
 has 'code'    => ( is => 'ro', default => sub { '' } );

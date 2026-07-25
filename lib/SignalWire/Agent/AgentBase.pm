@@ -39,62 +39,64 @@ has record_format => ( is => 'rw', default => sub { 'mp4' } );
 has record_stereo => ( is => 'rw', default => sub { 1 } );
 
 # Prompt system
-has prompt_text  => ( is => 'rw', default => sub { '' } );
-has post_prompt  => ( is => 'rw', default => sub { '' } );
-has use_pom      => ( is => 'rw', default => sub { 1 } );
-has pom_sections => ( is => 'rw', default => sub { [] } );
+has prompt_text  => ( init_arg => undef, is      => 'rw', default => sub { '' } );
+has post_prompt  => ( init_arg => undef, is      => 'rw', default => sub { '' } );
+has use_pom      => ( is       => 'rw',  default => sub { 1 } );
+has pom_sections => ( init_arg => undef, is      => 'rw', default => sub { [] } );
 
 # Tool registry — `tools` and `tool_order` are now declared on Service
 # (lifted so non-agent SWML services can host SWAIG functions). Inherited.
 
 # AI config
-has hints            => ( is => 'rw', default => sub { [] } );
-has pattern_hints    => ( is => 'rw', default => sub { [] } );
-has languages        => ( is => 'rw', default => sub { [] } );
-has multilingual     => ( is => 'rw', default => sub { undef } );
-has pronunciations   => ( is => 'rw', default => sub { [] } );
-has params           => ( is => 'rw', default => sub { {} } );
-has global_data      => ( is => 'rw', default => sub { {} } );
-has native_functions => ( is => 'rw', default => sub { [] } );
+has hints            => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has pattern_hints    => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has languages        => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has multilingual     => ( init_arg => undef, is      => 'rw', default => sub { undef } );
+has pronunciations   => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has params           => ( init_arg => undef, is      => 'rw', default => sub { {} } );
+has global_data      => ( init_arg => undef, is      => 'rw', default => sub { {} } );
+has native_functions => ( is       => 'rw',  default => sub { [] } );
 
 # Internal settings
-has internal_fillers   => ( is => 'rw', default => sub { undef } );
-has debug_events_level => ( is => 'rw', default => sub { 0 } );
+has internal_fillers   => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has debug_events_level => ( init_arg => undef, is => 'rw', default => sub { 0 } );
 
 # Includes and LLM params
-has function_includes      => ( is => 'rw', default => sub { [] } );
-has prompt_llm_params      => ( is => 'rw', default => sub { {} } );
-has post_prompt_llm_params => ( is => 'rw', default => sub { {} } );
+has function_includes      => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has prompt_llm_params      => ( init_arg => undef, is => 'rw', default => sub { {} } );
+has post_prompt_llm_params => ( init_arg => undef, is => 'rw', default => sub { {} } );
 
 # Verb insertion points
-has pre_answer_verbs  => ( is => 'rw', default => sub { [] } );
-has post_answer_verbs => ( is => 'rw', default => sub { [] } );
-has post_ai_verbs     => ( is => 'rw', default => sub { [] } );
-has answer_config     => ( is => 'rw', default => sub { {} } );
+has pre_answer_verbs  => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has post_answer_verbs => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has post_ai_verbs     => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has answer_config     => ( init_arg => undef, is => 'rw', default => sub { {} } );
 
 # SIP routing (Python parity: AgentBase SIP username mapping).
-has sip_routing_enabled => ( is => 'rw', default => sub { 0 } );
-has sip_auto_map        => ( is => 'rw', default => sub { 1 } );
-has sip_path            => ( is => 'rw', default => sub { '/sip' } );
-has sip_usernames       => ( is => 'rw', default => sub { [] } );
+has sip_routing_enabled => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has sip_auto_map        => ( init_arg => undef, is => 'rw', default => sub { 1 } );
+has sip_path            => ( init_arg => undef, is => 'rw', default => sub { '/sip' } );
+has sip_usernames       => ( init_arg => undef, is => 'rw', default => sub { [] } );
 
 # Context system (lazy)
 has context_builder => (
-    is      => 'rw',
-    lazy    => 1,
-    builder => '_build_context_builder',
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    builder  => '_build_context_builder',
 );
 
 # Callbacks
-has dynamic_config_callback => ( is => 'rw', default => sub { undef } );
-has summary_callback        => ( is => 'rw', default => sub { undef } );
-has debug_event_handler     => ( is => 'rw', default => sub { undef } );
+has dynamic_config_callback => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has summary_callback        => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has debug_event_handler     => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # URLs
-has webhook_url        => ( is => 'rw', default => sub { undef } );
-has post_prompt_url    => ( is => 'rw', default => sub { undef } );
-has proxy_url_base     => ( is => 'rw', lazy    => 1, builder => '_build_proxy_url_base' );
-has swaig_query_params => ( is => 'rw', default => sub { {} } );
+has webhook_url     => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has post_prompt_url => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has proxy_url_base =>
+    ( init_arg => undef, is => 'rw', lazy => 1, builder => '_build_proxy_url_base' );
+has swaig_query_params => ( init_arg => undef, is => 'rw', default => sub { {} } );
 
 # Python parity: AgentBase.__init__(token_expiry_secs=3600). The reference does
 # NOT store this on self — it FORWARDS it to the SessionManager collaborator
@@ -103,9 +105,10 @@ has token_expiry_secs => ( is => 'rw', default => sub { 3600 } );
 
 # Session manager — built lazily so it picks up token_expiry_secs.
 has session_manager => (
-    is      => 'rw',
-    lazy    => 1,
-    builder => '_build_session_manager',
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    builder  => '_build_session_manager',
 );
 
 sub _build_session_manager {
@@ -169,8 +172,8 @@ sub _build_signing_key {
 has skill_manager => ( is => 'rw', lazy => 1, builder => '_build_skill_manager' );
 
 # MCP integration
-has mcp_servers        => ( is => 'rw', default => sub { [] } );
-has mcp_server_enabled => ( is => 'rw', default => sub { 0 } );
+has mcp_servers        => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has mcp_server_enabled => ( init_arg => undef, is => 'rw', default => sub { 0 } );
 
 # ---------- builders ----------
 
@@ -2150,54 +2153,65 @@ sub _handle_mcp_endpoint {
 
 sub _clone_for_request {
     my ($self) = @_;
+
+    # CONSTRUCTION vs STATE TRANSFER. Only the agent's genuine construction
+    # contract (the params the python reference's AgentBase.__init__ accepts)
+    # goes through ``new``. Everything else is INTERNAL agent state that the
+    # reference configures through methods (add_hints/set_global_data/…) and
+    # its ephemeral clone copies attribute-by-attribute onto the built object —
+    # so this does the same, writing each attribute on the clone after
+    # construction rather than smuggling it in as a constructor argument.
     my %init;
     for my $attr (
         qw(name route host port auto_answer record_call record_format
-        record_stereo prompt_text post_prompt use_pom
-        debug_events_level)
+        record_stereo use_pom basic_auth_user basic_auth_password)
         )
     {
         $init{$attr} = $self->$attr;
     }
 
-    # Deep copy complex attributes
-    $init{pom_sections}           = dclone( $self->pom_sections );
-    $init{tools}                  = dclone( $self->tools );
-    $init{tool_order}             = [ @{ $self->tool_order } ];
-    $init{hints}                  = [ @{ $self->hints } ];
-    $init{pattern_hints}          = [ @{ $self->pattern_hints } ];
-    $init{languages}              = dclone( $self->languages );
-    $init{pronunciations}         = dclone( $self->pronunciations );
-    $init{params}                 = { %{ $self->params } };
-    $init{global_data}            = dclone( $self->global_data );
-    $init{native_functions}       = [ @{ $self->native_functions } ];
-    $init{function_includes}      = dclone( $self->function_includes );
-    $init{prompt_llm_params}      = { %{ $self->prompt_llm_params } };
-    $init{post_prompt_llm_params} = { %{ $self->post_prompt_llm_params } };
-    $init{pre_answer_verbs}       = dclone( $self->pre_answer_verbs );
-    $init{post_answer_verbs}      = dclone( $self->post_answer_verbs );
-    $init{post_ai_verbs}          = dclone( $self->post_ai_verbs );
-    $init{answer_config}          = { %{ $self->answer_config } };
-    $init{swaig_query_params}     = { %{ $self->swaig_query_params } };
-    $init{basic_auth_user}        = $self->basic_auth_user;
-    $init{basic_auth_password}    = $self->basic_auth_password;
-    $init{webhook_url}            = $self->webhook_url;
-    $init{post_prompt_url}        = $self->post_prompt_url;
-    $init{proxy_url_base}         = $self->proxy_url_base;
-    $init{internal_fillers} =
-        defined $self->internal_fillers ? dclone( $self->internal_fillers ) : undef;
-    $init{session_manager}    = $self->session_manager;
-    $init{mcp_servers}        = dclone( $self->mcp_servers );
-    $init{mcp_server_enabled} = $self->mcp_server_enabled;
+    my $clone = ( ref $self )->new(%init);
+
+    # Scalar state — copied straight across.
+    for my $attr (
+        qw(prompt_text post_prompt debug_events_level webhook_url
+        post_prompt_url proxy_url_base mcp_server_enabled session_manager)
+        )
+    {
+        $clone->$attr( $self->$attr );
+    }
+
+    # Deep-copied container state. dclone for nested structures, a shallow
+    # copy for the flat ones, so per-request mutation on the clone can never
+    # write through to the shared original.
+    for my $attr (
+        qw(pom_sections tools languages pronunciations global_data
+        function_includes pre_answer_verbs post_answer_verbs post_ai_verbs
+        mcp_servers)
+        )
+    {
+        $clone->$attr( dclone( $self->$attr ) );
+    }
+    for my $attr (qw(tool_order hints pattern_hints native_functions)) {
+        $clone->$attr( [ @{ $self->$attr } ] );
+    }
+    for my $attr (
+        qw(params prompt_llm_params post_prompt_llm_params answer_config
+        swaig_query_params)
+        )
+    {
+        $clone->$attr( { %{ $self->$attr } } );
+    }
+
+    $clone->internal_fillers(
+        defined $self->internal_fillers ? dclone( $self->internal_fillers ) : undef );
 
     # ASR-driven multilingual (Mode B) config — a render-relevant attribute
     # (emitted as the top-level ``multilingual`` object on the AI verb). It was
     # previously NOT copied, so a dynamic-config-callback request rendered off
     # the clone silently lost the agent's multilingual config. Mirror python's
     # ephemeral clone, which deep-copies _multilingual.
-    $init{multilingual} = defined $self->multilingual ? dclone( $self->multilingual ) : undef;
-
-    my $clone = ( ref $self )->new(%init);
+    $clone->multilingual( defined $self->multilingual ? dclone( $self->multilingual ) : undef );
 
     # context_builder — the contexts tree is render-relevant (emitted under
     # ai.prompt.contexts) and was ALSO not carried by the clone, so a

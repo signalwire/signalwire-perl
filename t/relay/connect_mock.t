@@ -103,8 +103,6 @@ subtest 'reconnect with protocol string includes protocol in frame' => sub {
         project  => 'test_proj',
         token    => 'test_tok',
         host     => "127.0.0.1:$RelayMockTest::WS_PORT",
-        scheme   => 'ws',
-        path     => '',
         contexts => ['c1'],
     );
     $c2->protocol($issued);
@@ -137,8 +135,6 @@ subtest 'reconnect with protocol preserves protocol value' => sub {
         project => 'test_proj',
         token   => 'test_tok',
         host    => "127.0.0.1:$RelayMockTest::WS_PORT",
-        scheme  => 'ws',
-        path    => '',
     );
     $c2->protocol($issued);
     $c2->connect;
@@ -263,8 +259,6 @@ subtest 'connect with jwt carries jwt on wire' => sub {
         token     => '',
         jwt_token => 'fake-jwt-eyJ.AaaA.BbB',
         host      => "127.0.0.1:$RelayMockTest::WS_PORT",
-        scheme    => 'ws',
-        path      => '',
     );
     $client->connect;
     # Scope the journal read to THIS client's session (captured before

@@ -34,13 +34,15 @@ has config_paths => (
 );
 
 has _config => (
-    is      => 'rw',
-    default => sub { undef },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { undef },
 );
 
 has _config_file => (
-    is      => 'rw',
-    default => sub { undef },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { undef },
 );
 
 # ---------- construction ----------

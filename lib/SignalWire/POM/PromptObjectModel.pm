@@ -27,8 +27,9 @@ use SignalWire::POM::Section;
 # ---------- attributes ----------
 
 has sections => (
-    is      => 'rw',
-    default => sub { [] },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { [] },
 );
 
 has debug => (

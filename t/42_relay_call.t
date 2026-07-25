@@ -162,8 +162,16 @@ subtest 'concrete action control methods' => sub {
             return { ok => 1 };
         };
     }
-    my $pa = $play->new( control_id => 'ctl-p', call_id => 'c', node_id => 'n' );
-    $pa->_client($fake_client);
+    # The action derives call_id / node_id / client from the call it belongs
+    # to (the reference's Action.__init__(call, control_id, ...) shape), so
+    # build the owning call and hand it over rather than setting the three
+    # identity fields on the action directly.
+    my $owning_call = SignalWire::Relay::Call->new(
+        call_id => 'c',
+        node_id => 'n',
+        _client => $fake_client,
+    );
+    my $pa = $play->new( call => $owning_call, control_id => 'ctl-p' );
     $pa->pause;                       # no behavior
     $pa->pause('collect');            # with behavior
     is( $client_calls->[0][0], 'calling.play.pause', 'play.pause verb' );
