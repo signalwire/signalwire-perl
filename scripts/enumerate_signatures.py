@@ -1071,6 +1071,24 @@ def collect(raw: dict) -> dict:
     # collect() iterates over the unioned entries.
     raw = {"types": list(by_full_name.values())}
 
+    # Canonical ``module.Class`` -> ``module.Class`` superclass map, used by
+    # build_construction to gate the inherited-attribute fold against the oracle
+    # (see ``_oracle_flattens``). Built from the same merged ``extends`` data
+    # collect_inherited_attrs walks, so the two cannot disagree.
+    superclasses: dict = {}
+    for full, entry in by_full_name.items():
+        target = PACKAGE_TO_PY.get(full)
+        if not target or not target.get("class"):
+            continue
+        child = f"{target['module']}.{target['class']}"
+        for parent_perl in entry.get("extends", []) or []:
+            ptarget = PACKAGE_TO_PY.get(parent_perl)
+            if ptarget and ptarget.get("class"):
+                parent = f"{ptarget['module']}.{ptarget['class']}"
+                if parent != child:
+                    superclasses[child] = parent
+                break
+
     def collect_inherited_attrs(entry: dict, seen: set) -> list:
         """Walk extends chain and concatenate attributes (parent first,
         then child). Stops on cycles via `seen`."""
@@ -1835,7 +1853,7 @@ def collect(raw: dict) -> dict:
         "version": "2",
         "generated_from": "signalwire-perl via best-effort regex parser",
         "modules": sorted_modules,
-        "construction": build_construction(sorted_modules),
+        "construction": build_construction(sorted_modules, superclasses),
     }
 
 
@@ -1848,8 +1866,58 @@ def collect(raw: dict) -> dict:
 # a configurable the caller passes in.
 _CONSTRUCTION_NON_PARAMS = frozenset({"new", "BUILD", "BUILDARGS", "meta"})
 
+# The reference's own construction node, consulted to decide whether an
+# inherited-attribute fold matches what the REFERENCE records (see
+# ``_oracle_flattens``). The adapter never decides on its own which inheritance
+# to flatten — it asks the oracle, per class.
+REF_CONSTRUCTION: dict = PYTHON_REFERENCE.get("construction", {})
 
-def build_construction(modules: dict) -> dict:
+
+def _oracle_flattens(cls: str, parent: str) -> bool:
+    """Does the REFERENCE flatten ``parent``'s construction params into ``cls``?
+
+    Perl/Moo's auto-``new`` ALWAYS accepts every inherited attribute as a named
+    constructor argument, so ``collect_inherited_attrs`` folds the whole
+    ``extends`` chain into the synthesized ``__init__``. Whether that fold is
+    correct for the CONSTRUCTION CONTRACT depends on which of two shapes the
+    reference uses, and only the oracle can say which:
+
+      * ``@dataclass`` events — Python flattens the base's fields into the
+        generated ``__init__``, so the oracle records ALL of them
+        (``CallReceiveEvent`` records its parent's ``event_type``/``params``/
+        ``call_id``/``timestamp``). Perl's fold is folding the SAME set → KEEP.
+      * ``**kwargs`` agents — ``BedrockAgent(AgentBase)`` forwards to
+        ``super().__init__(**kwargs)`` and the oracle records ONLY the child's
+        own 7 params, not AgentBase's 22. Perl's fold invents params the
+        reference never declares at this class → DROP the inherited tail.
+
+    Without this gate the six agent subclasses each carry ~59 inherited
+    AgentBase attrs as ``construction-extra-param``, which is ~356 bogus
+    findings — the mirror of the ruby lane's under-reporting artifact.
+
+    FAILS LOUD rather than guessing: an oracle with no ``construction`` node
+    means this enumerator is running against a pre-contract reference, and
+    silently returning either answer would emit a construction set that is
+    wrong for one whole shape. Raising says "pull the oracle".
+    """
+    if not REF_CONSTRUCTION:
+        raise RuntimeError(
+            "python_signatures.json has no `construction` node — cannot gate "
+            "the Moo inherited-attribute fold against the oracle. Pull "
+            "porting-sdk (the construction contract landed in cf05021) and "
+            "re-run."
+        )
+    ref_cls = (REF_CONSTRUCTION.get(cls) or {}).get("params")
+    ref_parent = (REF_CONSTRUCTION.get(parent) or {}).get("params")
+    if not ref_cls or not ref_parent:
+        # The reference records no construction set for one side of this edge;
+        # there is nothing to compare the fold against, so leave the port's own
+        # set alone rather than inventing or deleting params.
+        return True
+    return set(ref_parent).issubset(set(ref_cls))
+
+
+def build_construction(modules: dict, superclasses: dict) -> dict:
     """Return ``{"module.Class": {"params": {name: {type, required}}}}``.
 
     A NAME-KEYED, unordered set of the configurables a caller may supply when
@@ -1878,8 +1946,15 @@ def build_construction(modules: dict) -> dict:
     silently accepts an under-specified construction — so where this port gives
     a reference-required attribute a ``default``, the diff raises
     ``construction-required-flip`` rather than quietly matching.
+
+    THE INHERITED-ATTRIBUTE FOLD IS ORACLE-GATED. The synthesized ``__init__``
+    always carries the whole ``extends`` chain, because Moo's ``new`` really
+    does accept all of it. For the contract that is right for the reference's
+    ``@dataclass`` shape and wrong for its ``**kwargs``-to-``super`` shape, so
+    ``_oracle_flattens`` asks the REFERENCE which one applies per class and the
+    inherited tail is dropped where the reference does not flatten it.
     """
-    out: dict = {}
+    folded: dict = {}
 
     for mod, entry in modules.items():
         for cls, cinfo in entry.get("classes", {}).items():
@@ -1906,8 +1981,30 @@ def build_construction(modules: dict) -> dict:
                     "required": bool(p.get("required", False)),
                 }
             if params:
-                out[f"{mod}.{cls}"] = {"params": dict(sorted(params.items()))}
+                folded[f"{mod}.{cls}"] = params
 
+    def resolved(key: str, seen: frozenset = frozenset()) -> dict:
+        """The folded set, minus the parent's contribution where the reference
+        does NOT flatten that inheritance."""
+        params = dict(folded.get(key, {}))
+        parent = superclasses.get(key)
+        if (parent and parent in folded and parent not in seen
+                and not _oracle_flattens(key, parent)):
+            # Drop the params this class only has by inheritance. A name the
+            # class ALSO declares itself stays (Moo's ``has '+attr'`` override,
+            # and any name the reference records on the child).
+            inherited = resolved(parent, seen | {key})
+            ref_own = set((REF_CONSTRUCTION.get(key) or {}).get("params") or ())
+            for name in inherited:
+                if name in params and name not in ref_own:
+                    del params[name]
+        return params
+
+    out: dict = {}
+    for key in folded:
+        params = resolved(key)
+        if params:
+            out[key] = {"params": dict(sorted(params.items()))}
     return dict(sorted(out.items()))
 
 

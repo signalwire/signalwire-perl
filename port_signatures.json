@@ -35375,228 +35375,16 @@
     },
     "signalwire.agents.bedrock.BedrockAgent": {
       "params": {
-        "answer_config": {
-          "type": "any",
-          "required": false
-        },
-        "auto_answer": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_password": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_user": {
-          "type": "any",
-          "required": false
-        },
-        "context_builder": {
-          "type": "any",
-          "required": false
-        },
-        "debug_event_handler": {
-          "type": "any",
-          "required": false
-        },
-        "debug_events_level": {
-          "type": "any",
-          "required": false
-        },
-        "debug_routes_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "document": {
-          "type": "any",
-          "required": false
-        },
-        "dynamic_config_callback": {
-          "type": "any",
-          "required": false
-        },
-        "full_validation": {
-          "type": "any",
-          "required": false
-        },
-        "function_includes": {
-          "type": "any",
-          "required": false
-        },
-        "global_data": {
-          "type": "any",
-          "required": false
-        },
-        "hints": {
-          "type": "any",
-          "required": false
-        },
-        "host": {
-          "type": "any",
-          "required": false
-        },
-        "internal_fillers": {
-          "type": "any",
-          "required": false
-        },
-        "languages": {
-          "type": "any",
-          "required": false
-        },
-        "logger": {
-          "type": "any",
-          "required": false
-        },
         "max_tokens": {
           "type": "int",
-          "required": false
-        },
-        "mcp_server_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_servers": {
-          "type": "any",
-          "required": false
-        },
-        "multilingual": {
-          "type": "any",
           "required": false
         },
         "name": {
           "type": "string",
           "required": false
         },
-        "native_functions": {
-          "type": "any",
-          "required": false
-        },
-        "params": {
-          "type": "any",
-          "required": false
-        },
-        "pattern_hints": {
-          "type": "any",
-          "required": false
-        },
-        "pom_sections": {
-          "type": "any",
-          "required": false
-        },
-        "port": {
-          "type": "any",
-          "required": false
-        },
-        "post_ai_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_url": {
-          "type": "any",
-          "required": false
-        },
-        "pre_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "pronunciations": {
-          "type": "any",
-          "required": false
-        },
-        "proxy_url_base": {
-          "type": "any",
-          "required": false
-        },
-        "record_call": {
-          "type": "any",
-          "required": false
-        },
-        "record_format": {
-          "type": "any",
-          "required": false
-        },
-        "record_stereo": {
-          "type": "any",
-          "required": false
-        },
         "route": {
           "type": "string",
-          "required": false
-        },
-        "routing_callbacks": {
-          "type": "any",
-          "required": false
-        },
-        "schema_utils": {
-          "type": "any",
-          "required": false
-        },
-        "schema_validator": {
-          "type": "any",
-          "required": false
-        },
-        "security": {
-          "type": "any",
-          "required": false
-        },
-        "server_running": {
-          "type": "any",
-          "required": false
-        },
-        "session_manager": {
-          "type": "any",
-          "required": false
-        },
-        "signing_key": {
-          "type": "any",
-          "required": false
-        },
-        "sip_auto_map": {
-          "type": "any",
-          "required": false
-        },
-        "sip_path": {
-          "type": "any",
-          "required": false
-        },
-        "sip_routing_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "sip_usernames": {
-          "type": "any",
-          "required": false
-        },
-        "skill_manager": {
-          "type": "any",
-          "required": false
-        },
-        "summary_callback": {
-          "type": "any",
-          "required": false
-        },
-        "swaig_query_params": {
-          "type": "any",
           "required": false
         },
         "system_prompt": {
@@ -35607,36 +35395,12 @@
           "type": "float",
           "required": false
         },
-        "tool_order": {
-          "type": "any",
-          "required": false
-        },
-        "tools": {
-          "type": "any",
-          "required": false
-        },
         "top_p": {
           "type": "float",
           "required": false
         },
-        "use_pom": {
-          "type": "any",
-          "required": false
-        },
-        "verb_handlers": {
-          "type": "any",
-          "required": false
-        },
-        "verb_registry": {
-          "type": "any",
-          "required": false
-        },
         "voice_id": {
           "type": "string",
-          "required": false
-        },
-        "webhook_url": {
-          "type": "any",
           "required": false
         }
       }
@@ -36659,265 +36423,29 @@
           "type": "dict<string,dict<string,string>>",
           "required": false
         },
-        "answer_config": {
-          "type": "any",
-          "required": false
-        },
-        "auto_answer": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_password": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_user": {
-          "type": "any",
-          "required": false
-        },
-        "context_builder": {
-          "type": "any",
-          "required": false
-        },
-        "debug_event_handler": {
-          "type": "any",
-          "required": false
-        },
-        "debug_events_level": {
-          "type": "any",
-          "required": false
-        },
-        "debug_routes_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "document": {
-          "type": "any",
-          "required": false
-        },
-        "dynamic_config_callback": {
-          "type": "any",
-          "required": false
-        },
-        "full_validation": {
-          "type": "any",
-          "required": false
-        },
-        "function_includes": {
-          "type": "any",
-          "required": false
-        },
-        "global_data": {
-          "type": "any",
-          "required": false
-        },
-        "hints": {
-          "type": "any",
-          "required": false
-        },
-        "host": {
-          "type": "any",
-          "required": false
-        },
         "hours_of_operation": {
           "type": "optional<dict<string,string>>",
-          "required": false
-        },
-        "internal_fillers": {
-          "type": "any",
-          "required": false
-        },
-        "languages": {
-          "type": "any",
-          "required": false
-        },
-        "logger": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_server_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_servers": {
-          "type": "any",
-          "required": false
-        },
-        "multilingual": {
-          "type": "any",
           "required": false
         },
         "name": {
           "type": "string",
           "required": false
         },
-        "native_functions": {
-          "type": "any",
-          "required": false
-        },
-        "params": {
-          "type": "any",
-          "required": false
-        },
-        "pattern_hints": {
-          "type": "any",
-          "required": false
-        },
-        "pom_sections": {
-          "type": "any",
-          "required": false
-        },
-        "port": {
-          "type": "any",
-          "required": false
-        },
-        "post_ai_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_url": {
-          "type": "any",
-          "required": false
-        },
-        "pre_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "pronunciations": {
-          "type": "any",
-          "required": false
-        },
-        "proxy_url_base": {
-          "type": "any",
-          "required": false
-        },
-        "record_call": {
-          "type": "any",
-          "required": false
-        },
-        "record_format": {
-          "type": "any",
-          "required": false
-        },
-        "record_stereo": {
-          "type": "any",
-          "required": false
-        },
         "route": {
           "type": "string",
-          "required": false
-        },
-        "routing_callbacks": {
-          "type": "any",
-          "required": false
-        },
-        "schema_utils": {
-          "type": "any",
-          "required": false
-        },
-        "schema_validator": {
-          "type": "any",
-          "required": false
-        },
-        "security": {
-          "type": "any",
-          "required": false
-        },
-        "server_running": {
-          "type": "any",
           "required": false
         },
         "services": {
           "type": "list<string>",
           "required": false
         },
-        "session_manager": {
-          "type": "any",
-          "required": false
-        },
-        "signing_key": {
-          "type": "any",
-          "required": false
-        },
-        "sip_auto_map": {
-          "type": "any",
-          "required": false
-        },
-        "sip_path": {
-          "type": "any",
-          "required": false
-        },
-        "sip_routing_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "sip_usernames": {
-          "type": "any",
-          "required": false
-        },
-        "skill_manager": {
-          "type": "any",
-          "required": false
-        },
         "special_instructions": {
           "type": "optional<list<string>>",
-          "required": false
-        },
-        "summary_callback": {
-          "type": "any",
-          "required": false
-        },
-        "swaig_query_params": {
-          "type": "any",
-          "required": false
-        },
-        "tool_order": {
-          "type": "any",
-          "required": false
-        },
-        "tools": {
-          "type": "any",
-          "required": false
-        },
-        "use_pom": {
-          "type": "any",
           "required": false
         },
         "venue_name": {
           "type": "string",
           "required": true
-        },
-        "verb_handlers": {
-          "type": "any",
-          "required": false
-        },
-        "verb_registry": {
-          "type": "any",
-          "required": false
-        },
-        "webhook_url": {
-          "type": "any",
-          "required": false
         },
         "welcome_message": {
           "type": "optional<string>",
@@ -36927,412 +36455,32 @@
     },
     "signalwire.prefabs.faq_bot.FAQBotAgent": {
       "params": {
-        "answer_config": {
-          "type": "any",
-          "required": false
-        },
-        "auto_answer": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_password": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_user": {
-          "type": "any",
-          "required": false
-        },
-        "context_builder": {
-          "type": "any",
-          "required": false
-        },
-        "debug_event_handler": {
-          "type": "any",
-          "required": false
-        },
-        "debug_events_level": {
-          "type": "any",
-          "required": false
-        },
-        "debug_routes_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "document": {
-          "type": "any",
-          "required": false
-        },
-        "dynamic_config_callback": {
-          "type": "any",
-          "required": false
-        },
         "faqs": {
           "type": "list<dict<string,any>>",
           "required": false
         },
-        "full_validation": {
-          "type": "any",
-          "required": false
-        },
-        "function_includes": {
-          "type": "any",
-          "required": false
-        },
-        "global_data": {
-          "type": "any",
-          "required": false
-        },
-        "hints": {
-          "type": "any",
-          "required": false
-        },
-        "host": {
-          "type": "any",
-          "required": false
-        },
-        "internal_fillers": {
-          "type": "any",
-          "required": false
-        },
-        "languages": {
-          "type": "any",
-          "required": false
-        },
-        "logger": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_server_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_servers": {
-          "type": "any",
-          "required": false
-        },
-        "multilingual": {
-          "type": "any",
-          "required": false
-        },
         "name": {
           "type": "string",
-          "required": false
-        },
-        "native_functions": {
-          "type": "any",
-          "required": false
-        },
-        "params": {
-          "type": "any",
-          "required": false
-        },
-        "pattern_hints": {
-          "type": "any",
           "required": false
         },
         "persona": {
           "type": "optional<string>",
           "required": false
         },
-        "pom_sections": {
-          "type": "any",
-          "required": false
-        },
-        "port": {
-          "type": "any",
-          "required": false
-        },
-        "post_ai_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_url": {
-          "type": "any",
-          "required": false
-        },
-        "pre_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "pronunciations": {
-          "type": "any",
-          "required": false
-        },
-        "proxy_url_base": {
-          "type": "any",
-          "required": false
-        },
-        "record_call": {
-          "type": "any",
-          "required": false
-        },
-        "record_format": {
-          "type": "any",
-          "required": false
-        },
-        "record_stereo": {
-          "type": "any",
-          "required": false
-        },
         "route": {
           "type": "string",
           "required": false
         },
-        "routing_callbacks": {
-          "type": "any",
-          "required": false
-        },
-        "schema_utils": {
-          "type": "any",
-          "required": false
-        },
-        "schema_validator": {
-          "type": "any",
-          "required": false
-        },
-        "security": {
-          "type": "any",
-          "required": false
-        },
-        "server_running": {
-          "type": "any",
-          "required": false
-        },
-        "session_manager": {
-          "type": "any",
-          "required": false
-        },
-        "signing_key": {
-          "type": "any",
-          "required": false
-        },
-        "sip_auto_map": {
-          "type": "any",
-          "required": false
-        },
-        "sip_path": {
-          "type": "any",
-          "required": false
-        },
-        "sip_routing_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "sip_usernames": {
-          "type": "any",
-          "required": false
-        },
-        "skill_manager": {
-          "type": "any",
-          "required": false
-        },
         "suggest_related": {
           "type": "bool",
-          "required": false
-        },
-        "summary_callback": {
-          "type": "any",
-          "required": false
-        },
-        "swaig_query_params": {
-          "type": "any",
-          "required": false
-        },
-        "tool_order": {
-          "type": "any",
-          "required": false
-        },
-        "tools": {
-          "type": "any",
-          "required": false
-        },
-        "use_pom": {
-          "type": "any",
-          "required": false
-        },
-        "verb_handlers": {
-          "type": "any",
-          "required": false
-        },
-        "verb_registry": {
-          "type": "any",
-          "required": false
-        },
-        "webhook_url": {
-          "type": "any",
           "required": false
         }
       }
     },
     "signalwire.prefabs.info_gatherer.InfoGathererAgent": {
       "params": {
-        "answer_config": {
-          "type": "any",
-          "required": false
-        },
-        "auto_answer": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_password": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_user": {
-          "type": "any",
-          "required": false
-        },
-        "context_builder": {
-          "type": "any",
-          "required": false
-        },
-        "debug_event_handler": {
-          "type": "any",
-          "required": false
-        },
-        "debug_events_level": {
-          "type": "any",
-          "required": false
-        },
-        "debug_routes_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "document": {
-          "type": "any",
-          "required": false
-        },
-        "dynamic_config_callback": {
-          "type": "any",
-          "required": false
-        },
-        "full_validation": {
-          "type": "any",
-          "required": false
-        },
-        "function_includes": {
-          "type": "any",
-          "required": false
-        },
-        "global_data": {
-          "type": "any",
-          "required": false
-        },
-        "hints": {
-          "type": "any",
-          "required": false
-        },
-        "host": {
-          "type": "any",
-          "required": false
-        },
-        "internal_fillers": {
-          "type": "any",
-          "required": false
-        },
-        "languages": {
-          "type": "any",
-          "required": false
-        },
-        "logger": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_server_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_servers": {
-          "type": "any",
-          "required": false
-        },
-        "multilingual": {
-          "type": "any",
-          "required": false
-        },
         "name": {
           "type": "string",
-          "required": false
-        },
-        "native_functions": {
-          "type": "any",
-          "required": false
-        },
-        "params": {
-          "type": "any",
-          "required": false
-        },
-        "pattern_hints": {
-          "type": "any",
-          "required": false
-        },
-        "pom_sections": {
-          "type": "any",
-          "required": false
-        },
-        "port": {
-          "type": "any",
-          "required": false
-        },
-        "post_ai_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_url": {
-          "type": "any",
-          "required": false
-        },
-        "pre_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "pronunciations": {
-          "type": "any",
-          "required": false
-        },
-        "proxy_url_base": {
-          "type": "any",
           "required": false
         },
         "question_callback": {
@@ -37343,103 +36491,11 @@
           "type": "optional<list<dict<string,string>>>",
           "required": false
         },
-        "record_call": {
-          "type": "any",
-          "required": false
-        },
-        "record_format": {
-          "type": "any",
-          "required": false
-        },
-        "record_stereo": {
-          "type": "any",
-          "required": false
-        },
         "route": {
           "type": "string",
           "required": false
         },
-        "routing_callbacks": {
-          "type": "any",
-          "required": false
-        },
-        "schema_utils": {
-          "type": "any",
-          "required": false
-        },
-        "schema_validator": {
-          "type": "any",
-          "required": false
-        },
-        "security": {
-          "type": "any",
-          "required": false
-        },
-        "server_running": {
-          "type": "any",
-          "required": false
-        },
-        "session_manager": {
-          "type": "any",
-          "required": false
-        },
-        "signing_key": {
-          "type": "any",
-          "required": false
-        },
-        "sip_auto_map": {
-          "type": "any",
-          "required": false
-        },
-        "sip_path": {
-          "type": "any",
-          "required": false
-        },
-        "sip_routing_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "sip_usernames": {
-          "type": "any",
-          "required": false
-        },
-        "skill_manager": {
-          "type": "any",
-          "required": false
-        },
         "static_questions": {
-          "type": "any",
-          "required": false
-        },
-        "summary_callback": {
-          "type": "any",
-          "required": false
-        },
-        "swaig_query_params": {
-          "type": "any",
-          "required": false
-        },
-        "tool_order": {
-          "type": "any",
-          "required": false
-        },
-        "tools": {
-          "type": "any",
-          "required": false
-        },
-        "use_pom": {
-          "type": "any",
-          "required": false
-        },
-        "verb_handlers": {
-          "type": "any",
-          "required": false
-        },
-        "verb_registry": {
-          "type": "any",
-          "required": false
-        },
-        "webhook_url": {
           "type": "any",
           "required": false
         }
@@ -37447,282 +36503,30 @@
     },
     "signalwire.prefabs.receptionist.ReceptionistAgent": {
       "params": {
-        "answer_config": {
-          "type": "any",
-          "required": false
-        },
-        "auto_answer": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_password": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_user": {
-          "type": "any",
-          "required": false
-        },
-        "context_builder": {
-          "type": "any",
-          "required": false
-        },
-        "debug_event_handler": {
-          "type": "any",
-          "required": false
-        },
-        "debug_events_level": {
-          "type": "any",
-          "required": false
-        },
-        "debug_routes_enabled": {
-          "type": "any",
-          "required": false
-        },
         "departments": {
           "type": "list<dict<string,string>>",
-          "required": false
-        },
-        "document": {
-          "type": "any",
-          "required": false
-        },
-        "dynamic_config_callback": {
-          "type": "any",
-          "required": false
-        },
-        "full_validation": {
-          "type": "any",
-          "required": false
-        },
-        "function_includes": {
-          "type": "any",
-          "required": false
-        },
-        "global_data": {
-          "type": "any",
           "required": false
         },
         "greeting": {
           "type": "string",
           "required": false
         },
-        "hints": {
-          "type": "any",
-          "required": false
-        },
-        "host": {
-          "type": "any",
-          "required": false
-        },
-        "internal_fillers": {
-          "type": "any",
-          "required": false
-        },
-        "languages": {
-          "type": "any",
-          "required": false
-        },
-        "logger": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_server_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_servers": {
-          "type": "any",
-          "required": false
-        },
-        "multilingual": {
-          "type": "any",
-          "required": false
-        },
         "name": {
           "type": "string",
-          "required": false
-        },
-        "native_functions": {
-          "type": "any",
-          "required": false
-        },
-        "params": {
-          "type": "any",
-          "required": false
-        },
-        "pattern_hints": {
-          "type": "any",
-          "required": false
-        },
-        "pom_sections": {
-          "type": "any",
-          "required": false
-        },
-        "port": {
-          "type": "any",
-          "required": false
-        },
-        "post_ai_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_url": {
-          "type": "any",
-          "required": false
-        },
-        "pre_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "pronunciations": {
-          "type": "any",
-          "required": false
-        },
-        "proxy_url_base": {
-          "type": "any",
-          "required": false
-        },
-        "record_call": {
-          "type": "any",
-          "required": false
-        },
-        "record_format": {
-          "type": "any",
-          "required": false
-        },
-        "record_stereo": {
-          "type": "any",
           "required": false
         },
         "route": {
           "type": "string",
           "required": false
         },
-        "routing_callbacks": {
-          "type": "any",
-          "required": false
-        },
-        "schema_utils": {
-          "type": "any",
-          "required": false
-        },
-        "schema_validator": {
-          "type": "any",
-          "required": false
-        },
-        "security": {
-          "type": "any",
-          "required": false
-        },
-        "server_running": {
-          "type": "any",
-          "required": false
-        },
-        "session_manager": {
-          "type": "any",
-          "required": false
-        },
-        "signing_key": {
-          "type": "any",
-          "required": false
-        },
-        "sip_auto_map": {
-          "type": "any",
-          "required": false
-        },
-        "sip_path": {
-          "type": "any",
-          "required": false
-        },
-        "sip_routing_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "sip_usernames": {
-          "type": "any",
-          "required": false
-        },
-        "skill_manager": {
-          "type": "any",
-          "required": false
-        },
-        "summary_callback": {
-          "type": "any",
-          "required": false
-        },
-        "swaig_query_params": {
-          "type": "any",
-          "required": false
-        },
-        "tool_order": {
-          "type": "any",
-          "required": false
-        },
-        "tools": {
-          "type": "any",
-          "required": false
-        },
-        "use_pom": {
-          "type": "any",
-          "required": false
-        },
-        "verb_handlers": {
-          "type": "any",
-          "required": false
-        },
-        "verb_registry": {
-          "type": "any",
-          "required": false
-        },
         "voice": {
           "type": "string",
-          "required": false
-        },
-        "webhook_url": {
-          "type": "any",
           "required": false
         }
       }
     },
     "signalwire.prefabs.survey.SurveyAgent": {
       "params": {
-        "answer_config": {
-          "type": "any",
-          "required": false
-        },
-        "auto_answer": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_password": {
-          "type": "any",
-          "required": false
-        },
-        "basic_auth_user": {
-          "type": "any",
-          "required": false
-        },
         "brand_name": {
           "type": "optional<string>",
           "required": false
@@ -37731,212 +36535,20 @@
           "type": "optional<string>",
           "required": false
         },
-        "context_builder": {
-          "type": "any",
-          "required": false
-        },
-        "debug_event_handler": {
-          "type": "any",
-          "required": false
-        },
-        "debug_events_level": {
-          "type": "any",
-          "required": false
-        },
-        "debug_routes_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "document": {
-          "type": "any",
-          "required": false
-        },
-        "dynamic_config_callback": {
-          "type": "any",
-          "required": false
-        },
-        "full_validation": {
-          "type": "any",
-          "required": false
-        },
-        "function_includes": {
-          "type": "any",
-          "required": false
-        },
-        "global_data": {
-          "type": "any",
-          "required": false
-        },
-        "hints": {
-          "type": "any",
-          "required": false
-        },
-        "host": {
-          "type": "any",
-          "required": false
-        },
-        "internal_fillers": {
-          "type": "any",
-          "required": false
-        },
         "introduction": {
           "type": "optional<string>",
-          "required": false
-        },
-        "languages": {
-          "type": "any",
-          "required": false
-        },
-        "logger": {
-          "type": "any",
           "required": false
         },
         "max_retries": {
           "type": "int",
           "required": false
         },
-        "mcp_server_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "mcp_servers": {
-          "type": "any",
-          "required": false
-        },
-        "multilingual": {
-          "type": "any",
-          "required": false
-        },
         "name": {
           "type": "string",
           "required": false
         },
-        "native_functions": {
-          "type": "any",
-          "required": false
-        },
-        "params": {
-          "type": "any",
-          "required": false
-        },
-        "pattern_hints": {
-          "type": "any",
-          "required": false
-        },
-        "pom_sections": {
-          "type": "any",
-          "required": false
-        },
-        "port": {
-          "type": "any",
-          "required": false
-        },
-        "post_ai_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "post_prompt_url": {
-          "type": "any",
-          "required": false
-        },
-        "pre_answer_verbs": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_llm_params": {
-          "type": "any",
-          "required": false
-        },
-        "prompt_text": {
-          "type": "any",
-          "required": false
-        },
-        "pronunciations": {
-          "type": "any",
-          "required": false
-        },
-        "proxy_url_base": {
-          "type": "any",
-          "required": false
-        },
-        "record_call": {
-          "type": "any",
-          "required": false
-        },
-        "record_format": {
-          "type": "any",
-          "required": false
-        },
-        "record_stereo": {
-          "type": "any",
-          "required": false
-        },
         "route": {
           "type": "string",
-          "required": false
-        },
-        "routing_callbacks": {
-          "type": "any",
-          "required": false
-        },
-        "schema_utils": {
-          "type": "any",
-          "required": false
-        },
-        "schema_validator": {
-          "type": "any",
-          "required": false
-        },
-        "security": {
-          "type": "any",
-          "required": false
-        },
-        "server_running": {
-          "type": "any",
-          "required": false
-        },
-        "session_manager": {
-          "type": "any",
-          "required": false
-        },
-        "signing_key": {
-          "type": "any",
-          "required": false
-        },
-        "sip_auto_map": {
-          "type": "any",
-          "required": false
-        },
-        "sip_path": {
-          "type": "any",
-          "required": false
-        },
-        "sip_routing_enabled": {
-          "type": "any",
-          "required": false
-        },
-        "sip_usernames": {
-          "type": "any",
-          "required": false
-        },
-        "skill_manager": {
-          "type": "any",
-          "required": false
-        },
-        "summary_callback": {
-          "type": "any",
           "required": false
         },
         "survey_name": {
@@ -37946,78 +36558,14 @@
         "survey_questions": {
           "type": "any",
           "required": false
-        },
-        "swaig_query_params": {
-          "type": "any",
-          "required": false
-        },
-        "tool_order": {
-          "type": "any",
-          "required": false
-        },
-        "tools": {
-          "type": "any",
-          "required": false
-        },
-        "use_pom": {
-          "type": "any",
-          "required": false
-        },
-        "verb_handlers": {
-          "type": "any",
-          "required": false
-        },
-        "verb_registry": {
-          "type": "any",
-          "required": false
-        },
-        "webhook_url": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.AIAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
@@ -38119,135 +36667,27 @@
     },
     "signalwire.relay.call.CollectAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.DetectAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.FaxAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
         },
-        "events": {
-          "type": "any",
-          "required": false
-        },
         "fax_type": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
           "type": "any",
           "required": false
         }
@@ -38255,133 +36695,25 @@
     },
     "signalwire.relay.call.PayAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.PlayAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.RecordAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
@@ -38431,133 +36763,25 @@
     },
     "signalwire.relay.call.StreamAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.TapAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
     "signalwire.relay.call.TranscribeAction": {
       "params": {
-        "call_id": {
-          "type": "any",
-          "required": false
-        },
-        "client": {
-          "type": "any",
-          "required": false
-        },
-        "completed": {
-          "type": "any",
-          "required": false
-        },
         "control_id": {
           "type": "string",
           "required": true
-        },
-        "events": {
-          "type": "any",
-          "required": false
-        },
-        "node_id": {
-          "type": "any",
-          "required": false
-        },
-        "on_completed": {
-          "type": "any",
-          "required": false
-        },
-        "payload": {
-          "type": "any",
-          "required": false
-        },
-        "result": {
-          "type": "any",
-          "required": false
-        },
-        "state": {
-          "type": "any",
-          "required": false
         }
       }
     },
@@ -39747,20 +37971,8 @@
           "type": "any",
           "required": false
         },
-        "headers": {
-          "type": "any",
-          "required": false
-        },
         "method": {
           "type": "string",
-          "required": false
-        },
-        "request_id": {
-          "type": "any",
-          "required": false
-        },
-        "status_code": {
-          "type": "any",
           "required": false
         },
         "url": {
