@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 33f6c62906dbb24f4b981c22899d92ec3794e6d7",
+   "generated_from" : "signalwire-perl @ 78000d3daf07a2902222620f29b1b971cb351452",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -880,6 +880,10 @@
             "AIPromptText" : [
                "contexts"
             ],
+            "AiSidecar" : [],
+            "AiSidecarConfig" : [
+               "SWAIG"
+            ],
             "AllOfProperty" : [
                "allOf"
             ],
@@ -1095,6 +1099,7 @@
             "Request" : [],
             "RequestConfig" : [],
             "Return" : [],
+            "RingbackConfig" : [],
             "SIPRefer" : [],
             "SMSWithBody" : [],
             "SMSWithMedia" : [],
