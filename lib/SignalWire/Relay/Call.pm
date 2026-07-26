@@ -25,12 +25,23 @@ my $ArrayRef = sub {
     Carp::croak("must be an arrayref") unless ref $_[0] eq 'ARRAY';
 };
 
-has 'call_id'     => ( is       => 'ro',  required => 1, isa => $NonEmptyStr );
-has 'node_id'     => ( is       => 'rw',  default  => sub { '' } );
-has 'tag'         => ( is       => 'ro',  default  => sub { '' } );
-has 'state'       => ( is       => 'rw',  default  => sub { 'created' } );
-has 'device'      => ( is       => 'rw',  default  => sub { {} }, isa => $HashRef );
-has 'end_reason'  => ( init_arg => undef, is       => 'rw', default => sub { '' } );
+has 'call_id' => ( is => 'ro', required => 1, isa => $NonEmptyStr );
+has 'node_id' => ( is => 'rw', default  => sub { '' } );
+has 'tag'     => ( is => 'ro', default  => sub { '' } );
+has 'state'   => ( is => 'rw', default  => sub { 'created' } );
+has 'device'  => ( is => 'rw', default  => sub { {} }, isa => $HashRef );
+
+# project_id / direction / segment_id are caller-supplied construction params
+# the reference records on Call (relay/call.py:341-353) and populates from the
+# `calling.call.receive` / `calling.call.state` / dial-leg wire frames
+# (relay/client.py:1068-1071, :1152, :1206). Perl accepted none of them, so a
+# handler could not tell an inbound call from an outbound leg, could not read
+# the project the call belongs to, and could not correlate segments.
+has 'project_id' => ( is => 'rw', default => sub { '' } );
+has 'direction'  => ( is => 'rw', default => sub { '' } );
+has 'segment_id' => ( is => 'rw', default => sub { '' } );
+
+has 'end_reason'  => ( init_arg => undef, is      => 'rw', default => sub { '' } );
 has 'peer'        => ( init_arg => undef, is      => 'rw', default => sub { {} }, isa => $HashRef );
 has 'context'     => ( is       => 'rw',  default => sub { '' } );
 has 'dial_winner' => ( init_arg => undef, is      => 'rw', default => sub { 0 } );
@@ -667,6 +678,54 @@ exposes the full set of call-control verbs.
 Construction fails fast: C<call_id> is required and must be a non-empty
 string; C<device> / C<peer> must be hashrefs (Moo C<isa> constraints).
 These objects are created by L<SignalWire::Relay::Client>.
+
+=head2 Call identity attributes
+
+Each of these is settable at construction and readable back, matching the
+Python reference's C<Call.__init__>. L<SignalWire::Relay::Client> populates
+them from the C<calling.call.receive> / C<calling.call.state> / dial-leg
+frames, so an C<on_call> handler can read them directly.
+
+=over 4
+
+=item C<call_id>
+
+The RELAY call correlation id (required, non-empty).
+
+=item C<node_id>
+
+The RELAY node handling this call.
+
+=item C<project_id>
+
+The SignalWire project the call belongs to. Defaults to the client's own
+C<project> when the frame omits it.
+
+=item C<context>
+
+The RELAY context (protocol) the call arrived on.
+
+=item C<direction>
+
+C<"inbound"> for a received call, C<"outbound"> for a dialed leg.
+
+=item C<segment_id>
+
+The call-segment correlation id, empty when the frame omits it.
+
+=item C<tag>
+
+The dial tag correlating a leg to its originating C<calling.dial>.
+
+=item C<state>
+
+The call's lifecycle state; updated as C<calling.call.state> events arrive.
+
+=item C<device>
+
+The device hashref (type plus C<from_number> / C<to_number> params).
+
+=back
 
 =head2 Fire-and-response verbs
 

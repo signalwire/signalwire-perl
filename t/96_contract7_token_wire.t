@@ -67,6 +67,35 @@ subtest 'python-oracle-format token validates (interop)' => sub {
         'oracle-format token validates in the perl port' );
 };
 
+# (3b) The minted token is PADDED urlsafe base64, byte-for-byte what the
+#      reference emits (`base64.urlsafe_b64encode`, session_manager.py:86).
+#      This is the field the rest of this file never checked: MIME::Base64's
+#      encode_base64url STRIPS `=`, and the reference's validator calls
+#      `base64.urlsafe_b64decode` with NO padding tolerance, so it raises on an
+#      unpadded token and returns False. perl's own decoder tolerates padding,
+#      so the break was one-directional — perl accepted reference tokens while
+#      the reference rejected every perl token.
+subtest 'minted token is PADDED urlsafe base64 (reference decodes it)' => sub {
+    for my $case (
+        [ 'c',                 'f' ],            # short  -> needs padding
+        [ 'call_1',            'my_func' ],
+        [ 'oracle_call_long1', 'some_function' ],
+        )
+    {
+        my ( $cid, $fn ) = @$case;
+        my $token = $sm->generate_token( $fn, $cid );
+        is( length($token) % 4, 0,
+            "token for ($cid,$fn) is a multiple of 4 chars (padded to the base64 boundary)" );
+        unlike( $token, qr{[+/]}, 'urlsafe alphabet only (no + or /)' );
+
+        # The padding must be TRAILING `=` only, and re-decoding must round-trip.
+        like( $token, qr{^[A-Za-z0-9_-]+={0,2}$}, 'trailing = padding only' );
+        my $decoded = decode($token);
+        is( scalar( split /\./, $decoded ), 5, 'round-trips to the 5-field form' );
+        ok( $sm->validate_token( $cid, $fn, $token ), 'padded token still validates in-port' );
+    }
+};
+
 # (4) Flip one byte of the signature => validation fails.
 subtest 'tampered signature => invalid' => sub {
     my $call_id = 'c4';

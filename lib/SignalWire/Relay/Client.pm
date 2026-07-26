@@ -876,11 +876,15 @@ sub _handle_event ( $self, $outer_params ) {
 
             # Create the Call object so events route correctly
             my $call = SignalWire::Relay::Call->new(
-                call_id => $call_id,
-                node_id => $inner_params->{node_id} // '',
-                tag     => $tag,
-                device  => $inner_params->{device} // {},
-                _client => $self,
+                call_id    => $call_id,
+                node_id    => $inner_params->{node_id} // '',
+                tag        => $tag,
+                device     => $inner_params->{device}     // {},
+                project_id => $inner_params->{project_id} // $self->project,
+                context    => $self->protocol,
+                direction  => 'outbound',
+                state      => $inner_params->{call_state} // 'created',
+                _client    => $self,
             );
             $self->_calls->{$call_id} = $call;
         }
@@ -913,14 +917,21 @@ sub _handle_inbound_call ( $self, $event, $params ) {
         return;
     }
 
+    # project_id / direction / segment_id come straight off the receive frame
+    # (reference: relay/client.py:1060-1072). `context` prefers the negotiated
+    # protocol, falling back to the frame's context/protocol key, matching the
+    # reference's `self._relay_protocol or params.get("context", ...)`.
     my $call = SignalWire::Relay::Call->new(
-        call_id => $call_id,
-        node_id => $params->{node_id}    // '',
-        tag     => $params->{tag}        // '',
-        device  => $params->{device}     // {},
-        context => $params->{context}    // '',
-        state   => $params->{call_state} // 'ringing',
-        _client => $self,
+        call_id    => $call_id,
+        node_id    => $params->{node_id}    // '',
+        tag        => $params->{tag}        // '',
+        device     => $params->{device}     // {},
+        project_id => $params->{project_id} // $self->project,
+        context    => ( $self->protocol || $params->{context} || $params->{protocol} || '' ),
+        direction  => $params->{direction}  // 'inbound',
+        state      => $params->{call_state} // 'ringing',
+        segment_id => $params->{segment_id} // '',
+        _client    => $self,
     );
     $self->_calls->{$call_id} = $call;
 
@@ -955,14 +966,21 @@ sub _handle_dial_event ( $self, $event, $params ) {
         my $call_id = $call_info->{call_id} // '';
         my $call    = $self->_calls->{$call_id};
         unless ($call) {
+
+            # `dial_winner` is init_arg => undef (derived, not caller-supplied),
+            # so passing it here was silently discarded; it is set explicitly
+            # below. project_id/context/direction match the reference's
+            # dial-winner construction (relay/client.py:1198-1208).
             $call = SignalWire::Relay::Call->new(
-                call_id     => $call_id,
-                node_id     => $call_info->{node_id} // '',
-                tag         => $tag,
-                device      => $call_info->{device} // {},
-                dial_winner => 1,
-                state       => 'answered',
-                _client     => $self,
+                call_id    => $call_id,
+                node_id    => $call_info->{node_id} // '',
+                tag        => $tag,
+                device     => $call_info->{device} // {},
+                project_id => $self->project,
+                context    => $self->protocol,
+                direction  => 'outbound',
+                state      => 'answered',
+                _client    => $self,
             );
             $self->_calls->{$call_id} = $call;
         }

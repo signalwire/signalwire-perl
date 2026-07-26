@@ -89,7 +89,6 @@ signalwire.skills.registry.SkillRegistry.register_skill: Perl exposes a two-arg 
 ## Idiom: Perl Moo constructor shapes
 
 signalwire.relay.call.Call.__init__: Perl Moo Call doesn't model `project_id`, `direction`, or `segment_id` as `has` attrs (the Perl SDK derives them from the Relay event payload at dispatch time rather than tracking them on the Call object); Python keeps them as constructor kwargs
-signalwire.prefabs.survey.SurveyAgent.__init__: Perl SurveyAgent uses `survey_questions` (matching the SDK's other survey_* attrs) where Python uses `questions`; the constructor accepts both via Moo's open hash-arg interface but the canonical Perl attribute name differs
 
 
 ## Idiom: Perl event-class attribute coverage

@@ -2528,7 +2528,7 @@ my $agent = SignalWire::Prefabs::Survey->new(
     route            => '/survey',
     survey_name      => 'Customer Satisfaction',
     introduction     => "We'd like to know about your recent experience with our product.",
-    survey_questions => [
+    questions => [
         {
             id       => 'satisfaction',
             text     => 'On a scale of 1-5, how satisfied are you with our product?',

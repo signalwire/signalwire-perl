@@ -22,6 +22,25 @@ subtest 'construction' => sub {
     is($call->state, 'created', 'initial state');
 };
 
+# project_id / direction / segment_id are construction params the reference
+# records on Call (relay/call.py:341-353): settable AND readable back.
+subtest 'project_id / direction / segment_id round-trip through construction' => sub {
+    my $call = SignalWire::Relay::Call->new(
+        call_id    => 'c-rt',
+        project_id => 'proj-abc',
+        direction  => 'outbound',
+        segment_id => 'seg-7',
+    );
+    is($call->project_id, 'proj-abc', 'project_id readable back');
+    is($call->direction,  'outbound', 'direction readable back');
+    is($call->segment_id, 'seg-7',    'segment_id readable back');
+
+    my $bare = SignalWire::Relay::Call->new(call_id => 'c-bare');
+    is($bare->project_id, '', 'project_id defaults empty');
+    is($bare->direction,  '', 'direction defaults empty');
+    is($bare->segment_id, '', 'segment_id defaults empty');
+};
+
 # ============================================================
 # 2. State transitions via events
 # ============================================================

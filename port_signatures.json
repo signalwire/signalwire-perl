@@ -16824,6 +16824,11 @@
                   "required": false
                 },
                 {
+                  "name": "questions",
+                  "type": "list<dict<string,any>>",
+                  "required": false
+                },
+                {
                   "name": "introduction",
                   "type": "optional<string>",
                   "required": false
@@ -16972,11 +16977,6 @@
                   "name": "skill_manager",
                   "type": "any",
                   "required": false
-                },
-                {
-                  "name": "survey_questions",
-                  "type": "any",
-                  "required": false
                 }
               ],
               "returns": "void"
@@ -17055,7 +17055,7 @@
               ],
               "returns": "any"
             },
-            "survey_name": {
+            "questions": {
               "params": [
                 {
                   "name": "self",
@@ -17064,7 +17064,7 @@
               ],
               "returns": "any"
             },
-            "survey_questions": {
+            "survey_name": {
               "params": [
                 {
                   "name": "self",
@@ -17304,12 +17304,23 @@
                   "required": 0
                 },
                 {
+                  "name": "project_id",
+                  "type": "string",
+                  "required": 0
+                },
+                {
                   "name": "context",
                   "type": "string",
                   "required": 0
                 },
                 {
                   "name": "tag",
+                  "type": "string",
+                  "required": 0,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "direction",
                   "type": "string",
                   "required": 0,
                   "kind": "keyword"
@@ -17322,6 +17333,12 @@
                 },
                 {
                   "name": "state",
+                  "type": "string",
+                  "required": 0,
+                  "kind": "keyword"
+                },
+                {
+                  "name": "segment_id",
                   "type": "string",
                   "required": 0,
                   "kind": "keyword"
@@ -17908,6 +17925,15 @@
               "returns": "any"
             },
             "dial_winner": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "direction": {
               "params": [
                 {
                   "name": "self",
@@ -18584,6 +18610,15 @@
               ],
               "returns": "any"
             },
+            "project_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "prompt_audio": {
               "params": [
                 {
@@ -18785,6 +18820,15 @@
                   "type": "optional<string>",
                   "required": false,
                   "kind": "keyword"
+                }
+              ],
+              "returns": "any"
+            },
+            "segment_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
                 }
               ],
               "returns": "any"
@@ -33617,16 +33661,16 @@
           "type": "string",
           "required": false
         },
+        "questions": {
+          "type": "list<dict<string,any>>",
+          "required": false
+        },
         "route": {
           "type": "string",
           "required": false
         },
         "survey_name": {
           "type": "string",
-          "required": false
-        },
-        "survey_questions": {
-          "type": "any",
           "required": false
         }
       }
@@ -33673,7 +33717,19 @@
           "type": "optional<dict<string,any>>",
           "required": false
         },
+        "direction": {
+          "type": "string",
+          "required": false
+        },
         "node_id": {
+          "type": "string",
+          "required": false
+        },
+        "project_id": {
+          "type": "string",
+          "required": false
+        },
+        "segment_id": {
           "type": "string",
           "required": false
         },

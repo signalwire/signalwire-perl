@@ -6,10 +6,37 @@ use JSON qw(encode_json decode_json);
 
 use_ok('SignalWire::Prefabs::Survey');
 
+# The construction param is `questions`, matching the reference
+# (prefabs/survey.py:56 — a REQUIRED positional). It was previously spelled
+# `survey_questions`, so a reference-shaped `questions => [...]` was SILENTLY
+# DISCARDED by Moo: the agent built with zero questions, rendered an empty
+# "Survey Questions" section, and never errored. Assert the value REACHES both
+# the accessor and the rendered prompt, not just that construction succeeded.
+subtest 'questions reaches the accessor AND the rendered prompt' => sub {
+    my $a = SignalWire::Prefabs::Survey->new(
+        survey_name => 'CSAT',
+        questions   => [
+            { id => 'q1', text => 'How satisfied were you?', type => 'rating', scale => 5 },
+            { id => 'q2', text => 'Any comments?',           type => 'open_ended' },
+        ],
+    );
+    is(scalar @{ $a->questions }, 2, 'questions readable back off the accessor');
+    is($a->questions->[0]{id}, 'q1', 'first question preserved');
+
+    # RENDERED prompt text, not storage: a stored-but-unrendered value is the
+    # prefab defect this campaign found in five other ports.
+    my $rendered = $a->pom->render_markdown;
+    like($rendered, qr/How satisfied were you\?/, 'question 1 text rendered into the prompt');
+    like($rendered, qr/Any comments\?/,           'question 2 text rendered into the prompt');
+
+    # global_data carries the questions under the reference's `questions` key.
+    is(scalar @{ $a->global_data->{questions} }, 2, 'global_data.questions populated');
+};
+
 subtest 'construction defaults' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Test Survey',
-        survey_questions => [
+        questions => [
             { id => 'q1', text => 'Rate us', type => 'rating', scale => 5, required => 1 },
         ],
     );
@@ -21,7 +48,7 @@ subtest 'construction defaults' => sub {
 subtest 'tools registered' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'S',
-        survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
+        questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
     );
     ok(exists $a->tools->{submit_survey_answer}, 'submit_survey_answer');
 };
@@ -29,7 +56,7 @@ subtest 'tools registered' => sub {
 subtest 'prompt sections' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Test',
-        survey_questions => [{ id => 'q1', text => 'Q?', type => 'open_ended', required => 0 }],
+        questions => [{ id => 'q1', text => 'Q?', type => 'open_ended', required => 0 }],
     );
     ok($a->prompt_has_section('Survey Introduction'), 'intro section');
     ok($a->prompt_has_section('Survey Questions'), 'questions section');
@@ -38,7 +65,7 @@ subtest 'prompt sections' => sub {
 subtest 'global data' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Satisfaction',
-        survey_questions => [
+        questions => [
             { id => 'q1', text => 'Q1?', type => 'rating', scale => 5, required => 1 },
             { id => 'q2', text => 'Q2?', type => 'open_ended', required => 0 },
         ],
@@ -51,7 +78,7 @@ subtest 'global data' => sub {
 subtest 'tool execution' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'S',
-        survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
+        questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
     );
     my $result = $a->on_function_call('submit_survey_answer', { question_id => 'q1', answer => '5' }, {});
     ok(defined $result, 'returns result');
@@ -61,7 +88,7 @@ subtest 'tool execution' => sub {
 subtest 'render_swml' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'S',
-        survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
+        questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
     );
     my $swml = $a->render_swml;
     is($swml->{version}, '1.0.0', 'version');
@@ -70,7 +97,7 @@ subtest 'render_swml' => sub {
 subtest 'custom introduction' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'S',
-        survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
+        questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
         introduction     => 'Welcome to our custom survey!',
     );
     # The prompt section body should contain the custom intro

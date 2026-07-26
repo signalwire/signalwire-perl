@@ -9,12 +9,12 @@ use Moo;
 use JSON qw(encode_json);
 extends 'SignalWire::Agent::AgentBase';
 
-has survey_name      => ( is => 'ro', default => sub { 'Survey' } );
-has survey_questions => ( is => 'ro', default => sub { [] } );
-has introduction     => ( is => 'ro', default => sub { '' } );
-has conclusion       => ( is => 'ro', default => sub { '' } );
-has brand_name       => ( is => 'ro', default => sub { '' } );
-has max_retries      => ( is => 'ro', default => sub { 2 } );
+has survey_name  => ( is => 'ro', default => sub { 'Survey' } );
+has questions    => ( is => 'ro', default => sub { [] } );
+has introduction => ( is => 'ro', default => sub { '' } );
+has conclusion   => ( is => 'ro', default => sub { '' } );
+has brand_name   => ( is => 'ro', default => sub { '' } );
+has max_retries  => ( is => 'ro', default => sub { 2 } );
 
 sub BUILD {
     my ( $self, $args ) = @_;
@@ -23,7 +23,7 @@ sub BUILD {
     $self->route('/survey') if $self->route eq '/';
     $self->use_pom(1);
 
-    my $questions = $self->survey_questions;
+    my $questions = $self->questions;
 
     $self->set_global_data(
         {
@@ -127,7 +127,7 @@ sub validate_response {
     my $question_id = $args->{question_id} // '';
     my $response    = $args->{response}    // '';
 
-    my ($question) = grep { ( $_->{id} // '' ) eq $question_id } @{ $self->survey_questions };
+    my ($question) = grep { ( $_->{id} // '' ) eq $question_id } @{ $self->questions };
     unless ($question) {
         return SignalWire::SWAIG::FunctionResult->new(
             response => "Error: Question with ID '$question_id' not found." );
@@ -148,7 +148,7 @@ sub log_response {
     require SignalWire::SWAIG::FunctionResult;
 
     my $question_id   = $args->{question_id} // '';
-    my ($question)    = grep { ( $_->{id} // '' ) eq $question_id } @{ $self->survey_questions };
+    my ($question)    = grep { ( $_->{id} // '' ) eq $question_id } @{ $self->questions };
     my $question_text = $question ? ( $question->{text} // '' ) : '';
 
     return SignalWire::SWAIG::FunctionResult->new(
@@ -247,7 +247,7 @@ SignalWire::Prefabs::Survey - ready-made survey-administering AI agent
 
     my $agent = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Customer Satisfaction',
-        survey_questions => [
+        questions => [
             { id => 'q1', text => 'Rate our service 1-5', type => 'rating', scale => 5 },
             { id => 'q2', text => 'Would you recommend us?', type => 'yes_no' },
         ],
@@ -285,7 +285,7 @@ Constructor attributes (all C<ro>):
 
 The survey's display name (default C<'Survey'>).
 
-=item C<survey_questions>
+=item C<questions>
 
 Arrayref of question hashrefs (default C<[]>).
 
