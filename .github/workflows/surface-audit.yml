@@ -63,6 +63,13 @@ jobs:
         run: cpanm --notest --quiet --installdeps .
 
       - name: Enumerate Perl surface
+        # PORTING_SDK is load-bearing: this workflow checks porting-sdk out INSIDE
+        # the repo (path: porting-sdk), so the enumerator's sibling-layout search
+        # does not find it. Without the oracle every oracle-gated `has` accessor
+        # silently fails to emit (387 members) — the enumerator now fails loud on
+        # a miss, but set the var so it never has to.
+        env:
+          PORTING_SDK: ${{ github.workspace }}/porting-sdk
         run: perl scripts/enumerate_surface.pl --output port_surface.json
 
       - name: Sanity check — port_surface.json was written

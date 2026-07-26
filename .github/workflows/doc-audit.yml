@@ -72,6 +72,11 @@ jobs:
         run: cpanm --notest --quiet --installdeps .
 
       - name: Enumerate Perl surface (fresh snapshot)
+        # PORTING_SDK is load-bearing — see the note in surface-audit.yml: this
+        # workflow also checks porting-sdk out INSIDE the repo, so the sibling
+        # search misses and the oracle-gated accessors would not emit.
+        env:
+          PORTING_SDK: ${{ github.workspace }}/porting-sdk
         run: perl scripts/enumerate_surface.pl --output port_surface.json
 
       - name: Parse-check every example (perl -c)

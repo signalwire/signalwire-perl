@@ -50,15 +50,34 @@ PSDK_CANDIDATES = [
         if os.environ.get("PORTING_SDK") else None,
         # default adjacency layout: porting-sdk beside the port repo
         PORT_ROOT.parent / "porting-sdk" / "python_signatures.json",
+        # CI layout: porting-sdk checked out INSIDE the port repo. surface-audit.yml
+        # and doc-audit.yml do exactly this (`path: porting-sdk`) and set no
+        # PORTING_SDK, so neither candidate above resolves there.
+        PORT_ROOT / "porting-sdk" / "python_signatures.json",
     ) if p is not None
 ]
 
 
 def _load_python_reference() -> dict:
+    """Load the reference signature oracle, FAILING LOUD if it cannot be found.
+
+    This used to ``return {"modules": {}}`` on a miss. That is the trap that cost
+    dotnet and go a full CI investigation each: the type-projection pass below
+    reads this oracle, so an empty one silently degrades every projected param to
+    ``any`` and the enumerator still exits 0 with a valid-LOOKING snapshot. A gate
+    that cannot resolve its oracle must say so.
+    """
     for p in PSDK_CANDIDATES:
         if p.is_file():
             return json.loads(p.read_text(encoding="utf-8"))
-    return {"modules": {}}
+    tried = "\n".join(f"  - {p}" for p in PSDK_CANDIDATES)
+    raise SystemExit(
+        "enumerate_signatures: could not resolve the reference signature oracle "
+        f"(python_signatures.json). Tried:\n{tried}\n"
+        "Set $PORTING_SDK to the porting-sdk checkout. Emitting without the oracle "
+        "would silently fall every projected param type back to `any` and still "
+        "exit 0, which is how a phantom drift red gets shipped."
+    )
 
 
 PYTHON_REFERENCE = _load_python_reference()

@@ -78,6 +78,17 @@ my %REF_SURFACE_MEMBERS;    # "module.Class" => { member => 1, ... }
         File::Spec->catfile( File::Spec->catdir( $REPO_ROOT, '..', 'porting-sdk' ),
         'python_surface.json' );
 
+    # CI layout: porting-sdk checked out INSIDE the repo. surface-audit.yml and
+    # doc-audit.yml do exactly this (`path: porting-sdk`) and set no
+    # PORTING_SDK, so neither candidate above resolves there. Without this the
+    # oracle loads EMPTY and every oracle-gated `has` accessor silently fails to
+    # emit — measured at 387 lost members while the enumerator still exits 0
+    # with a valid-LOOKING snapshot. Same trap that produced dotnet's 311-symbol
+    # and go's 107-symbol phantom CI reds.
+    push @cands,
+        File::Spec->catfile( File::Spec->catdir( $REPO_ROOT, 'porting-sdk' ),
+        'python_surface.json' );
+
     # Worktree fallback: a `.git` FILE (not dir) means $REPO_ROOT is a linked
     # worktree; resolve the main checkout via its gitdir and try ITS sibling
     # porting-sdk, so an editing worktree resolves the oracle just like the real
@@ -122,6 +133,20 @@ my %REF_SURFACE_MEMBERS;    # "module.Class" => { member => 1, ... }
             }
         }
         last;
+    }
+
+    # FAIL LOUD on an unresolvable oracle. Degrading to an empty %REF_SURFACE_MEMBERS
+    # produced a valid-LOOKING snapshot missing every oracle-gated accessor
+    # (387 members) while still exiting 0 — the failure mode that cost dotnet and
+    # go a full CI investigation each. A gate that cannot resolve its oracle must
+    # SAY SO, not quietly emit less. Set PORTING_SDK to override the search.
+    if ( !%REF_SURFACE_MEMBERS ) {
+        die "enumerate_surface: could not resolve the reference surface oracle "
+            . "(python_surface.json). Tried:\n"
+            . join( '', map { "  - $_\n" } @cands )
+            . "Set \$PORTING_SDK to the porting-sdk checkout. Emitting without the "
+            . "oracle would silently DROP every oracle-gated `has` accessor and still "
+            . "exit 0, which is how a phantom surface red gets shipped.\n";
     }
 }
 
