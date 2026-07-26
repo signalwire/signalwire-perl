@@ -1024,10 +1024,19 @@ sub define_tool {
         function    => $name,
         description => $description,
         parameters  => $parameters,
+
+        # `secure` defaults to TRUE — a tool defined without an explicit
+        # `secure` REQUIRES SWAIG token validation. Python parity:
+        # tool_mixin.define_tool(..., secure: bool = True). This is
+        # security-critical: the SDK must never silently register a tool as
+        # unauthenticated because the caller omitted the flag. The wire
+        # manifestation is the per-tool `__token` AgentBase's render appends
+        # to a secure tool's `web_hook_url` when a call_id is active.
+        secure => ( exists $opts{secure} ? ( $opts{secure} ? 1 : 0 ) : 1 ),
         ( defined $handler ? ( _handler => $handler ) : () ),
     };
     for my $k ( keys %opts ) {
-        next if $k =~ /^(name|description|parameters|handler|required)$/;
+        next if $k =~ /^(name|description|parameters|handler|required|secure)$/;
         $tool_def->{$k} = $opts{$k};
     }
     $self->tools->{$name} = $tool_def;

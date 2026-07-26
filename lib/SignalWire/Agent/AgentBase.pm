@@ -140,6 +140,18 @@ has default_webhook_url => ( is => 'rw', default => sub { undef } );
 # structured logs" (agent_base.py:226). Consulted on the request-handling path.
 has suppress_logs => ( is => 'rw', default => sub { 0 } );
 
+# The active call's id for the DURATION of one SWML render. Python threads it as
+# the ``_render_swml(call_id)`` parameter (agent_base.py:867); Perl's public
+# render_swml($request_env) keeps its signature and carries the call_id here so a
+# SECURE tool's rendered webhook gets its per-tool ``__token``
+# (agent_base.py:1040). Set + cleared by _render_swml_for_call; never a
+# constructor arg (it is per-render state, not configuration).
+#
+# PRIVATE (leading underscore): the reference carries this as a PARAMETER, not an
+# attribute, so a public accessor here would be public surface the reference
+# lacks. Underscore-named, it is internal render state and adds no surface.
+has _render_call_id => ( init_arg => undef, is => 'rw', default => sub { undef } );
+
 # Python parity: AgentBase.__init__(enable_post_prompt_override=False) /
 # (check_for_input_override=False). The reference accepts and documents both;
 # neither is consulted elsewhere in the reference, so they are stored verbatim.
@@ -1476,6 +1488,34 @@ sub get_full_url {
 
 # ---------- render_swml (5-phase pipeline) ----------
 
+# _render_swml_for_call — render the SWML for an ACTIVE call, so every SECURE
+# tool's SWAIG webhook carries its per-call ``__token``.
+#
+# Python parity: ``_render_swml(call_id)`` (agent_base.py:867) — the call_id is
+# what makes the per-tool token mintable (it is bound to the call), so a render
+# WITHOUT one emits no tokens. Perl keeps the public ``render_swml($request_env)``
+# signature and carries the call_id in ``_render_call_id`` for the render's
+# duration; the serving paths (handle_request / the PSGI app / lambda mode) call
+# THIS, having parsed call_id off the request body.
+#
+# PRIVATE (leading underscore), matching the reference: python's call_id-aware
+# render is the private ``_render_swml``, and only the SDK's own serving paths
+# drive it. Keeping it private means it adds no public surface the reference
+# lacks — there is nothing here to excuse as a PORT_ADDITION.
+#
+# Always clears _render_call_id, so a die inside the render cannot leave a stale
+# call_id bound to the agent (which would mint tokens for the WRONG call on the
+# next render).
+sub _render_swml_for_call {
+    my ( $self, $request_env, $call_id ) = @_;
+    $self->_render_call_id($call_id);
+    my @r   = eval { $self->render_swml($request_env) };
+    my $err = $@;
+    $self->_render_call_id(undef);
+    die $err if $err;
+    return $r[0];
+}
+
 sub render_swml {
     my ( $self, $request_env ) = @_;
     $request_env //= {};
@@ -1604,12 +1644,34 @@ sub _build_ai_verb {
 
     # Build function list
     my @functions;
+    my $call_id = $self->_render_call_id;
     for my $fname ( @{ $self->tool_order } ) {
         my $tool = $self->tools->{$fname};
         next unless $tool;
         my %func = %$tool;
         delete $func{_handler};    # Don't include handler in SWML
+
+        # `secure` is an SDK-SIDE flag, never a SWAIG wire key. Python builds the
+        # rendered function entry from an explicit field list, so `secure` never
+        # reaches the wire (agent_base.py:1051-1054); a blanket copy of the tool
+        # definition would emit an invented `"secure"` key. Capture it, then drop
+        # it — its wire manifestation is the `__token` below, nothing else.
+        my $is_secure = delete $func{secure};
+
         $func{web_hook_url} //= $webhook_url;
+
+        # A SECURE tool rendered with an active call_id carries a per-tool
+        # `__token` on its webhook so the platform can validate the callback —
+        # the WIRE manifestation of `secure` (python agent_base.py:1040 /
+        # 1096-1100). An insecure tool gets NO token. Without a call_id no token
+        # can be minted (it is bound to the call), matching the reference.
+        if ( $is_secure && defined $call_id && length $call_id ) {
+            my $token = $self->create_tool_token( $fname, $call_id );
+            if ( defined $token && length $token ) {
+                my $sep = ( $func{web_hook_url} =~ /\?/ ) ? '&' : '?';
+                $func{web_hook_url} .= $sep . '__token=' . $token;
+            }
+        }
         push @functions, \%func;
     }
     $swaig->{functions} = \@functions if @functions;
@@ -1698,7 +1760,16 @@ sub handle_request {
     my $request_env = $self->_env_from_primitives( $url, $headers );
 
     # call_id from the parsed body (POST); routing callback: (body, headers).
+    # The call_id is what makes a SECURE tool's per-tool ``__token`` mintable on
+    # the render (python agent_base.py:1770-1774 parses it off the body and passes
+    # it to _render_swml). It was parsed nowhere before, so every served document
+    # rendered its secure tools WITHOUT a token.
+    my $call_id;
     if ( $method eq 'POST' && ref $body eq 'HASH' && %$body ) {
+        $call_id = $body->{call_id};
+        if ( ( !defined $call_id || !length $call_id ) && ref $body->{call} eq 'HASH' ) {
+            $call_id = $body->{call}{call_id};
+        }
         if ( defined $callback_path
             && $self->routing_callbacks->{$callback_path} )
         {
@@ -1741,7 +1812,7 @@ sub handle_request {
         $modifications = undef;
     }
 
-    my $swml = $agent->render_swml($request_env);
+    my $swml = $agent->_render_swml_for_call( $request_env, $call_id );
     if ( $modifications && ref $modifications eq 'HASH' ) {
         $swml = { %$swml, %$modifications };
     }
@@ -2020,15 +2091,28 @@ sub _handle_swml {
 
     my $agent = $self;
 
+    # Parse the POST body up-front: the call_id it carries is what makes a SECURE
+    # tool's per-tool ``__token`` mintable on the render (python
+    # agent_base.py:1795-1812 — body call_id, falling back to the ?call_id= query
+    # param). Parsed for EVERY request, not just the dynamic-config one, since the
+    # token is needed regardless.
+    my $body_params = {};
+    if ( $req->method eq 'POST' && $req->content_length ) {
+        eval { $body_params = decode_json( $req->content ) };
+        $body_params = {} unless ref $body_params eq 'HASH';
+    }
+    my $call_id = $body_params->{call_id};
+    if ( ( !defined $call_id || !length $call_id ) && ref $body_params->{call} eq 'HASH' ) {
+        $call_id = $body_params->{call}{call_id};
+    }
+    $call_id = $req->query_parameters->get('call_id')
+        unless defined $call_id && length $call_id;
+
     # If dynamic config callback is set, clone and apply
     if ( $self->dynamic_config_callback ) {
         $agent = $self->_clone_for_request;
         my $query_params = $req->query_parameters->as_hashref_mixed;
-        my $body_params  = {};
-        if ( $req->method eq 'POST' && $req->content_length ) {
-            eval { $body_params = decode_json( $req->content ) };
-        }
-        my $headers = {};
+        my $headers      = {};
         for my $k ( keys %$env ) {
             if ( $k =~ /^HTTP_(.+)/ ) {
                 $headers->{ lc($1) } = $env->{$k};
@@ -2037,7 +2121,7 @@ sub _handle_swml {
         $self->dynamic_config_callback->( $query_params, $body_params, $headers, $agent );
     }
 
-    my $swml = $agent->render_swml($env);
+    my $swml = $agent->_render_swml_for_call( $env, $call_id );
     my $json = encode_json($swml);
 
     return [ 200, [ 'Content-Type' => 'application/json' ], [$json] ];
@@ -2376,8 +2460,10 @@ sub _run_serverless_lambda {
         return $self->_lambda_swaig_response( $path, $args, $call_id, $raw_data );
     }
 
-    # Root path (or /swaig without a function) -> SWML.
-    return $self->_lambda_swml_response;
+    # Root path (or /swaig without a function) -> SWML. The body's call_id (parsed
+    # above) is threaded so a SECURE tool's rendered webhook carries its per-tool
+    # ``__token`` (python threads call_id into every _render_swml call).
+    return $self->_lambda_swml_response($call_id);
 }
 
 # _check_lambda_auth — Basic-auth gate for lambda mode (Python parity:
@@ -2411,9 +2497,11 @@ sub _lambda_swaig_response {
 }
 
 # _lambda_swml_response — render the SWML document as the 200 root response.
+# $call_id (when the event body carried one) makes each SECURE tool's per-tool
+# ``__token`` mintable on the render.
 sub _lambda_swml_response {
-    my ($self) = @_;
-    my $doc = $self->render_swml;
+    my ( $self, $call_id ) = @_;
+    my $doc = $self->_render_swml_for_call( undef, $call_id );
     return {
         statusCode => 200,
         headers    => { 'Content-Type' => 'application/json' },

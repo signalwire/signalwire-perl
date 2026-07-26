@@ -216,13 +216,22 @@ sched_gate GEN defer=1 desc="generated-code freshness suite (GEN-FRESH/-TESTS/-R
 
 # BEHAVIORAL (one Layer-D pass per rule): the per-PR rules. WAIT-LIVENESS (nightly)
 # is the separate line below. NOTE perl's hyphen spelling BEHAVIORAL-WIRE-RELAY.
-sched_gate BEHAVIORAL defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERROR-ENVELOPE/PAGINATION-WIRED/PAGINATION-CORPUS/DOC-WIRE/REST-COVERAGE/SPEC-PARITY/SKILL-CONTRACT/SWAIG-COVERAGE/SWAIG-CLI)" \
+# SECURE-DEFAULT (A1/PSDK-4a) is per-PR: a fast in-process SWML render, no live
+# mock. It proves define_tool defaults secure AND that the default tool's rendered
+# webhook carries its per-tool __token while a secure=>0 tool's does not — i.e.
+# that perl cannot silently ship a tool as UNAUTHENTICATED. Driven by
+# bin/secure-default-dump.pl.
+sched_gate BEHAVIORAL defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERROR-ENVELOPE/PAGINATION-WIRED/PAGINATION-CORPUS/SECURE-DEFAULT/DOC-WIRE/REST-COVERAGE/SPEC-PARITY/SKILL-CONTRACT/SWAIG-COVERAGE/SWAIG-CLI)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port perl --repo "$PORT_ROOT" \
-        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI
+        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,SECURE-DEFAULT,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI
 
-sched_gate BEHAVIORAL-NIGHTLY tier=nightly defer=1 desc="behavioral suite, nightly rules (WAIT-LIVENESS/RELAY-LIVENESS)" \
+# SECRET-SCRUB-LIVE (PSDK-5) is nightly: it drives the RELAY client through a
+# connect + a re-auth frame AT DEBUG LEVEL with fixture sentinels and asserts none
+# reach the captured log — i.e. that credentials never leak into logs. Driven by
+# bin/secret-scrub-dump.pl.
+sched_gate BEHAVIORAL-NIGHTLY tier=nightly defer=1 desc="behavioral suite, nightly rules (WAIT-LIVENESS/RELAY-LIVENESS/SECRET-SCRUB-LIVE)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port perl --repo "$PORT_ROOT" \
-        --rules WAIT-LIVENESS,RELAY-LIVENESS
+        --rules WAIT-LIVENESS,RELAY-LIVENESS,SECRET-SCRUB-LIVE
 
 # DOC-TRUTH (one markdown+POD walk): DOC-AUDIT/DOC-LINKS/DOC-LANG-PURITY/DOC-ENV/
 # COUNT-CLAIM/ACCESSOR-TRUTH/STATUS-CLAIM/README-INCLUDE. POD-aware (perl's docs are
