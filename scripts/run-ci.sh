@@ -199,7 +199,7 @@ sched_gate SURFACE res=surface desc="surface parity suite (SIGNATURES/DRIFT/SURF
 # declared optional<dict<string,string>> and go still shipped a bare string, with no gate
 # red. RATCHET, not a hard gate: dynamic languages cannot always express a type, so this
 # banks the current count and fails only on REGRESSION. Drive the number DOWN; never up.
-sched_gate TYPE-EROSION desc="port did not erase a reference-declared param type (ratchet 13)" \
+sched_gate TYPE-EROSION res=surface desc="port did not erase a reference-declared param type (ratchet 13)" \
     -- python3 "$PORTING_SDK_DIR/scripts/diff_port_type_erosion.py" --port perl --repo "$PORT_ROOT" --max 13
 
 # PREDICATE-SELFTEST (Wave-2 C1-V8, GATE-SELFTEST doctrine): the field-surface predicate
