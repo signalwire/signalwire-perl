@@ -93,6 +93,23 @@ serves HTTPS directly.
 
 - `SIGNALWIRE_SIGNING_KEY` - Key used to validate signed SWAIG tool-token requests
 
+### RELAY connection timings (read by `SignalWire::Relay::Client`)
+
+Advanced/testing knobs for the RELAY WebSocket client. Each defaults to the
+production value; **leave them unset in production.** They exist so a half-open,
+black-hole, or reconnect scenario can be driven inside a bounded test window —
+the analog of the Python reference's monkeypatchable `_EXECUTE_TIMEOUT` /
+`RECONNECT_MIN_DELAY` module constants.
+
+- `SIGNALWIRE_RELAY_REQUEST_TIMEOUT_MS` - Timeout in milliseconds for a single
+  RELAY request/response round-trip before it raises a `RelayError`
+  (default 30000 = 30s). This is what bounds detection of a half-open peer.
+- `SIGNALWIRE_RELAY_RECONNECT_MIN_DELAY_S` - Minimum backoff delay in seconds
+  before the first reconnect attempt after a disconnect (default 1). Each
+  subsequent attempt doubles it.
+- `SIGNALWIRE_RELAY_RECONNECT_MAX_DELAY_S` - Maximum delay in seconds that the
+  exponential reconnect backoff caps at (default 30).
+
 ### Schema validation
 
 - `SWML_SKIP_SCHEMA_VALIDATION` - When truthy (`1`, `true`, or `yes`), skips the

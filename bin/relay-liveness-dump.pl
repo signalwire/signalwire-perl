@@ -48,6 +48,18 @@ use Test::More ();    # RelayMockTest uses plan(skip_all) on a missing mock
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 't', 'lib' );
 
+# Fast liveness timings so each fixture lands inside the gate's bounded window
+# (diff_port_relay_liveness.BOUNDED_WINDOW_S = 5s, and the whole-dump budget is
+# 5s * (fixtures + 2) + 20s). At the production 30s request timeout the
+# dead-peer / black-hole fixtures alone consume ~60s and the dump blows that
+# budget, which the gate correctly reports as an unbounded connection path.
+# The client reads these lazily on first use, so setting them here (before any
+# client is constructed) takes effect; production defaults apply when unset.
+# Mirrors ts's scripts/relay-liveness-dump.ts preamble.
+$ENV{SIGNALWIRE_RELAY_REQUEST_TIMEOUT_MS}     = '400';
+$ENV{SIGNALWIRE_RELAY_RECONNECT_MIN_DELAY_S}  = '0.02';
+$ENV{SIGNALWIRE_RELAY_RECONNECT_MAX_DELAY_S}  = '0.05';
+
 use Protocol::WebSocket::Handshake::Server ();
 use Protocol::WebSocket::Frame ();
 
@@ -134,7 +146,27 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
     sub stop ($self) {
         if ( $self->{pid} ) {
             kill 'TERM', $self->{pid};
-            waitpid( $self->{pid}, 0 );
+
+            # Reap NON-BLOCKINGLY, and tolerate the child already being gone.
+            # A blocking waitpid() here HANGS FOREVER whenever anything earlier
+            # in the process has set $SIG{CHLD} = 'IGNORE' — which RelayMockTest
+            # does process-globally when it spawns the shared mock (t/lib/
+            # RelayMockTest.pm), and the relay_contract_* fixtures run before
+            # this one. Under CHLD=IGNORE the kernel auto-reaps the child the
+            # instant it exits, so there is nothing left for waitpid to collect
+            # and it blocks indefinitely instead of returning -1. That wedged the
+            # whole dump past the gate's budget and surfaced as "relay-liveness
+            # dump HUNG — an unbounded connection path", pointing at the SDK's
+            # connection path when the real fault was this teardown.
+            my $deadline = Time::HiRes::time() + 5;
+            while ( Time::HiRes::time() < $deadline ) {
+                my $reaped = waitpid( $self->{pid}, POSIX::WNOHANG() );
+                last if $reaped != 0;    # reaped, or already auto-reaped (-1)
+                last if !kill( 0, $self->{pid} );    # gone
+                Time::HiRes::sleep(0.02);
+            }
+            kill 'KILL', $self->{pid};               # belt-and-braces; no-op if gone
+            waitpid( $self->{pid}, POSIX::WNOHANG() );
             $self->{pid} = undef;
         }
         unlink $self->{countfile} if $self->{countfile};
@@ -406,8 +438,27 @@ sub drive_reconnect {
                 Time::HiRes::sleep(0.1);
             }
             $reconnected = 1;
-            kill 'TERM', $rpid if $rpid;
-            waitpid( $rpid, 0 ) if $rpid;
+            if ($rpid) {
+                kill 'TERM', $rpid;
+
+                # Non-blocking reap, for the same reason as
+                # ControllableWsServer::stop: $SIG{CHLD} is 'IGNORE' by the time
+                # this fixture runs (RelayMockTest sets it process-globally when
+                # the earlier relay_contract_* fixtures spawn the shared mock),
+                # so the kernel auto-reaps and a blocking waitpid() never
+                # returns. It burned the outer 20s deadline, and the
+                # `$reconnected = 0 if $timed_out` line below then THREW AWAY a
+                # reconnect that had already succeeded — the fixture reported
+                # reconnected=false while the SDK was working correctly.
+                my $deadline_r = Time::HiRes::time() + 2;
+                while ( Time::HiRes::time() < $deadline_r ) {
+                    last if waitpid( $rpid, POSIX::WNOHANG() ) != 0;
+                    last if !kill( 0, $rpid );
+                    Time::HiRes::sleep(0.02);
+                }
+                kill 'KILL', $rpid;
+                waitpid( $rpid, POSIX::WNOHANG() );
+            }
         }
     );
     $reconnected = 0 if $timed_out;

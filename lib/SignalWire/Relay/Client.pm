@@ -161,8 +161,35 @@ has '_socket' => ( init_arg => undef, is => 'rw', default => sub { undef } );
 has '_ws'     => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # Reconnect state
-has '_reconnect_attempts' => ( init_arg => undef, is => 'rw', default => sub { 0 } );
-has '_max_backoff'        => ( init_arg => undef, is => 'ro', default => sub { 30 } );
+has '_reconnect_attempts' => ( init_arg => undef, is => 'rw',   default => sub { 0 } );
+has '_max_backoff'        => ( init_arg => undef, is => 'lazy', builder => '_build_max_backoff' );
+
+# Liveness timings. Default to the production constants; overridable via env so a
+# half-open / black-hole / reconnect scenario can be exercised inside a BOUNDED
+# test window (the RELAY-LIVENESS behavioral gate allows 5s per fixture) — the
+# analog of the python reference's monkeypatchable `_EXECUTE_TIMEOUT` /
+# `RECONNECT_MIN_DELAY` module constants, go's `WithExecuteTimeout` /
+# `WithReconnectBackoff` options, and ts's identically-named env vars. Without
+# this seam the dump runs every fixture at the full 30s request timeout and
+# blows the gate's whole-dump budget, which reads as an unbounded connection
+# path. Production behavior is unchanged when the vars are unset.
+has '_request_timeout' => ( init_arg => undef, is => 'lazy', builder => '_build_request_timeout' );
+
+sub _env_num ( $name, $default ) {
+    my $raw = $ENV{$name};
+    return $default unless defined $raw && $raw =~ /^\s*[0-9]*\.?[0-9]+\s*$/;
+    return 0 + $raw;
+}
+
+sub _build_request_timeout ($self) {
+
+    # ms in the env var (ts spelling + units), seconds internally.
+    return _env_num( 'SIGNALWIRE_RELAY_REQUEST_TIMEOUT_MS', 30_000 ) / 1000;
+}
+
+sub _build_max_backoff ($self) {
+    return _env_num( 'SIGNALWIRE_RELAY_RECONNECT_MAX_DELAY_S', 30 );
+}
 
 # Set true by disconnect_ws() so run()'s auto-reconnect loop distinguishes an
 # INTENTIONAL teardown (do NOT reconnect, exit cleanly) from an unexpected drop
@@ -469,9 +496,11 @@ sub execute ( $self, $method, $params = undef ) {
     # the connection drops — _read_once rejects all pending requests on EOF, so
     # $done flips via the reject callback and we exit at once instead of
     # spinning on a dead socket until the timeout elapses.
-    my $timeout = 30;
-    my $start   = time();
-    while ( !$done && $self->connected && ( time() - $start ) < $timeout ) {
+    # Time::HiRes so a sub-second override (the liveness gate's bounded window)
+    # is honoured; whole-second time() would floor a 0.4s timeout to 0.
+    my $timeout = $self->_request_timeout;
+    my $start   = Time::HiRes::time();
+    while ( !$done && $self->connected && ( Time::HiRes::time() - $start ) < $timeout ) {
         $self->_read_once();
     }
 
@@ -1029,9 +1058,12 @@ sub reconnect ($self) {
         $p->{reject}->("Disconnected") if $p;
     }
 
-    # Exponential backoff: 1s, 2s, 4s, ... up to max_backoff
-    my $attempts = $self->_reconnect_attempts;
-    my $delay    = 2**$attempts;
+    # Exponential backoff: min_delay, 2x, 4x, ... up to max_backoff. The base is
+    # 1s in production and env-overridable so the liveness gate can drive a real
+    # reconnect inside its bounded window (see _build_request_timeout).
+    my $attempts  = $self->_reconnect_attempts;
+    my $min_delay = _env_num( 'SIGNALWIRE_RELAY_RECONNECT_MIN_DELAY_S', 1 );
+    my $delay     = $min_delay * ( 2**$attempts );
     $delay = $self->_max_backoff if $delay > $self->_max_backoff;
 
     $logger->info( "Reconnecting in ${delay}s (attempt " . ( $attempts + 1 ) . ")" );

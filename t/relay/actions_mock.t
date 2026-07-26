@@ -697,4 +697,54 @@ subtest 'concurrent play and record route independently' => sub {
     $client->disconnect;
 };
 
+# ---------------------------------------------------------------------------
+# Action outlives its Call handle
+#
+# `Action.call` is a weak_ref (Call._actions holds every Action strongly, so a
+# strong back-reference would leak the cycle under Perl's refcounting; the
+# python reference relies on its cycle collector instead). Identity + transport
+# must therefore be SNAPSHOTTED at construction, not derived lazily through the
+# weak handle -- otherwise the moment the caller stops holding the Call, the
+# handle goes undef, `_client` resolves to undef, and every control-op silently
+# returns on its `return unless $client` guard, emitting NOTHING on the wire.
+#
+# The regression: an ordinary chained `$call->play(...)->stop` sent no frame at
+# all, and so did pause / resume / volume.
+# ---------------------------------------------------------------------------
+
+subtest 'control-ops still emit when the Call handle has gone out of scope' => sub {
+    my $client = _connected_client();
+
+    # Deliberately do NOT keep the Call: take only the Action, exactly as a
+    # chained `$call->play(...)->stop` would. The Call is unreferenced the
+    # instant this statement completes.
+    my $action = do {
+        my $call = _answered_inbound_call( $client, 'call-orphan-action' );
+        $call->play( play => [ { type => 'silence', params => { duration => 60 } } ] );
+    };
+    isa_ok( $action, 'SignalWire::Relay::Action::Play' );
+
+    # NOTE: no assertion that `call` is already undef here — this client tracks
+    # the inbound call in its own `_calls` map, so the Call legitimately outlives
+    # the lexical. What must hold either way is that the transport and identity
+    # do not depend on that handle; the unit test below drives the collected case
+    # directly.
+    ok( defined $action->_client, 'transport does not depend on the Call lexical' );
+    is( $action->call_id, 'call-orphan-action', 'call_id was snapshotted at construction' );
+
+    $action->stop;
+    ok( scalar @{ RelayMockTest::journal_recv( method => 'calling.play.stop' ) },
+        'stop still journaled calling.play.stop' );
+
+    $action->pause('silence');
+    ok( scalar @{ RelayMockTest::journal_recv( method => 'calling.play.pause' ) },
+        'pause still journaled calling.play.pause' );
+
+    $action->volume(3.5);
+    ok( scalar @{ RelayMockTest::journal_recv( method => 'calling.play.volume' ) },
+        'volume still journaled calling.play.volume' );
+
+    $client->disconnect;
+};
+
 done_testing();

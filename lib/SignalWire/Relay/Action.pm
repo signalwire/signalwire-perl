@@ -40,24 +40,29 @@ has 'call' => ( is => 'ro', default => sub { undef }, weak_ref => 1 );
 # Identity + transport, DERIVED from ``call`` (never constructor arguments):
 # the reference reads these through ``self.call``, so there is nothing for a
 # caller to supply and no way for them to drift from the owning call.
-has 'call_id' => ( init_arg => undef, is => 'lazy', builder => '_build_call_id' );
-has 'node_id' => ( init_arg => undef, is => 'lazy', builder => '_build_node_id' );
-has '_client' => ( init_arg => undef, is => 'lazy', builder => '_build_client' );
+#
+# These are SNAPSHOTTED EAGERLY in BUILD, not derived lazily on first use. The
+# reference keeps a STRONG back-reference (``self.call = call``,
+# relay/call.py:82) and relies on Python's cycle collector to reclaim the
+# Call <-> Action cycle. Perl refcounts, so ``call`` must stay ``weak_ref`` or
+# the cycle leaks (``Call._actions`` holds every Action strongly). But a weak
+# handle plus LAZY derivation loses the identity outright the moment the Call
+# goes out of scope, and every control-op then silently no-ops on its
+# ``return unless $client`` guard — so the perfectly ordinary
+# ``$call->play(...)->stop`` emitted NO frame, and neither did pause / resume /
+# volume. Reading the fields while the handle is guaranteed alive keeps the
+# cycle broken AND makes an Action outlive its Call exactly as the reference's
+# does.
+has 'call_id' => ( init_arg => undef, is => 'rw', default => sub { '' } );
+has 'node_id' => ( init_arg => undef, is => 'rw', default => sub { '' } );
+has '_client' => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
-sub _build_call_id ($self) {
-    my $call = $self->call or return '';
-    return $call->call_id // '';
-}
-
-sub _build_node_id ($self) {
-    my $call = $self->call or return '';
-    return $call->node_id // '';
-}
-
-sub _build_client ($self) {
-    my $call = $self->call;
-    return unless $call;
-    return $call->_client;
+sub BUILD ( $self, $args ) {
+    my $call = $self->call or return;
+    $self->call_id( $call->call_id // '' );
+    $self->node_id( $call->node_id // '' );
+    $self->_client( $call->_client );
+    return;
 }
 
 # Live state, written by the event pipeline (_check_event/_resolve), exactly

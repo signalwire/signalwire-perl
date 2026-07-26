@@ -236,8 +236,18 @@ sub walk {
         project => $SENTINEL,
         token   => 't',
         host    => 'example.signalwire.com',
-        _http   => $http,
     );
+
+    # Inject the recorder AFTER construction, not as a ctor arg. `_http` is
+    # declared `init_arg => undef` on RestClient (internal state, not designed
+    # construction surface — owner ruling 2026-07-25), so a `_http => $http`
+    # ctor arg is SILENTLY DISCARDED and the walk would build the real
+    # HttpClient and hit the live network (every route then records a 401/404
+    # instead of a path, and Set B comes back with 0 routes / 260 errors).
+    # Seeding the lazy slot directly is the same seam the reference and ruby
+    # use — python monkeypatches `client_mod.HttpClient`, ruby sets `@http`
+    # post-hoc — and it keeps the narrow construction surface intact.
+    $client->{_http} = $http;
 
     my @skipped;
     my @errors;
@@ -330,6 +340,19 @@ unless ( caller() ) {
     my $result = build();
     my $json   = JSON::PP->new->canonical->pretty;
     print $json->encode($result);
+
+    # An EMPTY registry is always a tooling failure, never a real answer: the SDK
+    # has hundreds of routes, so zero means the walk never reached them (e.g. the
+    # recording HttpClient failed to attach and every call went to the real
+    # network, or a namespace accessor stopped resolving). Fail loud on it —
+    # otherwise a walk that collects nothing AND records no per-method error
+    # exits 0 and hands the consumers (ROUTE-COLLISION, SPEC-PARITY,
+    # GEN-FRESH-TESTS) a silently empty Set B.
+    if ( !@{ $result->{routes} } ) {
+        print {*STDERR} "route_registry.pl: registry is EMPTY (0 routes) — "
+            . "the client walk captured nothing; this is a tooling failure, not a clean run\n";
+        exit 1;
+    }
     exit( @{ $result->{errors} } ? 1 : 0 );
 }
 
