@@ -110,8 +110,15 @@ jobs:
             --surface port_surface.json \
             --ignore DOC_AUDIT_IGNORE.md
 
+      # Go through the canonical entry point (CLAUDE.md: nothing invokes `prove`
+      # directly). It resolves the harness through the chosen interpreter and
+      # builds PERL5LIB with the platform separator, so this step cannot pick up
+      # a `prove` from a different Perl install the way the Windows TEST step did
+      # (nightly Multi-OS run 30238072907). This job is ubuntu-only today, so the
+      # old `PERL5LIB="lib:t/lib"` was not itself broken — but it hardcoded the
+      # POSIX ':' and bypassed the bootstrap, which is the latent form of the bug.
       - name: Run Perl test suite (doc audit smoke tests)
-        run: PERL5LIB="lib:t/lib" prove -r t/54_doc_audit.t
+        run: bash scripts/run-tests.sh t/54_doc_audit.t
 
       - name: Upload surface snapshot on failure
         if: failure()

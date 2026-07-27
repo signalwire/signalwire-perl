@@ -15,10 +15,28 @@ The Perl SDK uses Moo for object orientation, Plack/PSGI for HTTP serving, and J
 Three scripts under `scripts/` are the SINGLE, canonical entry point for testing,
 linting, and formatting. Do NOT call `prove` / `perlcritic` / `perltidy`
 directly. Each script **self-bootstraps its tool environment** (via
-`scripts/_env.sh`: prepends the `~/perl5` local::lib to `PERL5LIB` so perltidy can
-locate `Perl::Tidy` and the test suite finds Plack/Protocol::WebSocket; prepends
-`~/perl5/bin` to `PATH`; pins `PERLTIDY`) and therefore **runs from ANY directory
-with ANY shell setup** -- no `PERL5LIB=...` prefix needed.
+`scripts/_env.sh`: resolves `$SW_PERL` -- the one interpreter every gate uses --
+prepends the `~/perl5` local::lib to `PERL5LIB` **using the platform path
+separator** so perltidy can locate `Perl::Tidy` and the test suite finds
+Plack/Protocol::WebSocket; prepends `~/perl5/bin` to `PATH`; pins `PERLTIDY`) and
+therefore **runs from ANY directory with ANY shell setup, on POSIX AND Windows**
+-- no `PERL5LIB=...` prefix needed.
+
+Two Windows-specific traps `_env.sh` and `run-tests.sh` now handle (both were
+live defects in nightly Multi-OS run 30238072907; see the notes in `_env.sh`):
+
+* **`PERL5LIB` is `;`-separated on Win32, `:` on POSIX.** Its entries carry drive
+  letters, so `:` is a path *character* there. `_env.sh` joins with
+  `$Config{path_sep}` (exported as `$SW_PATH_SEP`); anything that SPLITS the value
+  must do the same. `scripts/_perltidy_gen.py` uses `os.pathsep` for this reason.
+* **A bare `prove` may belong to a DIFFERENT Perl install than `$SW_PERL`.** On a
+  Windows runner PATH can offer Strawberry's or MSYS's `prove`, which then resolves
+  `App::Prove` out of yet another `@INC`. `run-tests.sh` therefore runs the harness
+  module *through* `$SW_PERL` (`_sw_perl_tool App::Prove ...`), making the
+  interpreter and its `@INC` the same install by construction.
+
+`t/111_env_platform_paths.t` is the regression guard for both (it simulates the
+Windows shapes, since neither defect is observable on POSIX).
 
 ```bash
 # Run all tests (prove -Ilib -It/lib -r t/)
