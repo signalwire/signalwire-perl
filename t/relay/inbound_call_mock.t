@@ -303,6 +303,36 @@ subtest 'handler exception does not crash client' => sub {
 };
 
 # ---------------------------------------------------------------------------
+# project_id / direction / segment_id are READ OFF the receive frame
+# ---------------------------------------------------------------------------
+# The reference populates all three from the `calling.call.receive` params
+# (relay/client.py:1060-1072): project_id defaults to the client's project,
+# direction to "inbound", segment_id to "". Perl's Call had none of the three
+# attributes at all, so a handler could not tell an inbound call from an
+# outbound dial leg nor read the project the call belongs to — the frame
+# already carried `direction`, and the port simply dropped it.
+subtest 'inbound call exposes project_id / direction / segment_id' => sub {
+    my $client = _connected_client();
+    my %seen;
+    $client->on_call(sub {
+        my ($call) = @_;
+        $seen{project_id} = $call->project_id;
+        $seen{direction}  = $call->direction;
+        $seen{segment_id} = $call->segment_id;
+        $seen{context}    = $call->context;
+    });
+    RelayMockTest::inbound_call(call_id => 'c-b2-fields', auto_states => ['created']);
+    _pump_until($client, 5, sub { defined $seen{direction} });
+
+    is($seen{direction}, 'inbound', 'direction read off the receive frame');
+    is($seen{project_id}, $client->project,
+        'project_id defaults to the client project when the frame omits it');
+    is($seen{segment_id}, '', 'segment_id defaults to empty when the frame omits it');
+    ok(defined $seen{context}, 'context resolved (negotiated protocol or frame context)');
+    $client->disconnect;
+};
+
+# ---------------------------------------------------------------------------
 # Wire shape — calling.call.receive in journal_send
 # ---------------------------------------------------------------------------
 
@@ -331,8 +361,6 @@ subtest 'inbound without handler does not crash' => sub {
         project  => 'test_proj',
         token    => 'test_tok',
         host     => "127.0.0.1:$RelayMockTest::WS_PORT",
-        scheme   => 'ws',
-        path     => '',
         contexts => ['default'],
     );
     $client->connect;

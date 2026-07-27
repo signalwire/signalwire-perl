@@ -71,7 +71,7 @@ subtest 'InfoGatherer tool execution' => sub {
 subtest 'Survey construction' => sub {
     my $agent = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Satisfaction Survey',
-        survey_questions => [
+        questions => [
             { id => 'q1', text => 'Rate our service', type => 'rating', scale => 5, required => 1 },
             { id => 'q2', text => 'Any comments?',    type => 'open_ended', required => 0 },
         ],
@@ -90,7 +90,7 @@ subtest 'Survey construction' => sub {
 subtest 'Survey render_swml' => sub {
     my $agent = SignalWire::Prefabs::Survey->new(
         survey_name      => 'Test Survey',
-        survey_questions => [
+        questions => [
             { id => 'q1', text => 'Question?', type => 'rating', scale => 5, required => 1 },
         ],
     );
@@ -221,7 +221,7 @@ subtest 'all prefabs have psgi_app' => sub {
         ),
         SignalWire::Prefabs::Survey->new(
             survey_name      => 'Test',
-            survey_questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
+            questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
         ),
         SignalWire::Prefabs::Receptionist->new(
             departments => [{ name => 'sales', description => 'Sales', number => '+1555' }],

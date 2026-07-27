@@ -13,8 +13,8 @@ has questions => ( is => 'ro', default => sub { [] } );
 
 # Registered per-request question callback (dynamic mode) and the
 # original static question list captured at construction.
-has question_callback => ( is => 'rw', default => sub { undef } );
-has static_questions  => ( is => 'rw', default => sub { undef } );
+has question_callback => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has static_questions  => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # Fallback questions used in dynamic mode when no callback is registered
 # or the callback raises (mirrors Python's / ruby's fallback list).

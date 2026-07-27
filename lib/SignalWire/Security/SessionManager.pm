@@ -18,8 +18,9 @@ has 'secret_key' => (
 );
 
 has '_debug_mode' => (
-    is      => 'rw',
-    default => sub { 0 },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { 0 },
 );
 
 sub _random_hex {
@@ -63,7 +64,20 @@ sub generate_token {
     my $signature = hmac_sha256_hex( $message, $self->secret_key );
 
     my $token = "$call_id.$function_name.$expiry.$nonce.$signature";
-    return MIME::Base64::encode_base64url( $token, '' );
+
+    # PADDED urlsafe base64, matching the reference's
+    # `base64.urlsafe_b64encode(...)` (session_manager.py:86). MIME::Base64's
+    # encode_base64url STRIPS the `=` padding, and the reference's validator
+    # calls `base64.urlsafe_b64decode` with no padding tolerance — so it RAISES
+    # on an unpadded token and returns False. A perl-minted `__token` on a SWAIG
+    # webhook URL was therefore rejected by the reference (and by any port that
+    # decodes strictly), while perl's own decoder tolerates padding, making the
+    # break one-directional and easy to miss. Re-pad to the 4-char boundary.
+    my $b64 = MIME::Base64::encode_base64url( $token, '' );
+    if ( my $rem = length($b64) % 4 ) {
+        $b64 .= '=' x ( 4 - $rem );
+    }
+    return $b64;
 }
 
 # Alias

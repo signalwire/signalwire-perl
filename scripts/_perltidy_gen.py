@@ -38,6 +38,37 @@ def perltidy_bin() -> str:
     )
 
 
+def perltidy_env() -> dict:
+    """Environment for the perltidy subprocess, with the local::lib on @INC.
+
+    FINDING perltidy is not enough to RUN it. ``~/perl5/bin/perltidy`` is a thin
+    wrapper whose shebang is ``#!/usr/bin/perl`` -- SYSTEM perl, whose default
+    ``@INC`` does NOT include ``~/perl5/lib/perl5`` where ``Perl::Tidy.pm`` was
+    installed. So the wrapper can never load its own module unless PERL5LIB says
+    where it is, and every generator died with "Can't locate Perl/Tidy.pm in @INC"
+    even though ``perltidy`` resolved and ``cpanm`` reported it "up to date".
+
+    scripts/_env.sh already exports exactly this PERL5LIB, and CLAUDE.md documents
+    _env.sh as what "makes the code generators' perltidy backstop work from any
+    CWD" -- but a generator invoked directly (``python3 scripts/generate_rest.py``,
+    which is how the GEN-FRESH gate and every agent runs it) never sources a bash
+    script, so the guarantee did not hold. Applying it here makes it true for EVERY
+    caller regardless of shell setup, which is what the doc already promises.
+
+    Respects an existing PERL5LIB (prepends, never clobbers) and honours
+    PERL_LOCAL_LIB_ROOT the same way _env.sh does.
+    """
+    env = dict(os.environ)
+    ll_root = Path(env.get("PERL_LOCAL_LIB_ROOT") or (Path.home() / "perl5"))
+    ll_lib = ll_root / "lib" / "perl5"
+    if ll_lib.is_dir():
+        existing = env.get("PERL5LIB", "")
+        parts = [p for p in existing.split(os.pathsep) if p]
+        if str(ll_lib) not in parts:
+            env["PERL5LIB"] = os.pathsep.join([str(ll_lib), *parts])
+    return env
+
+
 def perltidy_outputs(outs: dict, repo_root: Path) -> None:
     """Tidy every ``.pm`` value in ``outs`` in place using the repo .perltidyrc.
 
@@ -50,6 +81,7 @@ def perltidy_outputs(outs: dict, repo_root: Path) -> None:
     (each ``.pm`` is tidied in isolation; order is irrelevant).
     """
     tidy = perltidy_bin()
+    env = perltidy_env()
     profile = repo_root / ".perltidyrc"
     targets = [fn for fn in outs if fn.endswith(".pm")]
 
@@ -59,6 +91,7 @@ def perltidy_outputs(outs: dict, repo_root: Path) -> None:
             input=outs[fn],
             capture_output=True,
             text=True,
+            env=env,
         )
         if proc.returncode != 0 or not proc.stdout:
             raise SystemExit(f"perltidy failed on generated {fn}:\n{proc.stderr}")

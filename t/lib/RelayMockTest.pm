@@ -91,14 +91,14 @@ sub client {
         die "RelayMockTest: $_SKIP_REASON";
     }
 
+    # scheme/path are DERIVED from the host (the reference has no such
+    # constructor knobs): the mock's 127.0.0.1:PORT is loopback, so the client
+    # resolves ws:// with an empty path on its own.
     my $client = SignalWire::Relay::Client->new(
         project  => $opts{project}  // $PROJECT,
         token    => $opts{token}    // $TOKEN,
         host     => $opts{host}     // $RELAY_HOST,
-        scheme   => $opts{scheme}   // 'ws',
-        path     => exists $opts{path} ? $opts{path} : '',
         contexts => $opts{contexts} // [],
-        (exists $opts{agent} ? (agent => $opts{agent}) : ()),
     );
     $_ACTIVE_CLIENT = $client;
     return $client;

@@ -39,65 +39,130 @@ has record_format => ( is => 'rw', default => sub { 'mp4' } );
 has record_stereo => ( is => 'rw', default => sub { 1 } );
 
 # Prompt system
-has prompt_text  => ( is => 'rw', default => sub { '' } );
-has post_prompt  => ( is => 'rw', default => sub { '' } );
-has use_pom      => ( is => 'rw', default => sub { 1 } );
-has pom_sections => ( is => 'rw', default => sub { [] } );
+has prompt_text  => ( init_arg => undef, is      => 'rw', default => sub { '' } );
+has post_prompt  => ( init_arg => undef, is      => 'rw', default => sub { '' } );
+has use_pom      => ( is       => 'rw',  default => sub { 1 } );
+has pom_sections => ( init_arg => undef, is      => 'rw', default => sub { [] } );
 
 # Tool registry — `tools` and `tool_order` are now declared on Service
 # (lifted so non-agent SWML services can host SWAIG functions). Inherited.
 
 # AI config
-has hints            => ( is => 'rw', default => sub { [] } );
-has pattern_hints    => ( is => 'rw', default => sub { [] } );
-has languages        => ( is => 'rw', default => sub { [] } );
-has multilingual     => ( is => 'rw', default => sub { undef } );
-has pronunciations   => ( is => 'rw', default => sub { [] } );
-has params           => ( is => 'rw', default => sub { {} } );
-has global_data      => ( is => 'rw', default => sub { {} } );
-has native_functions => ( is => 'rw', default => sub { [] } );
+has hints            => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has pattern_hints    => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has languages        => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has multilingual     => ( init_arg => undef, is      => 'rw', default => sub { undef } );
+has pronunciations   => ( init_arg => undef, is      => 'rw', default => sub { [] } );
+has params           => ( init_arg => undef, is      => 'rw', default => sub { {} } );
+has global_data      => ( init_arg => undef, is      => 'rw', default => sub { {} } );
+has native_functions => ( is       => 'rw',  default => sub { [] } );
 
 # Internal settings
-has internal_fillers   => ( is => 'rw', default => sub { undef } );
-has debug_events_level => ( is => 'rw', default => sub { 0 } );
+has internal_fillers   => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has debug_events_level => ( init_arg => undef, is => 'rw', default => sub { 0 } );
 
 # Includes and LLM params
-has function_includes      => ( is => 'rw', default => sub { [] } );
-has prompt_llm_params      => ( is => 'rw', default => sub { {} } );
-has post_prompt_llm_params => ( is => 'rw', default => sub { {} } );
+has function_includes      => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has prompt_llm_params      => ( init_arg => undef, is => 'rw', default => sub { {} } );
+has post_prompt_llm_params => ( init_arg => undef, is => 'rw', default => sub { {} } );
 
 # Verb insertion points
-has pre_answer_verbs  => ( is => 'rw', default => sub { [] } );
-has post_answer_verbs => ( is => 'rw', default => sub { [] } );
-has post_ai_verbs     => ( is => 'rw', default => sub { [] } );
-has answer_config     => ( is => 'rw', default => sub { {} } );
+has pre_answer_verbs  => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has post_answer_verbs => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has post_ai_verbs     => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has answer_config     => ( init_arg => undef, is => 'rw', default => sub { {} } );
 
 # SIP routing (Python parity: AgentBase SIP username mapping).
-has sip_routing_enabled => ( is => 'rw', default => sub { 0 } );
-has sip_auto_map        => ( is => 'rw', default => sub { 1 } );
-has sip_path            => ( is => 'rw', default => sub { '/sip' } );
-has sip_usernames       => ( is => 'rw', default => sub { [] } );
+has sip_routing_enabled => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has sip_auto_map        => ( init_arg => undef, is => 'rw', default => sub { 1 } );
+has sip_path            => ( init_arg => undef, is => 'rw', default => sub { '/sip' } );
+has sip_usernames       => ( init_arg => undef, is => 'rw', default => sub { [] } );
 
 # Context system (lazy)
 has context_builder => (
-    is      => 'rw',
-    lazy    => 1,
-    builder => '_build_context_builder',
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    builder  => '_build_context_builder',
 );
 
 # Callbacks
-has dynamic_config_callback => ( is => 'rw', default => sub { undef } );
-has summary_callback        => ( is => 'rw', default => sub { undef } );
-has debug_event_handler     => ( is => 'rw', default => sub { undef } );
+has dynamic_config_callback => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has summary_callback        => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has debug_event_handler     => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # URLs
-has webhook_url        => ( is => 'rw', default => sub { undef } );
-has post_prompt_url    => ( is => 'rw', default => sub { undef } );
-has proxy_url_base     => ( is => 'rw', lazy    => 1, builder => '_build_proxy_url_base' );
-has swaig_query_params => ( is => 'rw', default => sub { {} } );
+has webhook_url     => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has post_prompt_url => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has proxy_url_base =>
+    ( init_arg => undef, is => 'rw', lazy => 1, builder => '_build_proxy_url_base' );
+has swaig_query_params => ( init_arg => undef, is => 'rw', default => sub { {} } );
 
-# Session manager (built in BUILD)
-has session_manager => ( is => 'rw' );
+# Python parity: AgentBase.__init__(token_expiry_secs=3600). The reference does
+# NOT store this on self — it FORWARDS it to the SessionManager collaborator
+# (agent_base.py:247: SessionManager(token_expiry_secs=token_expiry_secs)).
+has token_expiry_secs => ( is => 'rw', default => sub { 3600 } );
+
+# Session manager — built lazily so it picks up token_expiry_secs.
+has session_manager => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    builder  => '_build_session_manager',
+);
+
+sub _build_session_manager {
+    my ($self) = @_;
+    require SignalWire::Security::SessionManager;
+    return SignalWire::Security::SessionManager->new(
+        token_expiry_secs => $self->token_expiry_secs );
+}
+
+# Python parity: AgentBase.__init__(agent_id=None) — "Optional unique ID for
+# this agent, generated if not provided" (agent_base.py:229:
+# self.agent_id = agent_id or str(uuid.uuid4())).
+has agent_id => (
+    is      => 'rw',
+    lazy    => 1,
+    builder => '_build_agent_id',
+);
+
+sub _build_agent_id {
+    return _generate_uuid4();
+}
+
+# Python parity: AgentBase.__init__(default_webhook_url=None) — "Optional
+# default webhook URL for all SWAIG functions". Stored on the agent
+# (agent_base.py:225: self._default_webhook_url = default_webhook_url).
+has default_webhook_url => ( is => 'rw', default => sub { undef } );
+
+# Python parity: AgentBase.__init__(suppress_logs=False) — "Whether to suppress
+# structured logs" (agent_base.py:226). Consulted on the request-handling path.
+has suppress_logs => ( is => 'rw', default => sub { 0 } );
+
+# The active call's id for the DURATION of one SWML render. Python threads it as
+# the ``_render_swml(call_id)`` parameter (agent_base.py:867); Perl's public
+# render_swml($request_env) keeps its signature and carries the call_id here so a
+# SECURE tool's rendered webhook gets its per-tool ``__token``
+# (agent_base.py:1040). Set + cleared by _render_swml_for_call; never a
+# constructor arg (it is per-render state, not configuration).
+#
+# PRIVATE (leading underscore): the reference carries this as a PARAMETER, not an
+# attribute, so a public accessor here would be public surface the reference
+# lacks. Underscore-named, it is internal render state and adds no surface.
+has _render_call_id => ( init_arg => undef, is => 'rw', default => sub { undef } );
+
+# Python parity: AgentBase.__init__(enable_post_prompt_override=False) /
+# (check_for_input_override=False). The reference accepts and documents both;
+# neither is consulted elsewhere in the reference, so they are stored verbatim.
+has enable_post_prompt_override => ( is => 'rw', default => sub { 0 } );
+has check_for_input_override    => ( is => 'rw', default => sub { 0 } );
+
+# Python parity: AgentBase.__init__(trust_proxy_for_signature=False) — "If True,
+# honor X-Forwarded-Proto / X-Forwarded-Host when reconstructing the URL during
+# signature validation. Default False — proxy headers are spoofable, so opt in
+# only when you control the proxy chain." FORWARDED to WebhookMiddleware.
+has trust_proxy_for_signature => ( is => 'rw', default => sub { 0 } );
 
 # Webhook signature validation. When set (or SIGNALWIRE_SIGNING_KEY env
 # is non-empty), the PSGI app auto-mounts SignalWire::Security::WebhookMiddleware
@@ -119,8 +184,8 @@ sub _build_signing_key {
 has skill_manager => ( is => 'rw', lazy => 1, builder => '_build_skill_manager' );
 
 # MCP integration
-has mcp_servers        => ( is => 'rw', default => sub { [] } );
-has mcp_server_enabled => ( is => 'rw', default => sub { 0 } );
+has mcp_servers        => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has mcp_server_enabled => ( init_arg => undef, is => 'rw', default => sub { 0 } );
 
 # ---------- builders ----------
 
@@ -175,11 +240,78 @@ sub BUILD {
     $r =~ s{/+$}{} if $r ne '/';
     $self->route($r);
 
-    # Initialize session manager
-    require SignalWire::Security::SessionManager;
-    $self->session_manager(
-        SignalWire::Security::SessionManager->new( token_expiry_secs => 3600 ) );
     return;
+}
+
+# Python parity: AgentBase.__init__ loads the config file's ``service`` section
+# BEFORE initializing the base service, and applies route/host/port/name from it
+# with CONSTRUCTOR PARAMETERS TAKING PRECEDENCE (agent_base.py:189-196):
+#
+#   final_route = route if route != "/" else service_config.get("route", route)
+#   final_host  = host  if host  != "0.0.0.0" else service_config.get("host", host)
+#   final_port  = port if port is not None else service_config.get("port", None)
+#   final_name  = service_config.get("name", name)
+#
+# Perl's construction is Moo's generated ``new``, so the equivalent hook is
+# BUILDARGS: fold the config values into the argument hash before the
+# attributes are built. Service::BUILDARGS (which unfolds the ``basic_auth``
+# pair) runs as part of the same chain via SUPER.
+sub BUILDARGS {
+    my ( $class, @args ) = @_;
+    my $args = $class->SUPER::BUILDARGS(@args);
+
+    my $service_config = _load_service_config( $args->{config_file}, $args->{name} );
+    return $args unless %$service_config;
+
+    # Constructor parameters take precedence over the config file; the config
+    # file supplies the value only where the caller did not (matching the
+    # reference's default-sentinel comparisons).
+    $args->{route} = $service_config->{route}
+        if !defined $args->{route} && defined $service_config->{route};
+    $args->{host} = $service_config->{host}
+        if !defined $args->{host} && defined $service_config->{host};
+    $args->{port} = $service_config->{port}
+        if !defined $args->{port} && defined $service_config->{port};
+    $args->{name} = $service_config->{name} if defined $service_config->{name};
+
+    return $args;
+}
+
+# Python parity: AgentBase._load_service_config(config_file, service_name) —
+# a @staticmethod that finds the config file (falling back to
+# ConfigLoader.find_config_file when none was passed), loads it, and returns
+# its ``service`` section, or {} (agent_base.py:358-382).
+sub _load_service_config {
+    my ( $config_file, $service_name ) = @_;
+
+    require SignalWire::Core::ConfigLoader;
+
+    $config_file //= SignalWire::Core::ConfigLoader->find_config_file($service_name);
+    return {} unless $config_file;
+
+    my $loader = SignalWire::Core::ConfigLoader->new( [$config_file] );
+    return {} unless $loader->has_config;
+
+    my $section = $loader->get_section('service');
+    return ref $section eq 'HASH' ? $section : {};
+}
+
+# RFC 4122 version-4 UUID (Python parity: str(uuid.uuid4())). Uses the same
+# CSPRNG source as the credential generator.
+sub _generate_uuid4 {
+    my @octets = map { int( rand 256 ) } 1 .. 16;
+    if ( open my $fh, '<:raw', '/dev/urandom' ) {
+        my $bytes = '';
+        if ( read( $fh, $bytes, 16 ) == 16 ) {
+            @octets = unpack 'C16', $bytes;
+        }
+        close $fh;
+    }
+    $octets[6] = ( $octets[6] & 0x0f ) | 0x40;    # version 4
+    $octets[8] = ( $octets[8] & 0x3f ) | 0x80;    # variant 10xx
+    my $hex = join '', map { sprintf '%02x', $_ } @octets;
+    return join '-', substr( $hex, 0, 8 ), substr( $hex, 8, 4 ), substr( $hex, 12, 4 ),
+        substr( $hex, 16, 4 ), substr( $hex, 20, 12 );
 }
 
 # ---------- Prompt methods ----------
@@ -1356,6 +1488,34 @@ sub get_full_url {
 
 # ---------- render_swml (5-phase pipeline) ----------
 
+# _render_swml_for_call — render the SWML for an ACTIVE call, so every SECURE
+# tool's SWAIG webhook carries its per-call ``__token``.
+#
+# Python parity: ``_render_swml(call_id)`` (agent_base.py:867) — the call_id is
+# what makes the per-tool token mintable (it is bound to the call), so a render
+# WITHOUT one emits no tokens. Perl keeps the public ``render_swml($request_env)``
+# signature and carries the call_id in ``_render_call_id`` for the render's
+# duration; the serving paths (handle_request / the PSGI app / lambda mode) call
+# THIS, having parsed call_id off the request body.
+#
+# PRIVATE (leading underscore), matching the reference: python's call_id-aware
+# render is the private ``_render_swml``, and only the SDK's own serving paths
+# drive it. Keeping it private means it adds no public surface the reference
+# lacks — there is nothing here to excuse as a PORT_ADDITION.
+#
+# Always clears _render_call_id, so a die inside the render cannot leave a stale
+# call_id bound to the agent (which would mint tokens for the WRONG call on the
+# next render).
+sub _render_swml_for_call {
+    my ( $self, $request_env, $call_id ) = @_;
+    $self->_render_call_id($call_id);
+    my @r   = eval { $self->render_swml($request_env) };
+    my $err = $@;
+    $self->_render_call_id(undef);
+    die $err if $err;
+    return $r[0];
+}
+
 sub render_swml {
     my ( $self, $request_env ) = @_;
     $request_env //= {};
@@ -1484,12 +1644,34 @@ sub _build_ai_verb {
 
     # Build function list
     my @functions;
+    my $call_id = $self->_render_call_id;
     for my $fname ( @{ $self->tool_order } ) {
         my $tool = $self->tools->{$fname};
         next unless $tool;
         my %func = %$tool;
         delete $func{_handler};    # Don't include handler in SWML
+
+        # `secure` is an SDK-SIDE flag, never a SWAIG wire key. Python builds the
+        # rendered function entry from an explicit field list, so `secure` never
+        # reaches the wire (agent_base.py:1051-1054); a blanket copy of the tool
+        # definition would emit an invented `"secure"` key. Capture it, then drop
+        # it — its wire manifestation is the `__token` below, nothing else.
+        my $is_secure = delete $func{secure};
+
         $func{web_hook_url} //= $webhook_url;
+
+        # A SECURE tool rendered with an active call_id carries a per-tool
+        # `__token` on its webhook so the platform can validate the callback —
+        # the WIRE manifestation of `secure` (python agent_base.py:1040 /
+        # 1096-1100). An insecure tool gets NO token. Without a call_id no token
+        # can be minted (it is bound to the call), matching the reference.
+        if ( $is_secure && defined $call_id && length $call_id ) {
+            my $token = $self->create_tool_token( $fname, $call_id );
+            if ( defined $token && length $token ) {
+                my $sep = ( $func{web_hook_url} =~ /\?/ ) ? '&' : '?';
+                $func{web_hook_url} .= $sep . '__token=' . $token;
+            }
+        }
         push @functions, \%func;
     }
     $swaig->{functions} = \@functions if @functions;
@@ -1578,7 +1760,16 @@ sub handle_request {
     my $request_env = $self->_env_from_primitives( $url, $headers );
 
     # call_id from the parsed body (POST); routing callback: (body, headers).
+    # The call_id is what makes a SECURE tool's per-tool ``__token`` mintable on
+    # the render (python agent_base.py:1770-1774 parses it off the body and passes
+    # it to _render_swml). It was parsed nowhere before, so every served document
+    # rendered its secure tools WITHOUT a token.
+    my $call_id;
     if ( $method eq 'POST' && ref $body eq 'HASH' && %$body ) {
+        $call_id = $body->{call_id};
+        if ( ( !defined $call_id || !length $call_id ) && ref $body->{call} eq 'HASH' ) {
+            $call_id = $body->{call}{call_id};
+        }
         if ( defined $callback_path
             && $self->routing_callbacks->{$callback_path} )
         {
@@ -1621,7 +1812,7 @@ sub handle_request {
         $modifications = undef;
     }
 
-    my $swml = $agent->render_swml($request_env);
+    my $swml = $agent->_render_swml_for_call( $request_env, $call_id );
     if ( $modifications && ref $modifications eq 'HASH' ) {
         $swml = { %$swml, %$modifications };
     }
@@ -1841,7 +2032,11 @@ sub _build_psgi_app {
             signing_key => $signing_key,
             paths       => \@gated_paths,
             methods     => ['POST'],
-            trust_proxy => 1,
+
+            # Python parity: web_mixin.py:450 passes
+            # trust_proxy=getattr(self, "_trust_proxy_for_signature", False).
+            # Proxy headers are spoofable, so this is OPT-IN, not always-on.
+            trust_proxy => $self->trust_proxy_for_signature ? 1 : 0,
         );
         return $signed_app;
     } else {
@@ -1896,15 +2091,28 @@ sub _handle_swml {
 
     my $agent = $self;
 
+    # Parse the POST body up-front: the call_id it carries is what makes a SECURE
+    # tool's per-tool ``__token`` mintable on the render (python
+    # agent_base.py:1795-1812 — body call_id, falling back to the ?call_id= query
+    # param). Parsed for EVERY request, not just the dynamic-config one, since the
+    # token is needed regardless.
+    my $body_params = {};
+    if ( $req->method eq 'POST' && $req->content_length ) {
+        eval { $body_params = decode_json( $req->content ) };
+        $body_params = {} unless ref $body_params eq 'HASH';
+    }
+    my $call_id = $body_params->{call_id};
+    if ( ( !defined $call_id || !length $call_id ) && ref $body_params->{call} eq 'HASH' ) {
+        $call_id = $body_params->{call}{call_id};
+    }
+    $call_id = $req->query_parameters->get('call_id')
+        unless defined $call_id && length $call_id;
+
     # If dynamic config callback is set, clone and apply
     if ( $self->dynamic_config_callback ) {
         $agent = $self->_clone_for_request;
         my $query_params = $req->query_parameters->as_hashref_mixed;
-        my $body_params  = {};
-        if ( $req->method eq 'POST' && $req->content_length ) {
-            eval { $body_params = decode_json( $req->content ) };
-        }
-        my $headers = {};
+        my $headers      = {};
         for my $k ( keys %$env ) {
             if ( $k =~ /^HTTP_(.+)/ ) {
                 $headers->{ lc($1) } = $env->{$k};
@@ -1913,7 +2121,7 @@ sub _handle_swml {
         $self->dynamic_config_callback->( $query_params, $body_params, $headers, $agent );
     }
 
-    my $swml = $agent->render_swml($env);
+    my $swml = $agent->_render_swml_for_call( $env, $call_id );
     my $json = encode_json($swml);
 
     return [ 200, [ 'Content-Type' => 'application/json' ], [$json] ];
@@ -2029,54 +2237,65 @@ sub _handle_mcp_endpoint {
 
 sub _clone_for_request {
     my ($self) = @_;
+
+    # CONSTRUCTION vs STATE TRANSFER. Only the agent's genuine construction
+    # contract (the params the python reference's AgentBase.__init__ accepts)
+    # goes through ``new``. Everything else is INTERNAL agent state that the
+    # reference configures through methods (add_hints/set_global_data/…) and
+    # its ephemeral clone copies attribute-by-attribute onto the built object —
+    # so this does the same, writing each attribute on the clone after
+    # construction rather than smuggling it in as a constructor argument.
     my %init;
     for my $attr (
         qw(name route host port auto_answer record_call record_format
-        record_stereo prompt_text post_prompt use_pom
-        debug_events_level)
+        record_stereo use_pom basic_auth_user basic_auth_password)
         )
     {
         $init{$attr} = $self->$attr;
     }
 
-    # Deep copy complex attributes
-    $init{pom_sections}           = dclone( $self->pom_sections );
-    $init{tools}                  = dclone( $self->tools );
-    $init{tool_order}             = [ @{ $self->tool_order } ];
-    $init{hints}                  = [ @{ $self->hints } ];
-    $init{pattern_hints}          = [ @{ $self->pattern_hints } ];
-    $init{languages}              = dclone( $self->languages );
-    $init{pronunciations}         = dclone( $self->pronunciations );
-    $init{params}                 = { %{ $self->params } };
-    $init{global_data}            = dclone( $self->global_data );
-    $init{native_functions}       = [ @{ $self->native_functions } ];
-    $init{function_includes}      = dclone( $self->function_includes );
-    $init{prompt_llm_params}      = { %{ $self->prompt_llm_params } };
-    $init{post_prompt_llm_params} = { %{ $self->post_prompt_llm_params } };
-    $init{pre_answer_verbs}       = dclone( $self->pre_answer_verbs );
-    $init{post_answer_verbs}      = dclone( $self->post_answer_verbs );
-    $init{post_ai_verbs}          = dclone( $self->post_ai_verbs );
-    $init{answer_config}          = { %{ $self->answer_config } };
-    $init{swaig_query_params}     = { %{ $self->swaig_query_params } };
-    $init{basic_auth_user}        = $self->basic_auth_user;
-    $init{basic_auth_password}    = $self->basic_auth_password;
-    $init{webhook_url}            = $self->webhook_url;
-    $init{post_prompt_url}        = $self->post_prompt_url;
-    $init{proxy_url_base}         = $self->proxy_url_base;
-    $init{internal_fillers} =
-        defined $self->internal_fillers ? dclone( $self->internal_fillers ) : undef;
-    $init{session_manager}    = $self->session_manager;
-    $init{mcp_servers}        = dclone( $self->mcp_servers );
-    $init{mcp_server_enabled} = $self->mcp_server_enabled;
+    my $clone = ( ref $self )->new(%init);
+
+    # Scalar state — copied straight across.
+    for my $attr (
+        qw(prompt_text post_prompt debug_events_level webhook_url
+        post_prompt_url proxy_url_base mcp_server_enabled session_manager)
+        )
+    {
+        $clone->$attr( $self->$attr );
+    }
+
+    # Deep-copied container state. dclone for nested structures, a shallow
+    # copy for the flat ones, so per-request mutation on the clone can never
+    # write through to the shared original.
+    for my $attr (
+        qw(pom_sections tools languages pronunciations global_data
+        function_includes pre_answer_verbs post_answer_verbs post_ai_verbs
+        mcp_servers)
+        )
+    {
+        $clone->$attr( dclone( $self->$attr ) );
+    }
+    for my $attr (qw(tool_order hints pattern_hints native_functions)) {
+        $clone->$attr( [ @{ $self->$attr } ] );
+    }
+    for my $attr (
+        qw(params prompt_llm_params post_prompt_llm_params answer_config
+        swaig_query_params)
+        )
+    {
+        $clone->$attr( { %{ $self->$attr } } );
+    }
+
+    $clone->internal_fillers(
+        defined $self->internal_fillers ? dclone( $self->internal_fillers ) : undef );
 
     # ASR-driven multilingual (Mode B) config — a render-relevant attribute
     # (emitted as the top-level ``multilingual`` object on the AI verb). It was
     # previously NOT copied, so a dynamic-config-callback request rendered off
     # the clone silently lost the agent's multilingual config. Mirror python's
     # ephemeral clone, which deep-copies _multilingual.
-    $init{multilingual} = defined $self->multilingual ? dclone( $self->multilingual ) : undef;
-
-    my $clone = ( ref $self )->new(%init);
+    $clone->multilingual( defined $self->multilingual ? dclone( $self->multilingual ) : undef );
 
     # context_builder — the contexts tree is render-relevant (emitted under
     # ai.prompt.contexts) and was ALSO not carried by the clone, so a
@@ -2241,8 +2460,10 @@ sub _run_serverless_lambda {
         return $self->_lambda_swaig_response( $path, $args, $call_id, $raw_data );
     }
 
-    # Root path (or /swaig without a function) -> SWML.
-    return $self->_lambda_swml_response;
+    # Root path (or /swaig without a function) -> SWML. The body's call_id (parsed
+    # above) is threaded so a SECURE tool's rendered webhook carries its per-tool
+    # ``__token`` (python threads call_id into every _render_swml call).
+    return $self->_lambda_swml_response($call_id);
 }
 
 # _check_lambda_auth — Basic-auth gate for lambda mode (Python parity:
@@ -2276,9 +2497,11 @@ sub _lambda_swaig_response {
 }
 
 # _lambda_swml_response — render the SWML document as the 200 root response.
+# $call_id (when the event body carried one) makes each SECURE tool's per-tool
+# ``__token`` mintable on the render.
 sub _lambda_swml_response {
-    my ($self) = @_;
-    my $doc = $self->render_swml;
+    my ( $self, $call_id ) = @_;
+    my $doc = $self->_render_swml_for_call( undef, $call_id );
     return {
         statusCode => 200,
         headers    => { 'Content-Type' => 'application/json' },

@@ -59,22 +59,30 @@ my %DEFAULTS = (
 
 # ---------- attributes ----------
 
-has ssl_enabled         => ( is => 'rw' );
-has ssl_cert_path       => ( is => 'rw' );
-has ssl_key_path        => ( is => 'rw' );
-has domain              => ( is => 'rw' );
-has ssl_verify_mode     => ( is => 'rw' );
-has allowed_hosts       => ( is => 'rw' );
-has cors_origins        => ( is => 'rw' );
-has max_request_size    => ( is => 'rw' );
-has rate_limit          => ( is => 'rw' );
-has request_timeout     => ( is => 'rw' );
-has use_hsts            => ( is => 'rw' );
-has hsts_max_age        => ( is => 'rw' );
-has basic_auth_user     => ( is => 'rw' );
-has basic_auth_password => ( is => 'rw' );
+has ssl_enabled         => ( init_arg => undef, is => 'rw' );
+has ssl_cert_path       => ( init_arg => undef, is => 'rw' );
+has ssl_key_path        => ( init_arg => undef, is => 'rw' );
+has domain              => ( init_arg => undef, is => 'rw' );
+has ssl_verify_mode     => ( init_arg => undef, is => 'rw' );
+has allowed_hosts       => ( init_arg => undef, is => 'rw' );
+has cors_origins        => ( init_arg => undef, is => 'rw' );
+has max_request_size    => ( init_arg => undef, is => 'rw' );
+has rate_limit          => ( init_arg => undef, is => 'rw' );
+has request_timeout     => ( init_arg => undef, is => 'rw' );
+has use_hsts            => ( init_arg => undef, is => 'rw' );
+has hsts_max_age        => ( init_arg => undef, is => 'rw' );
+has basic_auth_user     => ( init_arg => undef, is => 'rw' );
+has basic_auth_password => ( init_arg => undef, is => 'rw' );
 
-has _basic_auth_autogen_warned => ( is => 'rw', default => sub { 0 } );
+has _basic_auth_autogen_warned => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+
+# Python parity: SecurityConfig.__init__(config_file=None, service_name=None).
+# These are genuine construction parameters — BUILD reads them to locate and
+# layer the config file over the environment defaults. Declared as real
+# attributes (rather than only read out of ``$args``) so the constructor
+# surface is introspectable and the values are readable after construction.
+has config_file  => ( is => 'ro', default => sub { undef } );
+has service_name => ( is => 'ro', default => sub { undef } );
 
 # ---------- construction ----------
 
@@ -84,7 +92,7 @@ has _basic_auth_autogen_warned => ( is => 'rw', default => sub { 0 } );
 sub BUILD ( $self, $args ) {
     $self->_set_defaults;
     $self->load_from_env;
-    $self->_load_config_file( $args->{config_file}, $args->{service_name} );
+    $self->_load_config_file( $self->config_file, $self->service_name );
     return;
 }
 

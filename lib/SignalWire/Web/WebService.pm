@@ -51,11 +51,14 @@ has blocked_extensions        => ( is => 'rw', default => sub { [@DEFAULT_BLOCKE
 has _basic_auth => ( is => 'rw', default => sub { undef } );
 
 # Runtime handles (background server child PID + bound port).
-has _pid        => ( is => 'rw', default => sub { undef } );
-has _bound_port => ( is => 'rw', default => sub { undef } );
+has _pid        => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has _bound_port => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
-# Construction params captured for BUILDARGS handling.
-has _basic_auth_arg => ( is => 'ro', default => sub { undef } );
+# The caller-supplied ``basic_auth`` pair, captured by BUILDARGS. This IS the
+# reference's construction param (web_service.py ``basic_auth``), so it keeps a
+# constructor argument — under the reference's PUBLIC name, not the private
+# slot name, so ``_basic_auth_arg`` is not itself a knob a caller can reach.
+has _basic_auth_arg => ( init_arg => 'basic_auth', is => 'ro', default => sub { undef } );
 
 # ---------- construction ----------
 
@@ -74,7 +77,7 @@ around BUILDARGS => sub ( $orig, $class, @args ) {
     $build{enable_cors}        = $opts{enable_cors} ? 1 : 0 if exists $opts{enable_cors};
     $build{allowed_extensions} = $opts{allowed_extensions}  if defined $opts{allowed_extensions};
     $build{blocked_extensions} = $opts{blocked_extensions}  if defined $opts{blocked_extensions};
-    $build{_basic_auth_arg}    = $opts{basic_auth}          if defined $opts{basic_auth};
+    $build{basic_auth}         = $opts{basic_auth}          if defined $opts{basic_auth};
 
     return $class->$orig(%build);
 };

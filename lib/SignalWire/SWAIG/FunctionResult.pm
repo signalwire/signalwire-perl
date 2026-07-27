@@ -13,8 +13,9 @@ has 'response' => (
 );
 
 has 'action' => (
-    is      => 'rw',
-    default => sub { [] },
+    init_arg => undef,
+    is       => 'rw',
+    default  => sub { [] },
 );
 
 has 'post_process' => (

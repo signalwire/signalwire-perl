@@ -10,18 +10,18 @@ use JSON qw(encode_json decode_json);
 use Carp qw(croak);
 use File::Spec;
 
-has host      => ( is => 'rw', default => sub { '0.0.0.0' } );
-has port      => ( is => 'rw', default => sub { $ENV{PORT} || 3000 } );
-has log_level => ( is => 'rw', default => sub { 'info' } );
-has agents    => ( is => 'rw', default => sub { {} } );
+has host      => ( is       => 'rw',  default => sub { '0.0.0.0' } );
+has port      => ( is       => 'rw',  default => sub { $ENV{PORT} || 3000 } );
+has log_level => ( is       => 'rw',  default => sub { 'info' } );
+has agents    => ( init_arg => undef, is      => 'rw', default => sub { {} } );
 
 # SIP routing
-has _sip_routing_enabled  => ( is => 'rw', default => sub { 0 } );
-has _sip_username_mapping => ( is => 'rw', default => sub { {} } );
-has _sip_route            => ( is => 'rw', default => sub { '/sip' } );
+has _sip_routing_enabled  => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has _sip_username_mapping => ( init_arg => undef, is => 'rw', default => sub { {} } );
+has _sip_route            => ( init_arg => undef, is => 'rw', default => sub { '/sip' } );
 
 # Static file routes: { route => directory }
-has _static_routes => ( is => 'rw', default => sub { {} } );
+has _static_routes => ( init_arg => undef, is => 'rw', default => sub { {} } );
 
 sub register {
     my ( $self, $agent, $route ) = @_;

@@ -88,27 +88,60 @@ has 'contexts' => (
     default => sub { [] },
     isa     => sub { Carp::croak("contexts must be an arrayref") unless ref $_[0] eq 'ARRAY' },
 );
-has 'agent' => ( is => 'ro', default => sub { $USER_AGENT } );
+has 'agent' => ( init_arg => undef, is => 'ro', default => sub { $USER_AGENT } );
 
 # Optional JWT-based authentication (alternative to project/token).
 has 'jwt_token'  => ( is => 'ro', default => sub { '' } );
 has '_jwt_token' => ( is => 'rw', default => sub { '' } );
 
-# Scheme: "wss" (production, TLS — the default) or "ws" (plain, used by
-# the local audit fixture in audit_relay_handshake.py). Keeping this
-# explicit lets the same client drive both real RELAY and a 127.0.0.1
-# fixture without forking the transport.
-has 'scheme' => ( is => 'ro', default => sub { 'wss' } );
+# Scheme: DERIVED from the host, never a constructor argument. The python
+# reference hardcodes ``wss://{host}`` (relay/client.py:354) and offers no
+# scheme knob, so accepting one here would be invented surface. Instead the
+# scheme follows the same loopback rule the REST half already uses
+# (REST/HttpClient::_is_loopback_host): a bare loopback host
+# (127.0.0.1[:port] / localhost[:port] / [::1][:port]) is a local mock/dev
+# fixture that speaks plain WebSocket, so it gets ws://; every other host is
+# the real platform over wss://. A real SignalWire space is never loopback,
+# so production is unaffected, and the local fixture works with no knob.
+has 'scheme' => (
+    init_arg => undef,
+    is       => 'lazy',
+    builder  => '_build_scheme',
+);
 
-# Path component appended to the host. Defaults to '/api/relay/ws' (the
-# documented production endpoint per RELAY_IMPLEMENTATION_GUIDE).
-has 'path' => ( is => 'ro', default => sub { '/api/relay/ws' } );
+sub _build_scheme ($self) {
+
+    # A configured RELAY CA bundle means the caller has a TLS endpoint to
+    # verify against — that is the reference's own signal
+    # (SIGNALWIRE_RELAY_CA_FILE, relay/client.py::_build_relay_ssl_context),
+    # and it holds for a loopback TLS fixture just as it does in production.
+    return 'wss' if $ENV{SIGNALWIRE_RELAY_CA_FILE} || $ENV{SSL_CERT_FILE};
+
+    require SignalWire::REST::HttpClient;
+    return SignalWire::REST::HttpClient::_is_loopback_host( $self->host )
+        ? 'ws'
+        : 'wss';
+}
+
+# Path component appended to the host. Derived, not a constructor argument:
+# the reference has no path knob. Production is the documented
+# '/api/relay/ws' endpoint (RELAY_IMPLEMENTATION_GUIDE); a loopback fixture
+# serves the handshake at the root, matching how the scheme is derived above.
+has 'path' => (
+    init_arg => undef,
+    is       => 'lazy',
+    builder  => '_build_path',
+);
+
+sub _build_path ($self) {
+    return $self->scheme eq 'ws' ? '' : '/api/relay/ws';
+}
 
 # Connection state
-has 'protocol'            => ( is => 'rw', default => sub { '' } );
-has 'authorization_state' => ( is => 'rw', default => sub { '' } );
-has 'connected'           => ( is => 'rw', default => sub { 0 } );
-has 'session_id'          => ( is => 'rw', default => sub { '' } );
+has 'protocol'            => ( init_arg => undef, is => 'rw', default => sub { '' } );
+has 'authorization_state' => ( init_arg => undef, is => 'rw', default => sub { '' } );
+has 'connected'           => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has 'session_id'          => ( init_arg => undef, is => 'rw', default => sub { '' } );
 
 # Aliases for Python parity (same value, different names).
 sub relay_protocol       { my ($self) = @_; return $self->protocol }
@@ -116,35 +149,62 @@ sub _connected           { my ($self) = @_; return $self->connected }
 sub _authorization_state { my ($self) = @_; return $self->authorization_state }
 
 # Correlation maps
-has '_pending' => ( is => 'rw', default => sub { {} } )
+has '_pending' => ( init_arg => undef, is => 'rw', default => sub { {} } )
     ;    # rpc_id => { resolve => sub, reject => sub }
-has '_calls' => ( is => 'rw', default => sub { {} } );    # call_id => Call
-has '_pending_dials' => ( is => 'rw', default => sub { {} } )
-    ;                                                     # tag => { resolve => sub, reject => sub }
-has '_messages' => ( is => 'rw', default => sub { {} } ); # message_id => Message
+has '_calls' => ( init_arg => undef, is => 'rw', default => sub { {} } );    # call_id => Call
+has '_pending_dials' => ( init_arg => undef, is => 'rw', default => sub { {} } )
+    ;    # tag => { resolve => sub, reject => sub }
+has '_messages' => ( init_arg => undef, is => 'rw', default => sub { {} } ); # message_id => Message
 
 # WebSocket internals
-has '_socket' => ( is => 'rw', default => sub { undef } );
-has '_ws'     => ( is => 'rw', default => sub { undef } );
+has '_socket' => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_ws'     => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # Reconnect state
-has '_reconnect_attempts' => ( is => 'rw', default => sub { 0 } );
-has '_max_backoff'        => ( is => 'ro', default => sub { 30 } );
+has '_reconnect_attempts' => ( init_arg => undef, is => 'rw',   default => sub { 0 } );
+has '_max_backoff'        => ( init_arg => undef, is => 'lazy', builder => '_build_max_backoff' );
+
+# Liveness timings. Default to the production constants; overridable via env so a
+# half-open / black-hole / reconnect scenario can be exercised inside a BOUNDED
+# test window (the RELAY-LIVENESS behavioral gate allows 5s per fixture) — the
+# analog of the python reference's monkeypatchable `_EXECUTE_TIMEOUT` /
+# `RECONNECT_MIN_DELAY` module constants, go's `WithExecuteTimeout` /
+# `WithReconnectBackoff` options, and ts's identically-named env vars. Without
+# this seam the dump runs every fixture at the full 30s request timeout and
+# blows the gate's whole-dump budget, which reads as an unbounded connection
+# path. Production behavior is unchanged when the vars are unset.
+has '_request_timeout' => ( init_arg => undef, is => 'lazy', builder => '_build_request_timeout' );
+
+sub _env_num ( $name, $default ) {
+    my $raw = $ENV{$name};
+    return $default unless defined $raw && $raw =~ /^\s*[0-9]*\.?[0-9]+\s*$/;
+    return 0 + $raw;
+}
+
+sub _build_request_timeout ($self) {
+
+    # ms in the env var (ts spelling + units), seconds internally.
+    return _env_num( 'SIGNALWIRE_RELAY_REQUEST_TIMEOUT_MS', 30_000 ) / 1000;
+}
+
+sub _build_max_backoff ($self) {
+    return _env_num( 'SIGNALWIRE_RELAY_RECONNECT_MAX_DELAY_S', 30 );
+}
 
 # Set true by disconnect_ws() so run()'s auto-reconnect loop distinguishes an
 # INTENTIONAL teardown (do NOT reconnect, exit cleanly) from an unexpected drop
 # (reconnect). Mirrors the python reference's _closing guard.
-has '_closing' => ( is => 'rw', default => sub { 0 } );
+has '_closing' => ( init_arg => undef, is => 'rw', default => sub { 0 } );
 
 # Bound the auto-reconnect loop: after this many CONSECUTIVE failed reconnect
 # attempts run() gives up and exits rather than spinning forever (A6: never
 # infinite-reconnect). Reset to 0 on a successful (re)connect.
-has '_max_reconnect_attempts' => ( is => 'rw', default => sub { 10 } );
+has '_max_reconnect_attempts' => ( init_arg => undef, is => 'rw', default => sub { 10 } );
 
 # Callbacks
-has '_on_call'    => ( is => 'rw', default => sub { undef } );
-has '_on_message' => ( is => 'rw', default => sub { undef } );
-has '_on_event'   => ( is => 'rw', default => sub { undef } );
+has '_on_call'    => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_on_message' => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_on_event'   => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
 # Max concurrent inbound calls (Python parity: RelayClient(max_active_calls=N)).
 # The (N+1)th inbound call while N are active is DROPPED, not accepted. undef =>
@@ -436,9 +496,11 @@ sub execute ( $self, $method, $params = undef ) {
     # the connection drops — _read_once rejects all pending requests on EOF, so
     # $done flips via the reject callback and we exit at once instead of
     # spinning on a dead socket until the timeout elapses.
-    my $timeout = 30;
-    my $start   = time();
-    while ( !$done && $self->connected && ( time() - $start ) < $timeout ) {
+    # Time::HiRes so a sub-second override (the liveness gate's bounded window)
+    # is honoured; whole-second time() would floor a 0.4s timeout to 0.
+    my $timeout = $self->_request_timeout;
+    my $start   = Time::HiRes::time();
+    while ( !$done && $self->connected && ( Time::HiRes::time() - $start ) < $timeout ) {
         $self->_read_once();
     }
 
@@ -843,11 +905,15 @@ sub _handle_event ( $self, $outer_params ) {
 
             # Create the Call object so events route correctly
             my $call = SignalWire::Relay::Call->new(
-                call_id => $call_id,
-                node_id => $inner_params->{node_id} // '',
-                tag     => $tag,
-                device  => $inner_params->{device} // {},
-                _client => $self,
+                call_id    => $call_id,
+                node_id    => $inner_params->{node_id} // '',
+                tag        => $tag,
+                device     => $inner_params->{device}     // {},
+                project_id => $inner_params->{project_id} // $self->project,
+                context    => $self->protocol,
+                direction  => 'outbound',
+                state      => $inner_params->{call_state} // 'created',
+                _client    => $self,
             );
             $self->_calls->{$call_id} = $call;
         }
@@ -880,14 +946,21 @@ sub _handle_inbound_call ( $self, $event, $params ) {
         return;
     }
 
+    # project_id / direction / segment_id come straight off the receive frame
+    # (reference: relay/client.py:1060-1072). `context` prefers the negotiated
+    # protocol, falling back to the frame's context/protocol key, matching the
+    # reference's `self._relay_protocol or params.get("context", ...)`.
     my $call = SignalWire::Relay::Call->new(
-        call_id => $call_id,
-        node_id => $params->{node_id}    // '',
-        tag     => $params->{tag}        // '',
-        device  => $params->{device}     // {},
-        context => $params->{context}    // '',
-        state   => $params->{call_state} // 'ringing',
-        _client => $self,
+        call_id    => $call_id,
+        node_id    => $params->{node_id}    // '',
+        tag        => $params->{tag}        // '',
+        device     => $params->{device}     // {},
+        project_id => $params->{project_id} // $self->project,
+        context    => ( $self->protocol || $params->{context} || $params->{protocol} || '' ),
+        direction  => $params->{direction}  // 'inbound',
+        state      => $params->{call_state} // 'ringing',
+        segment_id => $params->{segment_id} // '',
+        _client    => $self,
     );
     $self->_calls->{$call_id} = $call;
 
@@ -922,14 +995,21 @@ sub _handle_dial_event ( $self, $event, $params ) {
         my $call_id = $call_info->{call_id} // '';
         my $call    = $self->_calls->{$call_id};
         unless ($call) {
+
+            # `dial_winner` is init_arg => undef (derived, not caller-supplied),
+            # so passing it here was silently discarded; it is set explicitly
+            # below. project_id/context/direction match the reference's
+            # dial-winner construction (relay/client.py:1198-1208).
             $call = SignalWire::Relay::Call->new(
-                call_id     => $call_id,
-                node_id     => $call_info->{node_id} // '',
-                tag         => $tag,
-                device      => $call_info->{device} // {},
-                dial_winner => 1,
-                state       => 'answered',
-                _client     => $self,
+                call_id    => $call_id,
+                node_id    => $call_info->{node_id} // '',
+                tag        => $tag,
+                device     => $call_info->{device} // {},
+                project_id => $self->project,
+                context    => $self->protocol,
+                direction  => 'outbound',
+                state      => 'answered',
+                _client    => $self,
             );
             $self->_calls->{$call_id} = $call;
         }
@@ -978,9 +1058,12 @@ sub reconnect ($self) {
         $p->{reject}->("Disconnected") if $p;
     }
 
-    # Exponential backoff: 1s, 2s, 4s, ... up to max_backoff
-    my $attempts = $self->_reconnect_attempts;
-    my $delay    = 2**$attempts;
+    # Exponential backoff: min_delay, 2x, 4x, ... up to max_backoff. The base is
+    # 1s in production and env-overridable so the liveness gate can drive a real
+    # reconnect inside its bounded window (see _build_request_timeout).
+    my $attempts  = $self->_reconnect_attempts;
+    my $min_delay = _env_num( 'SIGNALWIRE_RELAY_RECONNECT_MIN_DELAY_S', 1 );
+    my $delay     = $min_delay * ( 2**$attempts );
     $delay = $self->_max_backoff if $delay > $self->_max_backoff;
 
     $logger->info( "Reconnecting in ${delay}s (attempt " . ( $attempts + 1 ) . ")" );

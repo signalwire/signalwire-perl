@@ -1,5 +1,53 @@
 # PORT_OMISSIONS.md
 
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+BEFORE YOU ADD AN ENTRY TO THIS FILE — READ THIS.
+
+Every entry here is a place the parity checker STOPS comparing. That is a real cost:
+a divergence you list is a divergence no gate will ever catch again. So entries must
+be RARE, and each one must earn its place. Default to skepticism: assume the entry is
+NOT needed and make the case that it is.
+
+The order of preference, always:
+  1. FIX THE PORT so it matches the reference (add the missing member; make the
+     signature match).
+  2. FIX THE EMISSION so idiom folds onto the reference shape — the enumerator/emitter
+     canonicalizes your language's spelling onto the oracle's (builder → __init__,
+     getters → attributes, Result<T,E> → the plain return, CamelCase → the reference
+     name, options-object/kwargs → the expanded param list, RAII/dispose → close).
+     MOST divergences are idiom and belong here, not in this file.
+  3. FIX THE REFERENCE if the oracle itself is wrong or stale (a Python-only symbol
+     that leaked into the contract, a param the reference added and the oracle never
+     re-enumerated). Fix Python / the oracle, then re-drift — do not paper over a
+     broken reference with a per-port entry.
+  4. Only when 1–3 genuinely cannot apply does an entry here become justified.
+
+An entry is JUSTIFIED ONLY IF it is irreducible after correct emission — i.e. the
+divergence survives because the two languages genuinely cannot express the same thing,
+not because the emitter hasn't folded the idiom yet. If emission COULD fold it, the
+entry is a bug in this file; go fix the emitter.
+
+Each entry MUST state WHY, concretely, in one of these forms:
+  • ADDITION — this symbol exists in the port but not the reference. Answer: is it
+    genuine port-only surface with NO reference twin (say what it is and why the
+    reference has no equivalent), or is it IDIOM the emitter should have folded (then
+    it does not belong here — fold it)? A convenience/alias/back-compat wrapper is NOT
+    a justification.
+  • OMISSION — this reference symbol has no port member. Answer: WHY can it not exist
+    here — what specific language feature is absent (e.g. no async-context-manager
+    protocol, no __init__ method protocol)? "impossible:" means the construct cannot
+    be expressed at all; if it merely LOOKS different, that's idiom → fold it, don't
+    omit it. Cite a precedent when one exists (e.g. RelayClient omits the same dunder).
+  • SIGNATURE — the symbol matches by name but its parameters differ. Answer: is the
+    difference a foldable idiom collapse (options-object, leading context/self,
+    builder) — then EXPAND it in the signature emitter so names+count match, don't list
+    it — or a genuine reference-only parameter with no cross-language analogue?
+
+If you cannot write a crisp, specific WHY that survives the "could emission fold this?"
+test, the entry is not ready. Prove it's needed before you add it.
+═══════════════════════════════════════════════════════════════════════════════ -->
+
 Python-reference symbols the Perl port does not implement, each with an
 explicit impossible:/approved: rationale.
 One line per symbol: `<fully.qualified.symbol>: <one-sentence rationale>`.
@@ -19,67 +67,10 @@ signalwire.core.agent.tools.decorator.ToolDecorator.create_class_decorator: impo
 signalwire.core.agent.tools.decorator.ToolDecorator.create_instance_decorator: impossible: Python @tool decorator-protocol API; Perl/Moo has no method-decorator feature — tools register via define_tool directly (TS+PHP omit identically)
 signalwire.core.agent.tools.registry.ToolRegistry.register_class_decorated_tools: impossible: Python @tool decorator-protocol API; Perl/Moo has no method-decorator feature — tools register via define_tool directly (TS+PHP omit identically)
 signalwire.core.mixins.mcp_server_mixin.MCPServerMixin: impossible: method-less Python mixin class hosting add_mcp_server/enable_mcp_server; per the user ruling those two methods ARE ported (folded onto AIConfigMixin/AgentBase, present), but the standalone mixin CLASS itself has no Perl home — Perl composes AgentBase via roles, not a named MCPServerMixin class (TS/PHP fold identically)
-signalwire.core.mixins.tool_mixin.ToolMixin.tool: impossible: Python @tool decorator-protocol API; Perl/Moo has no method-decorator feature — tools register via define_tool directly (TS+PHP omit identically)
+signalwire.core.mixins.tool_mixin.ToolMixin.tool: impossible: Python @tool decorator-protocol API; Perl/Moo has no method-decorator feature — tools register via define_tool directly (TS+PHP omit identically). Raw ToolMixin.tool key for the SIGNATURE diff; folded agentbase-family.tool twin excused for the SURFACE diff.
+agentbase-family.tool: impossible: Python @tool decorator-protocol API (folds to agentbase-family via the mixin-flatten fold); Perl/Moo has no method-decorator feature — tools register via define_tool directly (TS+PHP omit identically)
+signalwire.web.web_service.WebService.security: impossible: Python's WebService holds a SecurityConfig composition attr (security -> class:security_config.SecurityConfig); Perl's WebService applies security inline via a private _security_headers() sub and exposes no self-only accessor returning a SecurityConfig class.
 signalwire.core.security.webhook_middleware.make_webhook_validation_dependency: impossible: framework-bound factory returning a FastAPI dependency; Perl ships the equivalent as the SignalWire::Security::WebhookMiddleware Plack middleware (a PORT_ADDITION) — the FastAPI-dependency FORM has no Plack analog (TS/PHP ship native middleware likewise)
-signalwire.livewire.Agent: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.llm_node: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.on_enter: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.on_exit: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.on_user_turn_completed: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.session: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.stt_node: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.tts_node: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.update_instructions: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Agent.update_tools: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentHandoff: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentHandoff.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentServer: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentServer.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentServer.rtc_session: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession.generate_reply: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession.history: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession.interrupt: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession.say: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession.start: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession.update_agent: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.AgentSession.userdata: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.ChatContext: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.ChatContext.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.ChatContext.append: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.function_tool: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.InferenceLLM: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.InferenceLLM.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.InferenceSTT: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.InferenceSTT.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.InferenceTTS: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.InferenceTTS.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.JobContext: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.JobContext.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.JobContext.connect: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.JobContext.wait_for_participant: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.JobProcess: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.JobProcess.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.CartesiaTTS: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.CartesiaTTS.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.DeepgramSTT: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.DeepgramSTT.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.ElevenLabsTTS: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.ElevenLabsTTS.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.OpenAILLM: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.OpenAILLM.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.SileroVAD: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.SileroVAD.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.plugins.SileroVAD.load: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.Room: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.run_app: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.RunContext: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.RunContext.__init__: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.RunContext.userdata: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.StopResponse: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
-signalwire.livewire.ToolError: approved: livewire is LiveKit-agents-compat; LiveKit ships no Perl agents SDK (only Python + Node/TS), so it is not ported to Perl (§I.1/L21)
 signalwire.relay.client.RelayClient.__aenter__: impossible: Python async-context-manager protocol dunder; Perl uses explicit connect+disconnect — no __aenter__/__aexit__ equivalent (TS/PHP omit identically)
 signalwire.relay.client.RelayClient.__aexit__: impossible: Python async-context-manager protocol dunder; Perl uses explicit connect+disconnect — no __aenter__/__aexit__ equivalent (TS/PHP omit identically)
 signalwire.ai_chat.client.AIChatClient.__aenter__: impossible: Python async-context-manager protocol dunder; Perl has no context-manager language protocol — the AIChat client is used directly (construct-and-call), no with-block enter (TS/PHP omit identically)
@@ -113,3 +104,12 @@ signalwire.rest._base.FabricResourcePUT: impossible: the Perl generated FabricRe
 # every '#'-prefixed line. languages_enabled is NOT dropped — it is emitted and
 # marked '# deprecated:' per the overlay's deprecated list, so it is not recorded
 # here either.
+
+## B1 composition-attr / generated-model field-accessor omissions (fold branch)
+# porting-sdk fix/agentbase-mixin-flatten-fold enriched the surface oracle with class-ref
+# composition attributes + generated-model per-field accessors. Perl models generated payload
+# classes as method-less DTOs and does not surface Moo `has` accessors as API — same idiom
+# disposition ruby/ts/php take (wire JSON identical). See ALLOWLIST_DISCIPLINE.md §4c/§6-B1.
+
+
+# Raw-key twins for the SIGNATURE diff (dual-key convention)

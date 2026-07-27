@@ -22,6 +22,25 @@ subtest 'construction' => sub {
     is($call->state, 'created', 'initial state');
 };
 
+# project_id / direction / segment_id are construction params the reference
+# records on Call (relay/call.py:341-353): settable AND readable back.
+subtest 'project_id / direction / segment_id round-trip through construction' => sub {
+    my $call = SignalWire::Relay::Call->new(
+        call_id    => 'c-rt',
+        project_id => 'proj-abc',
+        direction  => 'outbound',
+        segment_id => 'seg-7',
+    );
+    is($call->project_id, 'proj-abc', 'project_id readable back');
+    is($call->direction,  'outbound', 'direction readable back');
+    is($call->segment_id, 'seg-7',    'segment_id readable back');
+
+    my $bare = SignalWire::Relay::Call->new(call_id => 'c-bare');
+    is($bare->project_id, '', 'project_id defaults empty');
+    is($bare->direction,  '', 'direction defaults empty');
+    is($bare->segment_id, '', 'segment_id defaults empty');
+};
+
 # ============================================================
 # 2. State transitions via events
 # ============================================================
@@ -162,8 +181,16 @@ subtest 'concrete action control methods' => sub {
             return { ok => 1 };
         };
     }
-    my $pa = $play->new( control_id => 'ctl-p', call_id => 'c', node_id => 'n' );
-    $pa->_client($fake_client);
+    # The action derives call_id / node_id / client from the call it belongs
+    # to (the reference's Action.__init__(call, control_id, ...) shape), so
+    # build the owning call and hand it over rather than setting the three
+    # identity fields on the action directly.
+    my $owning_call = SignalWire::Relay::Call->new(
+        call_id => 'c',
+        node_id => 'n',
+        _client => $fake_client,
+    );
+    my $pa = $play->new( call => $owning_call, control_id => 'ctl-p' );
     $pa->pause;                       # no behavior
     $pa->pause('collect');            # with behavior
     is( $client_calls->[0][0], 'calling.play.pause', 'play.pause verb' );
@@ -187,6 +214,55 @@ subtest 'multiple listeners' => sub {
     $call->dispatch_event($event);
     is($a, 1, 'first listener called');
     is($b, 1, 'second listener called');
+};
+
+# ============================================================
+# Action identity survives its Call being collected
+#
+# `Action.call` is weak (Call._actions holds Actions strongly, so a strong
+# back-reference would leak the cycle; the reference keeps a strong one and lets
+# Python's cycle collector deal with it). Identity + transport are therefore
+# snapshotted in BUILD. Derived LAZILY through the weak handle instead, they all
+# resolved to undef/'' as soon as the Call was collected, and every control-op
+# silently emitted nothing on its `return unless $client` guard -- the defect
+# that made play/pause/stop/volume transmit no frame at all.
+# ============================================================
+subtest 'action keeps call_id / node_id / client after the Call is collected' => sub {
+    my @sent;
+    my $client = bless { }, 'CollectedCallProbeClient';
+    {
+        no strict 'refs';    ## no critic (TestingAndDebugging::ProhibitNoStrict)
+        *{'CollectedCallProbeClient::execute'} = sub {
+            my ($self, $method, $params) = @_;
+            push @sent, [$method, $params];
+            return {};
+        };
+    }
+
+    # The Call is confined to this block and registered nowhere else, so it is
+    # genuinely refcount-collected on scope exit.
+    my $action = do {
+        my $call = SignalWire::Relay::Call->new(
+            call_id => 'c-collected',
+            node_id => 'n-collected',
+            state   => 'answered',
+            _client => $client,
+        );
+        $call->play(play => [{ type => 'silence', params => { duration => 1 } }]);
+    };
+
+    ok(!defined $action->call, 'the weak Call back-reference really was collected');
+    is($action->call_id, 'c-collected', 'call_id snapshotted before collection');
+    is($action->node_id, 'n-collected', 'node_id snapshotted before collection');
+    ok(defined $action->_client, 'client snapshotted before collection');
+
+    @sent = ();
+    $action->stop;
+    is(scalar @sent, 1, 'stop emitted exactly one frame');
+    is($sent[0][0], 'calling.play.stop', 'stop used the right RELAY verb');
+    is($sent[0][1]{call_id},    'c-collected', 'frame carried the snapshotted call_id');
+    is($sent[0][1]{node_id},    'n-collected', 'frame carried the snapshotted node_id');
+    is($sent[0][1]{control_id}, $action->control_id, 'frame carried the control_id');
 };
 
 done_testing;

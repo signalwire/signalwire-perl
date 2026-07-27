@@ -21,24 +21,27 @@ extends 'SignalWire::Skills::SkillBase';
 use SignalWire::Skills::SkillRegistry;
 SignalWire::Skills::SkillRegistry->register_skill( 'spider', __PACKAGE__ );
 
-has '+skill_name'        => ( default => sub { 'spider' } );
-has '+skill_description' => ( default => sub { 'Fast web scraping and crawling capabilities' } );
-has '+supports_multiple_instances' => ( default => sub { 1 } );
+has '+skill_name' => ( init_arg => undef, default => sub { 'spider' } );
+has '+skill_description' =>
+    ( init_arg => undef, default => sub { 'Fast web scraping and crawling capabilities' } );
+has '+supports_multiple_instances' => ( init_arg => undef, default => sub { 1 } );
 
 # Honor SPIDER_BASE_URL env var. When set, the skill rewrites the
 # user-supplied URL onto the base — useful for the audit fixture
 # (audit_skills_dispatch.py) which serves a 127.0.0.1 endpoint that
 # stands in for any external host.
 has 'base_url' => (
-    is      => 'ro',
-    lazy    => 1,
-    default => sub { $ENV{SPIDER_BASE_URL} || '' },
+    init_arg => undef,
+    is       => 'ro',
+    lazy     => 1,
+    default  => sub { $ENV{SPIDER_BASE_URL} || '' },
 );
 
 has '_http' => (
-    is      => 'ro',
-    lazy    => 1,
-    default => sub {
+    init_arg => undef,
+    is       => 'ro',
+    lazy     => 1,
+    default  => sub {
         HTTP::Tiny->new(
             agent      => 'SignalWire-Perl-Spider/1.0',
             timeout    => 15,

@@ -45,9 +45,9 @@ has 'host'    => ( is => 'ro', required => 1 );
 # tree (which shares this one HttpClient) inherits it.
 has 'request_options' => ( is => 'ro', default => sub { undef } );
 
-has 'base_url'     => ( is => 'lazy' );
-has '_ua'          => ( is => 'lazy' );
-has '_auth_header' => ( is => 'lazy' );
+has 'base_url'     => ( init_arg => undef, is => 'lazy' );
+has '_ua'          => ( init_arg => undef, is => 'lazy' );
+has '_auth_header' => ( init_arg => undef, is => 'lazy' );
 
 sub _build_base_url {
     my ($self) = @_;
@@ -404,7 +404,7 @@ has 'headers' => ( is => 'ro', default => sub { undef } );
 # request_id is DERIVED from headers (lazy): the platform request id, matched
 # case-insensitively against the SignalWire/proxy header names in preference
 # order. undef when there are no headers or none of the names are present.
-has 'request_id' => ( is => 'lazy' );
+has 'request_id' => ( init_arg => undef, is => 'lazy' );
 
 # Header names SignalWire (and common proxies) use for the platform request id,
 # in preference order (Python parity: _base._REQUEST_ID_HEADERS).

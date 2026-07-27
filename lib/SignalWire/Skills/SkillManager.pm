@@ -8,8 +8,8 @@ use warnings;
 use Moo;
 use Carp qw(croak);
 
-has agent => ( is => 'ro', required => 1, weak_ref => 1 );
-has loaded_skills => ( is => 'rw', default => sub { {} } );
+has agent         => ( is       => 'ro',  required => 1,    weak_ref => 1 );
+has loaded_skills => ( init_arg => undef, is       => 'rw', default  => sub { {} } );
 
 sub load_skill {
     my ( $self, $skill_name, $skill_class, $params ) = @_;

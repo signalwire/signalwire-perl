@@ -42,11 +42,11 @@ has 'state'       => ( is => 'rw', default  => sub { '' } );
 has 'reason'      => ( is => 'rw', default  => sub { '' } );
 has 'tags'        => ( is => 'rw', default  => sub { [] }, isa => $ArrayRef );
 
-has 'completed' => ( is => 'rw', default => sub { 0 } );
-has 'result'    => ( is => 'rw', default => sub { undef } );
+has 'completed' => ( init_arg => undef, is => 'rw', default => sub { 0 } );
+has 'result'    => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
-has '_on_completed' => ( is => 'rw', default => sub { undef } );
-has '_on_event' => ( is => 'rw', default => sub { [] }, isa => $ArrayRef );
+has '_on_completed' => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has '_on_event' => ( init_arg => undef, is => 'rw', default => sub { [] }, isa => $ArrayRef );
 
 # Check if message has reached a terminal state
 sub is_done ($self) {

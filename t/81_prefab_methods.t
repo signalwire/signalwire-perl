@@ -176,7 +176,7 @@ subtest 'Receptionist on_summary no-op' => sub {
 subtest 'Survey validate_response' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'CSAT',
-        survey_questions => [
+        questions => [
             { id => 'rate',   text => 'Rate us',    type => 'rating',          scale => 5 },
             { id => 'pick',   text => 'Pick one',   type => 'multiple_choice', options => [ 'a', 'b' ] },
             { id => 'yn',     text => 'Agree?',     type => 'yes_no' },
@@ -211,7 +211,7 @@ subtest 'Survey validate_response' => sub {
 subtest 'Survey log_response' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
         survey_name      => 'CSAT',
-        survey_questions => [ { id => 'q1', text => 'How was it?', type => 'open_ended' } ],
+        questions => [ { id => 'q1', text => 'How was it?', type => 'open_ended' } ],
     );
     my $r = $a->log_response( { question_id => 'q1', response => 'great' } );
     is( $r->response, "Response to 'How was it?' has been recorded.", 'logs by question text' );
@@ -219,7 +219,7 @@ subtest 'Survey log_response' => sub {
 
 subtest 'Survey on_summary' => sub {
     my $a = SignalWire::Prefabs::Survey->new(
-        survey_name => 'CSAT', survey_questions => [ { id => 'q', text => 't', type => 'open_ended' } ] );
+        survey_name => 'CSAT', questions => [ { id => 'q', text => 't', type => 'open_ended' } ] );
     is( $a->on_summary(undef), undef, 'nil summary no-op' );
     my $out = '';
     {

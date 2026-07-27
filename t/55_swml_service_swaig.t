@@ -252,13 +252,19 @@ subtest 'extract_sip_username: non-string to returns undef' => sub {
 # Python parity: schema_utils / verb_registry / security accessors.
 # -----------------------------------------------------------------------
 
-subtest 'schema_utils accessor returns the schema instance' => sub {
+subtest 'schema_utils accessor returns the per-instance SchemaUtils' => sub {
     my $svc = make_svc();
     my $su  = $svc->schema_utils;
-    isa_ok($su, 'SignalWire::SWML::Schema', 'schema_utils returns Schema instance');
-    ok($su->verb_count > 0, 'schema has verbs loaded');
+    # Python parity: SWMLService.__init__ builds a PER-INSTANCE SchemaUtils
+    # from the schema_path / schema_validation construction params
+    # (swml_service.py:181-183) — not a process-wide singleton.
+    isa_ok($su, 'SignalWire::Utils::SchemaUtils', 'schema_utils returns SchemaUtils instance');
+    ok(scalar($su->get_all_verb_names) > 0, 'schema has verbs loaded');
     # Python parity: idempotent — same instance on repeated access.
     is($svc->schema_utils, $su, 'schema_utils is memoized');
+    # It is the same collaborator the strict-render path validates through.
+    is($svc->schema_utils, $svc->_schema_validator,
+        'schema_utils and the internal validator are one collaborator');
 };
 
 subtest 'verb_registry accessor returns a registry-shaped object' => sub {
@@ -272,12 +278,16 @@ subtest 'verb_registry accessor returns a registry-shaped object' => sub {
     is($svc->verb_registry->{handlers}{custom_verb}->(), 'ok', 'memoized + mutable');
 };
 
-subtest 'security accessor returns SessionManager instance' => sub {
+subtest 'security accessor returns the SecurityConfig instance' => sub {
     my $svc = make_svc();
     my $sec = $svc->security;
-    isa_ok($sec, 'SignalWire::Security::SessionManager', 'security returns SessionManager');
+    # Python parity: SWMLService.security is a SecurityConfig built from the
+    # config_file construction param (swml_service.py:139), which is what the
+    # SSL / allowed-hosts / CORS accessors read from.
+    isa_ok($sec, 'SignalWire::Core::SecurityConfig', 'security returns SecurityConfig');
     is($svc->security, $sec, 'security is memoized');
-    ok($sec->generate_token('foo', 'bar'), 'session manager is functional');
+    ok(defined $sec->ssl_enabled,  'ssl_enabled resolved');
+    ok(defined $sec->allowed_hosts, 'allowed_hosts resolved');
 };
 
 # -----------------------------------------------------------------------
