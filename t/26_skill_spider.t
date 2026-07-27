@@ -45,6 +45,24 @@ subtest 'hints' => sub {
 };
 
 subtest 'tool execution against fixture' => sub {
+    # WIN32: skipped, because this fixture needs a REAL fork + a signallable child.
+    #
+    # `fork` on Win32 is emulated with interpreter threads, so the "child" is a
+    # PSEUDO-process inside this same OS process. Two consequences, both measured on
+    # run 30266308509:
+    #   1. `kill 'TERM', $pid` does not signal a separate process — it lands on THIS
+    #      one. The log shows the assertion failing at 12:37:35.6365 and
+    #      "Terminating on signal SIGTERM(15)" 0.3ms later, then 24 minutes of
+    #      silence until the job timed out. The reap killed the test itself.
+    #   2. Routing the child through fork+exec did not escape it either: the
+    #      fixture never served the request (`599 Internal Exception`), so the
+    #      assertion had nothing valid to match.
+    # The skill's HTTP dispatch path is already covered on POSIX, where fork and
+    # signals behave. Faking it here would assert nothing real, and the previous
+    # attempts each cost a 25-44 minute CI wedge.
+    plan skip_all => 'needs a real fork + signallable child; Win32 emulates fork with threads'
+        if $^O =~ /^(MS)?Win32$/;
+
     # Spider issues real outbound HTTP. To verify the dispatch path
     # deterministically — without depending on example.com being up
     # and serving stable text — point the skill at a local HTTP::Tiny
@@ -94,7 +112,14 @@ PSGI_SERVER
     die "fork: $!" unless defined $pid;
     if ($pid == 0) {
         # Fully detached real process — no shared sockets / interpreter state.
-        exec( $^X, $server_pl ) or POSIX::_exit(127);
+        # Pass THIS process's @INC through with -I: the exec'd perl gets a fresh
+        # interpreter, so without it the child cannot find HTTP::Server::PSGI (it
+        # lives in the local::lib that scripts/_env.sh puts on PERL5LIB). When that
+        # load fails the child dies instantly, nothing listens, and the request
+        # comes back "599 Internal Exception" — which is exactly what the bare
+        # `perl t/26_skill_spider.t` invocation reproduces.
+        my @inc_args = map { "-I$_" } grep { !ref $_ } @INC;
+        exec( $^X, @inc_args, $server_pl ) or POSIX::_exit(127);
     }
 
     # Wait for the server to come up.

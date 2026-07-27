@@ -50,6 +50,17 @@ sub _bounded_reap {
     return;
 }
 
+# WIN32: this test runs the SDK's HTTPS server in a BARE-FORK child and signals it
+# to tear down (kill TERM/KILL at both the retry site and the END block). On Win32
+# `fork` is emulated with interpreter threads, so the child is a PSEUDO-process in
+# the SAME OS process and those signals land on the PARENT, killing the test itself
+# — and the END-block teardown would do it AFTER every assertion passed, so the
+# tests look complete while the job hangs. (Measured in t/26_skill_spider.t on run
+# 30266308509.) HTTPS-server behaviour is covered on POSIX, where fork and signals
+# work as intended.
+plan skip_all => 'needs a real fork + signallable child; Win32 emulates fork with threads'
+    if $^O =~ /^(MS)?Win32$/;
+
 # Resolve the harness cert/key + CA (and set SSL_CERT_FILE for the client).
 my $ca = TlsMockTest::trust_ca();
 plan skip_all => 'porting-sdk/test_harness/tls not adjacent (no certs)' unless defined $ca;

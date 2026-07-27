@@ -25,6 +25,16 @@ use Time::HiRes ();
 use SignalWire::Agent::AgentBase;
 use SignalWire::Skills::SkillRegistry;
 
+# WIN32: this test stands up its mock server in a BARE-FORK child and then signals
+# it to shut down. On Win32 `fork` is emulated with interpreter threads, so the
+# child is a PSEUDO-process in the SAME OS process and `kill 'TERM', $pid` lands on
+# the PARENT — it kills the test instead of the server. (Measured in
+# t/26_skill_spider.t on run 30266308509: SIGTERM 0.3ms after the reap, then a
+# 24-minute hang.) The wire behaviour here is covered on POSIX, where fork and
+# signals work; forcing it on Windows only produces a self-killed test.
+plan skip_all => 'needs a real fork + signallable child; Win32 emulates fork with threads'
+    if $^O =~ /^(MS)?Win32$/;
+
 # Loopback URLs must pass the SSRF guard for this test.
 local $ENV{SWML_ALLOW_PRIVATE_URLS} = '1';
 
