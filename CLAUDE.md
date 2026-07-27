@@ -22,8 +22,9 @@ Plack/Protocol::WebSocket; prepends `~/perl5/bin` to `PATH`; pins `PERLTIDY`) an
 therefore **runs from ANY directory with ANY shell setup, on POSIX AND Windows**
 -- no `PERL5LIB=...` prefix needed.
 
-Two Windows-specific traps `_env.sh` and `run-tests.sh` now handle (both were
-live defects in nightly Multi-OS run 30238072907; see the notes in `_env.sh`):
+Three Windows-specific traps `_env.sh` and `run-tests.sh` now handle (all were
+live defects on the nightly Multi-OS lane; see the notes in `_env.sh` and
+`run-tests.sh`):
 
 * **`PERL5LIB` is `;`-separated on Win32, `:` on POSIX.** Its entries carry drive
   letters, so `:` is a path *character* there. `_env.sh` joins with
@@ -35,8 +36,19 @@ live defects in nightly Multi-OS run 30238072907; see the notes in `_env.sh`):
   module *through* `$SW_PERL` (`_sw_perl_tool App::Prove ...`), making the
   interpreter and its `@INC` the same install by construction.
 
-`t/111_env_platform_paths.t` is the regression guard for both (it simulates the
-Windows shapes, since neither defect is observable on POSIX).
+* **`prove -j>1` WEDGES on Win32 — the harness cannot multiplex there.**
+  `TAP/Parser/Multiplexer.pm:12` sets `SELECT_OK => !( IS_VMS || IS_WIN32 )`, so on
+  Win32 no parser joins the `IO::Select` set; all land on the `avid` list and
+  `_iter` blocks draining `avid->[0]` while the unread siblings fill their pipe
+  buffers. Observed as an indefinite hang with *zero* captured output (runs
+  30240112956, 30258476574) where macOS finished in 2m37s. `run-tests.sh`
+  therefore clamps to `-j1` on Win32 only. **This is not "serialise the tests to
+  make them pass"** — the tests are concurrency-safe (own free port via
+  PortPicker) and stay parallel on POSIX, where the ~3.5x was measured. It is a
+  harness platform limitation. `PROVE_JOBS` still overrides.
+
+`t/111_env_platform_paths.t` is the regression guard for all three (it simulates
+the Windows shapes, since none of these defects is observable on POSIX).
 
 ```bash
 # Run all tests (prove -Ilib -It/lib -r t/)

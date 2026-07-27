@@ -50,6 +50,44 @@ fi
 # cores (min 1); override with PROVE_JOBS.
 jobs="${PROVE_JOBS:-$( (command -v nproc >/dev/null && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}"
 
+# --- Win32: clamp to -j1, because the HARNESS cannot multiplex there. ---------
+#
+# THIS IS NOT "serialise the tests to make them pass." The tests are genuinely
+# concurrency-safe (each picks its own free port via PortPicker) and STAY PARALLEL
+# on POSIX, where the ~3.5x above was measured. This is a platform limitation of
+# Test::Harness itself, in its own source:
+#
+#   TAP/Parser/Multiplexer.pm:12
+#     use constant SELECT_OK => !( IS_VMS || IS_WIN32 );
+#
+# With SELECT_OK false, NO parser is ever added to the IO::Select set (line 84);
+# every one goes on the `avid` "can't select" list instead. `_iter` then drains
+# `avid->[0]` to completion before looking at any other parser — it BLOCKS on
+# $parser->next for the first job. So `-j4` on Windows does not fan out: it spawns
+# 4 children, reads exactly one, and the unread siblings fill their pipe buffers
+# with nobody draining them and wedge. (TAP/Parser/Iterator/Process.pm:95 shows the
+# same fork dependency: `return unless $Config{d_fork} || $IS_WIN32` — Win32 has no
+# real fork, only interpreter-thread emulation.)
+#
+# Observed twice on the nightly Multi-OS lane: run 30240112956 (4h57m, cancelled)
+# and 30258476574 (still wedged at 40min), both with NOT ONE line of captured TEST
+# output — prove emitted nothing at all before hanging, which is exactly what
+# blocking on an un-drained child looks like. macOS finished the same suite in
+# 2m37s on that run.
+#
+# So on Win32 -j>1 is not slow, it is BROKEN. Clamp to 1: slower than POSIX, but
+# finite. An explicit PROVE_JOBS still wins (override deliberately, e.g. to
+# re-test the harness behaviour) — the clamp only overrides the core-count default.
+case "${OSTYPE:-}" in
+    msys* | cygwin* | win32*) _sw_is_win32=1 ;;
+    *) _sw_is_win32="$("$SW_PERL" -e 'print(($^O =~ /^(MS)?Win32$/) ? 1 : 0)' 2>/dev/null || echo 0)" ;;
+esac
+if [ "${_sw_is_win32:-0}" = "1" ] && [ -z "${PROVE_JOBS:-}" ] && [ "$jobs" != "1" ]; then
+    echo "==> run-tests.sh: Win32 detected — clamping prove to -j1 (Test::Harness" >&2
+    echo "    cannot select() on Win32, so -j>1 wedges; see the note above)." >&2
+    jobs=1
+fi
+
 # Optional filter passthrough: default to the whole tree, else run exactly what
 # the caller named.
 # The body of the real `prove` script, inlined verbatim: process_args() is called

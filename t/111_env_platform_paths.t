@@ -219,4 +219,73 @@ SKIP: {
     File::Path::remove_tree($tmp);
 }
 
+# ---------------------------------------------------------------------------
+# Defect 3 — `prove -j>1` wedges on Win32 (Test::Harness cannot select there).
+# ---------------------------------------------------------------------------
+# TAP/Parser/Multiplexer.pm sets SELECT_OK => !(IS_VMS || IS_WIN32), so on Win32
+# every parser lands on the `avid` list and _iter BLOCKS draining avid->[0] before
+# reading any sibling -- the unread children fill their pipe buffers and hang.
+# Observed as an indefinite wedge with ZERO captured output (runs 30240112956,
+# 30258476574) while macOS finished the same suite in 2m37s.
+#
+# This is NOT "serialise the tests to make them pass" (the RULES.md ban is about
+# test ISOLATION): the tests are concurrency-safe and STAY PARALLEL on POSIX.
+# It is a harness platform limitation, so the clamp must be Win32-only.
+
+like( $rt_src, qr/SELECT_OK/,
+    'run-tests.sh cites the Test::Harness SELECT_OK limitation for the clamp' );
+
+# The clamp must be conditional on Win32 -- never unconditional, or POSIX loses
+# the measured ~3.5x parallel win.
+like( $rt_src, qr/_sw_is_win32/,
+    'the -j clamp is gated on a Win32 detection, not applied unconditionally' );
+
+# ...and an explicit PROVE_JOBS must still win, so the clamp cannot be a
+# permanent lock-out.
+like( $rt_src, qr/-z\s+"\$\{PROVE_JOBS:-\}"/,
+    'the clamp yields to an explicit PROVE_JOBS override' );
+
+# Behavioural: drive the real script with `bash -x` and read the -j it actually
+# passes to App::Prove. Three cases, since a clamp that fires everywhere would be
+# a silent POSIX regression and one that never fires would not fix Windows.
+SKIP: {
+    my $bash = `command -v bash 2>/dev/null`;
+    chomp $bash;
+    skip 'bash not available', 3 unless length $bash;
+
+    my $script = File::Spec->catfile( $repo, 'scripts', 'run-tests.sh' );
+
+    # Point the probe at a THROWAWAY trivial test, never at this file: passing
+    # 111_env_platform_paths.t here would make the script re-run the very test
+    # that is running, recursing until it hangs (hit while writing this).
+    require File::Path;
+    my $probe_dir = File::Spec->catdir( $repo, '.sw-tmp', "jprobe-$$" );
+    File::Path::make_path($probe_dir);
+    my $target = File::Spec->catfile( $probe_dir, 'trivial.t' );
+    open my $tfh, '>', $target or die $!;
+    print {$tfh} "print \"1..1\\nok 1\\n\";\n";
+    close $tfh;
+
+    # Returns the -jN that reached App::Prove for a given env prefix.
+    my $probe = sub {
+        my ($prefix) = @_;
+        my $out = `$prefix bash -x '$script' '$target' 2>&1 | grep -oE '\\-j[0-9]+' | tail -1`;
+        chomp $out;
+        return $out;
+    };
+
+    my $posix = $probe->('');
+    isnt( $posix, '-j1',
+        'POSIX keeps parallel prove (clamp does NOT fire off-Win32)' );
+
+    my $win = $probe->('OSTYPE=msys');
+    is( $win, '-j1', 'a Win32-shaped OSTYPE clamps prove to -j1' );
+
+    my $override = $probe->('OSTYPE=msys PROVE_JOBS=3');
+    is( $override, '-j3',
+        'explicit PROVE_JOBS overrides the Win32 clamp' );
+
+    File::Path::remove_tree($probe_dir);
+}
+
 done_testing();
