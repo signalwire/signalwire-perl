@@ -1070,6 +1070,7 @@ def collect(raw: dict) -> dict:
                 "attributes": [],
                 "methods": [],
                 "extends": [],
+                "consumes": [],
             }
         agg = by_full_name[full]
         # Dedupe attributes by name (later reopenings shouldn't clobber).
@@ -1086,6 +1087,79 @@ def collect(raw: dict) -> dict:
         for e in t.get("extends", []) or []:
             if e not in agg["extends"]:
                 agg["extends"].append(e)
+        for c in t.get("consumes", []) or []:
+            if c not in agg["consumes"]:
+                agg["consumes"].append(c)
+
+    # --- Moo ROLE composition (``with 'Some::Role';``) --------------------
+    #
+    # A role is not a superclass. Moo FLATTENS a composed role's attributes
+    # and methods into the consuming package at composition time, so they
+    # become the consumer's OWN members — there is no @ISA link, and the
+    # `extends` walk above therefore does not reach them. Mirror that
+    # flattening here so an accessor a class gets from a role is recorded on
+    # the class exactly as if it had been written in the class body.
+    #
+    # This is the Perl twin of the reference enumerator's
+    # ``_wired_base_attributes`` (porting-sdk
+    # scripts/enumerate_python_signatures.py): lift members off a provider
+    # the structural walker would otherwise miss.
+    #
+    # Concretely: RestClient composes the GENERATED
+    # SignalWire::REST::Namespaces::Generated::ResourceTree role, which
+    # provides all 22 resource accessors (calling, fabric, video, chat,
+    # messages, …). They are reachable at runtime — t/53_rest_client_tree_
+    # accessors.t drives real requests through them onto the mock — but were
+    # invisible to the audit, surfacing as 22 phantom missing-port drifts
+    # against signalwire.rest.client.RestClient.
+    #
+    # The consumer's OWN declarations win over the role's (Moo gives the
+    # consuming class precedence over a composed role's method), and the
+    # walk is recursive so a role that itself composes a role is covered.
+    # Cycles are guarded via `seen`.
+    def flatten_role_members(full: str, seen: set) -> tuple[list, list]:
+        """(attributes, methods) a package gains from the roles it composes."""
+        if full in seen:
+            return [], []
+        seen.add(full)
+        attrs_out: list = []
+        methods_out_: list = []
+        entry = by_full_name.get(full)
+        if not entry:
+            return [], []
+        for role_name in entry.get("consumes", []) or []:
+            role = by_full_name.get(role_name)
+            if not role:
+                # A role we cannot resolve (declared in a file outside lib/)
+                # is a real blind spot, not something to silently pass over.
+                raise RuntimeError(
+                    f"{full} composes role {role_name!r}, which signature_dump.pl "
+                    f"did not parse. The role's members would be silently dropped "
+                    f"from the audit — resolve the role or fix the dump."
+                )
+            # Depth-first: the role's own composed roles first.
+            r_attrs, r_methods = flatten_role_members(role_name, seen)
+            attrs_out.extend(r_attrs)
+            methods_out_.extend(r_methods)
+            attrs_out.extend(role.get("attributes", []) or [])
+            methods_out_.extend(role.get("methods", []) or [])
+        return attrs_out, methods_out_
+
+    for full, entry in list(by_full_name.items()):
+        if not entry.get("consumes"):
+            continue
+        role_attrs, role_methods = flatten_role_members(full, set())
+        own_attr_names = {a.get("name") for a in entry["attributes"]}
+        for a in role_attrs:
+            if a.get("name") not in own_attr_names:
+                entry["attributes"].append(a)
+                own_attr_names.add(a.get("name"))
+        own_method_names = {m.get("name") for m in entry["methods"]}
+        for m in role_methods:
+            if m.get("name") not in own_method_names:
+                entry["methods"].append(m)
+                own_method_names.add(m.get("name"))
+
     # Replace the raw types list with the merged versions so the rest of
     # collect() iterates over the unioned entries.
     raw = {"types": list(by_full_name.values())}
@@ -2145,6 +2219,7 @@ def augment_with_bareword_has(raw: dict) -> None:
                     "attributes": [],
                     "methods": [],
                     "extends": [],
+                    "consumes": [],
                 }
                 by_full_name[pkg_name] = entry
                 raw.setdefault("types", []).append(entry)

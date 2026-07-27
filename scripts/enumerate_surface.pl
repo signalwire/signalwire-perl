@@ -1697,6 +1697,7 @@ sub parse_file {
                 name        => $pkg,
                 subs        => [],
                 attrs       => [],
+                consumes    => [],
                 _seen       => {},
                 _seen_attr  => {},
                 uses_moo    => 0,
@@ -1737,6 +1738,43 @@ sub parse_file {
             $current->{has_extends} = 1 if $current;
 
             # fall through — no 'next' needed, but nothing else to match
+        }
+
+        # Detect `with 'Some::Role';` (Moo ROLE COMPOSITION).
+        #
+        # Unlike `extends`, a role is not a parent class: Moo flattens the
+        # role's `has` accessors and subs straight into the consuming package,
+        # so they are the consumer's OWN public surface. Record the role names
+        # here; flatten_roles() below lifts their members onto each consumer.
+        # Without this, every member reached through a role is invisible to
+        # the surface audit — which is how RestClient's 22 generated
+        # resource-tree accessors (composed from
+        # SignalWire::REST::Namespaces::Generated::ResourceTree) went
+        # unrecorded despite being reachable at runtime.
+        if ( $line =~ /^\s*with\s*\(?\s*['"]/ ) {
+            my $decl = $line;
+
+            # A `with` may list several roles and may wrap across lines; read
+            # forward (bounded) to the terminating `;`. This consumes from the
+            # same handle the outer loop reads, which is correct: the
+            # continuation lines belong to this declaration and carry nothing
+            # else we parse.
+            if ( $line !~ /;/ ) {
+                my $k = 0;
+                while ( $k++ < 10 ) {
+                    my $nxt = <$fh>;
+                    last unless defined $nxt;
+                    $decl .= $nxt;
+                    last if $nxt =~ /;/;
+                }
+            }
+            if ($current) {
+                while ( $decl =~ /(?:'([^']+)'|"([^"]+)")/g ) {
+                    my $role = defined $1 ? $1 : $2;
+                    push @{ $current->{consumes} }, $role;
+                }
+            }
+            next;
         }
 
         # Only match sub definitions at column 0. Indented subs are almost
@@ -1827,9 +1865,70 @@ sub collect_surface {
     my $top = File::Spec->catfile( File::Spec->catdir( $lib_root, '..' ), 'SignalWire.pm' );
     push @pm_files, $top if -f $top;
 
+    # PASS 1 — parse every file, so role providers are known before any
+    # consumer is projected. A role may be declared in a different file from
+    # the class that composes it (RestClient.pm composes the role defined in
+    # Namespaces/Generated/ResourceTree.pm), so flattening cannot be done
+    # inside the per-file parse.
+    my @parsed;    # [ $file, $packages ]
+    my %pkg_by_name;
     for my $file ( sort @pm_files ) {
         next if $SKIP_FILE{$file};
         my $packages = parse_file($file);
+        push @parsed, [ $file, $packages ];
+        for my $pkg (@$packages) {
+            $pkg_by_name{ $pkg->{name} } //= $pkg;
+        }
+    }
+
+    # PASS 1b — flatten composed roles into their consumers.
+    #
+    # Moo installs a role's `has` accessors and subs into the consuming class
+    # at composition time; they are the consumer's own public surface, with no
+    # @ISA link for an inheritance walk to follow. Mirror that here so members
+    # reached through a role are enumerated on the consumer. The consumer's own
+    # declarations take precedence (Moo gives the class priority over the
+    # role), and the walk recurses so a role composing another role is covered.
+    my $flatten_roles;
+    $flatten_roles = sub {
+        my ( $pkg, $seen ) = @_;
+        return ( [], [] ) if $seen->{ $pkg->{name} }++;
+        my ( @subs, @attrs );
+        for my $role_name ( @{ $pkg->{consumes} || [] } ) {
+            my $role = $pkg_by_name{$role_name};
+            if ( !$role ) {
+
+                # An unresolvable role is a genuine blind spot: its members
+                # would be silently dropped. Fail loud rather than emit a
+                # valid-looking but incomplete surface.
+                die "enumerate_surface: $pkg->{name} composes role '$role_name', "
+                    . "which was not found in lib/. Its members would be dropped "
+                    . "from the surface — resolve the role or fix the parser.\n";
+            }
+            my ( $rs, $ra ) = $flatten_roles->( $role, $seen );
+            push @subs,  @$rs, @{ $role->{subs}  || [] };
+            push @attrs, @$ra, @{ $role->{attrs} || [] };
+        }
+        return ( \@subs, \@attrs );
+    };
+    for my $pkg ( values %pkg_by_name ) {
+        next unless @{ $pkg->{consumes} || [] };
+        my ( $role_subs, $role_attrs ) = $flatten_roles->( $pkg, {} );
+        for my $s (@$role_subs) {
+            next if $s =~ /^_/ && !( $s =~ /^__\w+__$/ );
+            next if $SKIP_SUB{$s};
+            next if $pkg->{_seen}{$s}++;
+            push @{ $pkg->{subs} }, $s;
+        }
+        for my $a (@$role_attrs) {
+            next if $pkg->{_seen_attr}{$a}++;
+            push @{ $pkg->{attrs} }, $a;
+        }
+    }
+
+    # PASS 2 — project each package onto the canonical surface buckets.
+    for my $entry (@parsed) {
+        my ( $file, $packages ) = @$entry;
         for my $pkg (@$packages) {
             my $pkg_name = $pkg->{name};
 

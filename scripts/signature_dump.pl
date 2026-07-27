@@ -48,6 +48,7 @@ sub parse_file {
     my @methods;
     my @attrs;
     my @extends;
+    my @consumes;
 
     my $i = 0;
     while ( $i < @$lines ) {
@@ -56,19 +57,21 @@ sub parse_file {
         if ( $line =~ /^\s*package\s+([\w:]+)\s*;/ ) {
 
             # Flush previous package
-            if ( defined $cur_pkg && ( @methods || @attrs || @extends ) ) {
+            if ( defined $cur_pkg && ( @methods || @attrs || @extends || @consumes ) ) {
                 push @entries,
                     {
                     full_name  => $cur_pkg,
                     methods    => [@methods],
                     attributes => [@attrs],
                     extends    => [@extends],
+                    consumes   => [@consumes],
                     };
             }
-            $cur_pkg = $1;
-            @methods = ();
-            @attrs   = ();
-            @extends = ();
+            $cur_pkg  = $1;
+            @methods  = ();
+            @attrs    = ();
+            @extends  = ();
+            @consumes = ();
             $i++;
             next;
         }
@@ -76,6 +79,35 @@ sub parse_file {
         # ``extends 'Parent';`` — single arg
         if ( $line =~ /^\s*extends\s+(?:'([^']+)'|"([^"]+)")/ ) {
             push @extends, ( $1 // $2 );
+            $i++;
+            next;
+        }
+
+        # ``with 'Some::Role';`` — Moo/Moose ROLE COMPOSITION.
+        #
+        # A composed role is NOT a parent class: Moo FLATTENS the role's
+        # attributes and methods directly into the consuming package at
+        # `with`-time, so they are the consumer's OWN members (there is no
+        # @ISA link and `extends` does not cover them). Without recording
+        # this, every member a class gets from a role is invisible to the
+        # audit — which is exactly how the 22 generated resource-tree
+        # accessors RestClient composes from
+        # SignalWire::REST::Namespaces::Generated::ResourceTree went
+        # unrecorded while being fully reachable at runtime.
+        #
+        # Recorded separately from `extends` because the two have different
+        # semantics downstream: an `extends` parent contributes constructor
+        # args through inheritance, whereas a role's members are flattened
+        # in as though written in the consumer's own body.
+        #
+        # Handles the single-arg form plus the multi-role list
+        # (``with 'A', 'B';``), including the parenthesized spelling.
+        if ( $line =~ /^\s*with\s*\(?\s*['"]/ ) {
+            my $decl = with_decl_text( $lines, $i );
+            while ( $decl =~ /(?:'([^']+)'|"([^"]+)")/g ) {
+                my $role = $1 // $2;
+                push @consumes, $role unless grep { $_ eq $role } @consumes;
+            }
             $i++;
             next;
         }
@@ -167,16 +199,33 @@ sub parse_file {
         $i++;
     }
 
-    if ( defined $cur_pkg && ( @methods || @attrs || @extends ) ) {
+    if ( defined $cur_pkg && ( @methods || @attrs || @extends || @consumes ) ) {
         push @entries,
             {
             full_name  => $cur_pkg,
             methods    => [@methods],
             attributes => [@attrs],
             extends    => [@extends],
+            consumes   => [@consumes],
             };
     }
     return @entries;
+}
+
+# The source text of the ``with '...';`` role composition starting at
+# $lines->[$start]. A ``with`` may list several roles and may wrap across
+# lines, so scan forward to the terminating ``;`` (bounded, like the ``has``
+# scanner) rather than reading a single line.
+sub with_decl_text {
+    my ( $lines, $start ) = @_;
+    my $text = '';
+    for my $j ( $start .. $#$lines ) {
+        my $l = $lines->[$j];
+        $text .= $l;
+        last if $l =~ /;/;
+        last if $j - $start > 10;
+    }
+    return $text;
 }
 
 # Does the Moo/Moose ``has`` declaration starting at $lines->[$start] carry

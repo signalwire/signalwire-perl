@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ f47e81752b12db684db3aaea78076f63a1a5eda6",
+   "generated_from" : "signalwire-perl @ a3d593c74482da7b92ddb5fff5813b72aeaf766c",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -1929,7 +1929,29 @@
       "signalwire.rest.client" : {
          "classes" : {
             "RestClient" : [
-               "__init__"
+               "__init__",
+               "addresses",
+               "calling",
+               "chat",
+               "datasphere",
+               "fabric",
+               "imported_numbers",
+               "logs",
+               "lookup",
+               "messages",
+               "mfa",
+               "number_groups",
+               "phone_numbers",
+               "project",
+               "projects",
+               "pubsub",
+               "queues",
+               "recordings",
+               "registry",
+               "short_codes",
+               "sip_profile",
+               "verified_callers",
+               "video"
             ]
          },
          "functions" : []
