@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 78000d3daf07a2902222620f29b1b971cb351452",
+   "generated_from" : "signalwire-perl @ f47e81752b12db684db3aaea78076f63a1a5eda6",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -816,6 +816,7 @@
                "add_verb_to_section",
                "as_router",
                "can",
+               "domain",
                "extract_sip_username",
                "full_validation_enabled",
                "get_all_functions",
@@ -844,6 +845,9 @@
                "schema_utils",
                "security",
                "serve",
+               "ssl_cert_path",
+               "ssl_enabled",
+               "ssl_key_path",
                "stop",
                "swaig_pre_dispatch",
                "to_psgi_app",
@@ -1303,6 +1307,7 @@
             "Action" : [
                "__init__",
                "call",
+               "completed",
                "control_id",
                "is_done",
                "on_completed",
@@ -1884,6 +1889,7 @@
                "body",
                "headers",
                "method",
+               "request_id",
                "status_code",
                "url"
             ],
@@ -3426,6 +3432,7 @@
                "get_instance_key",
                "get_parameter_schema",
                "register_tools",
+               "remove_xpaths",
                "scrape_url",
                "setup"
             ]
