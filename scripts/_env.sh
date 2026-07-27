@@ -36,14 +36,61 @@ _ENV_SH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$_ENV_SH_DIR")"
 export REPO_ROOT
 
+# ---------------------------------------------------------------------------
+# SW_PERL — the ONE interpreter every gate must use, and PERL5LIB's separator
+# ---------------------------------------------------------------------------
+# On a Windows runner, three Perls are typically in play at once and mixing them
+# is fatal (nightly Multi-OS run 30238072907):
+#   1. the one `actions-setup-perl` installed and set PERL5LIB for
+#      (C:\hostedtoolcache\windows\perl\5.38.5-thr\x64) — the one we WANT;
+#   2. Strawberry's (C:\Strawberry\perl\bin) — ships with the runner image;
+#   3. an MSYS/Git-for-Windows core_perl (/usr/share/perl5/core_perl) — comes
+#      with the `shell: bash` (C:\Program Files\Git\bin\bash.EXE) the step runs in.
+# The step ran Strawberry's `prove`, which then resolved App::Prove out of the
+# MSYS core_perl and died: "Can't locate TAP/Harness/Env.pm in @INC". A `prove`
+# from one install loading modules from another CANNOT work. Resolving the
+# interpreter (not the script) and running the harness THROUGH it makes the
+# interpreter and its @INC the same install by construction.
+#
+# Picking the interpreter is itself PATH-order-sensitive, and "first perl on PATH"
+# is NOT good enough: under `shell: bash` (Git-for-Windows) the MSYS /usr/bin is
+# injected AHEAD of what actions-setup-perl prepended to the Windows PATH, so
+# `command -v perl` returns MSYS's /usr/bin/perl — install #3, the very one whose
+# @INC lacks TAP::Harness::Env. (Measured: run 30239532589 failed with
+# "ERROR: /usr/bin/perl cannot load App::Prove" after the first fix landed.)
+#
+# So SELECT ON EVIDENCE, not on PATH position: among the candidate interpreters,
+# take the first that can actually load App::Prove. An explicit SW_PERL override
+# always wins and is never second-guessed.
+#
+# Callers must invoke "$SW_PERL", never a bare `prove`/`perltidy`/`perlcritic`
+# whose own shebang picks a DIFFERENT perl than the one we resolved.
+if [ -z "${SW_PERL:-}" ]; then
+    SW_PERL="$(bash "$_ENV_SH_DIR/_pick_perl.sh" 2>/dev/null)"
+    [ -n "$SW_PERL" ] || SW_PERL=perl
+fi
+export SW_PERL
+
+# PERL5LIB's separator is PLATFORM-DEPENDENT: ':' on POSIX, ';' on Win32 (where
+# paths carry drive letters, so ':' cannot be a separator). Hardcoding ':' here
+# corrupted the Windows value — perl split `D:\a\...\perl5;D:\a\...` on ':' and
+# @INC came out as the entries `D`, `\a\...\perl5;D`, `\a\...`: every ':' eaten,
+# still ';'-joined, not one usable directory among them. Ask the interpreter we
+# actually resolved (never assume), and fall back to ':' only if that fails.
+SW_PATH_SEP="$("$SW_PERL" -MConfig -e 'print $Config{path_sep}' 2>/dev/null)"
+[ -n "$SW_PATH_SEP" ] || SW_PATH_SEP=':'
+export SW_PATH_SEP
+
 # The local::lib root — override with PERL_LOCAL_LIB_ROOT, else ~/perl5.
 PERL_LL_ROOT="${PERL_LOCAL_LIB_ROOT:-$HOME/perl5}"
 
 # --- PERL5LIB: so the perltidy/perlcritic wrappers (and the test suite, and the
 #     generators' perltidy backstop) can locate Perl::Tidy / Perl::Critic / the
-#     runtime deps. Prepend, preserving any existing PERL5LIB. -----------------
+#     runtime deps. Prepend with the PLATFORM separator, preserving any existing
+#     PERL5LIB (on Windows that is the ';'-joined value setup-perl exported —
+#     splitting or re-joining it on ':' destroys it). ---------------------------
 if [ -d "$PERL_LL_ROOT/lib/perl5" ]; then
-    export PERL5LIB="$PERL_LL_ROOT/lib/perl5${PERL5LIB:+:$PERL5LIB}"
+    export PERL5LIB="$PERL_LL_ROOT/lib/perl5${PERL5LIB:+$SW_PATH_SEP$PERL5LIB}"
 fi
 
 # --- PATH: so `perltidy` / `perlcritic` resolve by bare name. ----------------
@@ -84,11 +131,42 @@ _sw_ensure_perl_tools() {
         echo "         cpanm --local-lib=$PERL_LL_ROOT --with-develop --installdeps $REPO_ROOT" >&2
         return 1
     }
-    # Re-expose the now-populated local::lib.
-    [ -d "$PERL_LL_ROOT/lib/perl5" ] && export PERL5LIB="$PERL_LL_ROOT/lib/perl5${PERL5LIB:+:$PERL5LIB}"
+    # Re-expose the now-populated local::lib (platform separator, as above).
+    [ -d "$PERL_LL_ROOT/lib/perl5" ] && export PERL5LIB="$PERL_LL_ROOT/lib/perl5${PERL5LIB:+$SW_PATH_SEP$PERL5LIB}"
     [ -d "$PERL_LL_ROOT/bin" ] && export PATH="$PERL_LL_ROOT/bin:$PATH"
     [ -x "$PERL_LL_ROOT/bin/perltidy" ] && export PERLTIDY="$PERL_LL_ROOT/bin/perltidy"
     return 0
+}
+
+# ---------------------------------------------------------------------------
+# Running a Perl-shipped CLI tool through the RESOLVED interpreter
+# ---------------------------------------------------------------------------
+# `prove`, `perltidy` and `perlcritic` are all Perl SCRIPTS with a shebang. Two
+# ways that betrays us:
+#   * PATH order picks a script belonging to a DIFFERENT perl install than
+#     $SW_PERL (the Windows failure above: Strawberry's prove, MSYS's App::Prove);
+#   * even with an absolute path, the shebang (`#!/usr/bin/perl`) re-launches
+#     SYSTEM perl, whose @INC lacks the local::lib — which is why a full path to
+#     ~/perl5/bin/perltidy still died with "Can't locate Perl/Tidy.pm" (see the
+#     BUG note at the top of this file).
+# Both vanish if we run the tool's MODULE through $SW_PERL: one interpreter, its
+# own @INC, no shebang and no PATH lookup in the loop.
+#
+#   _sw_perl_tool <Module::Name> <entry-perl-code> [args...]
+#
+# `App::Prove`'s documented programmatic entry point is
+# `App::Prove->new->process_args(@ARGV)->run`; perltidy/perlcritic keep using
+# their wrappers (they are found via PATH but now under the corrected PERL5LIB).
+_sw_perl_tool() {
+    local module="$1" entry="$2"
+    shift 2
+    "$SW_PERL" "-M$module" -e "$entry" -- "$@"
+}
+
+# True when $SW_PERL can load the named module — use to fail LOUD with a real
+# diagnostic instead of letting a tool die with a confusing @INC dump.
+_sw_perl_has_module() {
+    "$SW_PERL" "-M$1" -e1 >/dev/null 2>&1
 }
 
 # The set of Perl source files the FMT + LINT gates police: every module under
