@@ -234,7 +234,14 @@ sub discover_porting_sdk_package {
     $dir =~ s{[/\\]$}{};
     while (1) {
         # 2. SIBLING ../porting-sdk (the ~/src adjacency layout).
-        my $parent = File::Spec->canonpath(File::Spec->catdir($dir, File::Spec->updir));
+        # Cwd::abs_path RESOLVES '..'; File::Spec->canonpath does NOT (it is purely
+        # lexical), so the old canonpath form appended another '/..' every pass, the
+        # path grew without bound, and `last if $parent eq $dir` could never fire —
+        # an infinite loop with a -f syscall per hop. It only LOOKED location-specific
+        # because an adjacent checkout finds porting-sdk within a few hops and exits
+        # early; the non-termination was always there. (root-caused 2026-07-27)
+        my $parent = Cwd::abs_path(File::Spec->catdir($dir, File::Spec->updir));
+        last unless defined $parent;
         my $sib = $ok->(File::Spec->catdir($parent, 'porting-sdk'));
         return $sib if $sib;
         # 3. NESTED <dir>/porting-sdk (the CI checkout at path: porting-sdk).
