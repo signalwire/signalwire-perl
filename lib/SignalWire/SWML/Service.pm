@@ -244,6 +244,46 @@ has 'security' => (
     },
 );
 
+# Python parity: swml_service.py:143-146 lifts four values off the
+# SecurityConfig collaborator onto the service itself --
+#   self.ssl_enabled   = self.security.ssl_enabled
+#   self.domain        = self.security.domain
+#   self.ssl_cert_path = self.security.ssl_cert_path
+#   self.ssl_key_path  = self.security.ssl_key_path
+# They are caller-observable VALUES, and the reference also REASSIGNS them
+# later (serve() overrides ssl_enabled/domain at swml_service.py:1235-1248,
+# and clears ssl_enabled at :1248 when the cert/key check fails), so these
+# are read/write, not read-only. ``lazy`` defers to ->security so the
+# config_file passed to ->new is honoured, matching the reference's
+# construction order.
+has 'ssl_enabled' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub { $_[0]->security->ssl_enabled },
+);
+
+has 'ssl_cert_path' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub { $_[0]->security->ssl_cert_path },
+);
+
+has 'ssl_key_path' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub { $_[0]->security->ssl_key_path },
+);
+
+has 'domain' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub { $_[0]->security->domain },
+);
+
 # Function-name validation pattern matches the other ports.
 my $SWAIG_FN_NAME = qr/\A[a-zA-Z_][a-zA-Z0-9_]*\z/;
 

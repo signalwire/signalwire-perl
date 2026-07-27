@@ -37,6 +37,20 @@ has 'base_url' => (
     default  => sub { $ENV{SPIDER_BASE_URL} || '' },
 );
 
+# Python parity: skill.py:191-199 sets self.remove_xpaths to a PREFILLED list
+# of XPath expressions naming the elements stripped before text extraction,
+# and _fast_text_extract (skill.py:313) iterates it. It is a caller-observable
+# value -- a consumer reads it to learn what gets dropped, or appends to it to
+# drop more. Same seven expressions, same order, as the reference.
+has 'remove_xpaths' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub {
+        return [ '//script', '//style', '//nav', '//header', '//footer', '//aside', '//noscript', ];
+    },
+);
+
 has '_http' => (
     init_arg => undef,
     is       => 'ro',
@@ -143,7 +157,7 @@ sub scrape_url {
         }
     }
 
-    return _extract_text($body);
+    return $self->_extract_text($body);
 }
 
 sub _resolve_url {
@@ -166,12 +180,23 @@ sub _resolve_url {
 }
 
 sub _extract_text {
-    my ($html) = @_;
+    my ( $self, $html ) = @_;
     return '' unless defined $html && length $html;
 
-    # Strip <script> and <style> blocks entirely.
-    $html =~ s{<script\b[^>]*>.*?</script\s*>}{}gisx;
-    $html =~ s{<style\b[^>]*>.*?</style\s*>}{}gisx;
+    # Drop each element named by ->remove_xpaths, subtree and all -- the
+    # regex analogue of the reference's lxml `tree.xpath($x)` + `drop_tree()`
+    # loop (skill.py:313-315). Only the simple `//tag` form is supported; a
+    # more complex expression is skipped rather than mis-stripped, so an
+    # extension that appends a predicate degrades to a no-op instead of
+    # silently eating the wrong markup.
+    for my $xpath ( @{ $self->remove_xpaths } ) {
+        next unless $xpath =~ m{\A//([A-Za-z][A-Za-z0-9]*)\z};
+        my $tag = $1;
+        $html =~ s{<\Q$tag\E\b[^>]*>.*?</\Q$tag\E\s*>}{}gis;
+
+        # Void / unclosed occurrences leave a bare start tag behind.
+        $html =~ s{<\Q$tag\E\b[^>]*/?>}{}gis;
+    }
 
     # Strip remaining tags, decode common entities, collapse whitespace.
     $html =~ s/<[^>]+>/ /g;

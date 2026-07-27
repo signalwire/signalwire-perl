@@ -11129,6 +11129,15 @@
               ],
               "returns": "any"
             },
+            "domain": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "extract_sip_username": {
               "params": [
                 {
@@ -11497,6 +11506,33 @@
                   "name": "domain",
                   "type": "optional<string>",
                   "required": false
+                }
+              ],
+              "returns": "any"
+            },
+            "ssl_cert_path": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "ssl_enabled": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "ssl_key_path": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
                 }
               ],
               "returns": "any"
@@ -32208,6 +32244,15 @@
               "returns": "void"
             },
             "base_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "remove_xpaths": {
               "params": [
                 {
                   "name": "self",
