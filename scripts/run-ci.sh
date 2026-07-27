@@ -268,6 +268,16 @@ sched_gate PACKAGE-NIGHTLY tier=nightly defer=1 res=dayone desc="package suite, 
 sched_gate NO-CHEAT desc="audit_no_cheat_tests" \
     -- python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
 
+# BOUNDED-REAP: no test may reap a child with an unbounded waitpid($pid, 0). Such a
+# reap hangs the WHOLE suite when the child doesn't die — on Win32 that is the
+# normal case (emulated fork ⇒ a pseudo-process can ignore even SIGKILL). This is a
+# HANG, which is strictly worse than a failure: no assertions, and GitHub's API
+# 404s an in_progress job's log, so it burns runner hours with no evidence until
+# someone cancels by hand. t/26_skill_spider.t did exactly that for 44 min (run
+# 30261956136). Static, sub-second, catches the next one at commit time.
+sched_gate BOUNDED-REAP desc="no unbounded waitpid(\$pid, 0) in t/ (a stuck child hangs the suite)" \
+    -- perl "$PORT_ROOT/scripts/lint_bounded_reap.pl"
+
 # COORDINATED-PASS: if porting-sdk was checked out at a NON-main ref (a coordinated
 # pass via the PORTING_SDK_REF repo variable), the PR must declare it (a
 # `Coordinated-With: porting-sdk@<branch>` line in the PR body, or the

@@ -32,6 +32,35 @@ use TlsMockTest;
 use SignalWire::Server::AgentServer;
 use SignalWire::Agent::AgentBase;
 
+# Reap a child with a HARD DEADLINE. A bare waitpid($pid, 0) hangs the whole suite
+# forever when the child does not die — on Win32 an emulated-fork pseudo-process in
+# a blocking accept() ignores even SIGKILL. Same shape as the documented pattern in
+# t/relay/outbound_call_mock.t. Caller has already signalled; we just don't wait
+# forever for the corpse.
+sub _bounded_reap {
+    my ( $pid, $what ) = @_;
+    return unless defined $pid && $pid > 0;
+    my $deadline = time + 30;
+    while ( time < $deadline ) {
+        my $w = waitpid( $pid, POSIX::WNOHANG() );
+        return if $w == $pid || $w == -1;
+        Time::HiRes::sleep(0.05);
+    }
+    diag("62_tls_https_server: $what — child $pid exceeded 30s reap deadline; abandoning to avoid suite hang");
+    return;
+}
+
+# WIN32: this test runs the SDK's HTTPS server in a BARE-FORK child and signals it
+# to tear down (kill TERM/KILL at both the retry site and the END block). On Win32
+# `fork` is emulated with interpreter threads, so the child is a PSEUDO-process in
+# the SAME OS process and those signals land on the PARENT, killing the test itself
+# — and the END-block teardown would do it AFTER every assertion passed, so the
+# tests look complete while the job hangs. (Measured in t/26_skill_spider.t on run
+# 30266308509.) HTTPS-server behaviour is covered on POSIX, where fork and signals
+# work as intended.
+plan skip_all => 'needs a real fork + signallable child; Win32 emulates fork with threads'
+    if $^O =~ /^(MS)?Win32$/;
+
 # Resolve the harness cert/key + CA (and set SSL_CERT_FILE for the client).
 my $ca = TlsMockTest::trust_ca();
 plan skip_all => 'porting-sdk/test_harness/tls not adjacent (no certs)' unless defined $ca;
@@ -97,9 +126,12 @@ sub start_https_server {
             Time::HiRes::sleep(0.1);
         }
 
-        # This attempt failed: tear the child down and try a fresh port.
+        # This attempt failed: tear the child down and try a fresh port. BOUNDED —
+        # even after SIGKILL, waitpid($pid, 0) can block forever if the child is a
+        # Win32 pseudo-process (emulated fork) that does not die on a signal, and
+        # this sits in a retry loop, so a wedge here never even reports a failure.
         kill 'KILL', $pid if kill 0, $pid;
-        waitpid($pid, 0);
+        _bounded_reap($pid, "https server attempt $attempt teardown");
         note("https server attempt $attempt on port $port did not come up; retrying");
     }
     return (undef, undef);
@@ -115,7 +147,10 @@ my $reap = sub {
     kill 'TERM', $pid;
     for (1 .. 40) { last unless kill 0, $pid; Time::HiRes::sleep(0.05); }
     kill 'KILL', $pid if kill 0, $pid;
-    waitpid($pid, 0);
+    # BOUNDED — this runs from an END block, so an unbounded waitpid here hangs the
+    # suite AFTER all assertions have passed: the tests would look complete and the
+    # job would still have to be cancelled, with no clue which file was at fault.
+    _bounded_reap($pid, 'https server END teardown');
 };
 END { $reap->() if defined $pid && $pid > 0 }
 
