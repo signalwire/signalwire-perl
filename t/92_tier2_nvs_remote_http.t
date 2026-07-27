@@ -4,6 +4,8 @@ use warnings;
 use Test::More;
 use JSON ();
 use IO::Socket::INET;
+use POSIX ();
+use Time::HiRes ();
 
 # =============================================================================
 # Behavioral contract #4 — native_vector_search REMOTE HTTP (real POST, not a
@@ -126,8 +128,26 @@ my $ok = eval {
 };
 my $err = $@;
 
-# Reap the child so run-ci completes (bounded, no zombie).
-waitpid( $pid, 0 );
+# BOUNDED reap. This said "bounded" while using an UNBOUNDED waitpid($pid, 0):
+# if the child is still blocked in accept() (the skill never connected, or it
+# wedged mid-request), the parent sits in wait4 forever and takes the whole suite
+# with it. On Win32 that is the normal case, since a bare-fork child is a
+# pseudo-process that does not die on TERM. Same pattern as
+# t/relay/outbound_call_mock.t: TERM, poll with WNOHANG to a hard deadline, then
+# SIGKILL a stuck child and reap the corpse.
+kill 'TERM', $pid;
+my $nvs_deadline = time + 30;
+my $nvs_reaped   = 0;
+while ( time < $nvs_deadline ) {
+    my $w = waitpid( $pid, POSIX::WNOHANG() );
+    if ( $w == $pid || $w == -1 ) { $nvs_reaped = 1; last }
+    Time::HiRes::sleep(0.05);
+}
+unless ($nvs_reaped) {
+    kill 'KILL', $pid;
+    waitpid( $pid, 0 );
+    diag("92_tier2_nvs_remote_http: server child $pid exceeded 30s reap deadline — killed to avoid suite hang");
+}
 
 ok( $ok, 'search invocation completed against the real server' ) or diag($err);
 
