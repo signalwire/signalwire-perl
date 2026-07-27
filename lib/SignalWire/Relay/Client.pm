@@ -26,6 +26,7 @@ use SignalWire::Relay::Constants qw(
 use SignalWire::Relay::Event;
 use SignalWire::Relay::Call;
 use SignalWire::Relay::Message;
+use SignalWire::Core::Random ();
 use SignalWire::Logging;
 
 my $logger = SignalWire::Logging->get_logger('relay_client');
@@ -230,16 +231,7 @@ sub _max_active_calls ($self) {
 
 # --- UUID generation ---
 sub _generate_uuid {
-    my @hex = map { sprintf( '%02x', int( rand(256) ) ) } 1 .. 16;
-    $hex[6] = sprintf( '%02x', ( hex( $hex[6] ) & 0x0f ) | 0x40 );
-    $hex[8] = sprintf( '%02x', ( hex( $hex[8] ) & 0x3f ) | 0x80 );
-    return join( '-',
-        join( '', @hex[ 0 .. 3 ] ),
-        join( '', @hex[ 4 .. 5 ] ),
-        join( '', @hex[ 6 .. 7 ] ),
-        join( '', @hex[ 8 .. 9 ] ),
-        join( '', @hex[ 10 .. 15 ] ),
-    );
+    return SignalWire::Core::Random::_random_uuid4();
 }
 
 # --- Public API: register handlers ---

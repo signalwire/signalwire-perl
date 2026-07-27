@@ -13,6 +13,15 @@ requires 'Digest::SHA';
 requires 'MIME::Base64';
 requires 'IO::Socket::SSL';
 
+# Portable CSPRNG. SignalWire::Core::Random is the SDK's single entropy source
+# (session HMAC keys, SWAIG __token material, auto-generated basic-auth
+# credentials, RELAY control ids, UUIDs). Crypt::URandom dispatches to the
+# platform primitive — getrandom(2) / /dev/urandom on Unix-likes,
+# RtlGenRandom / CryptGenRandom on Win32 — so it is a RUNTIME requirement on
+# EVERY platform, not a Unix-only convenience. Reading /dev/urandom directly
+# (what this SDK previously did) has no Windows equivalent.
+requires 'Crypt::URandom', '0.52';
+
 # WebSocket for RELAY
 requires 'Protocol::WebSocket', '0.26';
 

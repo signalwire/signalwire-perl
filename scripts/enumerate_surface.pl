@@ -223,7 +223,14 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.core.security_config', class => 'SecurityConfig' },
     'SignalWire::Core::AuthHandler' =>
         { module => 'signalwire.core.auth_handler', class => 'AuthHandler' },
-    'SignalWire::Utils'               => { module => 'signalwire.utils', class => undef },
+
+    # The SDK's single CSPRNG entropy source — internal plumbing with no
+    # reference counterpart (Python calls `secrets` / `os.urandom` inline at
+    # each site). Every sub in it is underscore-private, so with class => undef
+    # it emits ZERO surface: it hides no reference symbol and is therefore not
+    # a PORT_ADDITION. Routed here only to satisfy the C1-V7 fail-closed check.
+    'SignalWire::Core::Random'        => { module => 'signalwire.core.random', class => undef },
+    'SignalWire::Utils'               => { module => 'signalwire.utils',       class => undef },
     'SignalWire::Utils::UrlValidator' =>
         { module => 'signalwire.utils.url_validator', class => undef },
 

@@ -15,13 +15,14 @@ no warnings 'experimental::signatures';
 
 use SignalWire::SWML::Service;
 extends 'SignalWire::SWML::Service';
-use JSON         qw(encode_json decode_json);
-use MIME::Base64 qw(encode_base64 decode_base64);
-use Digest::SHA  qw(hmac_sha256_hex);
-use POSIX        qw(strftime);
-use Scalar::Util qw(blessed reftype);
-use Storable     qw(dclone);
-use Carp         qw(croak carp);
+use SignalWire::Core::Random ();
+use JSON                     qw(encode_json decode_json);
+use MIME::Base64             qw(encode_base64 decode_base64);
+use Digest::SHA              qw(hmac_sha256_hex);
+use POSIX                    qw(strftime);
+use Scalar::Util             qw(blessed reftype);
+use Storable                 qw(dclone);
+use Carp                     qw(croak carp);
 
 # ---------- attributes ----------
 
@@ -306,19 +307,7 @@ sub _load_service_config {
 # RFC 4122 version-4 UUID (Python parity: str(uuid.uuid4())). Uses the same
 # CSPRNG source as the credential generator.
 sub _generate_uuid4 {
-    my @octets = map { int( rand 256 ) } 1 .. 16;
-    if ( open my $fh, '<:raw', '/dev/urandom' ) {
-        my $bytes = '';
-        if ( read( $fh, $bytes, 16 ) == 16 ) {
-            @octets = unpack 'C16', $bytes;
-        }
-        close $fh;
-    }
-    $octets[6] = ( $octets[6] & 0x0f ) | 0x40;    # version 4
-    $octets[8] = ( $octets[8] & 0x3f ) | 0x80;    # variant 10xx
-    my $hex = join '', map { sprintf '%02x', $_ } @octets;
-    return join '-', substr( $hex, 0, 8 ), substr( $hex, 8, 4 ), substr( $hex, 12, 4 ),
-        substr( $hex, 16, 4 ), substr( $hex, 20, 12 );
+    return SignalWire::Core::Random::_random_uuid4();
 }
 
 # ---------- Prompt methods ----------
@@ -2747,20 +2736,8 @@ sub _serve_tls {
 
 sub _generate_random_password {
 
-    # Use /dev/urandom for cryptographically secure random bytes.
-    # Die on failure rather than falling back to a weak password.
-    my $bytes = '';
-    if ( open my $fh, '<:raw', '/dev/urandom' ) {
-        my $read = read( $fh, $bytes, 32 );
-        close $fh;
-        if ( defined $read && $read == 32 ) {
-
-            # Convert to hex string (64 chars)
-            return unpack( 'H*', $bytes );
-        }
-    }
-    die "FATAL: Cannot generate secure random password - /dev/urandom unavailable or read failed. "
-        . "Set SWML_BASIC_AUTH_PASSWORD environment variable instead.\n";
+    # 32 CSPRNG bytes as a 64-char hex string.
+    return SignalWire::Core::Random::_random_hex(32);
 }
 
 sub extract_sip_username {

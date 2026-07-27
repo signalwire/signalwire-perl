@@ -37,6 +37,28 @@ subtest 'tool execution' => sub {
     like($result->response, qr/current time/, 'response mentions time');
 };
 
+subtest 'both handlers survive a build without POSIX::tzset' => sub {
+
+    # POSIX::tzset is NOT implemented on Win32 — it croaks "POSIX::tzset not
+    # implemented on this architecture", which aborted both handlers on every
+    # Windows run. The skill now probes tzset at load and degrades to server-
+    # local time (saying so) instead of dying. Assert the handlers return a
+    # usable answer and never die, whichever branch this platform takes.
+    my $agent = SignalWire::Agent::AgentBase->new(name => 'dt_tz');
+    my $skill = $factory->new(agent => $agent, params => {});
+    $skill->setup;
+    $skill->register_tools;
+
+    for my $tool (qw(get_current_time get_current_date)) {
+        for my $tz ('UTC', 'US/Eastern', 'Asia/Tokyo') {
+            my $result = eval { $agent->on_function_call($tool, { timezone => $tz }, {}) };
+            ok(!$@, "$tool($tz) did not die") or diag($@);
+            ok(defined $result && length($result->response),
+                "$tool($tz) returned a non-empty response");
+        }
+    }
+};
+
 subtest 'prompt sections' => sub {
     my $agent = SignalWire::Agent::AgentBase->new(name => 'dt_ps');
     my $skill = $factory->new(agent => $agent, params => {});

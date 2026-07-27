@@ -11,6 +11,7 @@ use Time::HiRes ();
 use SignalWire::Relay::Action;
 use SignalWire::Relay::Constants qw(CALL_TERMINAL_STATES ACTION_TERMINAL_STATES);
 use SignalWire::Relay::CallState ();
+use SignalWire::Core::Random     ();
 
 # isa: call_id is the required correlation key — a bad construction must
 # die immediately rather than yield a call the server can never route.
@@ -54,16 +55,7 @@ has '_on_event' => ( init_arg => undef, is => 'rw', default => sub { [] }, isa =
 
 # Helper to generate a UUID-like control_id
 sub _generate_uuid {
-    my @hex = map { sprintf( '%02x', int( rand(256) ) ) } 1 .. 16;
-    $hex[6] = sprintf( '%02x', ( hex( $hex[6] ) & 0x0f ) | 0x40 );
-    $hex[8] = sprintf( '%02x', ( hex( $hex[8] ) & 0x3f ) | 0x80 );
-    return join( '-',
-        join( '', @hex[ 0 .. 3 ] ),
-        join( '', @hex[ 4 .. 5 ] ),
-        join( '', @hex[ 6 .. 7 ] ),
-        join( '', @hex[ 8 .. 9 ] ),
-        join( '', @hex[ 10 .. 15 ] ),
-    );
+    return SignalWire::Core::Random::_random_uuid4();
 }
 
 sub _base_params ($self) {

@@ -15,6 +15,7 @@ use Scalar::Util ();
 use SignalWire::SWML::Document;
 use SignalWire::SWML::Schema;
 use SignalWire::Utils::SchemaUtils ();
+use SignalWire::Core::Random       ();
 use SignalWire::Logging;
 
 has 'name' => (
@@ -348,19 +349,7 @@ sub can {
 
 sub _random_hex {
     my ($len) = @_;
-
-    # Use /dev/urandom for cryptographically secure random bytes.
-    # Die on failure rather than falling back to weak randomness.
-    if ( open my $fh, '<:raw', '/dev/urandom' ) {
-        my $bytes;
-        my $read = read( $fh, $bytes, $len );
-        close $fh;
-        if ( defined $read && $read == $len ) {
-            return unpack( 'H*', $bytes );
-        }
-    }
-    die "FATAL: Cannot generate secure random bytes - /dev/urandom unavailable or read failed. "
-        . "Set SWML_BASIC_AUTH_USER and SWML_BASIC_AUTH_PASSWORD environment variables instead.\n";
+    return SignalWire::Core::Random::_random_hex($len);
 }
 
 sub _timing_safe_compare {

@@ -15,6 +15,56 @@ has '+supports_multiple_instances' => ( default => sub { 0 } );
 
 sub setup { return 1 }
 
+# Is POSIX::tzset actually usable on this build?
+#
+# tzset() is how a changed $ENV{TZ} is made visible to localtime/strftime. It is
+# NOT implemented on Win32 — POSIX.xs croaks "POSIX::tzset not implemented on
+# this architecture", which aborted both handlers below on every Windows run
+# (observed at Datetime.pm:38 on the nightly Multi-OS lane). Probe once, at
+# load, rather than per call.
+my $TZSET_OK = do {
+    local $@;
+    my $probe = eval {
+        POSIX::tzset();
+        1;
+    };
+    $probe ? 1 : 0;
+};
+
+# Format the current time in $tz using $format.
+#
+# Returns ($formatted, $tz_honoured). When tzset() is unavailable the requested
+# zone CANNOT be applied — $ENV{TZ} alone does not affect localtime there — so
+# we report the local zone and say so, rather than silently labelling local time
+# with the requested zone's name (which would be a wrong answer presented as a
+# right one).
+sub _format_in_tz {
+    my ( $format, $tz ) = @_;
+
+    if ( !$TZSET_OK ) {
+        return ( strftime( $format, localtime ), 0 );
+    }
+
+    local $ENV{TZ} = $tz;
+    POSIX::tzset();
+    my $out = strftime( $format, localtime );
+
+    # Restore the process's original zone. $ENV{TZ} is already restored by the
+    # `local` going out of scope, but tzset() must run again for the C library
+    # to pick that up.
+    POSIX::tzset();
+    return ( $out, 1 );
+}
+
+# "The current time in US/Eastern is 09:14:02 EDT", or, where the requested zone
+# could not be applied, an explicit note to that effect.
+sub _describe {
+    my ( $label, $tz, $value, $honoured ) = @_;
+    return "The current $label in $tz is $value" if $honoured;
+    return "The current $label is $value (server local time; this platform "
+        . "cannot switch to $tz)";
+}
+
 sub register_tools {
     my ($self) = @_;
 
@@ -34,13 +84,10 @@ sub register_tools {
         handler => sub {
             my ( $args, $raw ) = @_;
             my $tz = $args->{timezone} // 'UTC';
-            local $ENV{TZ} = $tz;
-            POSIX::tzset();
-            my $time = strftime( '%H:%M:%S %Z', localtime );
-            POSIX::tzset();    # Reset
+            my ( $time, $honoured ) = _format_in_tz( '%H:%M:%S %Z', $tz );
             require SignalWire::SWAIG::FunctionResult;
             return SignalWire::SWAIG::FunctionResult->new(
-                response => "The current time in $tz is $time" );
+                response => _describe( 'time', $tz, $time, $honoured ) );
         },
     );
 
@@ -60,13 +107,10 @@ sub register_tools {
         handler => sub {
             my ( $args, $raw ) = @_;
             my $tz = $args->{timezone} // 'UTC';
-            local $ENV{TZ} = $tz;
-            POSIX::tzset();
-            my $date = strftime( '%Y-%m-%d', localtime );
-            POSIX::tzset();
+            my ( $date, $honoured ) = _format_in_tz( '%Y-%m-%d', $tz );
             require SignalWire::SWAIG::FunctionResult;
             return SignalWire::SWAIG::FunctionResult->new(
-                response => "The current date in $tz is $date" );
+                response => _describe( 'date', $tz, $date, $honoured ) );
         },
     );
 }
