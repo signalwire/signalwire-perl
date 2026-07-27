@@ -112,6 +112,74 @@ like( $rt_src, qr/_sw_perl_tool\s+App::Prove/,
 
 like( $env_src, qr/SW_PERL=/, '_env.sh exports SW_PERL (the one chosen interpreter)' );
 
+# SW_PERL must NOT be resolved by PATH position. Under `shell: bash` on Windows,
+# Git-for-Windows injects the MSYS /usr/bin ahead of what actions-setup-perl
+# prepended, so `command -v perl` returns MSYS's perl -- the very install whose
+# @INC lacks TAP::Harness::Env (measured: run 30239532589 failed with
+# "ERROR: /usr/bin/perl cannot load App::Prove"). Selection must be by EVIDENCE.
+unlike(
+    $env_src,
+    qr/SW_PERL="\$\{SW_PERL:-\$\(command -v perl/,
+    'SW_PERL is not resolved by naive PATH position (command -v perl)',
+);
+like( $env_src, qr/_pick_perl\.sh/,
+    '_env.sh delegates interpreter choice to the evidence-based picker' );
+
+# The picker itself: it must probe candidates for App::Prove rather than trusting
+# order, and it must consider the hosted toolcache (where actions-setup-perl puts
+# the interpreter the workflow provisioned and set PERL5LIB for).
+{
+    my $picker = File::Spec->catfile( $repo, 'scripts', '_pick_perl.sh' );
+    ok( -e $picker, 'scripts/_pick_perl.sh exists' );
+
+    my $psrc = slurp($picker);
+    like( $psrc, qr/-MApp::Prove -e1/,
+        'picker validates a candidate by loading App::Prove' );
+    like( $psrc, qr/RUNNER_TOOL_CACHE/,
+        'picker considers the actions-setup-perl toolcache install' );
+
+    # Behavioural: a BROKEN candidate that sorts first must be SKIPPED, not
+    # chosen. Fake a toolcache whose perl always fails, and assert the picker
+    # falls through to a usable interpreter instead.
+    require File::Path;
+    my $fake = File::Spec->catdir( $repo, '.sw-tmp', "pickperl-$$", 'perl', '9.9.9', 'x64', 'bin' );
+    File::Path::make_path($fake);
+    my $fake_perl = File::Spec->catfile( $fake, 'perl' );
+    open my $fh, '>', $fake_perl or die $!;
+    print {$fh} "#!/bin/sh\nexit 1\n";
+    close $fh;
+    chmod 0755, $fake_perl;
+
+    my $cache = File::Spec->catdir( $repo, '.sw-tmp', "pickperl-$$" );
+    my $picked = `RUNNER_TOOL_CACHE='$cache' bash '$picker' 2>/dev/null`;
+    chomp $picked;
+    isnt( $picked, $fake_perl,
+        'picker SKIPS a first-in-line candidate that cannot load App::Prove' );
+    ok( length $picked, 'picker still returns an interpreter' );
+
+    # ...and the POSITIVE case: a toolcache perl that DOES work must be PREFERRED
+    # over PATH, since it is the install the workflow provisioned and set PERL5LIB
+    # for. Without this assertion a wrong find(1) depth silently stops discovering
+    # the toolcache entirely and every run quietly falls back to PATH perl.
+    my $good_dir = File::Spec->catdir( $repo, '.sw-tmp', "pickgood-$$", 'perl', '9.9.9', 'x64', 'bin' );
+    File::Path::make_path($good_dir);
+    my $good_perl = File::Spec->catfile( $good_dir, 'perl' );
+    open my $gfh, '>', $good_perl or die $!;
+    print {$gfh} "#!/bin/sh\nexec '$^X' \"\$@\"\n";
+    close $gfh;
+    chmod 0755, $good_perl;
+
+    my $good_cache = File::Spec->catdir( $repo, '.sw-tmp', "pickgood-$$" );
+    my $picked_good = `RUNNER_TOOL_CACHE='$good_cache' bash '$picker' 2>/dev/null`;
+    chomp $picked_good;
+    is( $picked_good, $good_perl,
+        'picker PREFERS a usable toolcache perl over whatever PATH offers' );
+
+    File::Path::remove_tree( File::Spec->catdir( $repo, '.sw-tmp', "pickgood-$$" ) );
+
+    File::Path::remove_tree( File::Spec->catdir( $repo, '.sw-tmp', "pickperl-$$" ) );
+}
+
 # The entry point must match the real prove script's contract: process_args in
 # VOID context, run() mapped to an exit code. Chaining ->process_args(...)->run
 # dies ("Can't call method run on an undefined value"), and ignoring run()'s

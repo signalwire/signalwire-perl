@@ -52,10 +52,23 @@ export REPO_ROOT
 # interpreter (not the script) and running the harness THROUGH it makes the
 # interpreter and its @INC the same install by construction.
 #
-# SW_PERL honours an explicit override, else takes the first `perl` on PATH.
+# Picking the interpreter is itself PATH-order-sensitive, and "first perl on PATH"
+# is NOT good enough: under `shell: bash` (Git-for-Windows) the MSYS /usr/bin is
+# injected AHEAD of what actions-setup-perl prepended to the Windows PATH, so
+# `command -v perl` returns MSYS's /usr/bin/perl — install #3, the very one whose
+# @INC lacks TAP::Harness::Env. (Measured: run 30239532589 failed with
+# "ERROR: /usr/bin/perl cannot load App::Prove" after the first fix landed.)
+#
+# So SELECT ON EVIDENCE, not on PATH position: among the candidate interpreters,
+# take the first that can actually load App::Prove. An explicit SW_PERL override
+# always wins and is never second-guessed.
+#
 # Callers must invoke "$SW_PERL", never a bare `prove`/`perltidy`/`perlcritic`
 # whose own shebang picks a DIFFERENT perl than the one we resolved.
-SW_PERL="${SW_PERL:-$(command -v perl 2>/dev/null || echo perl)}"
+if [ -z "${SW_PERL:-}" ]; then
+    SW_PERL="$(bash "$_ENV_SH_DIR/_pick_perl.sh" 2>/dev/null)"
+    [ -n "$SW_PERL" ] || SW_PERL=perl
+fi
 export SW_PERL
 
 # PERL5LIB's separator is PLATFORM-DEPENDENT: ':' on POSIX, ';' on Win32 (where
