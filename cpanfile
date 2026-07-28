@@ -22,6 +22,19 @@ requires 'IO::Socket::SSL';
 # (what this SDK previously did) has no Windows equivalent.
 requires 'Crypt::URandom', '0.52';
 
+# Win32 ONLY, and load-bearing there. Crypt::URandom reaches the Windows CSPRNG
+# through `require Win32::API` at RUNTIME (advapi32 RtlGenRandom /
+# CryptGenRandom) but does NOT declare Win32::API as a prereq — verified against
+# its CPAN metadata, whose runtime requires are only Carp/English/Exporter/
+# FileHandle/constant. So `cpanm --installdeps .` would not pull it in, and the
+# SDK's entropy source would die at first use on any Windows Perl that does not
+# happen to bundle it. Declaring it here is what makes the dependency actually
+# resolve on the Windows CI leg instead of trading /dev/urandom's failure for a
+# missing-module failure. Guarded by $^O so the other nine legs never see it.
+if ( $^O eq 'MSWin32' ) {
+    requires 'Win32::API', '0.84';
+}
+
 # WebSocket for RELAY
 requires 'Protocol::WebSocket', '0.26';
 
