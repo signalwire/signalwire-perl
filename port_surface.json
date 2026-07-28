@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ 7c4028112fd85a9603e3943400eef3e7d4fe6927",
+   "generated_from" : "signalwire-perl @ f0d5ffa162e5bad043a694c4f224c218df5f0c3f",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -820,6 +820,7 @@
                "add_verb_to_section",
                "as_router",
                "can",
+               "domain",
                "extract_sip_username",
                "full_validation_enabled",
                "get_all_functions",
@@ -848,6 +849,9 @@
                "schema_utils",
                "security",
                "serve",
+               "ssl_cert_path",
+               "ssl_enabled",
+               "ssl_key_path",
                "stop",
                "swaig_pre_dispatch",
                "to_psgi_app",
@@ -1954,7 +1958,29 @@
       "signalwire.rest.client" : {
          "classes" : {
             "RestClient" : [
-               "__init__"
+               "__init__",
+               "addresses",
+               "calling",
+               "chat",
+               "datasphere",
+               "fabric",
+               "imported_numbers",
+               "logs",
+               "lookup",
+               "messages",
+               "mfa",
+               "number_groups",
+               "phone_numbers",
+               "project",
+               "projects",
+               "pubsub",
+               "queues",
+               "recordings",
+               "registry",
+               "short_codes",
+               "sip_profile",
+               "verified_callers",
+               "video"
             ]
          },
          "functions" : []
@@ -3457,6 +3483,7 @@
                "get_instance_key",
                "get_parameter_schema",
                "register_tools",
+               "remove_xpaths",
                "scrape_url",
                "setup"
             ]
