@@ -90,6 +90,73 @@ subtest 'bearer env path carries the scheme, not just the token' => sub {
     is( $seen->credentials, 'tok123', 'credentials are the header tail' );
 };
 
+subtest 'auth-scheme token is matched case-insensitively (RFC 7235)' => sub {
+    # FastAPI's HTTPBearer/HTTPBasic split the header on the FIRST space via
+    # get_authorization_scheme_param() and compare `scheme.lower()` against
+    # 'bearer' / 'basic'. RFC 7235 makes auth-scheme case-insensitive, so a
+    # client sending `authorization: bearer <tok>` authenticates against the
+    # reference and MUST authenticate here too.
+    my $h = SignalWire::Core::AuthHandler->new(
+        FakeSecConfig->new( user => 'bob', pass => 'sekret', bearer => 'tok123' ) );
+
+    for my $scheme ( 'Bearer', 'bearer', 'BEARER', 'BeArEr' ) {
+        ok( $h->_bearer_env_ok( { HTTP_AUTHORIZATION => "$scheme tok123" } ),
+            "bearer accepted with scheme '$scheme'" );
+    }
+    for my $scheme ( 'Basic', 'basic', 'BASIC', 'BaSiC' ) {
+        my $env = basic_env( 'bob', 'sekret' );
+        $env->{HTTP_AUTHORIZATION} =~ s/\ABasic/$scheme/;
+        ok( $h->_basic_env_ok($env), "basic accepted with scheme '$scheme'" );
+    }
+
+    # ...and the scheme check is still a real check: a different scheme is
+    # rejected by BOTH branches (an accept-only assertion would pass even if
+    # the scheme test were deleted entirely).
+    my $b64 = MIME::Base64::encode_base64( 'bob:sekret', '' );
+    for my $bad ( 'Digest', 'digest', 'Basicx', 'Negotiate', 'NotBearer' ) {
+        ok( !$h->_bearer_env_ok( { HTTP_AUTHORIZATION => "$bad tok123" } ),
+            "bearer branch rejects scheme '$bad'" );
+        ok( !$h->_basic_env_ok( { HTTP_AUTHORIZATION => "$bad $b64" } ),
+            "basic branch rejects scheme '$bad'" );
+    }
+
+    # A bare token with no scheme at all is rejected.
+    ok( !$h->_bearer_env_ok( { HTTP_AUTHORIZATION => 'tok123' } ),
+        'bearer branch rejects a scheme-less header' );
+    ok( !$h->_basic_env_ok( { HTTP_AUTHORIZATION => $b64 } ),
+        'basic branch rejects a scheme-less header' );
+
+    # The scheme is still carried into the credential carrier verbatim (not
+    # normalized, not discarded) — FastAPI returns the header's own casing.
+    my $seen;
+    no warnings 'redefine';    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
+    my $real = \&SignalWire::Core::AuthHandler::verify_bearer_token;
+    local *SignalWire::Core::AuthHandler::verify_bearer_token = sub {
+        $seen = $_[1];
+        return $real->(@_);
+    };
+    ok( $h->_bearer_env_ok( { HTTP_AUTHORIZATION => 'bearer tok123' } ),
+        'lowercase bearer authenticates' );
+    is( $seen->scheme,      'bearer', 'carrier keeps the header casing verbatim' );
+    is( $seen->credentials, 'tok123', 'credentials are the header tail' );
+};
+
+subtest 'basic branch requires the colon separator (FastAPI HTTPBasic)' => sub {
+    # The two branches are not symmetric: HTTPBasic raises when the decoded
+    # payload has no ':' (``username, separator, password = data.partition(":")
+    # / if not separator: raise``). A colon-less blob must NOT be read as a
+    # username with an empty password.
+    my $h = SignalWire::Core::AuthHandler->new(
+        FakeSecConfig->new( user => 'bob', pass => q{} ) );
+    my $no_colon = MIME::Base64::encode_base64( 'bob', '' );
+    ok( !$h->_basic_env_ok( { HTTP_AUTHORIZATION => "Basic $no_colon" } ),
+        'colon-less basic payload rejected' );
+
+    my $with_colon = MIME::Base64::encode_base64( 'bob:', '' );
+    ok( $h->_basic_env_ok( { HTTP_AUTHORIZATION => "Basic $with_colon" } ),
+        'empty password with an explicit colon still parses' );
+};
+
 subtest 'verify_api_key disabled when not configured' => sub {
     my $h = SignalWire::Core::AuthHandler->new( FakeSecConfig->new );
     ok( !$h->verify_api_key('anything'), 'api key check false when disabled' );

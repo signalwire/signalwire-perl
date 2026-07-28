@@ -164,16 +164,29 @@ sub _authenticate_env ( $self, $env ) {
     return;
 }
 
+# Split an Authorization header into (scheme, param), exactly as FastAPI's
+# ``get_authorization_scheme_param`` does: partition on the FIRST space, then
+# strip the parameter. Returns the empty pair for an empty/undef header.
+sub _scheme_param ($header) {
+    return ( '', '' ) unless defined $header && length $header;
+    my ( $scheme, $param ) = split / /, $header, 2;
+    $param = '' unless defined $param;
+    $param =~ s/\A\s+//;
+    $param =~ s/\s+\z//;
+    return ( $scheme, $param );
+}
+
 sub _bearer_env_ok ( $self, $env ) {
     return 0 unless $self->auth_methods->{bearer} && $self->auth_methods->{bearer}{enabled};
-    my $header = $env->{HTTP_AUTHORIZATION} // '';
-    return 0 unless index( $header, 'Bearer ' ) == 0;
 
-    # Split the header on the FIRST space, exactly as FastAPI's HTTPBearer does:
-    # the leading token is the `scheme` ('Bearer'), the remainder the credentials.
-    # Carrying the scheme is contract — building the carrier from the tail alone
-    # left `scheme` permanently unset.
-    my ( $scheme, $credentials ) = split / /, $header, 2;
+    # The auth-scheme token is case-insensitive (RFC 7235), and FastAPI's
+    # HTTPBearer compares ``scheme.lower() != "bearer"`` — so a client sending
+    # `authorization: bearer <token>` authenticates against the reference and
+    # must authenticate here. Carrying the scheme into the carrier is contract;
+    # it is carried VERBATIM (the header's own casing), as FastAPI does.
+    my ( $scheme, $credentials ) = _scheme_param( $env->{HTTP_AUTHORIZATION} );
+    return 0 unless length $scheme && length $credentials;
+    return 0 unless lc $scheme eq 'bearer';
     return $self->verify_bearer_token(
         SignalWire::Core::AuthHandler::BearerCredentials->new( $scheme, $credentials ) );
 }
@@ -193,8 +206,17 @@ sub _basic_env_ok ( $self, $env ) {
 }
 
 sub _parse_basic_auth ($header) {
-    return unless index( $header, 'Basic ' ) == 0;
-    my $decoded = MIME::Base64::decode_base64( substr( $header, 6 ) );
+
+    # Same case-insensitive scheme rule as the bearer branch: FastAPI's
+    # HTTPBasic compares ``scheme.lower() != "basic"``. Note the branches are
+    # NOT symmetric beyond the scheme test — HTTPBasic additionally requires
+    # the decoded payload to contain a ':' separator (``if not separator:
+    # raise``), so a credential blob with no colon is rejected rather than
+    # treated as a user with an empty password.
+    my ( $scheme, $param ) = _scheme_param($header);
+    return unless length $scheme && lc $scheme eq 'basic';
+    my $decoded = MIME::Base64::decode_base64($param);
+    return unless index( $decoded, ':' ) >= 0;
     my ( $user, $pass ) = split /:/, $decoded, 2;
     return SignalWire::Core::AuthHandler::BasicCredentials->new( $user // '', $pass // '' );
 }

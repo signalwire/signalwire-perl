@@ -282,8 +282,12 @@ sub _authorize ( $self, $env ) {
     my ( $user, $pass ) = @$auth;
     return unless defined $user && defined $pass;
 
+    # The auth-scheme token is case-insensitive (RFC 7235); the reference
+    # guards this route with FastAPI's HTTPBasic, which compares
+    # ``scheme.lower() != "basic"``. Matching case-sensitively 401s a client
+    # that the reference authenticates.
     my $header = $env->{HTTP_AUTHORIZATION} // '';
-    if ( $header =~ /\ABasic\s+(.+)\z/ ) {
+    if ( $header =~ /\ABasic\s+(.+)\z/i ) {
         my $decoded = decode_base64($1);
         my ( $in_user, $in_pass ) = split /:/, $decoded, 2;
         $in_pass //= '';

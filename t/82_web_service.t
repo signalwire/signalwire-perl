@@ -122,6 +122,25 @@ subtest 'wrong auth rejected' => sub {
     is( $res->{status}, 401, 'HTTP 401 with wrong password' );
 };
 
+subtest 'auth-scheme token is matched case-insensitively (RFC 7235)' => sub {
+    # The reference guards this route with FastAPI's HTTPBasic, which compares
+    # ``scheme.lower() != "basic"``. A client sending the legal lowercase form
+    # authenticates there and must authenticate here.
+    chomp( my $b64 = encode_base64("$USER:$PASS") );
+    for my $scheme ( 'Basic', 'basic', 'BASIC', 'BaSiC' ) {
+        my $res = $http->get( "http://127.0.0.1:$port/static/hello.txt",
+            { headers => { Authorization => "$scheme $b64" } } );
+        is( $res->{status}, 200, "authenticated with scheme '$scheme'" );
+    }
+
+    # ...and the scheme check is still a real check.
+    for my $bad ( 'Digest', 'Bearer', 'Basicx', 'Negotiate' ) {
+        my $res = $http->get( "http://127.0.0.1:$port/static/hello.txt",
+            { headers => { Authorization => "$bad $b64" } } );
+        is( $res->{status}, 401, "scheme '$bad' rejected" );
+    }
+};
+
 subtest 'path traversal denied' => sub {
     my $res = _get('/static/../../etc/passwd');
     ok( ( grep { $_ == $res->{status} } ( 403, 404, 400 ) ), 'traversal blocked (403/404/400)' );
