@@ -16,24 +16,32 @@
 #
 # This program defines both corpus tools on ONE agent — a default (no explicit
 # ``secure``) and a ``secure => 0`` — renders the SWML with the FIXED corpus
-# CALL_ID, and reduces each to the deterministic pair the differ compares against
-# the python golden:
+# CALL_ID, and emits per fixture the RENDERED WIRE PAYLOAD for the differ to
+# classify:
+#
+#   {"<fixture id>": {"secure_default_true": bool, "rendered": {<functions[] entry>}}}
 #
 #   secure_default_true   the SDK-RECORDED secure flag for the tool, read back off
 #                         the registry (true for the default case, false for the
 #                         explicit case). Read, not assumed — a port that failed to
 #                         default secure reds here.
-#   wire_reflects_secure  a ``__token`` is present on the rendered webhook IFF the
-#                         tool is secure (secure -> token present; insecure ->
-#                         token correctly absent).
+#   rendered              that tool's own ``SWAIG.functions[]`` entry, VERBATIM,
+#                         with every token VALUE replaced by the corpus
+#                         placeholder ``<TOKEN>`` (the values are HMACs bound to
+#                         (call_id, tool, secret) and vary per run; the KEY PATH is
+#                         the whole contract and is preserved exactly).
 #
-# The token VALUE is an HMAC bound to (call_id, tool, secret) and is NOT compared
-# — only its PRESENCE folds into the boolean, so the golden is deterministic while
-# the behavior producing it is real and unfakeable.
+# This program deliberately makes NO judgement about whether the render is
+# correct. The previous version emitted a self-computed ``wire_reflects_secure``
+# boolean, which made the gate vacuous by construction: the differ never saw the
+# wire, so it could not see WHICH key a port had classified on, nor that an
+# INSECURE tool had been handed its own unauthenticated per-function callback URL.
+# The differ now sees the keys and decides (diff_port_secure_default.py: topology
+# -> {secure_default_true, has_own_webhook, token_carrier}).
 #
 # Protocol: stdout carries ONE JSON object mapping corpus fixture-id =>
-# classification map, and NOTHING else. The differ invokes this with 2>/dev/null,
-# so all diagnostics must go to stderr. Deterministic: no socket, no timing.
+# payload map, and NOTHING else. All diagnostics must go to stderr.
+# Deterministic: no socket, no timing.
 #
 # Run from the signalwire-perl repo root:
 #
@@ -85,14 +93,52 @@ sub swaig_functions {
     return [];
 }
 
-# True iff a rendered SWAIG function entry's webhook carries the reserved
-# ``__token`` query parameter — the wire reflection of ``secure``. Mirrors the
-# oracle's _webhook_has_token.
-sub webhook_has_token {
+# Must match porting-sdk/scripts/secure_default_corpus.py TOKEN_PLACEHOLDER.
+my $TOKEN_PLACEHOLDER = '<TOKEN>';
+
+# Replace the VALUE of every token-suffixed query parameter in a URL with the
+# placeholder, preserving the parameter KEYS and their order exactly.
+sub redact_url_tokens {
+    my ($url) = @_;
+    my $q = index( $url, '?' );
+    return $url if $q < 0;
+    my $head = substr( $url, 0, $q + 1 );
+    my @out;
+    for my $pair ( split /&/, substr( $url, $q + 1 ), -1 ) {
+        my ( $k, $v ) = split /=/, $pair, 2;
+        if ( defined $v && lc($k) =~ /token\z/ ) {
+            push @out, "$k=$TOKEN_PLACEHOLDER";
+        } else {
+            push @out, $pair;
+        }
+    }
+    return $head . join( '&', @out );
+}
+
+# Normalize a rendered functions[] entry: replace every nondeterministic token
+# VALUE (an HMAC) with the placeholder while preserving every KEY and key path
+# exactly — both a token-suffixed field and a token-suffixed query parameter on a
+# URL value. Mirrors diff_port_secure_default.redact_entry so the differ's
+# re-application is a no-op (idempotent).
+sub redact_entry {
     my ($entry) = @_;
-    return 0 unless ref $entry eq 'HASH';
-    my $url = $entry->{web_hook_url} // '';
-    return ( index( $url, '__token=' ) >= 0 ) ? 1 : 0;
+    return {} unless ref $entry eq 'HASH';
+    my %out;
+    for my $k ( keys %$entry ) {
+        my $v = $entry->{$k};
+        if ( defined $v && !ref $v ) {
+            if ( lc($k) =~ /token\z/ ) {
+                $out{$k} = $TOKEN_PLACEHOLDER;
+                next;
+            }
+            if ( index( $v, '://' ) >= 0 || substr( $v, 0, 1 ) eq '/' ) {
+                $out{$k} = redact_url_tokens($v);
+                next;
+            }
+        }
+        $out{$k} = $v;
+    }
+    return \%out;
 }
 
 my $agent = SignalWire::Agent::AgentBase->new(
@@ -129,13 +175,11 @@ my %by_name = map { ( $_->{function} // '' ) => $_ }
 
 my %out;
 for my $case (@CORPUS) {
-    my $name          = $case->{tool_name};
-    my $expect_secure = $case->{expect_secure} ? 1 : 0;
-    my $is_secure     = $recorded{$name} // 0;
-    my $token_present = webhook_has_token( $by_name{$name} );
+    my $name      = $case->{tool_name};
+    my $is_secure = $recorded{$name} // 0;
     $out{ $case->{id} } = {
-        secure_default_true  => $is_secure ? JSON::true : JSON::false,
-        wire_reflects_secure => ( $token_present == $expect_secure ) ? JSON::true : JSON::false,
+        secure_default_true => $is_secure ? JSON::true : JSON::false,
+        rendered            => redact_entry( $by_name{$name} ),
     };
 }
 

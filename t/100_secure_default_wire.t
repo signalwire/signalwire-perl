@@ -86,11 +86,51 @@ subtest 'rendered with a call_id: __token IFF the tool is secure' => sub {
         qr/[?&]__token=/,
         'SECURE tool webhook carries a per-tool __token'
     );
-    unlike(
-        $fns->{insecure_tool}{web_hook_url},
-        qr/__token=/,
-        'INSECURE tool webhook carries NO __token'
+
+    # The INSECURE tool must have NO `web_hook_url` KEY AT ALL — not an empty
+    # string, not undef, not a tokenless URL. Emitting one publishes an
+    # unauthenticated, function-specific callback on the wire; the tool is meant
+    # to fall back to the shared `SWAIG.defaults.web_hook_url` endpoint.
+    # Reference: agent_base.py:1085-1100 — the local URL is built only under
+    # `elif token or _swaig_query_params`, so the key is simply never set.
+    #
+    # This is asserted as KEY ABSENCE deliberately. The previous `unlike(...,
+    # qr/__token=/)` passed VACUOUSLY once the value was undef, which is how a
+    # tokenless per-tool webhook survived here unnoticed.
+    ok( !exists $fns->{insecure_tool}{web_hook_url},
+        'INSECURE tool has NO per-tool web_hook_url key at all' );
+};
+
+# Dropping the per-tool key is only SAFE because a shared fallback endpoint
+# exists. The reference emits `SWAIG.defaults.web_hook_url` whenever there are
+# functions at all (agent_base.py:1108-1113). Without it, an insecure tool would
+# render with NO reachable callback whatsoever — a worse defect than the
+# unauthenticated per-function URL the guard removes.
+#
+# The cross-port SECURE-DEFAULT gate CANNOT catch this: it inspects only the
+# `functions[]` entries, so a port that adds the guard but omits `defaults`
+# passes green while functionally breaking every insecure tool. Hence this test.
+subtest 'SWAIG.defaults.web_hook_url is the fallback for tools with no own key' => sub {
+    my $agent = build_agent();
+    my $doc   = $agent->_render_swml_for_call( {}, $CALL_ID );
+
+    my $swaig;
+    for my $entry ( @{ $doc->{sections}{main} } ) {
+        next unless ref $entry eq 'HASH' && ref $entry->{ai} eq 'HASH';
+        $swaig = $entry->{ai}{SWAIG};
+        last if $swaig;
+    }
+    ok( ref $swaig eq 'HASH', 'SWAIG object rendered' );
+    ok( exists $swaig->{defaults}, 'SWAIG.defaults emitted when functions exist' );
+    like(
+        $swaig->{defaults}{web_hook_url},
+        qr{/swaig$},
+        'defaults.web_hook_url points at the agent SWAIG endpoint'
     );
+    # The shared default is the UNTOKENIZED agent endpoint — the per-call token
+    # lives only on a secure tool's own URL, never on the shared fallback.
+    unlike( $swaig->{defaults}{web_hook_url}, qr/__token=/,
+        'the shared default carries no per-tool __token' );
 };
 
 subtest '`secure` never reaches the SWAIG wire' => sub {
@@ -149,8 +189,11 @@ subtest 'the served path threads the body call_id into the render' => sub {
     my $fns = rendered_functions( JSON::decode_json($body) );
     like( $fns->{default_tool}{web_hook_url}, qr/[?&]__token=/,
         'the served document tokenizes the secure tool from the body call_id' );
-    unlike( $fns->{insecure_tool}{web_hook_url}, qr/__token=/,
-        'the served document leaves the insecure tool untokenized' );
+    # Key ABSENCE, not just token-absence: on the real served path an insecure
+    # tool must still fall back to SWAIG.defaults rather than be handed its own
+    # unauthenticated per-function callback.
+    ok( !exists $fns->{insecure_tool}{web_hook_url},
+        'the served document gives the insecure tool NO per-tool web_hook_url' );
 };
 
 subtest 'the served path accepts the nested body.call.call_id form' => sub {

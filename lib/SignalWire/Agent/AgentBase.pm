@@ -1666,23 +1666,73 @@ sub _build_ai_verb {
         # it — its wire manifestation is the `__token` below, nothing else.
         my $is_secure = delete $func{secure};
 
-        $func{web_hook_url} //= $webhook_url;
-
-        # A SECURE tool rendered with an active call_id carries a per-tool
-        # `__token` on its webhook so the platform can validate the callback —
-        # the WIRE manifestation of `secure` (python agent_base.py:1040 /
-        # 1096-1100). An insecure tool gets NO token. Without a call_id no token
-        # can be minted (it is bound to the call), matching the reference.
+        # A SECURE tool rendered with an active call_id mints a per-tool
+        # `__token` so the platform can validate the callback — the WIRE
+        # manifestation of `secure` (python agent_base.py:1040 / 1096-1100). An
+        # insecure tool gets NO token. Without a call_id no token can be minted
+        # (it is bound to the call), matching the reference.
+        my $token;
         if ( $is_secure && defined $call_id && length $call_id ) {
-            my $token = $self->create_tool_token( $fname, $call_id );
-            if ( defined $token && length $token ) {
-                my $sep = ( $func{web_hook_url} =~ /\?/ ) ? '&' : '?';
-                $func{web_hook_url} .= $sep . '__token=' . $token;
-            }
+            $token = $self->create_tool_token( $fname, $call_id );
+            undef $token unless defined $token && length $token;
+        }
+
+        # Per-tool `web_hook_url`, guarded as the reference does
+        # (agent_base.py:1085-1100):
+        #   1. an EXTERNAL webhook set on the tool itself always wins;
+        #   2. else emit the agent-local URL ONLY when the tool is SECURE (so the
+        #      URL carries, or would carry, its `__token`) or there are SWAIG
+        #      query params to convey;
+        #   3. else emit NO `web_hook_url` KEY AT ALL — the tool falls back to
+        #      the shared `SWAIG.defaults` endpoint.
+        #
+        # Case 3 is load-bearing SECURITY: handing an INSECURE tool its own
+        # per-function callback URL publishes an unauthenticated,
+        # function-specific endpoint on the wire. The key must be ABSENT — not
+        # empty, not null, not a tokenless URL.
+        #
+        # Case 2 keys on `$is_secure`, NOT on `defined $token`. In the reference
+        # the two coincide, because its render GENERATES a call_id when none was
+        # supplied (agent_base.py:957-960) and so a secure tool always has a
+        # token. This port leaves `_render_call_id` undef outside a served call,
+        # so a secure tool can be tokenless here; it must still get its webhook.
+        # Keying on the SDK-side `secure` flag reproduces the reference's
+        # emission decision without depending on that call_id divergence.
+        if ( defined $func{web_hook_url} && length $func{web_hook_url} ) {
+
+            # (1) external URL supplied on the tool — use it verbatim.
+        } elsif ( $is_secure || %{ $self->swaig_query_params } ) {
+
+            # (2) local URL; it carries the token when one could be minted.
+            $func{web_hook_url} = $webhook_url;
+        } else {
+
+            # (3) nothing to authenticate or convey — emit no key.
+            delete $func{web_hook_url};
+        }
+
+        if ( defined $token && defined $func{web_hook_url} ) {
+            my $sep = ( $func{web_hook_url} =~ /\?/ ) ? '&' : '?';
+            $func{web_hook_url} .= $sep . '__token=' . $token;
         }
         push @functions, \%func;
     }
-    $swaig->{functions} = \@functions if @functions;
+
+    # Emit `SWAIG.defaults.web_hook_url` WHENEVER there are functions, exactly as
+    # the reference does (agent_base.py:1108-1113: `if functions:` -> set
+    # `functions`, then `defaults` if not already present). `$webhook_url` is the
+    # agent-level SWAIG endpoint with basic auth already embedded — the same value
+    # the reference's `default_webhook_url` carries (agent_base.py:972).
+    #
+    # This block is what makes the per-tool guard above SAFE. A tool that emits no
+    # per-tool `web_hook_url` (every INSECURE tool) reaches the platform ONLY via
+    # this shared default. Without it, dropping the per-tool key would leave those
+    # functions with no callback endpoint at all — worse than the unauthenticated
+    # per-function URL the guard removes. The two changes belong together.
+    if (@functions) {
+        $swaig->{functions} = \@functions;
+        $swaig->{defaults} //= { web_hook_url => $webhook_url };
+    }
 
     # Native functions
     $swaig->{native_functions} = $self->native_functions
