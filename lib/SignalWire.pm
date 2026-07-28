@@ -2,7 +2,7 @@ package SignalWire;
 use strict;
 use warnings;
 
-our $VERSION = '4.0.0';
+our $VERSION = '3.0.0';
 
 use SignalWire::Logging;
 use SignalWire::SWML::Document;
