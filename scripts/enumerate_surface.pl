@@ -1565,45 +1565,20 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::Relay::Action::Stream',
     'SignalWire::Relay::Action::Tap',
     'SignalWire::Relay::Action::Transcribe',
-);
 
-# Suppress implicit __init__ emission. Relay::Event subclasses and the
-# Constants holder are dataclasses in Python: they don't expose __init__
-# as a public method. Matching that keeps the diff meaningful.
-my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
-    'SignalWire::Relay::Constants',
-
-    # RequestOptions (plan 4.2): the oracle surface for
-    # signalwire.rest._request_options.RequestOptions is ONLY `merge` -- the
-    # python @dataclass's auto-generated __init__ is not recorded as surface, so
-    # the Perl Moo root's implicit __init__ is suppressed to match.
-    'SignalWire::REST::RequestOptions',
-
-    # AI Chat data carriers: the reference records ConversationInfo /
-    # ChatResponse / ChatLog as @dataclass whose surface is EMPTY (no
-    # __init__ recorded). Each Perl package is a Moo root, which would
-    # otherwise emit an implicit __init__ — suppress it so they surface as
-    # empty classes, matching the reference. (AIChatClient + the base
-    # AIChatError DO expose __init__ in the oracle, so they are NOT listed.)
-    'SignalWire::AIChat::ConversationInfo',
-    'SignalWire::AIChat::ChatResponse',
-    'SignalWire::AIChat::ChatLog',
-
-    # SWML helper classes whose Python reference class does NOT expose an
-    # __init__ in the surface oracle: SwmlRenderer (staticmethod-only) and the
-    # base SWMLVerbHandler ABC. SWMLBuilder / SchemaUtils DO have __init__ in
-    # the oracle, so they are NOT skipped. AIVerbHandler extends the base (not
-    # is_moo_root) so it already gets no implicit __init__.
-    'SignalWire::SWML::SWMLRenderer',
-    'SignalWire::SWML::SWMLHandler',
-
-    # Relay::Event and every Relay::Event::Foo subclass
-    'SignalWire::Relay::Event',
+    # Relay Event subclasses: same shape as the Action subclasses above. Since
+    # porting-sdk 8828dd2 the oracle records the SYNTHESIZED __init__ of each
+    # concrete event dataclass, so every one of these compares as MISSING
+    # unless the constructor is emitted. Perl's subclasses `extends` the base
+    # Event (is_moo_root false) yet each carries the capability — a Moo
+    # constructor taking that event's own `has` fields. Only the subclasses
+    # with a reference counterpart are listed; the three Perl-only events
+    # (CallDisconnect / AuthorizationState / Disconnect) stay suppressed so we
+    # do not invent addition surface.
     'SignalWire::Relay::Event::CallState',
     'SignalWire::Relay::Event::CallReceive',
     'SignalWire::Relay::Event::CallDial',
     'SignalWire::Relay::Event::CallConnect',
-    'SignalWire::Relay::Event::CallDisconnect',
     'SignalWire::Relay::Event::CallPlay',
     'SignalWire::Relay::Event::CallRecord',
     'SignalWire::Relay::Event::CallCollect',
@@ -1617,13 +1592,44 @@ my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::Relay::Event::CallRefer',
     'SignalWire::Relay::Event::Conference',
     'SignalWire::Relay::Event::CallAI',
+    'SignalWire::Relay::Event::CallDenoise',
+    'SignalWire::Relay::Event::CallEcho',
+    'SignalWire::Relay::Event::CallHold',
+    'SignalWire::Relay::Event::CallQueue',
     'SignalWire::Relay::Event::MessageReceive',
     'SignalWire::Relay::Event::MessageState',
+);
+
+# Suppress implicit __init__ emission for the Perl packages whose Python
+# counterpart genuinely records NO __init__ on the surface. The list shrank
+# sharply with porting-sdk 8828dd2 ("surface must record a synthesized
+# __init__, not just a `def` one"): before that commit a python @dataclass's
+# auto-generated __init__ was invisible to the oracle, so every Perl Moo root
+# facing a dataclass had to suppress its implicit constructor to compare equal.
+# The oracle now records those synthesized constructors, so suppressing here
+# would MANUFACTURE a missing symbol. Only classes the oracle still shows
+# without __init__ belong below — re-verify against python_surface.json before
+# adding an entry.
+my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
+
+    # relay.client.Constants is not a class the oracle records __init__ on.
+    'SignalWire::Relay::Constants',
+
+    # SWML helper classes whose Python reference class does NOT expose an
+    # __init__ in the surface oracle: SwmlRenderer (staticmethod-only) and the
+    # base SWMLVerbHandler ABC. SWMLBuilder / SchemaUtils DO have __init__ in
+    # the oracle, so they are NOT skipped. AIVerbHandler extends the base (not
+    # is_moo_root) so it already gets no implicit __init__.
+    'SignalWire::SWML::SWMLRenderer',
+    'SignalWire::SWML::SWMLHandler',
+
+    # Perl-only events (no reference counterpart at all — they surface via
+    # PORT_ADDITIONS). Emitting an implicit __init__ on them would invent
+    # addition surface the reference cannot have, so they stay suppressed
+    # while every oracle-mapped Relay::Event subclass no longer is.
+    'SignalWire::Relay::Event::CallDisconnect',
     'SignalWire::Relay::Event::AuthorizationState',
     'SignalWire::Relay::Event::Disconnect',
-
-    # CLI-only container packages with no instantiable class contract
-    # (we don't emit them here, but listed for future use).
 );
 
 # Subs to always skip: private helpers, Moo plumbing, __PACKAGE__ accessors.
