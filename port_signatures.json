@@ -65,7 +65,8 @@
                 {
                   "name": "host",
                   "type": "string",
-                  "required": false
+                  "required": false,
+                  "default": "0.0.0.0"
                 },
                 {
                   "name": "port",
@@ -75,7 +76,8 @@
                 {
                   "name": "log_level",
                   "type": "string",
-                  "required": false
+                  "required": false,
+                  "default": "info"
                 }
               ],
               "returns": "void"
@@ -312,37 +314,44 @@
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "agent"
                 },
                 {
                   "name": "route",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "/"
                 },
                 {
                   "name": "system_prompt",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "voice_id",
                   "type": "string",
-                  "required": false
+                  "required": false,
+                  "default": "matthew"
                 },
                 {
                   "name": "temperature",
                   "type": "float",
-                  "required": false
+                  "required": false,
+                  "default": 0.7
                 },
                 {
                   "name": "top_p",
                   "type": "float",
-                  "required": false
+                  "required": false,
+                  "default": 0.9
                 },
                 {
                   "name": "max_tokens",
                   "type": "int",
-                  "required": false
+                  "required": false,
+                  "default": 1024
                 },
                 {
                   "name": "host",
@@ -372,17 +381,20 @@
                 {
                   "name": "schema_path",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "any",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "config_file",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_utils",
@@ -392,37 +404,44 @@
                 {
                   "name": "auto_answer",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "record_call",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "record_format",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": "mp4"
                 },
                 {
                   "name": "record_stereo",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "use_pom",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "native_functions",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "token_expiry_secs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 3600
                 },
                 {
                   "name": "agent_id",
@@ -432,27 +451,32 @@
                 {
                   "name": "default_webhook_url",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "suppress_logs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "enable_post_prompt_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "check_for_input_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "trust_proxy_for_signature",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "signing_key",
@@ -485,7 +509,8 @@
                 {
                   "name": "request_env",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -893,12 +918,14 @@
                 {
                   "name": "code",
                   "type": "optional<int>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "message",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -934,12 +961,14 @@
                 {
                   "name": "messages",
                   "type": "list<dict<string,any>>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 },
                 {
                   "name": "call_timeline",
                   "type": "list<dict<string,any>>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 }
               ],
               "returns": "void"
@@ -985,7 +1014,8 @@
                 {
                   "name": "user_event",
                   "type": "optional<dict<string,any>>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -1040,7 +1070,8 @@
                 {
                   "name": "initial_message",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -1089,7 +1120,8 @@
                 {
                   "name": "agent",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -1332,7 +1364,8 @@
                 {
                   "name": "agent",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -1528,12 +1561,14 @@
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "agent"
                 },
                 {
                   "name": "route",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "/"
                 },
                 {
                   "name": "host",
@@ -1553,37 +1588,44 @@
                 {
                   "name": "use_pom",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "token_expiry_secs",
                   "type": "int",
-                  "required": false
+                  "required": false,
+                  "default": 3600
                 },
                 {
                   "name": "auto_answer",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "record_call",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "record_format",
                   "type": "string",
-                  "required": false
+                  "required": false,
+                  "default": "mp4"
                 },
                 {
                   "name": "record_stereo",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "default_webhook_url",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "agent_id",
@@ -1593,37 +1635,44 @@
                 {
                   "name": "native_functions",
                   "type": "optional<list<string>>",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "schema_path",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "suppress_logs",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "enable_post_prompt_override",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "check_for_input_override",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "config_file",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "bool",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "signing_key",
@@ -1633,7 +1682,8 @@
                 {
                   "name": "trust_proxy_for_signature",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "basic_auth_user",
@@ -2707,12 +2757,14 @@
                 {
                   "name": "service_name",
                   "type": "optional<string>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "additional_paths",
                   "type": "optional<list<string>>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -2731,7 +2783,8 @@
                 {
                   "name": "default",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -2786,7 +2839,8 @@
                 {
                   "name": "env_prefix",
                   "type": "string",
-                  "required": true
+                  "required": true,
+                  "default": "SWML_"
                 }
               ],
               "returns": "any"
@@ -2805,7 +2859,8 @@
                 {
                   "name": "max_depth",
                   "type": "int",
-                  "required": true
+                  "required": true,
+                  "default": 10
                 }
               ],
               "returns": "any"
@@ -3259,7 +3314,8 @@
                 {
                   "name": "agent",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -3364,22 +3420,26 @@
                 {
                   "name": "output_key",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "completion_action",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "prompt",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "isolated",
                   "type": "bool",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 }
               ],
               "returns": "void"
@@ -3444,27 +3504,32 @@
                 {
                   "name": "type",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "string"
                 },
                 {
                   "name": "confirm",
                   "type": "bool",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "prompt",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "functions",
                   "type": "optional<list<string>>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "isolated",
                   "type": "optional<bool>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -4232,12 +4297,14 @@
                 {
                   "name": "response",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "post_process",
                   "type": "bool",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 }
               ],
               "returns": "void"
@@ -4395,7 +4462,8 @@
                 {
                   "name": "enabled",
                   "type": "bool",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -4409,7 +4477,8 @@
                 {
                   "name": "enabled",
                   "type": "bool",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -4480,7 +4549,8 @@
                 {
                   "name": "timeout",
                   "type": "int",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -4831,7 +4901,8 @@
                 {
                   "name": "text",
                   "type": "union<string,bool>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -6789,7 +6860,8 @@
                 {
                   "name": "sections",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -8472,7 +8544,8 @@
                 {
                   "name": "token_expiry_secs",
                   "type": "int",
-                  "required": 0
+                  "required": false,
+                  "default": 900
                 },
                 {
                   "name": "secret_key",
@@ -8803,12 +8876,14 @@
                 {
                   "name": "config_file",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "service_name",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -9075,7 +9150,8 @@
                 {
                   "name": "params",
                   "type": "optional<dict<string,any>>",
-                  "required": false
+                  "required": false,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -9574,47 +9650,56 @@
                 {
                   "name": "parameters",
                   "type": "optional<dict<string,dict<string,any>>>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "secure",
                   "type": "bool",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "fillers",
                   "type": "optional<dict<string,list<string>>>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "wait_file",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "wait_file_loops",
                   "type": "optional<int>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "webhook_url",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "required",
                   "type": "optional<list<string>>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 },
                 {
                   "name": "is_typed_handler",
                   "type": "bool",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "extra_swaig_fields",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -9642,7 +9727,8 @@
                 {
                   "name": "raw_data",
                   "type": "optional<class:signalwire.core.swaig_request_generated.SwaigRequest>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -10561,7 +10647,8 @@
                 {
                   "name": "handlers",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -10751,7 +10838,8 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "opts",
@@ -10776,7 +10864,8 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "opts",
@@ -10806,7 +10895,8 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "opts",
@@ -10831,7 +10921,8 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "opts",
@@ -10856,7 +10947,8 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "opts",
@@ -10881,7 +10973,8 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "opts",
@@ -10921,7 +11014,8 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "opts",
@@ -10963,12 +11057,14 @@
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "service"
                 },
                 {
                   "name": "route",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "/"
                 },
                 {
                   "name": "host",
@@ -10988,17 +11084,20 @@
                 {
                   "name": "schema_path",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "config_file",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "bool",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "basic_auth_user",
@@ -15540,7 +15639,8 @@
                 {
                   "name": "debug",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 }
               ],
               "returns": "void"
@@ -15721,30 +15821,35 @@
                 {
                   "name": "title",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "body",
                   "type": "string",
                   "required": false,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "bullets",
                   "type": "optional<list<string>>",
                   "required": false,
+                  "default": [],
                   "kind": "keyword"
                 },
                 {
                   "name": "numbered",
                   "type": "optional<bool>",
                   "required": false,
+                  "default": null,
                   "kind": "keyword"
                 },
                 {
                   "name": "numberedBullets",
                   "type": "bool",
                   "required": false,
+                  "default": 0,
                   "kind": "keyword"
                 }
               ],
@@ -15861,12 +15966,14 @@
                 {
                   "name": "level",
                   "type": "int",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "section_number",
                   "type": "optional<list<int>>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -15880,12 +15987,14 @@
                 {
                   "name": "indent",
                   "type": "int",
-                  "required": true
+                  "required": true,
+                  "default": null
                 },
                 {
                   "name": "section_number",
                   "type": "optional<list<int>>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -15948,37 +16057,44 @@
                 {
                   "name": "services",
                   "type": "list<string>",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "amenities",
                   "type": "dict<string,dict<string,string>>",
-                  "required": false
+                  "required": false,
+                  "default": {}
                 },
                 {
                   "name": "hours_of_operation",
                   "type": "optional<dict<string,string>>",
-                  "required": false
+                  "required": false,
+                  "default": {}
                 },
                 {
                   "name": "special_instructions",
                   "type": "optional<list<string>>",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "welcome_message",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "agent"
                 },
                 {
                   "name": "route",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "/"
                 },
                 {
                   "name": "host",
@@ -16008,17 +16124,20 @@
                 {
                   "name": "schema_path",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "any",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "config_file",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_utils",
@@ -16028,37 +16147,44 @@
                 {
                   "name": "auto_answer",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "record_call",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "record_format",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": "mp4"
                 },
                 {
                   "name": "record_stereo",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "use_pom",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "native_functions",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "token_expiry_secs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 3600
                 },
                 {
                   "name": "agent_id",
@@ -16068,27 +16194,32 @@
                 {
                   "name": "default_webhook_url",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "suppress_logs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "enable_post_prompt_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "check_for_input_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "trust_proxy_for_signature",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "signing_key",
@@ -16231,27 +16362,32 @@
                 {
                   "name": "faqs",
                   "type": "list<dict<string,any>>",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "suggest_related",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "persona",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": "You are a helpful FAQ bot that provides accurate answers to common questions."
                 },
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "agent"
                 },
                 {
                   "name": "route",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "/"
                 },
                 {
                   "name": "host",
@@ -16281,17 +16417,20 @@
                 {
                   "name": "schema_path",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "any",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "config_file",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_utils",
@@ -16301,37 +16440,44 @@
                 {
                   "name": "auto_answer",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "record_call",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "record_format",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": "mp4"
                 },
                 {
                   "name": "record_stereo",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "use_pom",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "native_functions",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "token_expiry_secs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 3600
                 },
                 {
                   "name": "agent_id",
@@ -16341,27 +16487,32 @@
                 {
                   "name": "default_webhook_url",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "suppress_logs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "enable_post_prompt_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "check_for_input_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "trust_proxy_for_signature",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "signing_key",
@@ -16458,17 +16609,20 @@
                 {
                   "name": "questions",
                   "type": "optional<list<dict<string,string>>>",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "agent"
                 },
                 {
                   "name": "route",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "/"
                 },
                 {
                   "name": "host",
@@ -16498,17 +16652,20 @@
                 {
                   "name": "schema_path",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "any",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "config_file",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_utils",
@@ -16518,37 +16675,44 @@
                 {
                   "name": "auto_answer",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "record_call",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "record_format",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": "mp4"
                 },
                 {
                   "name": "record_stereo",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "use_pom",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "native_functions",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "token_expiry_secs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 3600
                 },
                 {
                   "name": "agent_id",
@@ -16558,27 +16722,32 @@
                 {
                   "name": "default_webhook_url",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "suppress_logs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "enable_post_prompt_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "check_for_input_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "trust_proxy_for_signature",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "signing_key",
@@ -16713,27 +16882,32 @@
                 {
                   "name": "departments",
                   "type": "list<dict<string,string>>",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "agent"
                 },
                 {
                   "name": "route",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "/"
                 },
                 {
                   "name": "greeting",
                   "type": "string",
-                  "required": false
+                  "required": false,
+                  "default": "Thank you for calling. How can I help you today?"
                 },
                 {
                   "name": "voice",
                   "type": "string",
-                  "required": false
+                  "required": false,
+                  "default": "rime.spore"
                 },
                 {
                   "name": "host",
@@ -16763,17 +16937,20 @@
                 {
                   "name": "schema_path",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "any",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "config_file",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_utils",
@@ -16783,37 +16960,44 @@
                 {
                   "name": "auto_answer",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "record_call",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "record_format",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": "mp4"
                 },
                 {
                   "name": "record_stereo",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "use_pom",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "native_functions",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "token_expiry_secs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 3600
                 },
                 {
                   "name": "agent_id",
@@ -16823,27 +17007,32 @@
                 {
                   "name": "default_webhook_url",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "suppress_logs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "enable_post_prompt_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "check_for_input_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "trust_proxy_for_signature",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "signing_key",
@@ -16921,42 +17110,50 @@
                 {
                   "name": "survey_name",
                   "type": "string",
-                  "required": false
+                  "required": false,
+                  "default": "Survey"
                 },
                 {
                   "name": "questions",
                   "type": "list<dict<string,any>>",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "introduction",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": ""
                 },
                 {
                   "name": "conclusion",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": ""
                 },
                 {
                   "name": "brand_name",
                   "type": "optional<string>",
-                  "required": false
+                  "required": false,
+                  "default": ""
                 },
                 {
                   "name": "max_retries",
                   "type": "int",
-                  "required": false
+                  "required": false,
+                  "default": 2
                 },
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "agent"
                 },
                 {
                   "name": "route",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "/"
                 },
                 {
                   "name": "host",
@@ -16986,17 +17183,20 @@
                 {
                   "name": "schema_path",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "any",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "config_file",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_utils",
@@ -17006,37 +17206,44 @@
                 {
                   "name": "auto_answer",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "record_call",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "record_format",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": "mp4"
                 },
                 {
                   "name": "record_stereo",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "use_pom",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 },
                 {
                   "name": "native_functions",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": []
                 },
                 {
                   "name": "token_expiry_secs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 3600
                 },
                 {
                   "name": "agent_id",
@@ -17046,27 +17253,32 @@
                 {
                   "name": "default_webhook_url",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "suppress_logs",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "enable_post_prompt_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "check_for_input_override",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "trust_proxy_for_signature",
                   "type": "any",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "signing_key",
@@ -17209,7 +17421,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -17241,7 +17454,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -17323,7 +17537,8 @@
                 {
                   "name": "cb",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -17391,7 +17606,8 @@
                 {
                   "name": "client",
                   "type": "class:signalwire.relay.client.RelayClient",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "call_id",
@@ -17401,46 +17617,54 @@
                 {
                   "name": "node_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "project_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "context",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "tag",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "direction",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "device",
                   "type": "optional<dict<string,any>>",
                   "required": 0,
+                  "default": {},
                   "kind": "keyword"
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0,
+                  "required": false,
+                  "default": "created",
                   "kind": "keyword"
                 },
                 {
                   "name": "segment_id",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 }
               ],
@@ -19275,7 +19499,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19303,7 +19528,8 @@
                 {
                   "name": "behavior",
                   "type": "optional<string>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -19362,7 +19588,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19403,7 +19630,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19413,7 +19641,8 @@
                 {
                   "name": "method_prefix",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "send_fax"
                 }
               ],
               "returns": "void"
@@ -19458,7 +19687,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19499,7 +19729,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19518,7 +19749,8 @@
                 {
                   "name": "behavior",
                   "type": "optional<string>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -19568,7 +19800,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19650,7 +19883,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19691,7 +19925,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19723,7 +19958,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19755,7 +19991,8 @@
                 {
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "control_id",
@@ -19836,17 +20073,20 @@
                 {
                   "name": "project",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "token",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "jwt_token",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "host",
@@ -19856,12 +20096,14 @@
                 {
                   "name": "contexts",
                   "type": "optional<list<string>>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 },
                 {
                   "name": "max_active_calls",
                   "type": "optional<int>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -19993,7 +20235,8 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -20443,62 +20686,74 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "call_state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "direction",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "device",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "node_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "project_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "context",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "segment_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "tag",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -20611,42 +20866,50 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "call_state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "end_reason",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "direction",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "device",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -20750,32 +21013,38 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "code",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "message",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -20852,42 +21121,50 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "result",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "final",
                   "type": "optional<bool>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -20973,37 +21250,44 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "conference_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "status",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -21080,32 +21364,38 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "connect_state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "peer",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -21173,27 +21463,32 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "denoised",
                   "type": "bool",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 }
               ],
               "returns": "void"
@@ -21234,32 +21529,38 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "detect",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -21327,37 +21628,44 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "tag",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "dial_state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "call",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -21452,27 +21760,32 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -21513,32 +21826,38 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "fax",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -21606,27 +21925,32 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -21667,72 +21991,86 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "message_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "context",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "direction",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "inbound"
                 },
                 {
                   "name": "from_number",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "to_number",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "body",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "media",
                   "type": "list<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 },
                 {
                   "name": "segments",
                   "type": "int",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "message_state",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "received"
                 },
                 {
                   "name": "tags",
                   "type": "list<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 }
               ],
               "returns": "void"
@@ -21854,77 +22192,92 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "message_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "context",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "direction",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "outbound"
                 },
                 {
                   "name": "from_number",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "to_number",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "body",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "media",
                   "type": "list<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 },
                 {
                   "name": "segments",
                   "type": "int",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "message_state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "reason",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "tags",
                   "type": "list<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 }
               ],
               "returns": "void"
@@ -22055,32 +22408,38 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -22157,32 +22516,38 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -22250,52 +22615,62 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "status",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "queue_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "queue_name",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "position",
                   "type": "int",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "size",
                   "type": "int",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 }
               ],
               "returns": "void"
@@ -22318,7 +22693,8 @@
                 {
                   "name": "payload",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -22381,52 +22757,62 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "url",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "duration",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "size",
                   "type": "int",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "record",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -22467,7 +22853,8 @@
                 {
                   "name": "payload",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -22530,42 +22917,50 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "sip_refer_to",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "sip_refer_response_code",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "sip_notify_response_code",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -22660,22 +23055,26 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 }
               ],
               "returns": "void"
@@ -22707,7 +23106,8 @@
                 {
                   "name": "payload",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -22743,32 +23143,38 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -22836,42 +23242,50 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "url",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "name",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 }
               ],
               "returns": "void"
@@ -22957,42 +23371,50 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "tap",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "device",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -23078,52 +23500,62 @@
                 {
                   "name": "event_type",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "call_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "timestamp",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "control_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "state",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "url",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "recording_id",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "duration",
                   "type": "float",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 },
                 {
                   "name": "size",
                   "type": "int",
-                  "required": 0
+                  "required": 0,
+                  "default": 0
                 }
               ],
               "returns": "void"
@@ -23250,60 +23682,70 @@
                   "name": "context",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "direction",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "from_number",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "to_number",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "body",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "media",
                   "type": "optional<list<string>>",
                   "required": 0,
+                  "default": [],
                   "kind": "keyword"
                 },
                 {
                   "name": "segments",
                   "type": "int",
                   "required": 0,
+                  "default": 0,
                   "kind": "keyword"
                 },
                 {
                   "name": "state",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "reason",
                   "type": "string",
                   "required": 0,
+                  "default": "",
                   "kind": "keyword"
                 },
                 {
                   "name": "tags",
                   "type": "optional<list<string>>",
                   "required": 0,
+                  "default": [],
                   "kind": "keyword"
                 }
               ],
@@ -23436,7 +23878,8 @@
                 {
                   "name": "cb",
                   "type": "any",
-                  "required": true
+                  "required": true,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -23734,7 +24177,8 @@
                 {
                   "name": "request_options",
                   "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -23983,22 +24427,26 @@
                 {
                   "name": "body",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "url",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "method",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "GET"
                 },
                 {
                   "name": "headers",
                   "type": "optional<dict<string,string>>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -24070,27 +24518,32 @@
                 {
                   "name": "body",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "url",
                   "type": "string",
-                  "required": 0
+                  "required": 0,
+                  "default": ""
                 },
                 {
                   "name": "method",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "GET"
                 },
                 {
                   "name": "status_code",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "headers",
                   "type": "any",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -24131,17 +24584,20 @@
                 {
                   "name": "params",
                   "type": "optional<dict<string,any>>",
-                  "required": 0
+                  "required": 0,
+                  "default": {}
                 },
                 {
                   "name": "data_key",
                   "type": "string",
-                  "required": 0
+                  "required": false,
+                  "default": "data"
                 },
                 {
                   "name": "request_options",
                   "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -24217,27 +24673,32 @@
                 {
                   "name": "timeout",
                   "type": "optional<float>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "retries",
                   "type": "optional<int>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "retry_on_status",
                   "type": "optional<list<int>>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "retry_backoff",
                   "type": "optional<float>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "abort_signal",
                   "type": "optional<class:signalwire.rest._request_options._AbortSignal>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -24370,7 +24831,8 @@
                 {
                   "name": "request_options",
                   "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -32436,7 +32898,8 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": false
+                  "required": false,
+                  "default": {}
                 }
               ],
               "returns": "void"
@@ -32748,12 +33211,14 @@
                 {
                   "name": "schema_path",
                   "type": "optional<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": null
                 },
                 {
                   "name": "schema_validation",
                   "type": "bool",
-                  "required": 0
+                  "required": false,
+                  "default": 1
                 }
               ],
               "returns": "void"
@@ -33006,7 +33471,8 @@
                 {
                   "name": "errors",
                   "type": "list<string>",
-                  "required": 0
+                  "required": 0,
+                  "default": []
                 }
               ],
               "returns": "void"
@@ -33075,27 +33541,32 @@
                 {
                   "name": "port",
                   "type": "int",
-                  "required": false
+                  "required": false,
+                  "default": 8002
                 },
                 {
                   "name": "directories",
                   "type": "optional<dict<string,string>>",
-                  "required": false
+                  "required": false,
+                  "default": {}
                 },
                 {
                   "name": "basic_auth",
                   "type": "optional<tuple<string,string>>",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "enable_directory_browsing",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 0
                 },
                 {
                   "name": "allowed_extensions",
                   "type": "optional<list<string>>",
-                  "required": false
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "blocked_extensions",
@@ -33105,12 +33576,14 @@
                 {
                   "name": "max_file_size",
                   "type": "int",
-                  "required": false
+                  "required": false,
+                  "default": 104857600
                 },
                 {
                   "name": "enable_cors",
                   "type": "bool",
-                  "required": false
+                  "required": false,
+                  "default": 1
                 }
               ],
               "returns": "void"

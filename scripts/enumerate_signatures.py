@@ -904,6 +904,41 @@ def project_swaig(sub: str, cls: str, type_entry: dict, out_modules: dict) -> No
     out_modules[mod]["classes"][cls]["methods"].update(methods)
 
 
+def _attach_signature_default(param: dict, parsed: dict) -> None:
+    """Carry a Perl 5.20+ subroutine-signature default (``sub f ($a, $b = 42)``)
+    from the parsed parameter onto the emitted one.
+
+    Two distinct facts come out of the parser and both matter:
+
+    * ``has_default`` — the source declares SOME default, so the parameter is
+      optional. This is always trustworthy (it is syntax, not value analysis)
+      and drives ``required``.
+    * ``default`` — the recovered literal VALUE, present only when the default
+      expression is a literal. A computed default (a call, a variable, an
+      interpolating string) sets ``has_default`` WITHOUT ``default``: the
+      parameter is optional but its value is not statically knowable, so we
+      record no value rather than a fabricated one.
+
+    ``= undef`` is a real declared default of undef and is recorded as
+    ``"default": None`` — the reference records ``None`` the same way.
+
+    ``required`` is deliberately NOT touched here. It would be tempting to set
+    it False (a param with a default IS optional in Perl), and for 16 params the
+    reference agrees that is the correction. But 4 params — ``RelayEvent`` /
+    ``QueueEvent`` / ``RecordEvent.from_payload(payload)`` and
+    ``RelayClient.execute(params)`` — are written ``= undef`` in the Perl source
+    while the reference records them REQUIRED. That is a genuine port/reference
+    divergence, not a defaults question, and flipping ``required`` here would
+    move it into this change and red DRIFT. Defaults are recovered as VALUES
+    only; ``required`` keeps whatever the existing reference-driven logic
+    decides. The divergence is reported separately.
+    """
+    if not parsed.get("has_default"):
+        return
+    if "default" in parsed:
+        param["default"] = parsed["default"]
+
+
 def _sig_from_parsed_method(m: dict) -> dict:
     """Best-effort signature for a generated method the sidecar doesn't cover
     (should be rare — only methods emitted without a body record). Mirrors the
@@ -928,6 +963,7 @@ def _sig_from_parsed_method(m: dict) -> dict:
         elif sigil == "%":
             param["kind"] = "var_keyword"; param["type"] = "dict<string,any>"
             param["required"] = False  # var_keyword tail is optional (see above)
+        _attach_signature_default(param, p)
         params_out.append(param)
     if not params_out or params_out[0].get("kind") not in ("self", "cls"):
         params_out.insert(0, {"name": "self", "kind": "self"})
@@ -1366,6 +1402,7 @@ def collect(raw: dict) -> dict:
                     param["kind"] = "var_keyword"
                     param["type"] = "dict<string,any>"
                     param["required"] = False  # var_keyword tail is never required
+                _attach_signature_default(param, p)
                 params_out.append(param)
 
             # Perl-idiom projection: the canonical Perl ``%opts`` slurpy
@@ -1579,6 +1616,12 @@ def collect(raw: dict) -> dict:
                 required = not a.get("default") and a.get("required", False)
                 if canonical in seen_names:
                     by_canonical[canonical]["required"] = required
+                    # A ``has '+attr'`` override that redeclares ``default``
+                    # supersedes the parent's — Moo honours the override, so the
+                    # recorded default must follow it (and an override that
+                    # REMOVES the literal default must drop the stale one).
+                    if "default" in a:
+                        by_canonical[canonical]["default"] = a["default"]
                     continue
                 seen_names.add(canonical)
                 param = {
@@ -1586,6 +1629,15 @@ def collect(raw: dict) -> dict:
                     "type": "any",
                     "required": required,
                 }
+                # Moo's ``default`` is the value the constructor stores when the
+                # caller passes nothing — the Perl spelling of the reference's
+                # per-parameter default VALUE. signature_dump.pl recovers it
+                # only for LITERAL defaults (``default => sub { 900 }`` -> 900);
+                # a computed default (``sub { _random_hex(32) }``) carries no
+                # ``default`` key at all, so the param records no default rather
+                # than a fabricated one.
+                if "default" in a:
+                    param["default"] = a["default"]
                 by_canonical[canonical] = param
                 init_params.append(param)
             # Project the synthesized __init__ to Python's reference shape
@@ -2162,6 +2214,82 @@ def _has_decl_init_arg(block: str, start: int) -> tuple[str | None, bool]:
     return None, False
 
 
+_MISSING = object()
+
+
+def _literal_value(expr: str):
+    """The Python twin of signature_dump.pl's ``literal_value`` — SAME rule, so
+    the quoted and bareword ``has`` spellings recover a default identically.
+
+    Returns the recovered value, or ``_MISSING`` when the expression is not a
+    literal (a call, a variable, an interpolating string) and therefore has no
+    statically knowable value.
+    """
+    if expr is None:
+        return _MISSING
+    expr = re.sub(r"#.*$", "", expr, flags=re.MULTILINE).strip()
+    expr = re.sub(r";\s*$", "", expr).strip()
+    if not expr:
+        return _MISSING
+    if expr == "undef":
+        return None
+    if re.fullmatch(r"\[\s*\]", expr):
+        return []
+    if re.fullmatch(r"\{\s*\}", expr):
+        return {}
+    if re.fullmatch(r"-?\d+", expr):
+        return int(expr)
+    if re.fullmatch(r"-?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?", expr):
+        return float(expr)
+    if re.fullmatch(r"[\d\s.*+\-/()]+", expr) and re.search(r"\d", expr):
+        try:
+            v = eval(expr, {"__builtins__": {}}, {})  # digits/operators only
+        except Exception:
+            return _MISSING
+        return v if isinstance(v, (int, float)) else _MISSING
+    m = re.fullmatch(r"'([^'\\]*)'", expr)
+    if m:
+        return m.group(1)
+    m = re.fullmatch(r'"([^"\\$@]*)"', expr)
+    if m:
+        return m.group(1)
+    return _MISSING
+
+
+def _has_decl_default(block: str, start: int):
+    """This ``has`` declaration's literal ``default``, or ``_MISSING``.
+
+    Mirrors signature_dump.pl's ``attr_default``: unwrap one ``sub { ... }``
+    coderef level (Moo requires a coderef for any non-scalar default) and read
+    the literal inside. A computed default yields ``_MISSING`` so no value is
+    recorded.
+    """
+    text = _has_decl_text(block, start)
+    m = re.search(r"\bdefault\s*=>\s*(.*)$", text, flags=re.DOTALL)
+    if not m:
+        return _MISSING
+    rest = m.group(1)
+    sub_m = re.match(r"\s*sub\s*\{", rest)
+    if sub_m:
+        open_i = rest.index("{")
+        depth = 0
+        close_i = None
+        for k in range(open_i, len(rest)):
+            if rest[k] == "{":
+                depth += 1
+            elif rest[k] == "}":
+                depth -= 1
+                if depth == 0:
+                    close_i = k
+                    break
+        if close_i is None:
+            return _MISSING
+        expr = rest[open_i + 1:close_i]
+    else:
+        expr = re.match(r"[^,)]*", rest).group(0)
+    return _literal_value(expr)
+
+
 def augment_with_bareword_has(raw: dict) -> None:
     """Post-process the raw signature dump to also pick up Moo ``has``
     declarations using BAREWORDS rather than quoted names. The
@@ -2206,7 +2334,8 @@ def augment_with_bareword_has(raw: dict) -> None:
             # two ``has`` spellings a class happens to use.
             new_attrs = [
                 (m.group(1), _has_decl_required(block, m.end()),
-                 _has_decl_init_arg(block, m.end()))
+                 _has_decl_init_arg(block, m.end()),
+                 _has_decl_default(block, m.end()))
                 for m in bareword_has.finditer(block)
             ]
             if not new_attrs:
@@ -2224,11 +2353,13 @@ def augment_with_bareword_has(raw: dict) -> None:
                 by_full_name[pkg_name] = entry
                 raw.setdefault("types", []).append(entry)
             existing = {a.get("name") for a in entry.get("attributes", [])}
-            for n, required, (init_arg, has_init_arg) in new_attrs:
+            for n, required, (init_arg, has_init_arg), default in new_attrs:
                 if n not in existing:
                     attr = {"name": n, "required": required}
                     if has_init_arg:
                         attr["init_arg"] = init_arg
+                    if default is not _MISSING:
+                        attr["default"] = default
                     entry.setdefault("attributes", []).append(attr)
                     existing.add(n)
 

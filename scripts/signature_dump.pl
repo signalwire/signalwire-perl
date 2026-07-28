@@ -186,11 +186,13 @@ sub parse_file {
             #     constructor entirely (the lazy resource-tree accessors).
             # Both are construction contract, so record them alongside the name.
             my ( $init_arg, $has_init_arg ) = attr_init_arg( $lines, $i );
+            my ( $default,  $has_default )  = attr_default( $lines, $i );
             push @attrs,
                 {
                 name     => $attr,
                 required => attr_required( $lines, $i ),
                 ( $has_init_arg ? ( init_arg => $init_arg ) : () ),
+                ( $has_default  ? ( default  => $default )  : () ),
                 };
             $i++;
             next;
@@ -265,6 +267,68 @@ sub attr_init_arg {
     return ( undef, 0 );
 }
 
+# The ``default`` VALUE of the ``has`` declaration at $lines->[$start], as
+# ``($value, $present)``.
+#
+# Moo's ``default`` is what the constructor stores when the caller passes
+# nothing — i.e. the Perl spelling of the reference's per-parameter default
+# VALUE, which the cross-port defaults comparison needs as a real typed value
+# (``900``, not ``"900"``; ``sub { 900 }`` yields ``900``).
+#
+# Moo requires a non-scalar default to be a CODEREF (``default => sub { [] }``)
+# because a bare reference would be shared across instances, so essentially
+# every default in this SDK is written ``default => sub { EXPR }``. We unwrap
+# that one level and read EXPR. The bare-scalar spelling (``default => 900``)
+# is accepted too, since Moo permits it for simple scalars.
+#
+# ONLY a literal EXPR is recoverable. ``sub { _random_hex(32) }`` computes its
+# value at construction time and has no static value — a function call, a method
+# call, a variable, or an expression yields ``($present = 0)`` so the caller
+# emits NO default rather than a fabricated one. This is a deliberate,
+# documented blind spot: a wrong default is worse than a missing one.
+#
+# Returns the value already typed for JSON: a number stays numeric (so
+# ``JSON::PP`` encodes ``900`` not ``"900"``), a quoted string stays a string,
+# and ``undef`` is returned as present-with-undef-value (a real "defaults to
+# undef" declaration, distinct from "no default declared").
+sub attr_default {
+    my ( $lines, $start ) = @_;
+    my $decl = attr_decl_text( $lines, $start );
+
+    # Isolate the text following ``default =>`` up to the option that follows.
+    return ( undef, 0 ) unless $decl =~ /\bdefault\s*=>\s*(.*)$/s;
+    my $rest = $1;
+
+    my $expr;
+    if ( $rest =~ /^\s*sub\s*\{/ ) {
+
+        # Unwrap ONE coderef level by matching balanced braces from the ``{``.
+        my $open  = index( $rest, '{' );
+        my $depth = 0;
+        my $close;
+        for my $k ( $open .. length($rest) - 1 ) {
+            my $ch = substr( $rest, $k, 1 );
+            $depth++ if $ch eq '{';
+            if ( $ch eq '}' ) {
+                $depth--;
+                if ( $depth == 0 ) { $close = $k; last; }
+            }
+        }
+        return ( undef, 0 ) unless defined $close;
+        $expr = substr( $rest, $open + 1, $close - $open - 1 );
+    } else {
+
+        # Bare-scalar default: read up to the option separator / end of list.
+        ($expr) = $rest =~ /^([^,\)]*)/;
+    }
+
+    # Anything that is not a literal — a function call (``_random_hex(32)``), a
+    # constructor (``SignalWire::POM::PromptObjectModel->new``), a variable, a
+    # computed expression — has NO static value, and ``literal_value`` reports
+    # it as unrecovered so we emit no default rather than a fabricated one.
+    return literal_value($expr);
+}
+
 # The source text of the Moo/Moose ``has`` declaration starting at
 # $lines->[$start] — from its ``=>`` to the end of the option list.
 #
@@ -304,10 +368,13 @@ sub attr_decl_text {
 # into the same { name => ..., sigil => ... } shape parse_params emits
 # from ``my (...) = @_``. The leading ``$`` sigil is dropped (positional
 # scalars carry sigil => ''); ``@`` / ``%`` are preserved so the canonical
-# translator can map them to var_positional / var_keyword. Defaults
-# (``= EXPR``) are stripped — they don't affect the parameter NAME or its
-# kind, and matching Python's per-parameter ``required`` flag is handled
-# downstream from the Python reference, not from the Perl default here.
+# translator can map them to var_positional / var_keyword.
+#
+# Defaults (``= EXPR``) are RECOVERED, not stripped: ``$beta = 5`` records the
+# value 5. The reference oracle records real default VALUES per parameter, and
+# a port that emits none makes a defaults comparison vacuous. Only a LITERAL
+# EXPR is recoverable (same rule as ``attr_default``) — a call or an expression
+# has no static value and records no default rather than a fabricated one.
 sub parse_signature {
     my ($sig) = @_;
 
@@ -321,8 +388,11 @@ sub parse_signature {
     # sufficient (and the parser is best-effort by design).
     for my $part ( split /,/, $sig ) {
 
-        # Drop any default: ``$beta = 5`` / ``$x //= 'foo'`` -> ``$beta``.
-        $part =~ s/(?:\/\/=|=).*$//s;
+        # Split off the default: ``$beta = 5`` / ``$x //= 'foo'``.
+        my $default_expr;
+        if ( $part =~ s/(?:\/\/=|=)(.*)$//s ) {
+            $default_expr = $1;
+        }
         $part =~ s/^\s+//;
         $part =~ s/\s+$//;
         next if $part eq '';
@@ -337,9 +407,56 @@ sub parse_signature {
         $part =~ s/^[\$\@\%]//;
         next if $part eq '';
         next unless $part =~ /^[A-Za-z_]\w*$/;
-        push @params, { name => $part, sigil => $sigil };
+
+        my %p = ( name => $part, sigil => $sigil );
+        if ( defined $default_expr ) {
+            my ( $v, $present ) = literal_value($default_expr);
+            if ($present) {
+                $p{default}     = $v;
+                $p{has_default} = 1;
+            } else {
+
+                # A default EXISTS but its value is not statically recoverable.
+                # Record that fact (it makes the param optional) without
+                # claiming a value.
+                $p{has_default} = 1;
+            }
+        }
+        push @params, \%p;
     }
     return @params;
+}
+
+# ``($value, $recovered)`` for a Perl literal expression. Shared by
+# ``parse_signature`` and ``attr_default`` so the two spellings of a default
+# are read by the SAME rule. Returns $recovered = 0 for anything that is not a
+# literal (a call, a variable, an interpolating string) — those have no static
+# value and must emit no default.
+sub literal_value {
+    my ($expr) = @_;
+    return ( undef, 0 ) unless defined $expr;
+    $expr =~ s/#.*$//mg;
+    $expr =~ s/^\s+//;
+    $expr =~ s/\s+$//;
+    $expr =~ s/;\s*$//;
+    $expr =~ s/^\s+//;
+    $expr =~ s/\s+$//;
+    return ( undef, 0 ) if $expr eq '';
+
+    return ( undef,       1 ) if $expr eq 'undef';
+    return ( [],          1 ) if $expr =~ /^\[\s*\]$/;
+    return ( {},          1 ) if $expr =~ /^\{\s*\}$/;
+    return ( 0 + $expr,   1 ) if $expr =~ /^-?\d+$/;
+    return ( 0.0 + $expr, 1 )
+        if $expr =~ /^-?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?$/;
+    if ( $expr =~ m{^[\d\s\.\*\+\-/\(\)]+$} && $expr =~ /\d/ ) {
+        my $v = eval $expr;    ## no critic
+        return ( $v + 0, 1 ) if !$@ && defined $v && $v =~ /^-?[\d.]+$/;
+        return ( undef,  0 );
+    }
+    return ( "$1",  1 ) if $expr =~ /^'([^'\\]*)'$/;
+    return ( "$1",  1 ) if $expr =~ /^"([^"\\\$\@]*)"$/;
+    return ( undef, 0 );
 }
 
 sub parse_params {
