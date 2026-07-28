@@ -168,8 +168,14 @@ sub _bearer_env_ok ( $self, $env ) {
     return 0 unless $self->auth_methods->{bearer} && $self->auth_methods->{bearer}{enabled};
     my $header = $env->{HTTP_AUTHORIZATION} // '';
     return 0 unless index( $header, 'Bearer ' ) == 0;
+
+    # Split the header on the FIRST space, exactly as FastAPI's HTTPBearer does:
+    # the leading token is the `scheme` ('Bearer'), the remainder the credentials.
+    # Carrying the scheme is contract — building the carrier from the tail alone
+    # left `scheme` permanently unset.
+    my ( $scheme, $credentials ) = split / /, $header, 2;
     return $self->verify_bearer_token(
-        SignalWire::Core::AuthHandler::BearerCredentials->new( substr( $header, 7 ) ) );
+        SignalWire::Core::AuthHandler::BearerCredentials->new( $scheme, $credentials ) );
 }
 
 sub _api_key_env_ok ( $self, $env ) {
@@ -260,9 +266,10 @@ use strict;
 use warnings;
 
 sub new {
-    my ( $class, $credentials ) = @_;
-    return bless { credentials => $credentials }, $class;
+    my ( $class, $scheme, $credentials ) = @_;
+    return bless { scheme => $scheme, credentials => $credentials }, $class;
 }
+sub scheme      { return $_[0]->{scheme} }         ## no critic (Subroutines::RequireArgUnpacking)
 sub credentials { return $_[0]->{credentials} }    ## no critic (Subroutines::RequireArgUnpacking)
 
 # ---------- AuthError ----------

@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ a3d593c74482da7b92ddb5fff5813b72aeaf766c",
+   "generated_from" : "signalwire-perl @ 59181e141d7b309c5afa288b7b15be06850a31d5",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -200,7 +200,8 @@
             ],
             "BearerCredentials" : [
                "__init__",
-               "credentials"
+               "credentials",
+               "scheme"
             ]
          },
          "functions" : []
@@ -816,7 +817,6 @@
                "add_verb_to_section",
                "as_router",
                "can",
-               "domain",
                "extract_sip_username",
                "full_validation_enabled",
                "get_all_functions",
@@ -845,9 +845,6 @@
                "schema_utils",
                "security",
                "serve",
-               "ssl_cert_path",
-               "ssl_enabled",
-               "ssl_key_path",
                "stop",
                "swaig_pre_dispatch",
                "to_psgi_app",
@@ -1929,29 +1926,7 @@
       "signalwire.rest.client" : {
          "classes" : {
             "RestClient" : [
-               "__init__",
-               "addresses",
-               "calling",
-               "chat",
-               "datasphere",
-               "fabric",
-               "imported_numbers",
-               "logs",
-               "lookup",
-               "messages",
-               "mfa",
-               "number_groups",
-               "phone_numbers",
-               "project",
-               "projects",
-               "pubsub",
-               "queues",
-               "recordings",
-               "registry",
-               "short_codes",
-               "sip_profile",
-               "verified_callers",
-               "video"
+               "__init__"
             ]
          },
          "functions" : []
@@ -3454,7 +3429,6 @@
                "get_instance_key",
                "get_parameter_schema",
                "register_tools",
-               "remove_xpaths",
                "scrape_url",
                "setup"
             ]

@@ -2670,7 +2670,7 @@
                 },
                 {
                   "name": "credentials",
-                  "type": "class:HTTPBasicCredentials",
+                  "type": "class:signalwire.core.auth_handler.BasicCredentials",
                   "required": true
                 }
               ],
@@ -2684,7 +2684,7 @@
                 },
                 {
                   "name": "credentials",
-                  "type": "class:HTTPAuthorizationCredentials",
+                  "type": "class:signalwire.core.auth_handler.BearerCredentials",
                   "required": true
                 }
               ],
@@ -2717,6 +2717,15 @@
         "BearerCredentials": {
           "methods": {
             "credentials": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "scheme": {
               "params": [
                 {
                   "name": "self",
@@ -20301,7 +20310,7 @@
                 },
                 {
                   "name": "handler",
-                  "type": "class:signalwire.relay.client.CallHandler",
+                  "type": "callable<list<class:signalwire.relay.call.Call>,void>",
                   "required": true
                 }
               ],
@@ -20329,7 +20338,7 @@
                 },
                 {
                   "name": "handler",
-                  "type": "class:signalwire.relay.client.MessageHandler",
+                  "type": "callable<list<class:signalwire.relay.message.Message>,void>",
                   "required": true
                 }
               ],

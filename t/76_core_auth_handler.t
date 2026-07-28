@@ -55,10 +55,13 @@ subtest 'verify_bearer_token + verify_api_key' => sub {
     ok( $h->auth_methods->{bearer}{enabled},  'bearer enabled when configured' );
     ok( $h->auth_methods->{api_key}{enabled}, 'api_key enabled when configured' );
 
-    my $b_good = SignalWire::Core::AuthHandler::BearerCredentials->new('tok123');
-    my $b_bad  = SignalWire::Core::AuthHandler::BearerCredentials->new('nope');
-    ok( $h->verify_bearer_token($b_good),  'valid bearer accepted' );
-    ok( !$h->verify_bearer_token($b_bad),  'invalid bearer rejected' );
+    my $b_good = SignalWire::Core::AuthHandler::BearerCredentials->new( 'Bearer', 'tok123' );
+    my $b_bad  = SignalWire::Core::AuthHandler::BearerCredentials->new( 'Bearer', 'nope' );
+    ok( $h->verify_bearer_token($b_good), 'valid bearer accepted' );
+    ok( !$h->verify_bearer_token($b_bad), 'invalid bearer rejected' );
+
+    is( $b_good->scheme,      'Bearer', 'BearerCredentials carries the scheme' );
+    is( $b_good->credentials, 'tok123', 'BearerCredentials carries the credentials' );
 
     ok( $h->verify_api_key('key456'), 'valid api key accepted' );
     ok( !$h->verify_api_key('bad'),   'invalid api key rejected' );
@@ -68,10 +71,29 @@ subtest 'verify_bearer_token + verify_api_key' => sub {
     like( $info->{bearer}{hint}, qr/Bearer/, 'bearer hint present' );
 };
 
+subtest 'bearer env path carries the scheme, not just the token' => sub {
+    my $h = SignalWire::Core::AuthHandler->new( FakeSecConfig->new( bearer => 'tok123' ) );
+
+    # Capture the carrier the PSGI-env path actually constructs, so the split is
+    # asserted where the header is parsed — not only on a hand-built carrier.
+    my $seen;
+    no warnings 'redefine';    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
+    my $real = \&SignalWire::Core::AuthHandler::verify_bearer_token;
+    local *SignalWire::Core::AuthHandler::verify_bearer_token = sub {
+        $seen = $_[1];
+        return $real->(@_);
+    };
+
+    ok( $h->_bearer_env_ok( { HTTP_AUTHORIZATION => 'Bearer tok123' } ),
+        'bearer env authenticates' );
+    is( $seen->scheme,      'Bearer', 'scheme parsed from the Authorization header' );
+    is( $seen->credentials, 'tok123', 'credentials are the header tail' );
+};
+
 subtest 'verify_api_key disabled when not configured' => sub {
     my $h = SignalWire::Core::AuthHandler->new( FakeSecConfig->new );
     ok( !$h->verify_api_key('anything'), 'api key check false when disabled' );
-    my $b = SignalWire::Core::AuthHandler::BearerCredentials->new('x');
+    my $b = SignalWire::Core::AuthHandler::BearerCredentials->new( 'Bearer', 'x' );
     ok( !$h->verify_bearer_token($b), 'bearer check false when disabled' );
 };
 
