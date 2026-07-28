@@ -509,7 +509,7 @@
                 {
                   "name": "request_env",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -2757,13 +2757,13 @@
                 {
                   "name": "service_name",
                   "type": "optional<string>",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
                   "name": "additional_paths",
                   "type": "optional<list<string>>",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -2783,7 +2783,7 @@
                 {
                   "name": "default",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -2839,7 +2839,7 @@
                 {
                   "name": "env_prefix",
                   "type": "string",
-                  "required": true,
+                  "required": false,
                   "default": "SWML_"
                 }
               ],
@@ -2859,7 +2859,7 @@
                 {
                   "name": "max_depth",
                   "type": "int",
-                  "required": true,
+                  "required": false,
                   "default": 10
                 }
               ],
@@ -4462,7 +4462,7 @@
                 {
                   "name": "enabled",
                   "type": "bool",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -4477,7 +4477,7 @@
                 {
                   "name": "enabled",
                   "type": "bool",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -4549,7 +4549,7 @@
                 {
                   "name": "timeout",
                   "type": "int",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -4901,7 +4901,7 @@
                 {
                   "name": "text",
                   "type": "union<string,bool>",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -9727,7 +9727,7 @@
                 {
                   "name": "raw_data",
                   "type": "optional<class:signalwire.core.swaig_request_generated.SwaigRequest>",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -10838,7 +10838,7 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
@@ -10864,7 +10864,7 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
@@ -10895,7 +10895,7 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
@@ -10921,7 +10921,7 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
@@ -10947,7 +10947,7 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
@@ -10973,7 +10973,7 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
@@ -11014,7 +11014,7 @@
                 {
                   "name": "description",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
@@ -15966,13 +15966,13 @@
                 {
                   "name": "level",
                   "type": "int",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
                   "name": "section_number",
                   "type": "optional<list<int>>",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -15987,13 +15987,13 @@
                 {
                   "name": "indent",
                   "type": "int",
-                  "required": true,
+                  "required": false,
                   "default": null
                 },
                 {
                   "name": "section_number",
                   "type": "optional<list<int>>",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -17537,7 +17537,7 @@
                 {
                   "name": "cb",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -19528,7 +19528,7 @@
                 {
                   "name": "behavior",
                   "type": "optional<string>",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -19749,7 +19749,7 @@
                 {
                   "name": "behavior",
                   "type": "optional<string>",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],
@@ -23878,7 +23878,7 @@
                 {
                   "name": "cb",
                   "type": "any",
-                  "required": true,
+                  "required": false,
                   "default": null
                 }
               ],

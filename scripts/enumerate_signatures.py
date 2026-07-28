@@ -904,7 +904,29 @@ def project_swaig(sub: str, cls: str, type_entry: dict, out_modules: dict) -> No
     out_modules[mod]["classes"][cls]["methods"].update(methods)
 
 
-def _attach_signature_default(param: dict, parsed: dict) -> None:
+# Params written ``= undef`` in the Perl source that the REFERENCE nonetheless
+# records as REQUIRED. A declared default makes a Perl param syntactically
+# optional, so the generic rule below would flip these to ``required: False``
+# — but that flip is a genuine port/reference DIVERGENCE, not a defaults
+# question, and folding it in silently would bury it under a green DRIFT.
+#
+# All four normalize a missing argument (``$payload //= {}`` /
+# ``$params //= {}``) rather than dying, and every internal call site passes
+# the argument explicitly, so the ``= undef`` is decorative in practice. They
+# are held here, unflipped, pending adjudication under the standing
+# ``required`` ruling (``required`` means "an argument must be written").
+# Keyed ``(canonical_class, canonical_method, param_name)``.
+_REQUIRED_DIVERGENCE_HOLD = {
+    ("RelayEvent", "from_payload", "payload"),
+    ("QueueEvent", "from_payload", "payload"),
+    ("RecordEvent", "from_payload", "payload"),
+    ("RelayClient", "execute", "params"),
+}
+
+
+def _attach_signature_default(
+    param: dict, parsed: dict, canonical_class=None, canonical_method=None
+) -> None:
     """Carry a Perl 5.20+ subroutine-signature default (``sub f ($a, $b = 42)``)
     from the parsed parameter onto the emitted one.
 
@@ -922,27 +944,35 @@ def _attach_signature_default(param: dict, parsed: dict) -> None:
     ``= undef`` is a real declared default of undef and is recorded as
     ``"default": None`` — the reference records ``None`` the same way.
 
-    ``required`` is deliberately NOT touched here. It would be tempting to set
-    it False (a param with a default IS optional in Perl), and for 16 params the
-    reference agrees that is the correction. But 4 params — ``RelayEvent`` /
-    ``QueueEvent`` / ``RecordEvent.from_payload(payload)`` and
-    ``RelayClient.execute(params)`` — are written ``= undef`` in the Perl source
-    while the reference records them REQUIRED. That is a genuine port/reference
-    divergence, not a defaults question, and flipping ``required`` here would
-    move it into this change and red DRIFT. Defaults are recovered as VALUES
-    only; ``required`` keeps whatever the existing reference-driven logic
-    decides. The divergence is reported separately.
+    ``has_default`` also drives ``required``: a Perl parameter with a declared
+    default can be omitted at the call site, so it is optional BY SYNTAX. The
+    previous parser stripped ``= EXPR`` before the default was ever visible, so
+    every such parameter reported ``required: True`` — a pre-existing wrong flag
+    that is shipped today. Recovering the default makes the correction visible
+    and the reference AGREES on every one of them, so port and oracle converge.
+
+    The four ``_REQUIRED_DIVERGENCE_HOLD`` params are the exception: the source
+    says optional, the reference says required. They keep the reference-driven
+    flag so the divergence stays visible for adjudication instead of being
+    silently folded away.
     """
     if not parsed.get("has_default"):
         return
     if "default" in parsed:
         param["default"] = parsed["default"]
+    key = (canonical_class, canonical_method, param.get("name"))
+    if key not in _REQUIRED_DIVERGENCE_HOLD:
+        param["required"] = False
 
 
-def _sig_from_parsed_method(m: dict) -> dict:
+def _sig_from_parsed_method(m: dict, canonical_class=None) -> dict:
     """Best-effort signature for a generated method the sidecar doesn't cover
     (should be rare — only methods emitted without a body record). Mirrors the
-    generic per-param handling in collect(): first positional is the receiver."""
+    generic per-param handling in collect(): first positional is the receiver.
+
+    Both callers are on the generated-REST-resource path, where none of the
+    ``_REQUIRED_DIVERGENCE_HOLD`` params live; ``canonical_class`` is threaded
+    anyway so the hold cannot be bypassed if this helper is reused elsewhere."""
     params_out: list[dict] = []
     for i, p in enumerate(m.get("parameters", [])):
         pname = (p.get("name") or "").lstrip("+")
@@ -963,7 +993,7 @@ def _sig_from_parsed_method(m: dict) -> dict:
         elif sigil == "%":
             param["kind"] = "var_keyword"; param["type"] = "dict<string,any>"
             param["required"] = False  # var_keyword tail is optional (see above)
-        _attach_signature_default(param, p)
+        _attach_signature_default(param, p, canonical_class, m.get("name"))
         params_out.append(param)
     if not params_out or params_out[0].get("kind") not in ("self", "cls"):
         params_out.insert(0, {"name": "self", "kind": "self"})
@@ -1402,7 +1432,9 @@ def collect(raw: dict) -> dict:
                     param["kind"] = "var_keyword"
                     param["type"] = "dict<string,any>"
                     param["required"] = False  # var_keyword tail is never required
-                _attach_signature_default(param, p)
+                _attach_signature_default(
+                    param, p, canonical_class, method_canonical
+                )
                 params_out.append(param)
 
             # Perl-idiom projection: the canonical Perl ``%opts`` slurpy
