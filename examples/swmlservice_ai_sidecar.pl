@@ -97,12 +97,15 @@ sub build_service {
     #    table; it is invoked by handlers that override
     #    handle_additional_route() in subclasses. Comment this out if
     #    you don't need it.
-    $svc->register_routing_callback('/events', sub {
-        my ($request_data, $env) = @_;
-        my $event_type = $request_data->{type} // '<unknown>';
-        warn "[sidecar event] type=$event_type\n";
-        return { ok => 1 };
-    });
+    $svc->register_routing_callback(
+        sub {
+            my ($request_data, $env) = @_;
+            my $event_type = $request_data->{type} // '<unknown>';
+            warn "[sidecar event] type=$event_type\n";
+            return { ok => 1 };
+        },
+        '/events',
+    );
 
     return $svc;
 }

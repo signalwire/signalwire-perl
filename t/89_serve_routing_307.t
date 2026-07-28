@@ -66,13 +66,13 @@ subtest 'AgentBase served path: routing callback drives a real 307' => sub {
     my $seen_body;
     my $seen_headers;
     $agent->register_routing_callback(
-        '/',
         sub {
             my ( $body, $headers ) = @_;
             $seen_body    = $body;
             $seen_headers = $headers;
             return 'https://elsewhere.example/swml';
         },
+        '/',
     );
 
     # This is the exact coderef serve()/run() hands to Plack.
@@ -106,7 +106,7 @@ subtest 'AgentBase served path: 401 on bad auth through the served endpoint' => 
         basic_auth_user     => 'u',
         basic_auth_password => 'p',
     );
-    $agent->register_routing_callback( '/', sub { return '/nope' } );
+    $agent->register_routing_callback( sub { return '/nope' }, '/' );
     my $app = $agent->psgi_app;
 
     my ( $status, $headers ) = psgi_parts(
@@ -132,7 +132,7 @@ subtest 'AgentBase served path: 200 SWML happy path (no redirect)' => sub {
     );
 
     # A callback that returns undef must fall through to the rendered document.
-    $agent->register_routing_callback( '/', sub { return undef } );
+    $agent->register_routing_callback( sub { return undef }, '/' );
     my $app = $agent->psgi_app;
 
     my ( $status, $headers, $body ) = psgi_parts(
@@ -165,7 +165,7 @@ subtest 'as_router served path: routing callback drives a real 307' => sub {
         basic_auth_user     => 'u',
         basic_auth_password => 'p',
     );
-    $agent->register_routing_callback( '/', sub { return '/routed' } );
+    $agent->register_routing_callback( sub { return '/routed' }, '/' );
 
     my $app = $agent->as_router;    # == to_psgi_app (inherited)
 
@@ -190,7 +190,7 @@ subtest 'SWMLService served path: routing callback drives a real 307' => sub {
         basic_auth_user     => 'u',
         basic_auth_password => 'p',
     );
-    $svc->register_routing_callback( '/', sub { return '/svc-routed' } );
+    $svc->register_routing_callback( sub { return '/svc-routed' }, '/' );
 
     my $app = $svc->as_router;
 

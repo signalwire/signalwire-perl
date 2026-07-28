@@ -149,8 +149,8 @@ sub main {
     {
         my $svc = SignalWire::SWML::Service->new( name => 'svc', route => '/svc' );
         my $noop = sub { return; };
-        $svc->register_routing_callback( '/sip/', $noop );
-        $svc->register_routing_callback( 'voice', $noop );
+        $svc->register_routing_callback( $noop, '/sip/' );
+        $svc->register_routing_callback( $noop, 'voice' );
         $out{state_register_routing_callback} = [ sort keys %{ $svc->routing_callbacks } ];
     }
 

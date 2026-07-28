@@ -149,8 +149,11 @@ sub get_instance_key ($self) {
 # ``raw_data["global_data"][namespace]`` and returns it (or an empty
 # hashref when absent). raw_data is the per-call data a SWAIG handler
 # receives; global_data is its agent-state bucket.
+# Python parity: SkillBase.get_skill_data(raw_data) — ``raw_data`` is REQUIRED.
+# The former ``//= {}`` invented a default the reference does not have, so a
+# caller who omitted the post-prompt payload silently read an empty namespace
+# instead of failing.
 sub get_skill_data ( $self, $raw_data ) {
-    $raw_data //= {};
     my $global_data = $raw_data->{global_data} // {};
     return $global_data->{ $self->_skill_namespace } // {};
 }

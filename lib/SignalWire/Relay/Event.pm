@@ -23,8 +23,11 @@ has 'params'     => ( is => 'ro', default => sub { {} } );
 # typed subclass, so ``PlayEvent->from_payload($payload)`` yields a populated
 # ::CallPlay-equivalent — the cross-language surface records from_payload on
 # each event class.
-sub from_payload ( $class, $payload = undef ) {
-    $payload //= {};
+# Python parity: RelayEvent.from_payload(payload) — ``payload`` is REQUIRED.
+# The former ``= undef`` default was decorative: no internal call site omits
+# the argument, and defaulting it silently manufactured an empty event for a
+# caller who forgot it. The reference has no such default; neither does this.
+sub from_payload ( $class, $payload ) {
     my $event_type = $payload->{event_type} // '';
     my $params     = $payload->{params}     // {};
     my %args       = ( event_type => $event_type, params => $params );
@@ -122,10 +125,10 @@ has 'record'     => ( is => 'ro', default => sub { {} } );
 # Python parity: RecordEvent.from_payload resolves url/duration/size from the
 # nested ``record`` object first, falling back to the flat params — the wire
 # sends the finished-recording metadata under params.record{}.
-sub from_payload ( $class, $payload = undef ) {
+sub from_payload ( $class, $payload ) {
     my $self = $class->SUPER::from_payload($payload);
-    my $p    = ( $payload && ref $payload->{params} eq 'HASH' ) ? $payload->{params} : {};
-    my $rec  = ref $p->{record} eq 'HASH'                       ? $p->{record}       : {};
+    my $p    = ( ref $payload->{params} eq 'HASH' ) ? $payload->{params} : {};
+    my $rec  = ref $p->{record} eq 'HASH'           ? $p->{record}       : {};
     $self->{url}      = $rec->{url}      // $p->{url}      // '';
     $self->{duration} = $rec->{duration} // $p->{duration} // 0;
     $self->{size}     = $rec->{size}     // $p->{size}     // 0;
@@ -307,9 +310,9 @@ has 'queue_name' => ( is => 'ro', default => sub { '' } );
 
 # Python parity: QueueEvent.from_payload RENAMES params.id -> queue_id and
 # params.name -> queue_name (the wire uses the bare id/name keys).
-sub from_payload ( $class, $payload = undef ) {
+sub from_payload ( $class, $payload ) {
     my $self = $class->SUPER::from_payload($payload);
-    my $p    = ( $payload && ref $payload->{params} eq 'HASH' ) ? $payload->{params} : {};
+    my $p    = ( ref $payload->{params} eq 'HASH' ) ? $payload->{params} : {};
     $self->{queue_id}   = $p->{id}   // '';
     $self->{queue_name} = $p->{name} // '';
     return $self;

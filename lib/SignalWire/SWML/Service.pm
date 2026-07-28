@@ -2,6 +2,12 @@ package SignalWire::SWML::Service;
 use strict;
 use warnings;
 use Moo;
+
+# Subroutine signatures (stable since Perl 5.36, this SDK's declared floor —
+# see cpanfile / Makefile.PL MIN_PERL_VERSION). Used on the subclass-override
+# hooks below, whose OPTIONAL parameters have no body to default them in.
+use feature 'signatures';
+no warnings 'experimental::signatures';
 use JSON         ();
 use Digest::SHA  qw(hmac_sha256_hex);
 use MIME::Base64 ();
@@ -384,6 +390,8 @@ sub validate_basic_auth {
 # AuthMixin.get_basic_auth_credentials(include_source=False).)
 sub get_basic_auth_credentials {
     my ( $self, $include_source ) = @_;
+    $include_source //= 0;
+
     my $user = $self->basic_auth_user     // '';
     my $pass = $self->basic_auth_password // '';
     return ( $user, $pass ) unless $include_source;
@@ -582,10 +590,11 @@ sub to_psgi_app {
 # it is the SWML JSON document; for a routing redirect it is 307 with a
 # Location header and an empty body; for an auth failure it is 401 with a
 # WWW-Authenticate: Basic header and a JSON error body.
-sub handle_request {
-    my ( $self, $method, $url, $headers, $body ) = @_;
-    $headers //= {};
-    $body    //= {};
+# Python parity: handle_request(method, url, headers, body=None).
+# ``headers`` is REQUIRED — it used to default to ``{}``, which silently turned
+# a forgotten headers argument into an unauthenticated request rather than an
+# error. Only ``body`` carries a default.
+sub handle_request ( $self, $method, $url, $headers, $body = undef ) {
     my $callback_path = $self->_callback_path_for_url($url);
 
     # Auth (over the plain headers hashref).
@@ -988,8 +997,7 @@ sub stop {
 # Python parity: WebMixin.on_request(request_data, callback_path).
 # The Python third `request` argument is FastAPI-specific and
 # intentionally not mirrored.
-sub on_request {
-    my ( $self, $request_data, $callback_path ) = @_;
+sub on_request ( $self, $request_data = undef, $callback_path = undef ) {
     return $self->on_swml_request( $request_data, $callback_path );
 }
 
@@ -1001,8 +1009,7 @@ sub on_request {
 # Request object; in Perl this is the PSGI ``$env`` hashref (or a
 # wrapper produced by the calling code). Subclasses that don't need
 # direct request access can ignore it.
-sub on_swml_request {
-    my ( $self, $request_data, $callback_path, $request ) = @_;
+sub on_swml_request ( $self, $request_data = undef, $callback_path = undef, $request = undef ) {
     return;
 }
 
@@ -1143,8 +1150,7 @@ sub define_tools {
 
 # Dispatch a function call to the registered handler. Default plain
 # implementation. AgentBase may override to add token validation.
-sub on_function_call {
-    my ( $self, $name, $args, $raw_data ) = @_;
+sub on_function_call ( $self, $name, $args, $raw_data = undef ) {
     my $tool = $self->tools->{$name};
     return unless $tool && $tool->{_handler};
     return $tool->{_handler}->( $args, $raw_data );
@@ -1174,18 +1180,22 @@ sub handle_additional_route {
 }
 
 # Register a routing callback at a given sub-path under the service route.
-sub register_routing_callback {
-    my ( $self, $path, $cb ) = @_;
+#
+# Python parity: SWMLService.register_routing_callback(callback_fn, path="/sip").
+# The callback comes FIRST and the path is optional — this port used to take
+# them in the opposite order (``($path, $cb)``) with the path mandatory, so a
+# caller porting reference code got its arguments silently transposed.
+sub register_routing_callback ( $self, $callback_fn, $path = '/sip' ) {
 
     # Normalize the path for consistent lookup (Python parity:
     # SWMLService.register_routing_callback -> path.rstrip("/") then ensure a
     # leading "/"). Without this, "/sip/" and "voice" register under
     # non-canonical keys and never match an incoming request path.
-    $path = '' unless defined $path;
+    $path = '/sip' unless defined $path;
     $path =~ s{/+$}{};
     $path = "/$path" unless $path =~ m{^/};
 
-    $self->routing_callbacks->{$path} = $cb;
+    $self->routing_callbacks->{$path} = $callback_fn;
     return $self;
 }
 
@@ -1498,7 +1508,7 @@ C<on_swml_request($request_data, $callback_path, $request)>
 Customization hooks for modifying the SWML based on request data. The
 default returns undef (no modification).
 
-=item C<register_routing_callback($path, $cb)>
+=item C<register_routing_callback($callback_fn, $path)>
 
 Register a routing callback at a sub-path under the service route.
 

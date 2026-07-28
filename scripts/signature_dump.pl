@@ -154,6 +154,15 @@ sub parse_file {
             my @params;
             if ( defined $sig ) {
                 @params = parse_signature($sig);
+
+                # A signature default of ``undef`` is frequently a PLACEHOLDER
+                # that the prologue immediately resolves:
+                #     sub hold ( $self, $timeout = undef ) { $timeout //= 300; }
+                # The real contract is "omitting the argument yields 300"; the
+                # ``= undef`` only reserves the slot. Scanning the prologue
+                # recovers the value the caller actually gets, so this spelling
+                # and the classic-unpack spelling report the SAME default.
+                apply_body_defaults( \@params, \@body );
             } else {
                 @params = parse_params( \@body );
             }
@@ -495,6 +504,7 @@ sub parse_params {
                 next if $v eq '';
                 push @params, { name => $v, sigil => $sigil };
             }
+            apply_body_defaults( \@params, $body );
             return @params;
         }
 
@@ -514,5 +524,153 @@ sub parse_params {
             last;
         }
     }
+    apply_body_defaults( \@params, $body );
     return @params;
+}
+
+# Recover per-parameter DEFAULTS from the body of a sub that unpacks with
+# ``my (...) = @_;`` (or ``my $x = shift;``).
+#
+# The Perl 5.20+ signature form spells a default IN the signature
+# (``sub f ($self, $timeout = 300)``) and ``parse_signature`` reads it there.
+# The classic unpack form CANNOT — ``@_`` assignment has no default slot — so
+# the SDK spells the very same contract on the next line:
+#
+#     sub validate_url {
+#         my ( $url, $allow_private ) = @_;
+#         $allow_private //= 0;
+#
+# That ``//=`` is not an implementation detail; it IS how this idiom declares
+# "omitting the argument yields 0". A caller may omit ``$allow_private`` and
+# gets exactly the reference's ``allow_private: bool = False`` behaviour. The
+# parser previously saw only the unpack line, so every such parameter was
+# emitted with no default and therefore ``required: True`` — reporting the
+# whole ``my (...) = @_`` half of the SDK as demanding arguments it does not
+# demand. That produced 25 spurious ``required-flip`` findings against a
+# reference the source already matches.
+#
+# Only a defaulting assignment to a parameter NAME is recognised, in the two
+# spellings the SDK uses:
+#
+#     $x //= EXPR;                     # defined-or assign
+#     $x = EXPR unless defined $x;     # the long-hand equivalent
+#
+# A plain ``$x = EXPR;`` is deliberately NOT treated as a default: that is an
+# unconditional overwrite of whatever the caller passed, which is a
+# transformation of the argument, not a default for its absence (e.g.
+# ``$route = "/$route" unless $route =~ m{^/}`` normalises a value the caller
+# DID supply). Reading those as defaults would mark genuinely required
+# parameters optional — the opposite error, and the more dangerous one.
+#
+# ONLY THE PROLOGUE COUNTS. The scan stops at the first statement that is not
+# itself a defaulting assignment. That restriction is load-bearing, because the
+# SAME ``//=`` syntax spells two different contracts depending on where it sits:
+#
+#   sub handle_request {                  |  sub validate_webhook_signature {
+#       my ( $self, $m, $u, $h ) = @_;    |      my ( $key, $sig, $url ) = @_;
+#       $h //= {};      # <- DEFAULT      |      croak "signing_key is required"
+#       ...                               |          unless defined $key;
+#                                         |      return 0 unless defined $sig;
+#                                         |      $url = '' unless defined $url;
+#                                         |          # <- NIL-COERCION, not a default
+#
+# On the right the sub has already REJECTED an under-specified call; the later
+# ``$url = ''`` only keeps the hashing arithmetic from warning on undef. The
+# parameter is still required — the reference records it required — and reading
+# that line as a default would silently report a required param as optional.
+# Restricting recovery to the prologue separates the two without a per-symbol
+# table: a default is what the sub does BEFORE it does anything else.
+#
+# The recovered VALUE follows the same literal-only rule as ``attr_default``
+# and ``parse_signature``: a computed default (``//= _random_urlsafe(16)``,
+# ``//= $agent->route``) marks the parameter optional (``has_default``) but
+# records no value, because a fabricated default is worse than a missing one.
+sub apply_body_defaults {
+    my ( $params, $body ) = @_;
+    return unless @$params;
+
+    my %by_name = map { $_->{name} => $_ } grep { !$_->{sigil} } @$params;
+    return unless %by_name;
+
+    for my $line (@$body) {
+
+        # A TRAILING comment is not part of the statement. Strip it before
+        # matching so ``$body //= '';    # Python parity: ...`` is recognised —
+        # the SDK annotates these lines precisely because they encode contract,
+        # and an end-anchored pattern that only matched bare statements would
+        # miss the very lines most likely to carry a default.
+        # Only a comment that follows a STATEMENT TERMINATOR is stripped
+        # (``...;   # note``). Anchoring on the ``;`` keeps a ``#`` living
+        # inside a string or regex literal — ``'#channel'``, ``m{/#/}`` —
+        # safely out of reach, which a bare ``s/#.*$//`` would mangle.
+        my $bline = $line;
+        $bline =~ s/;\s+#.*$/;/;
+
+        # Blank lines, comments, and the ``sub NAME {`` / unpack lines are not
+        # statements — they do not end the prologue.
+        next if $bline =~ /^\s*$/;
+        next if $bline =~ /^\s*#/;
+        next if $bline =~ /^\s*sub\s+\w+/;
+        next if $bline =~ /\bmy\s*\(.*\)\s*=\s*\@_\s*;/;
+        next if $bline =~ /\bmy\s+\$\w+\s*=\s*shift\s*;/;
+
+        # A bare ``shift`` that drops a class-method RECEIVER is argument
+        # plumbing, not a statement about the parameters — a dual free-function
+        # / class-method sub normalises ``@_`` before it can unpack. Treating it
+        # as the end of the prologue would hide the very next line's default.
+        next if $bline =~ /^\s*shift\b[^;]*;\s*$/;
+
+        # ``$x //= EXPR;``
+        if ( $bline =~ /^\s*\$(\w+)\s*\/\/=\s*(.+?)\s*;\s*$/ ) {
+            last unless record_body_default( \%by_name, $1, $2 );
+            next;
+        }
+
+        # ``$x = EXPR unless defined $x;`` — the long-hand of the above. The
+        # guard must name the SAME variable, otherwise it is a conditional
+        # assignment driven by something else and not a default at all.
+        if (   $bline =~ /^\s*\$(\w+)\s*=\s*(.+?)\s+unless\s+defined\s+\$(\w+)\s*;\s*$/
+            && $1 eq $3 )
+        {
+            last unless record_body_default( \%by_name, $1, $2 );
+            next;
+        }
+
+        # Any other statement ends the prologue.
+        last;
+    }
+    return;
+}
+
+# Attach a recovered body default to the named parameter.
+#
+# ``has_default`` is set unconditionally (the parameter IS optional — that is
+# syntax, not value analysis); ``default`` only when the expression is a
+# recoverable literal.
+#
+# Returns TRUE when the assignment targeted a PARAMETER, i.e. when the prologue
+# continues. A defaulting assignment to a local (``$expected //= ...``) is a
+# real statement about something other than the signature, so it ENDS the
+# prologue — returning false is what stops the scan there.
+sub record_body_default {
+    my ( $by_name, $name, $expr ) = @_;
+    my $p = $by_name->{$name} or return 0;
+
+    # First default wins, with ONE exception: a signature ``= undef``
+    # placeholder that the prologue immediately resolves (``$t = undef`` then
+    # ``$t //= 300``). ``undef`` there is a slot reservation, not the value the
+    # caller gets, so the prologue's value supersedes it. Any other recorded
+    # default is kept — a later re-assignment transforms the already-defaulted
+    # value rather than re-declaring it. Either way the prologue continues:
+    # this line WAS about a parameter.
+    if ( $p->{has_default} ) {
+        my $placeholder = exists $p->{default} && !defined $p->{default};
+        return 1 unless $placeholder;
+    }
+
+    $p->{has_default} = 1;
+    delete $p->{default};
+    my ( $v, $present ) = literal_value($expr);
+    $p->{default} = $v if $present;
+    return 1;
 }

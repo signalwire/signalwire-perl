@@ -8,11 +8,18 @@ use warnings;
 use Moo;
 use Carp qw(croak);
 
+# Subroutine signatures (stable since Perl 5.36, this SDK's declared floor —
+# see cpanfile / Makefile.PL MIN_PERL_VERSION).
+use feature 'signatures';
+no warnings 'experimental::signatures';
+
 has agent         => ( is       => 'ro',  required => 1,    weak_ref => 1 );
 has loaded_skills => ( init_arg => undef, is       => 'rw', default  => sub { {} } );
 
-sub load_skill {
-    my ( $self, $skill_name, $skill_class, $params ) = @_;
+# Python parity: SkillManager.load_skill(skill_name, skill_class=None,
+# params=None). ``skill_class`` omitted means "look the class up in the
+# registry"; ``params`` omitted means "no configuration".
+sub load_skill ( $self, $skill_name, $skill_class = undef, $params = undef ) {
     $params //= {};
 
     # Get class from registry if not provided

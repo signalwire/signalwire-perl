@@ -185,7 +185,7 @@ sub main {
     # ---- handle_request: 307 redirect via routing callback ----
     {
         my $svc = new_service();
-        $svc->register_routing_callback( '/sip', \&redirect_cb );
+        $svc->register_routing_callback( \&redirect_cb, '/sip' );
         my ( $status, $headers, $body ) = $svc->handle_request(
             'POST', 'http://localhost:3000/swml/sip',
             { Authorization => basic_auth( $USER, $PASSWORD ) },
@@ -197,7 +197,7 @@ sub main {
     # ---- handle_request: callback returns undef -> normal 200 SWML ----
     {
         my $svc = new_service();
-        $svc->register_routing_callback( '/sip', \&redirect_cb );
+        $svc->register_routing_callback( \&redirect_cb, '/sip' );
         my ( $status, $headers, $body ) = $svc->handle_request(
             'POST', 'http://localhost:3000/swml/sip',
             { Authorization => basic_auth( $USER, $PASSWORD ) },

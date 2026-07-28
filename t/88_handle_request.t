@@ -59,12 +59,12 @@ subtest 'SWMLService: 307 routing redirect, callback gets (body, headers)' => su
     );
     my @seen;
     $svc->register_routing_callback(
-        '/route',
         sub {
             my ( $body, $headers ) = @_;
             @seen = ( $body, $headers );
             return '/elsewhere';
         },
+        '/route',
     );
     my ( $status, $headers, $body ) = $svc->handle_request(
         'POST', 'http://x/route',
@@ -84,7 +84,7 @@ subtest 'SWMLService: callback returning undef falls through to 200' => sub {
         basic_auth_user  => 'u',
         basic_auth_password => 'p',
     );
-    $svc->register_routing_callback( '/route', sub { return undef } );
+    $svc->register_routing_callback( sub { return undef }, '/route' );
     my ( $status, undef, $body ) = $svc->handle_request(
         'POST', 'http://x/route',
         { Authorization => auth_for($svc) },
@@ -131,12 +131,12 @@ subtest 'AgentBase: routing callback (body, headers) drives 307' => sub {
     );
     my $got_headers;
     $agent->register_routing_callback(
-        '/swaig',
         sub {
             my ( $body, $headers ) = @_;
             $got_headers = $headers;
             return $body->{go} ? '/target' : undef;
         },
+        '/swaig',
     );
     my ( $status, $headers, $body ) = $agent->handle_request(
         'POST', 'http://x/swaig',

@@ -6,6 +6,12 @@ package SignalWire::Prefabs::InfoGatherer;
 use strict;
 use warnings;
 use Moo;
+
+# Subroutine signatures (stable since Perl 5.36, this SDK's declared floor —
+# see cpanfile / Makefile.PL MIN_PERL_VERSION).
+use feature 'signatures';
+no warnings 'experimental::signatures';
+
 use JSON qw(encode_json);
 extends 'SignalWire::Agent::AgentBase';
 
@@ -193,8 +199,9 @@ sub submit_answer {
 # registered question callback (or a fallback) and returns a
 # { global_data => {...} } hashref that AgentBase merges into the SWML
 # response. In static mode this is a no-op (returns undef).
-sub on_swml_request {
-    my ( $self, $request_data, $callback_path, %opts ) = @_;
+# Python parity: InfoGathererAgent.on_swml_request(request_data=None,
+# callback_path=None, request=None).
+sub on_swml_request ( $self, $request_data = undef, $callback_path = undef, %opts ) {
     my $request = $opts{request};
 
     # Static mode: questions are already configured.

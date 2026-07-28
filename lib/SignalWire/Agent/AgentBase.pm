@@ -6,6 +6,13 @@ package SignalWire::Agent::AgentBase;
 use strict;
 use warnings;
 use Moo;
+
+# Subroutine signatures (stable since Perl 5.36, this SDK's declared floor —
+# see cpanfile / Makefile.PL MIN_PERL_VERSION). Used on the subclass-override
+# hooks below, whose OPTIONAL parameters have no body to default them in.
+use feature 'signatures';
+no warnings 'experimental::signatures';
+
 use SignalWire::SWML::Service;
 extends 'SignalWire::SWML::Service';
 use JSON         qw(encode_json decode_json);
@@ -330,6 +337,8 @@ sub set_post_prompt {
 
 sub prompt_add_section {
     my ( $self, $title, $body, %opts ) = @_;
+    $body //= '';    # Python parity: prompt_add_section(title, body="", ...)
+
     my $section = { title => $title };
 
     # Python parity: signalwire.pom Section.to_dict emits ``body`` only when
@@ -343,6 +352,7 @@ sub prompt_add_section {
 
 sub prompt_add_subsection {
     my ( $self, $parent_title, $title, $body, %opts ) = @_;
+    $body //= '';    # Python parity: prompt_add_subsection(parent, title, body="", ...)
 
     # Auto-create the parent section when absent. TS parity:
     # PomBuilder.addSubsection does `if (!sectionMap.has(parentTitle))
@@ -955,8 +965,8 @@ sub get_name {
 
 # add_answer_verb(config) — set the auto-answer verb configuration used when
 # the agent picks up (Python parity: AgentBase.add_answer_verb).
-sub add_answer_verb {
-    my ( $self, $config ) = @_;
+# Python parity: AgentBase.add_answer_verb(config=None).
+sub add_answer_verb ( $self, $config = undef ) {
     $self->answer_config( $config // {} );
     return $self;
 }
@@ -979,11 +989,11 @@ sub enable_sip_routing {
     # (on_sip_request) which may return a redirect URL for a username routed to a
     # different agent.
     $self->register_routing_callback(
-        $path,
         sub {
             my ( $body, $headers ) = @_;
             return $self->_sip_routing_callback( $body, $headers );
         },
+        $path,
     );
 
     $self->auto_map_sip_usernames if $self->sip_auto_map;
@@ -1101,8 +1111,7 @@ sub set_answer_config {
 # names against reserved native tool names (next_step, change_context,
 # gather_submit). See SignalWire::Contexts::ContextBuilder.
 #
-sub define_contexts {
-    my ( $self, $contexts ) = @_;
+sub define_contexts ( $self, $contexts = undef ) {
 
     # Python parity: PromptMixin.define_contexts(contexts=None).
     #   - When called with no arg (legacy / Perl idiom), returns the
@@ -1237,8 +1246,7 @@ sub clear_swaig_query_params {
     return $self;
 }
 
-sub on_summary {
-    my ( $self, $summary, $raw_data ) = @_;
+sub on_summary ( $self, $summary, $raw_data = undef ) {
 
     # Python parity: AgentBase.on_summary(summary, raw_data=None).
     #
@@ -1739,10 +1747,11 @@ sub psgi_app {
 #   $url     full request URL (callback-path derivation + proxy detection)
 #   $headers hashref of request headers
 #   $body    already-parsed JSON body hashref for POST, or undef
-sub handle_request {
-    my ( $self, $method, $url, $headers, $body ) = @_;
-    $headers //= {};
-    $body    //= {};
+# Python parity: handle_request(method, url, headers, body=None).
+# ``headers`` is REQUIRED — it used to default to ``{}``, which silently turned
+# a forgotten headers argument into an unauthenticated request rather than an
+# error. Only ``body`` carries a default.
+sub handle_request ( $self, $method, $url, $headers, $body = undef ) {
     my $callback_path = $self->_callback_path_for_url($url);
 
     # Auth (over the plain headers hashref; inherited from SWMLService).

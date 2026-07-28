@@ -463,9 +463,11 @@ sub authenticate ($self) {
 
 # --- JSON-RPC execute ---
 
-sub execute ( $self, $method, $params = undef ) {
-    $params //= {};
-
+# Python parity: RelayClient.execute(method, params) — ``params`` is REQUIRED.
+# The former ``= undef`` default was decorative: every call site passes the
+# params hashref, and defaulting it silently sent an empty-params RPC for a
+# caller who forgot it. The reference has no such default; neither does this.
+sub execute ( $self, $method, $params ) {
     my $id = _generate_uuid();
 
     # Python parity: RelayClient._send_request sends params VERBATIM — the

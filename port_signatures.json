@@ -173,7 +173,7 @@
                 {
                   "name": "route",
                   "type": "optional<string>",
-                  "required": true
+                  "required": false
                 }
               ],
               "returns": "any"
@@ -259,7 +259,8 @@
                 {
                   "name": "route",
                   "type": "string",
-                  "required": true
+                  "required": false,
+                  "default": "/"
                 }
               ],
               "returns": "any"
@@ -1208,7 +1209,7 @@
                 {
                   "name": "body",
                   "type": "string",
-                  "required": true
+                  "required": false
                 },
                 {
                   "name": "bullets",
@@ -1252,7 +1253,7 @@
                 {
                   "name": "body",
                   "type": "string",
-                  "required": true
+                  "required": false
                 },
                 {
                   "name": "bullets",
@@ -1487,8 +1488,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "func_def",
-                  "type": "any",
+                  "name": "function_dict",
+                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
@@ -1589,7 +1590,7 @@
                   "name": "use_pom",
                   "type": "bool",
                   "required": false,
-                  "default": 1
+                  "default": true
                 },
                 {
                   "name": "token_expiry_secs",
@@ -1601,13 +1602,13 @@
                   "name": "auto_answer",
                   "type": "bool",
                   "required": false,
-                  "default": 1
+                  "default": true
                 },
                 {
                   "name": "record_call",
                   "type": "bool",
                   "required": false,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "record_format",
@@ -1619,7 +1620,7 @@
                   "name": "record_stereo",
                   "type": "bool",
                   "required": false,
-                  "default": 1
+                  "default": true
                 },
                 {
                   "name": "default_webhook_url",
@@ -1636,7 +1637,7 @@
                   "name": "native_functions",
                   "type": "optional<list<string>>",
                   "required": false,
-                  "default": []
+                  "default": null
                 },
                 {
                   "name": "schema_path",
@@ -1648,19 +1649,19 @@
                   "name": "suppress_logs",
                   "type": "bool",
                   "required": false,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "enable_post_prompt_override",
                   "type": "bool",
                   "required": false,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "check_for_input_override",
                   "type": "bool",
                   "required": false,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "config_file",
@@ -1672,7 +1673,7 @@
                   "name": "schema_validation",
                   "type": "bool",
                   "required": false,
-                  "default": 1
+                  "default": true
                 },
                 {
                   "name": "signing_key",
@@ -1683,7 +1684,7 @@
                   "name": "trust_proxy_for_signature",
                   "type": "bool",
                   "required": false,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "basic_auth_user",
@@ -1717,7 +1718,8 @@
                 {
                   "name": "config",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -2144,7 +2146,8 @@
                 {
                   "name": "raw_data",
                   "type": "optional<class:signalwire.core.post_prompt_generated.PostPrompt>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -2343,7 +2346,8 @@
                 {
                   "name": "request_env",
                   "type": "any",
-                  "required": true
+                  "required": false,
+                  "default": {}
                 }
               ],
               "returns": "any"
@@ -3439,7 +3443,7 @@
                   "name": "isolated",
                   "type": "bool",
                   "required": 0,
-                  "default": 0
+                  "default": false
                 }
               ],
               "returns": "void"
@@ -3511,7 +3515,7 @@
                   "name": "confirm",
                   "type": "bool",
                   "required": 0,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "prompt",
@@ -3971,7 +3975,8 @@
             {
               "name": "name",
               "type": "string",
-              "required": true
+              "required": false,
+              "default": "default"
             }
           ],
           "returns": "any"
@@ -4298,13 +4303,13 @@
                   "name": "response",
                   "type": "optional<string>",
                   "required": 0,
-                  "default": ""
+                  "default": null
                 },
                 {
                   "name": "post_process",
                   "type": "bool",
                   "required": 0,
-                  "default": 0
+                  "default": false
                 }
               ],
               "returns": "void"
@@ -4463,7 +4468,7 @@
                   "name": "enabled",
                   "type": "bool",
                   "required": false,
-                  "default": null
+                  "default": true
                 }
               ],
               "returns": "any"
@@ -4478,7 +4483,7 @@
                   "name": "enabled",
                   "type": "bool",
                   "required": false,
-                  "default": null
+                  "default": true
                 }
               ],
               "returns": "any"
@@ -4550,7 +4555,7 @@
                   "name": "timeout",
                   "type": "int",
                   "required": false,
-                  "default": null
+                  "default": 300
                 }
               ],
               "returns": "any"
@@ -4901,8 +4906,7 @@
                 {
                   "name": "text",
                   "type": "union<string,bool>",
-                  "required": false,
-                  "default": null
+                  "required": false
                 }
               ],
               "returns": "any"
@@ -5906,7 +5910,8 @@
                 {
                   "name": "level",
                   "type": "int",
-                  "required": true
+                  "required": false,
+                  "default": 1
                 }
               ],
               "returns": "any"
@@ -6145,7 +6150,8 @@
                 {
                   "name": "include_source",
                   "type": "bool",
-                  "required": true
+                  "required": false,
+                  "default": false
                 }
               ],
               "returns": "any"
@@ -6222,8 +6228,9 @@
                 },
                 {
                   "name": "contexts",
-                  "type": "union<dict<string,any>,any>",
-                  "required": true
+                  "type": "optional<union<dict<string,any>,class:signalwire.core.contexts.ContextBuilder>>",
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -6260,7 +6267,8 @@
                 {
                   "name": "body",
                   "type": "string",
-                  "required": true
+                  "required": false,
+                  "default": ""
                 },
                 {
                   "name": "bullets",
@@ -6304,7 +6312,8 @@
                 {
                   "name": "body",
                   "type": "string",
-                  "required": true
+                  "required": false,
+                  "default": ""
                 },
                 {
                   "name": "bullets",
@@ -6462,7 +6471,8 @@
                 {
                   "name": "params",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -6632,7 +6642,8 @@
                 {
                   "name": "raw_data",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -6709,12 +6720,14 @@
                 {
                   "name": "request_data",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "callback_path",
                   "type": "optional<string>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -6728,17 +6741,20 @@
                 {
                   "name": "request_data",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "callback_path",
                   "type": "optional<string>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "request",
                   "type": "optional<class:Request>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -6750,14 +6766,15 @@
                   "kind": "self"
                 },
                 {
-                  "name": "path",
-                  "type": "string",
+                  "name": "callback_fn",
+                  "type": "callable<list<dict<string,any>,dict<string,any>>,optional<string>>",
                   "required": true
                 },
                 {
-                  "name": "cb",
-                  "type": "any",
-                  "required": true
+                  "name": "path",
+                  "type": "string",
+                  "required": false,
+                  "default": "/sip"
                 }
               ],
               "returns": "any"
@@ -8578,7 +8595,7 @@
                 {
                   "name": "call_id",
                   "type": "optional<string>",
-                  "required": true
+                  "required": false
                 }
               ],
               "returns": "any"
@@ -9151,7 +9168,7 @@
                   "name": "params",
                   "type": "optional<dict<string,any>>",
                   "required": false,
-                  "default": {}
+                  "default": null
                 }
               ],
               "returns": "void"
@@ -9466,12 +9483,14 @@
                 {
                   "name": "skill_class",
                   "type": "optional<class:signalwire.core.skill_base.SkillBase>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "params",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -9651,13 +9670,13 @@
                   "name": "parameters",
                   "type": "optional<dict<string,dict<string,any>>>",
                   "required": 0,
-                  "default": {}
+                  "default": null
                 },
                 {
                   "name": "secure",
                   "type": "bool",
                   "required": 0,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "fillers",
@@ -9687,13 +9706,13 @@
                   "name": "required",
                   "type": "optional<list<string>>",
                   "required": 0,
-                  "default": []
+                  "default": null
                 },
                 {
                   "name": "is_typed_handler",
                   "type": "bool",
                   "required": 0,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "extra_swaig_fields",
@@ -11097,7 +11116,7 @@
                   "name": "schema_validation",
                   "type": "bool",
                   "required": false,
-                  "default": 1
+                  "default": true
                 },
                 {
                   "name": "basic_auth_user",
@@ -11274,7 +11293,8 @@
                 {
                   "name": "include_source",
                   "type": "bool",
-                  "required": true
+                  "required": false,
+                  "default": false
                 }
               ],
               "returns": "any"
@@ -11345,7 +11365,8 @@
                 {
                   "name": "body",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -11409,12 +11430,14 @@
                 {
                   "name": "request_data",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "callback_path",
                   "type": "optional<string>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "any"
@@ -11444,14 +11467,15 @@
                   "kind": "self"
                 },
                 {
-                  "name": "path",
-                  "type": "string",
+                  "name": "callback_fn",
+                  "type": "callable<list<dict<string,any>,dict<string,any>>,optional<string>>",
                   "required": true
                 },
                 {
-                  "name": "cb",
-                  "type": "any",
-                  "required": true
+                  "name": "path",
+                  "type": "string",
+                  "required": false,
+                  "default": "/sip"
                 }
               ],
               "returns": "any"
@@ -15640,7 +15664,7 @@
                   "name": "debug",
                   "type": "bool",
                   "required": false,
-                  "default": 0
+                  "default": false
                 }
               ],
               "returns": "void"
@@ -15835,7 +15859,7 @@
                   "name": "bullets",
                   "type": "optional<list<string>>",
                   "required": false,
-                  "default": [],
+                  "default": null,
                   "kind": "keyword"
                 },
                 {
@@ -15849,7 +15873,7 @@
                   "name": "numberedBullets",
                   "type": "bool",
                   "required": false,
-                  "default": 0,
+                  "default": false,
                   "kind": "keyword"
                 }
               ],
@@ -15967,7 +15991,7 @@
                   "name": "level",
                   "type": "int",
                   "required": false,
-                  "default": null
+                  "default": 2
                 },
                 {
                   "name": "section_number",
@@ -15988,7 +16012,7 @@
                   "name": "indent",
                   "type": "int",
                   "required": false,
-                  "default": null
+                  "default": 0
                 },
                 {
                   "name": "section_number",
@@ -16070,13 +16094,13 @@
                   "name": "hours_of_operation",
                   "type": "optional<dict<string,string>>",
                   "required": false,
-                  "default": {}
+                  "default": null
                 },
                 {
                   "name": "special_instructions",
                   "type": "optional<list<string>>",
                   "required": false,
-                  "default": []
+                  "default": null
                 },
                 {
                   "name": "welcome_message",
@@ -16369,7 +16393,7 @@
                   "name": "suggest_related",
                   "type": "bool",
                   "required": false,
-                  "default": 1
+                  "default": true
                 },
                 {
                   "name": "persona",
@@ -16610,7 +16634,7 @@
                   "name": "questions",
                   "type": "optional<list<dict<string,string>>>",
                   "required": false,
-                  "default": []
+                  "default": null
                 },
                 {
                   "name": "name",
@@ -16771,12 +16795,14 @@
                 {
                   "name": "request_data",
                   "type": "optional<dict<string,any>>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "callback_path",
                   "type": "optional<string>",
-                  "required": true
+                  "required": false,
+                  "default": null
                 },
                 {
                   "name": "request",
@@ -17123,19 +17149,19 @@
                   "name": "introduction",
                   "type": "optional<string>",
                   "required": false,
-                  "default": ""
+                  "default": null
                 },
                 {
                   "name": "conclusion",
                   "type": "optional<string>",
                   "required": false,
-                  "default": ""
+                  "default": null
                 },
                 {
                   "name": "brand_name",
                   "type": "optional<string>",
                   "required": false,
-                  "default": ""
+                  "default": null
                 },
                 {
                   "name": "max_retries",
@@ -17650,7 +17676,7 @@
                   "name": "device",
                   "type": "optional<dict<string,any>>",
                   "required": 0,
-                  "default": {},
+                  "default": null,
                   "kind": "keyword"
                 },
                 {
@@ -20074,19 +20100,19 @@
                   "name": "project",
                   "type": "optional<string>",
                   "required": 0,
-                  "default": ""
+                  "default": null
                 },
                 {
                   "name": "token",
                   "type": "optional<string>",
                   "required": 0,
-                  "default": ""
+                  "default": null
                 },
                 {
                   "name": "jwt_token",
                   "type": "optional<string>",
                   "required": 0,
-                  "default": ""
+                  "default": null
                 },
                 {
                   "name": "host",
@@ -20097,7 +20123,7 @@
                   "name": "contexts",
                   "type": "optional<list<string>>",
                   "required": 0,
-                  "default": []
+                  "default": null
                 },
                 {
                   "name": "max_active_calls",
@@ -20235,8 +20261,7 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true,
-                  "default": null
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -21488,7 +21513,7 @@
                   "name": "denoised",
                   "type": "bool",
                   "required": 0,
-                  "default": 0
+                  "default": false
                 }
               ],
               "returns": "void"
@@ -22693,8 +22718,7 @@
                 {
                   "name": "payload",
                   "type": "dict<string,any>",
-                  "required": true,
-                  "default": null
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -22853,8 +22877,7 @@
                 {
                   "name": "payload",
                   "type": "dict<string,any>",
-                  "required": true,
-                  "default": null
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -23106,8 +23129,7 @@
                 {
                   "name": "payload",
                   "type": "dict<string,any>",
-                  "required": true,
-                  "default": null
+                  "required": true
                 }
               ],
               "returns": "any"
@@ -23717,7 +23739,7 @@
                   "name": "media",
                   "type": "optional<list<string>>",
                   "required": 0,
-                  "default": [],
+                  "default": null,
                   "kind": "keyword"
                 },
                 {
@@ -23745,7 +23767,7 @@
                   "name": "tags",
                   "type": "optional<list<string>>",
                   "required": 0,
-                  "default": [],
+                  "default": null,
                   "kind": "keyword"
                 }
               ],
@@ -24585,7 +24607,7 @@
                   "name": "params",
                   "type": "optional<dict<string,any>>",
                   "required": 0,
-                  "default": {}
+                  "default": null
                 },
                 {
                   "name": "data_key",
@@ -33218,7 +33240,7 @@
                   "name": "schema_validation",
                   "type": "bool",
                   "required": false,
-                  "default": 1
+                  "default": true
                 }
               ],
               "returns": "void"
@@ -33521,7 +33543,8 @@
             {
               "name": "allow_private",
               "type": "bool",
-              "required": true
+              "required": false,
+              "default": false
             }
           ],
           "returns": "any"
@@ -33548,7 +33571,7 @@
                   "name": "directories",
                   "type": "optional<dict<string,string>>",
                   "required": false,
-                  "default": {}
+                  "default": null
                 },
                 {
                   "name": "basic_auth",
@@ -33560,7 +33583,7 @@
                   "name": "enable_directory_browsing",
                   "type": "bool",
                   "required": false,
-                  "default": 0
+                  "default": false
                 },
                 {
                   "name": "allowed_extensions",
@@ -33583,7 +33606,7 @@
                   "name": "enable_cors",
                   "type": "bool",
                   "required": false,
-                  "default": 1
+                  "default": true
                 }
               ],
               "returns": "void"

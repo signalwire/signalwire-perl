@@ -119,7 +119,7 @@ sub register_global_routing_callback {
     $path = "/$path" unless $path =~ m{^/};
     $path =~ s{/+$}{} unless $path eq '/';
     for my $agent ( values %{ $self->agents } ) {
-        $agent->register_routing_callback( $path, $callback )
+        $agent->register_routing_callback( $callback, $path )
             if $agent->can('register_routing_callback');
     }
     return $self;
@@ -128,8 +128,12 @@ sub register_global_routing_callback {
 sub serve_static_files {
     my ( $self, $directory, $route ) = @_;
 
+    # Python parity: AgentServer.serve_static_files(directory, route="/").
+    # ``route`` is OPTIONAL and defaults to the site root; this port used to
+    # croak on its absence, demanding an argument the reference does not.
+    $route //= '/';
+
     croak("serve_static_files requires a directory")      unless defined $directory;
-    croak("serve_static_files requires a route")          unless defined $route;
     croak("Static directory '$directory' does not exist") unless -d $directory;
 
     $route = "/$route" unless $route =~ m{^/};

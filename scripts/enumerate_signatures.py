@@ -270,6 +270,70 @@ def project_reference_param_types(out_modules: dict) -> None:
             apply((mod, None, fn), sig)
 
 
+def normalize_defaults_to_type(out_modules: dict) -> None:
+    """Express each recovered default in the VOCABULARY of its declared type.
+
+    Perl has neither a boolean type nor a null distinct from "empty". The
+    source writes the only spellings the language has, and the parser reports
+    them literally:
+
+        sub validate_url { my ( $url, $allow_private ) = @_;
+                           $allow_private //= 0;      # bool false
+        sub enable_extensive_data ( $self, $enabled = undef ) {
+                           $enabled //= 1;            # bool true
+        sub add_skill { my ( $self, $skill_name, $params ) = @_;
+                           $params //= {};            # "nothing supplied"
+
+    Compared verbatim against a reference that records ``false`` / ``true`` /
+    ``None``, every one of those reads as a default-VALUE mismatch — but the
+    values are identical, only the spelling differs, and the port is not free
+    to write ``false`` in Perl. That is idiom, and idiom is folded by the code
+    that emits the comparison rather than excused per symbol
+    (ALLOWLIST_DISCIPLINE.md §2).
+
+    Two folds, both driven by the param's own declared type, so neither needs a
+    per-symbol table and neither can fire where the type does not say so:
+
+    * ``bool``-typed param, default ``0`` / ``1`` / ``""`` → ``False`` / ``True``.
+      Perl's truth values ARE 0 and 1; there is no third spelling.
+    * ``optional<...>``-typed param whose default is an EMPTY container
+      (``{}`` / ``[]``) or the empty string → ``None``. In an ``optional``
+      parameter, the empty container is how Perl spells "the caller supplied
+      nothing" — it is the sentinel, not a value the reference would ever see,
+      because the reference spells that same state ``None``. A NON-empty
+      default is a real value and is left exactly as written.
+
+    A ``bool``-typed default of any other value, or an empty container under a
+    NON-optional type, is left alone: those are genuine mismatches and must
+    stay visible.
+    """
+    def fold(p: dict) -> None:
+        if "default" not in p:
+            return
+        t = p.get("type") or ""
+        d = p["default"]
+
+        if t == "bool":
+            if d in (0, 1) and not isinstance(d, bool):
+                p["default"] = bool(d)
+            elif d == "":
+                p["default"] = False
+            return
+
+        if t.startswith("optional<"):
+            if d == {} or d == [] or d == "":
+                p["default"] = None
+
+    for me in out_modules.values():
+        for ce in me.get("classes", {}).values():
+            for sig in ce.get("methods", {}).values():
+                for p in sig.get("params", []):
+                    fold(p)
+        for sig in me.get("functions", {}).values():
+            for p in sig.get("params", []):
+                fold(p)
+
+
 # ---------------------------------------------------------------------------
 # Generated REST resource-tree signature projection (item B).
 #
@@ -905,23 +969,25 @@ def project_swaig(sub: str, cls: str, type_entry: dict, out_modules: dict) -> No
 
 
 # Params written ``= undef`` in the Perl source that the REFERENCE nonetheless
-# records as REQUIRED. A declared default makes a Perl param syntactically
-# optional, so the generic rule below would flip these to ``required: False``
-# — but that flip is a genuine port/reference DIVERGENCE, not a defaults
-# question, and folding it in silently would bury it under a green DRIFT.
+# records as REQUIRED — held here unflipped so the divergence stayed visible
+# instead of being folded away under a green DRIFT.
 #
-# All four normalize a missing argument (``$payload //= {}`` /
-# ``$params //= {}``) rather than dying, and every internal call site passes
-# the argument explicitly, so the ``= undef`` is decorative in practice. They
-# are held here, unflipped, pending adjudication under the standing
-# ``required`` ruling (``required`` means "an argument must be written").
+# ADJUDICATED AND EMPTIED (2026-07-27). The four entries were
+# ``{Relay,Queue,Record}Event.from_payload($payload)`` and
+# ``RelayClient.execute($params)``. Measurement: all four survived a missing
+# argument (``$payload //= {}`` / ``$params //= {}``) and ZERO internal call
+# sites omitted it, so the ``= undef`` was decorative — it declared an optional
+# parameter the reference declares required, and it silently manufactured an
+# empty event / empty-params RPC for a caller who simply forgot the argument.
+#
+# Resolution followed the reference: the decorative ``= undef`` was DELETED at
+# all four sites, so the SOURCE now states the contract and the generic rule
+# below produces the right flag with nothing suppressed. The table is kept
+# (empty) because it is the right mechanism should a future genuine divergence
+# need to be held for adjudication — but it holds nothing today, and an entry
+# added here is a claim that needs human sign-off, not a way to go green.
 # Keyed ``(canonical_class, canonical_method, param_name)``.
-_REQUIRED_DIVERGENCE_HOLD = {
-    ("RelayEvent", "from_payload", "payload"),
-    ("QueueEvent", "from_payload", "payload"),
-    ("RecordEvent", "from_payload", "payload"),
-    ("RelayClient", "execute", "params"),
-}
+_REQUIRED_DIVERGENCE_HOLD: set[tuple[str, str, str]] = set()
 
 
 def _attach_signature_default(
@@ -1960,7 +2026,28 @@ def collect(raw: dict) -> dict:
                 re_projected_present[m_name] = sig
             out_modules.setdefault(target_mod, {"classes": {}})
             out_modules[target_mod]["classes"].setdefault(target_cls, {"methods": {}})
-            out_modules[target_mod]["classes"][target_cls]["methods"].update(re_projected_present)
+            target_methods = out_modules[target_mod]["classes"][target_cls]["methods"]
+
+            # A projection STANDS IN for a member the port reaches only through
+            # AgentBase; it must never DISPLACE one the port genuinely
+            # implements on the target class itself. Where the port has its own
+            # implementation, that real signature is the truth and the
+            # projection is redundant.
+            #
+            # This is not hypothetical: the reference houses TWO different
+            # ``define_contexts`` — ``PromptMixin.define_contexts(contexts=None)``
+            # (optional; returns a ContextBuilder when called bare) and
+            # ``PromptManager.define_contexts(contexts)`` (required; raises on a
+            # non-dict). They are different contracts. This port implements both
+            # — the mixin one on AgentBase, the manager one in
+            # SignalWire::Core::Agent::Prompt::Manager, which maps straight onto
+            # PromptManager — but the blanket projection overwrote the real
+            # Manager signature with AgentBase's, reporting the manager's
+            # REQUIRED parameter as optional-with-an-invented-default.
+            for m_name, sig in re_projected_present.items():
+                if m_name in target_methods:
+                    continue  # the port implements it here; keep the real one
+                target_methods[m_name] = sig
             projected.update(present)
         for n in projected:
             ab_methods.pop(n, None)
@@ -2011,6 +2098,10 @@ def collect(raw: dict) -> dict:
     # types onto hand-written params the parser recorded as bare ``any``.
     apply_hand_param_renames(out_modules)
     project_reference_param_types(out_modules)
+    # Types are final at this point, so the recovered defaults can now be
+    # expressed in that type's vocabulary (Perl 0/1 -> bool, empty container
+    # under ``optional<...>`` -> None). Must run AFTER the type projection.
+    normalize_defaults_to_type(out_modules)
     apply_return_type_overrides(out_modules)
 
     sorted_modules = {}

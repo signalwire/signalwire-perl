@@ -972,14 +972,17 @@ sub create_simple_context {    ## no critic (Subroutines::RequireArgUnpacking)
     # method calling convention needs @_/shift to drop a possible receiver.
     # Unpacking into ``@args`` would rename the audited param and move the
     # surface, so RequireArgUnpacking is suppressed here (parity, not laziness).
-    my ($name) = @_;
-    if ( defined $name && !ref($name) && $name eq __PACKAGE__ ) {
+    # Drop a class-method receiver BEFORE unpacking, so ``$name`` below is
+    # always the caller's real argument whichever spelling was used. Doing it
+    # here (rather than after the unpack) lets the parameter's own default be
+    # the sub's FIRST statement about it: the audit reads the prologue for the
+    # declared default, a default stated after a branch is invisible there, and
+    # this one has to match the reference's ``name: str = "default"``.
+    shift if @_ && defined $_[0] && !ref( $_[0] ) && $_[0] eq __PACKAGE__;
 
-        # Class-method invocation form — drop the receiver, shift remaining.
-        shift;
-        $name = $_[0];
-    }
+    my ($name) = @_;
     $name //= 'default';
+
     return SignalWire::Contexts::Context->new( name => $name );
 }
 
