@@ -72,22 +72,11 @@ sub strip_control_chars {
     for my $key ( keys %$event_dict ) {
         my $value = $event_dict->{$key};
         if ( defined $value && !ref $value ) {
-            $event_dict->{$key} = strip_control_chars_value($value);
+            ( my $clean = $value ) =~ s/$CONTROL_CHAR_RE//g;
+            $event_dict->{$key} = $clean;
         }
     }
     return $event_dict;
-}
-
-# Strip control characters from a SINGLE string.
-#
-# INTERNAL: the reference's public contract is the event-map form
-# (strip_control_chars above); this is the per-value scrub that form is built out
-# of, and the unit the emitter needs. Not exported, so it is not port surface.
-sub strip_control_chars_value {
-    my ($value) = @_;
-    return $value unless defined $value;
-    ( my $clean = $value ) =~ s/$CONTROL_CHAR_RE//g;
-    return $clean;
 }
 
 # Configure the SDK logging system once, globally, based on the

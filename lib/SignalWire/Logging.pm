@@ -57,7 +57,10 @@ sub _log {
     # compile-time `use` here would close the loop. Require at call time instead —
     # by the time anything logs, the module is loadable.
     require SignalWire::Core::LoggingConfig;
-    my $safe = SignalWire::Core::LoggingConfig::strip_control_chars_value($msg);
+    # Route through the reference's event-map contract rather than a second
+    # sub: a port-only `strip_control_chars_value` is surface the reference does
+    # not have, and the surface gate reports it as an invented addition.
+    my $safe = SignalWire::Core::LoggingConfig::strip_control_chars( { event => $msg } )->{event};
     print STDERR "[$ts] [$tag] [$name] $safe\n";
     return;
 }
