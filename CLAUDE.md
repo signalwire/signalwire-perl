@@ -187,7 +187,13 @@ $agent->register_swaig_function($tool->to_swaig_function);
 #### Contexts
 ```perl
 my $ctx = $self->define_contexts;
-$ctx->add_context('sales', prompt => 'You are a sales agent.');
+
+# add_context() takes a NAME ONLY -- the prompt is set on the returned
+# Context object. A single context must be named 'default', and every
+# context needs at least one step, or validate() dies.
+my $sales = $ctx->add_context('default');
+$sales->set_prompt('You are a sales agent.');
+$sales->add_step( 'greet', task => 'Greet the caller and ask what they need.' );
 ```
 
 #### Skills
