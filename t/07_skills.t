@@ -335,4 +335,45 @@ subtest 'swaig_fields extraction' => sub {
     ok(!exists $skill->params->{swaig_fields}, 'swaig_fields removed from params');
 };
 
+# The engine reads ONLY "params" and "headers" off a webhook (mod_openai/actions.c:735-739 --
+# there is no read of "body" anywhere), and expands ${formatted_results} from the "foreach" block.
+# This asserts on the EMITTED PAYLOAD; before the fix this skill emitted a bare webhook with no
+# params, no headers and no foreach, so the search went out unauthenticated and with no query.
+subtest 'datasphere_serverless emits params, auth headers and foreach' => sub {
+    my $agent   = SignalWire::Agent::AgentBase->new( name => 'ds_serverless_payload' );
+    my $factory = SignalWire::Skills::SkillRegistry->get_factory('datasphere_serverless');
+    my $skill   = $factory->new(
+        agent  => $agent,
+        params => {
+            space_name  => 'test.signalwire.com',
+            project_id  => 'proj-123',
+            token       => 'tok-456',
+            document_id => 'doc-789',
+            count       => 4,
+            distance    => 2.5,
+        },
+    );
+    $skill->register_tools;
+
+    my $fn = $agent->tools->{'search_knowledge'};
+    ok( $fn, 'search_knowledge registered' );
+    my $webhook = $fn->{data_map}{webhooks}[0];
+    ok( $webhook, 'data_map webhook present' );
+
+    # The search payload must ride on "params" -- a "body" key is silently dropped by the engine.
+    ok( !exists $webhook->{body}, 'no body key (the engine never reads it)' );
+    is( $webhook->{params}{query_string}, '${args.query}', 'query_string on params' );
+    is( $webhook->{params}{document_id},  'doc-789',       'document_id on params' );
+    is( $webhook->{params}{count},        4,               'count honoured' );
+    is( $webhook->{params}{distance},     2.5,             'distance honoured' );
+
+    like( $webhook->{headers}{Authorization}, qr/^Basic \S+/, 'basic auth header present' );
+
+    # ${formatted_results} in the output is only populated by a foreach block.
+    is( $webhook->{foreach}{input_key},  'chunks',            'foreach input_key' );
+    is( $webhook->{foreach}{output_key}, 'formatted_results', 'foreach output_key' );
+    is( $webhook->{foreach}{max},        4,                   'foreach max follows count' );
+    like( $webhook->{foreach}{append}, qr/\$\{this\.text\}/, 'foreach append interpolates this.text' );
+};
+
 done_testing;

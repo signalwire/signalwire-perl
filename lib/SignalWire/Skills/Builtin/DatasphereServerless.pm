@@ -2,7 +2,8 @@ package SignalWire::Skills::Builtin::DatasphereServerless;
 use strict;
 use warnings;
 use Moo;
-use JSON ();
+use JSON         ();
+use MIME::Base64 qw(encode_base64);
 extends 'SignalWire::Skills::SkillBase';
 
 use SignalWire::Skills::SkillRegistry;
@@ -19,7 +20,15 @@ sub register_tools {
     my ($self) = @_;
     my $tool_name = $self->params->{tool_name} // 'search_knowledge';
 
-    # DataMap-based tool: register as a SWAIG function definition
+    my $space = $self->params->{space_name} // '';
+    my $auth  = encode_base64(
+        ( $self->params->{project_id} // '' ) . ':' . ( $self->params->{token} // '' ), '' );
+    my $count    = $self->params->{count}    // 1;
+    my $distance = $self->params->{distance} // 3.0;
+
+    # DataMap-based tool: register as a SWAIG function definition.
+    # The engine reads ONLY "params" and "headers" off a webhook (mod_openai/actions.c:735-739),
+    # and expands ${formatted_results} from the "foreach" block -- see the commit message.
     return $self->agent->register_swaig_function(
         {
             function    => $tool_name,
@@ -35,10 +44,26 @@ sub register_tools {
             data_map => {
                 webhooks => [
                     {
-                        method => 'POST',
-                        url    => 'https://'
-                            . ( $self->params->{space_name} // '' )
-                            . '/api/datasphere/documents/search',
+                        method  => 'POST',
+                        url     => 'https://' . $space . '/api/datasphere/documents/search',
+                        headers => {
+                            'Content-Type'  => 'application/json',
+                            'Authorization' => "Basic $auth",
+                        },
+                        params => {
+                            document_id  => $self->params->{document_id} // '',
+                            query_string => '${args.query}',
+                            count        => $count,
+                            distance     => $distance,
+                        },
+                        foreach => {
+                            input_key  => 'chunks',
+                            output_key => 'formatted_results',
+                            max        => $count,
+                            append     => "=== RESULT ===\n"
+                                . '${this.text}' . "\n"
+                                . ( '=' x 50 ) . "\n\n",
+                        },
                         output => {
                             response =>
                                 'I found results for "${args.query}":\n\n${formatted_results}',
