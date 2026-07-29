@@ -228,9 +228,21 @@ max_tokens =E<gt> ...)> — update inference params (only defined values).
 
 =item * C<set_llm_temperature($t)> — redirects to C<set_inference_params>.
 
-=item * C<set_llm_model($m)>, C<set_prompt_llm_params(%p)>,
-C<set_post_prompt_llm_params(%p)> — warn and no-op (not applicable to
-Bedrock).
+=item * C<set_llm_model($m)> — warns and no-ops; the model is not
+selectable here.
+
+=item * C<set_prompt_llm_params(%p)> — warns and no-ops. Use
+C<set_inference_params> instead, which is the Bedrock equivalent.
+
+=item * C<set_post_prompt_llm_params(%p)> — warns and no-ops. Bedrock's
+post-prompt runs on OpenAI configured in the engine's C code, so there is
+nothing here for this to set.
+
+=item * C<render_swml($request_env)> — render the agent's SWML, then
+B<rewrite the first C<ai> verb> in the main section into an
+C<amazon_bedrock> verb built from that verb's config. Only the first is
+rewritten, and a document whose main section is missing or not an arrayref
+is returned untouched.
 
 =item * C<to_string> — the C<BedrockAgent(name=..., route=..., voice=...)>
 representation (also the overloaded stringification; the cross-language

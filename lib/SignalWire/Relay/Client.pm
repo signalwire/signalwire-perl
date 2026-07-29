@@ -1219,9 +1219,69 @@ Each callback must be a coderef; each returns C<$self> for chaining.
 
 =head2 Connection
 
-C<connect> (open WS + authenticate), C<disconnect>, C<connect_ws>,
-C<authenticate>, C<reconnect>, C<disconnect_ws>, and C<run> (the blocking
-read loop).
+=over 4
+
+=item C<connect()>
+
+Open the WebSocket and run the C<signalwire.connect> handshake in one
+call, returning the authenticate result hashref. B<Validates credentials
+before dialling out>, dying with a per-variable message that names exactly
+which one is missing and the env var that supplies it — C<project> and
+C<token> are checked separately, and both checks are skipped when a JWT is
+in play. Dies if the WebSocket itself fails to open.
+
+=item C<disconnect()>
+
+Tear the transport down; a thin alias for C<disconnect_ws>.
+
+=item C<connect_ws()>
+
+Open just the WebSocket, without authenticating. C<host> may be a bare
+hostname or C<host:port>; when no port is given the scheme's default is
+used. Returns true on success.
+
+=item C<authenticate()>
+
+Run the C<signalwire.connect> handshake over an already-open socket and
+return the result hashref. Sends either C<project>/C<token> or
+C<jwt_token>; in the non-JWT case the credentials are B<also mirrored at
+the top level> of the params, a convention production accepts alongside the
+nested form. C<contexts>, C<protocol> and C<authorization_state> are added
+only when set, the latter two enabling session resume and fast re-auth.
+Captures the server's C<protocol> and its session id — which arrives under
+the key C<sessionid>, with B<no underscore>.
+
+=item C<reconnect()>
+
+Reject every pending request and dial, back off, then reconnect and
+re-authenticate. The delay is exponential —
+C<min_delay * 2 ** attempts>, base 1s (overridable via
+C<SIGNALWIRE_RELAY_RECONNECT_MIN_DELAY_S>) — clamped at C<max_backoff>.
+Increments the attempt counter, and returns the authenticate result, or
+C<undef> if the socket did not come back.
+
+=item C<disconnect_ws()>
+
+Close the socket and mark the client as intentionally closing so C<run>
+exits rather than reconnecting. B<Fails every in-flight request
+immediately> so a synchronous waiter returns at once instead of blocking to
+its timeout.
+
+=item C<run()>
+
+The blocking event loop, B<with auto-reconnect>. Reads frames while
+connected; on an unexpected drop it attempts a backing-off reconnect rather
+than silently returning. A successful reconnect resets the backoff counter.
+It exits on an intentional C<disconnect_ws>, or once
+C<max_reconnect_attempts> consecutive reconnects have failed — it never
+reconnects forever.
+
+=item C<relay_protocol()>
+
+The server-assigned protocol string captured during the handshake, used for
+session resume.
+
+=back
 
 =head2 RPC and operations
 
@@ -1239,6 +1299,31 @@ L<SignalWire::Relay::Message> handle.
 =item * C<receive($contexts)> / C<unreceive($contexts)> — subscribe /
 unsubscribe to inbound contexts. Accepts an arrayref (canonical) or a
 bare list.
+
+=back
+
+=head2 SignalWire::Relay::Client::RelayError
+
+The exception the RPC helpers throw when the RELAY server rejects a
+request. It overloads stringification as
+C<"RELAY error E<lt>codeE<gt>: E<lt>messageE<gt>">, so it can be caught with
+C<eval> and either printed directly or inspected via C<ref $@>.
+
+=over 4
+
+=item C<new(code =E<gt> $code, message =E<gt> $message)>
+
+Construct the error. Both arguments are optional, defaulting to 0 and the
+empty string.
+
+=item C<code()>
+
+The numeric server error code.
+
+=item C<message()>
+
+The human-readable server message, without the C<"RELAY error N: "> prefix
+that stringification adds.
 
 =back
 

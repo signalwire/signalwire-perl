@@ -523,8 +523,16 @@ validation. The C<SWML_SKIP_SCHEMA_VALIDATION> environment variable
 
 =item * C<get_all_verb_names> - sorted list of known verb names.
 
-=item * C<get_verb_properties($verb)> / C<get_verb_parameters($verb)> /
-C<get_verb_required_properties($verb)> - verb metadata accessors.
+=item * C<get_verb_properties($verb)> - the verb's schema block as a
+hashref, or C<{}> when the verb is unknown.
+
+=item * C<get_verb_parameters($verb)> - the verb's C<properties> block used
+by the code generators, or C<{}> when absent.
+
+=item * C<get_verb_required_properties($verb)> - the verb's required
+property names as an arrayref, or C<[]> when the verb is unknown or
+declares none. Non-string entries are filtered out, so the result is always
+a flat list of names.
 
 =item * C<validate_verb($verb, $config)> - returns C<($valid, $errors_arrayref)>.
 

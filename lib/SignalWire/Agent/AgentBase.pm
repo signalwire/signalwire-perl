@@ -2832,70 +2832,788 @@ grouped setter methods below where they exist.
 
 =head1 METHODS
 
+Unless a method's entry says otherwise, it returns C<$self> so calls chain.
+The four exceptions are called out where they occur: the C<get_*> readers,
+C<pom>, C<add_skill> / C<remove_skill> / C<list_skills> / C<has_skill>, and
+the render/serve entry points.
+
 =head2 Prompt
 
-C<set_prompt_text>, C<set_post_prompt>, C<prompt_add_section>,
-C<prompt_add_subsection>, C<prompt_add_to_section>, C<prompt_has_section>,
-C<get_prompt>, C<pom>, C<get_post_prompt>, C<get_raw_prompt>,
-C<set_prompt_pom>, C<set_prompt_llm_params>, C<set_post_prompt_llm_params>.
+An agent's prompt is EITHER a flat text blob (C<set_prompt_text>) or a
+structured Prompt Object Model -- a list of titled sections
+(C<prompt_add_section> and friends). The C<use_pom> attribute selects which
+one C<render_swml> emits: when C<use_pom> is true AND at least one section
+exists, the AI verb gets C<< ai.prompt.pom >>; otherwise it gets
+C<< ai.prompt.text >>. Neither store is cleared when you write the other, so
+an agent that has both keeps the POM and silently ignores the text.
+
+=over 4
+
+=item C<set_prompt_text($text)>
+
+Store C<$text> as the flat prompt. Does NOT switch C<use_pom> off -- if any
+POM sections have been added, this text stays unrendered until you either
+clear the sections or set C<< use_pom => 0 >>. Rendering falls back to
+C<"You are <name>, a helpful AI assistant."> when the text is empty and no
+sections exist.
+
+=item C<set_post_prompt($text)>
+
+Store the post-prompt (the summarization prompt the platform runs after the
+call). Emitted as C<< ai.post_prompt.text >> only when non-empty; an empty
+string omits the whole C<post_prompt> key, and with it any
+C<post_prompt_llm_params> you set.
+
+=item C<prompt_add_section($title, $body, %opts)>
+
+Append a POM section. C<$body> defaults to the empty string, and an empty
+body is OMITTED from the section hash entirely rather than emitted as
+C<< body => "" >> -- so a bullets-only section renders clean. C<%opts>
+recognizes only C<bullets> (an arrayref), added when truthy. No duplicate
+check: calling this twice with the same title appends TWO sections, which is
+why C<prompt_add_to_section> exists.
+
+=item C<prompt_add_subsection($parent_title, $title, $body, %opts)>
+
+Append a subsection under the section named C<$parent_title>, auto-creating
+that parent (via C<prompt_add_section>) when it does not already exist, so
+this never silently drops the subsection. Attaches to the FIRST section
+matching the parent title. Unlike C<prompt_add_section>, the subsection
+always carries a C<body> key even when empty. C<%opts> recognizes C<bullets>.
+
+=item C<prompt_add_to_section($title, %opts)>
+
+Append to an existing section, auto-creating it when absent. C<%opts> takes
+C<body> (concatenated onto the existing body after a newline) and C<bullets>
+(pushed onto the existing bullet list). Both are appends, never replacements.
+Note the asymmetry with C<prompt_add_section>: here the body arrives as a
+NAMED option, not positionally.
+
+=item C<prompt_has_section($title)>
+
+True when a POM section with exactly that title exists. Returns C<1>/C<0>,
+not the section. Exact string equality -- no case folding, no trimming.
+
+=item C<get_prompt()>
+
+The prompt AS IT WILL RENDER: the raw C<pom_sections> ARRAYREF when
+C<use_pom> is on and sections exist, otherwise the C<prompt_text> STRING.
+Callers must branch on C<ref>; C<_build_ai_verb> does exactly that to choose
+between C<< prompt.pom >> and C<< prompt.text >>. The arrayref is the LIVE
+internal list -- mutating it mutates the agent. Use C<pom> for a safe copy.
+
+=item C<get_raw_prompt()>
+
+The C<prompt_text> string whatever was stored, or C<""> -- never the POM.
+This is the reader to use when you want the text an agent was configured
+with regardless of which mode it will render in.
+
+=item C<get_post_prompt()>
+
+The post-prompt string, or C<""> when none was set.
+
+=item C<set_prompt_pom($pom)>
+
+Replace the whole section list with C<$pom> (an arrayref of section hashes)
+and force C<< use_pom => 1 >>. A shallow copy of the arrayref is taken, so
+pushing onto your original afterwards does not affect the agent -- but the
+section hashes themselves are shared. C<undef> is treated as an empty list,
+which CLEARS every section while leaving POM mode on (rendering then falls
+back to the default text prompt).
+
+=item C<pom()>
+
+A read-only snapshot of the POM as a typed
+L<SignalWire::POM::PromptObjectModel>. Returns empty (C<undef> in scalar
+context) when C<use_pom> is false. The sections are deep-cloned first, so
+mutating the returned model can never write back into the agent -- this is
+the safe counterpart to C<get_prompt>'s live arrayref. With no sections you
+still get a PromptObjectModel, just an empty one.
+
+=item C<set_prompt_llm_params(%params)>
+
+MERGE keyword pairs into the model-tuning params that are spliced onto the
+rendered C<< ai.prompt >> object alongside C<text>/C<pom> (C<temperature>,
+C<top_p>, and the like). Merges, never replaces, so repeated calls
+accumulate; a repeated key wins on the later call.
+
+=item C<set_post_prompt_llm_params(%params)>
+
+The same merge for the C<< ai.post_prompt >> object. These are only ever
+rendered when a non-empty post-prompt exists -- setting them on an agent with
+no post-prompt is silently inert.
+
+=back
 
 =head2 Contexts
 
-C<define_contexts>, C<get_contexts>, C<contexts>, C<reset_contexts>.
+Contexts are the structured-workflow alternative to a monolithic prompt; see
+L<SignalWire::Contexts>. The builder is lazy -- it is not constructed until
+one of these methods asks for it.
 
-=head2 Tool tokens
+=over 4
 
-C<create_tool_token>, C<validate_tool_token>, C<list_tool_names>.
+=item C<define_contexts($contexts)>
+
+Two shapes, distinguished by whether an argument is present:
+
+With NO argument, returns the agent's memoized
+L<SignalWire::Contexts::ContextBuilder> (attaching the agent to it first, so
+the builder's C<validate> can check step function names against the agent's
+registered tools). This is the fluent form:
+C<< $agent->define_contexts->add_context('default') >> -- note it returns the
+BUILDER, not C<$self>.
+
+With a HASHREF, applies it as C<< name => { steps => { name => \%args } } >>
+and returns C<$self>. Only the C<steps> key of each context config is read;
+any other key in the config is silently ignored.
+
+With a ContextBuilder-like object (anything that C<can('to_hash')>), adopts
+it as an external builder and returns C<$self>. Anything else C<die>s with
+C<"define_contexts: contexts must be a hashref or a ContextBuilder">.
+
+=item C<contexts()>
+
+The raw C<context_builder> attribute, without the agent-attachment
+C<define_contexts> performs. Prefer C<define_contexts> unless you
+specifically want the un-attached builder.
+
+=item C<get_contexts()>
+
+Delegates to C<< $context_builder->to_hash >> -- the serialized contexts that
+render under C<< ai.prompt.contexts >>. B<This validates, and validation
+C<die>s>: on an agent with no contexts it raises C<"At least one context must
+be defined"> rather than returning undef, and it will equally die on a single
+context not named C<default>, or on any context with no steps. Guard the call
+with C<eval> (or check C<< $agent->contexts->has_contexts >> first) unless
+you know the contexts tree is complete.
+
+=item C<reset_contexts()>
+
+Empty the contexts tree, returning the agent to its no-contexts state. A
+no-op if the builder has no C<reset>. The typical use is inside a
+dynamic-config callback that rebuilds contexts per request -- the callback
+runs against a per-request CLONE, so the reset does not touch the shared
+agent.
+
+=back
+
+=head2 Tools and tool tokens
+
+Tool REGISTRATION (C<define_tool>, C<register_swaig_function>,
+C<define_tools>, C<on_function_call>) lives on
+L<SignalWire::SWML::Service> and is inherited. What AgentBase adds is the
+per-call token layer that authenticates a SECURE tool's webhook.
+
+=over 4
+
+=item C<create_tool_token($tool_name, $call_id)>
+
+Mint a per-call token for one tool via the agent's C<session_manager>.
+B<Returns C<""> on ANY error> -- the SessionManager raising is swallowed and
+becomes an empty string, so an empty return is indistinguishable from a
+failure. C<render_swml> treats an empty token as "no token" and simply omits
+the C<__token> query parameter. A token is bound to the call, so this is
+meaningless without a real C<$call_id>.
+
+=item C<validate_tool_token($function_name, $token, $call_id)>
+
+C<1> when the token is valid for that function on that call, C<0> otherwise.
+Returns C<0> up front for a function that is not registered on this agent,
+and swallows any SessionManager exception into C<0> as well -- there is no
+way to distinguish "invalid token" from "SessionManager blew up".
+
+Note the argument ORDER: this facade keeps the reference's
+C<(function_name, token, call_id)> so cross-language code reads the same,
+and internally transposes to L<SignalWire::Security::SessionManager>'s
+native C<(call_id, function_name, token)>.
+
+=item C<list_tool_names()>
+
+The registered SWAIG function names in registration order, as a LIST (not an
+arrayref) -- it returns C<< @{ $self->tool_order } >>. Used by
+ContextBuilder's validation to detect a step function colliding with a
+reserved native name.
+
+=back
 
 =head2 Hints and pronunciations
 
-C<add_hint>, C<add_hints>, C<add_pattern_hint>, C<add_pronunciation>,
-C<set_pronunciations>.
+=over 4
+
+=item C<add_hint($hint)>
+
+Push one hint onto the list, unfiltered -- C<undef>, an empty string, and a
+reference all get stored as-is and reach the rendered C<< ai.hints >>.
+C<add_hints> is the filtering entry point.
+
+=item C<add_hints($hints)>
+
+Append many. The canonical form takes an ARRAYREF; for backward
+compatibility a slurpy list (C<< add_hints('a','b','c') >>) is also accepted,
+detected by the first argument not being an arrayref. Either way each
+candidate must be defined, non-reference, and non-empty to be kept -- unlike
+C<add_hint>, this one DROPS junk silently.
+
+=item C<add_pattern_hint($args)>
+
+Append a structured pattern-replacement hint. C<$args> is a hashref of
+C<hint>, C<pattern>, C<replace>, and optional C<ignore_case> (coerced to a
+JSON boolean; defaults false). All three of C<hint>/C<pattern>/C<replace>
+must be present and non-empty or the call is a SILENT no-op -- it still
+returns C<$self>, so a typo'd key looks like success.
+
+Pattern hints are stored in their own list, but render CONCATENATED after the
+plain hints into the single C<< ai.hints >> array, so the wire shape matches
+the reference (which keeps one combined list).
+
+=item C<add_pronunciation(%pron)>
+
+Push a pronunciation rule. The keyword pairs are stored VERBATIM as the rule
+hash and reach C<< ai.pronounce >> unchanged -- there is no key validation,
+no required-field guard, and no C<ignore_case> normalization, so you are
+responsible for spelling the wire keys (C<replace>, C<with>, C<ignore_case>)
+correctly.
+
+=item C<set_pronunciations($prons)>
+
+REPLACE the whole pronunciation list with C<$prons>. The arrayref is stored
+by reference (not copied), so later pushes onto your array mutate the agent.
+No shape validation.
+
+=back
 
 =head2 Languages
 
-C<add_language>, C<set_languages>, C<set_multilingual>,
-C<set_language_params>, C<get_language_params>.
+=over 4
 
-=head2 Params and data
+=item C<add_language(%lang)>
 
-C<set_param>, C<set_params>, C<set_global_data>, C<update_global_data>.
+Append one language config; the keyword pairs become the language hash
+(C<name>, C<code>, C<voice>, C<speech_fillers>, C<function_fillers>,
+C<engine>, C<model>, C<params>). The one transform applied: a C<params> key
+whose value is missing, not a hashref, or an EMPTY hashref is DELETED rather
+than emitted, so an agent that passes C<< params => {} >> renders SWML
+byte-identical to one that omitted the key.
 
-=head2 Functions and fillers
+=item C<set_languages($langs)>
 
-C<set_native_functions>, C<set_internal_fillers>, C<add_internal_filler>,
-C<add_function_include>, C<set_function_includes>, C<enable_debug_events>.
+Replace the whole language list with C<$langs>. Stored by reference, no
+validation, and no per-entry C<params> normalization -- entries added this
+way keep an empty C<params> hash that C<add_language> would have stripped.
 
-=head2 Answer and verbs
+=item C<set_multilingual($config)>
 
-C<add_pre_answer_verb>, C<add_post_answer_verb>, C<add_post_ai_verb>,
-C<add_answer_verb>, C<clear_pre_answer_verbs>, C<clear_post_answer_verbs>,
-C<clear_post_ai_verbs>, C<set_answer_config>.
+Switch on ASR-driven code-switching mode: the recognizer detects the
+caller's language and the agent answers in it, emitted as a top-level
+C<< ai.multilingual >> object. A missing, non-hash, or empty C<$config> is a
+no-op (the previous value stands), so this cannot be used to CLEAR
+multilingual mode.
+
+Mutually exclusive with C<set_languages> in effect but not in code: both are
+rendered when both are set, and the server then prefers C<multilingual> and
+ignores C<languages>.
+
+=item C<set_language_params($code, $params)>
+
+Set or replace the C<params> hashref on the already-added language whose
+C<code> matches. An empty/non-hash C<$params> DELETES the key instead of
+setting it -- this is the only way to clear per-language params. An unknown
+C<$code> is a silent no-op. Only the first match is touched.
+
+=item C<get_language_params($code)>
+
+The C<params> hashref for that language code, or empty (C<undef> in scalar
+context) when the code is unknown or params were never set -- the two cases
+are indistinguishable. Returns the LIVE hashref, so mutating it mutates the
+agent's language config.
+
+=back
+
+=head2 Params and global data
+
+=over 4
+
+=item C<set_param($key, $value)>
+
+Set one AI parameter (rendered under C<< ai.params >>). No key validation --
+an C<undef> or empty key is stored and will be emitted.
+
+=item C<set_params($p)>
+
+MERGE the hashref's pairs into the existing params. Despite the C<set_>
+name this never clears; existing keys survive and only collide-on-write.
+
+=item C<set_global_data($data)>
+
+B<MERGES into C<global_data> -- it does NOT replace, despite the name.>
+Identical in behavior to C<update_global_data>. This is deliberate: skills
+contribute keys to C<global_data> during C<add_skill>, and a replacing setter
+would silently clobber them.
+
+=item C<update_global_data($data)>
+
+Merge the hashref into C<global_data>. The same operation as
+C<set_global_data>; both spellings exist so code reads naturally whichever
+name you reach for.
+
+=back
+
+=head2 SWAIG functions, fillers, and debug events
+
+=over 4
+
+=item C<set_native_functions($funcs)>
+
+Replace the list of platform-native function names enabled on this agent
+(rendered as C<< ai.SWAIG.native_functions >>). Stored by reference; no
+validation that the names are real native functions.
+
+=item C<set_internal_fillers($fillers)>
+
+Replace the internal-filler map -- the short phrases the agent speaks while a
+native function runs, so the caller does not hear dead air. Shape is
+C<< { function_name => { language_code => [ phrase, ... ] } } >>.
+
+Only nine function names are honored by the runtime: C<hangup>,
+C<check_time>, C<wait_for_user>, C<wait_seconds>,
+C<adjust_response_latency>, C<next_step>, C<change_context>,
+C<get_visual_input>, C<get_ideal_strategy>. Notably C<change_step>,
+C<gather_submit>, and your own SWAIG function names are NOT supported. This
+method C<carp>s a list of any unrecognized names it is given -- but stores
+them anyway; the runtime ignores them at the SWML level.
+
+=item C<add_internal_filler(...)>
+
+Add one filler entry. Three calling conventions, dispatched on argument
+count:
+
+With ONE argument (a string or a hashref) this takes the legacy path: the
+value is pushed onto C<internal_fillers> as a flat ARRAYREF, initializing it
+to C<[]> first. This does not produce the map shape the runtime expects.
+
+With THREE arguments C<($function_name, $language_code, \@phrases)> it takes
+the modern path: C<internal_fillers> is coerced to a HASHREF (discarding any
+legacy list already there) and the phrases are stored at
+C<< {$function_name}{$language_code} >>. An unsupported function name
+C<carp>s a warning naming the nine valid ones, and the entry is stored
+regardless -- the runtime will simply never play it.
+
+=item C<add_function_include($include)>
+
+Push one remote SWAIG include (C<< { url => ..., functions => [...] } >>)
+onto the list. Stored VERBATIM with no validation, which is asymmetric with
+C<set_function_includes> -- an entry this method accepts silently would be
+dropped-and-warned had you passed it through the setter.
+
+=item C<set_function_includes($includes)>
+
+Replace the include list, DROP-FILTERING as it goes: an entry survives only
+if it is a hashref with a non-empty C<url> and an arrayref C<functions>.
+Every rejected entry C<carp>s with its index so the typo surfaces at
+registration time rather than as a missing function at call time. A
+non-arrayref argument is ignored entirely (the existing list stands).
+
+=item C<enable_debug_events($level)>
+
+Turn on the AI module's debug-event stream at verbosity C<$level>, which
+defaults to C<1>. Level 1 gives high-level events (barge, errors, session
+start/end, step changes); 2 and above add high-volume ones (every LLM
+request/response). Rendered as C<< ai.params.debug_events >> whenever the
+level is above zero, so passing C<0> effectively disables it again.
+
+=back
+
+=head2 Answer and verb insertion
+
+C<render_swml> assembles the C<main> section in five fixed phases:
+pre-answer verbs, the C<answer> verb (plus C<record_call> when enabled),
+post-answer verbs, the C<ai> verb, then post-AI verbs. These methods populate
+the three caller-controlled lists.
+
+=over 4
+
+=item C<add_pre_answer_verb($verb_name, $verb_config)>
+
+=item C<add_post_answer_verb($verb_name, $verb_config)>
+
+=item C<add_post_ai_verb($verb_name, $verb_config)>
+
+Append C<< { $verb_name => $verb_config } >> to the corresponding phase list.
+Each is emitted into C<main> in insertion order, verbatim -- no verb-name
+validation and no config schema check, so a misspelled verb reaches the
+platform as-is. C<$verb_config> is stored by reference.
+
+=item C<clear_pre_answer_verbs()>
+
+=item C<clear_post_answer_verbs()>
+
+=item C<clear_post_ai_verbs()>
+
+Empty the corresponding list. Each installs a fresh C<[]> rather than
+truncating in place, so any arrayref you previously handed in is left alone.
+
+=item C<add_answer_verb($config)>
+
+Set the C<answer> verb's configuration; C<$config> defaults to C<{}>. The
+rendered verb always starts from C<< max_duration => 14400 >> and merges your
+config OVER that, so passing C<max_duration> overrides the default while
+passing anything else adds to it. Only takes effect when the C<auto_answer>
+attribute is true (it is by default); with C<auto_answer> off, no C<answer>
+verb is emitted at all and this config is inert.
+
+=item C<set_answer_config($config)>
+
+REPLACE the answer configuration outright, with no C<//> default -- passing
+C<undef> stores C<undef>, which then makes C<render_swml> fail when it tries
+to dereference it. Prefer C<add_answer_verb>, which is the guarded spelling
+of the same store.
+
+=back
 
 =head2 SIP routing
 
-C<enable_sip_routing>, C<register_sip_username>, C<auto_map_sip_usernames>,
-C<extract_sip_username>.
+=over 4
+
+=item C<enable_sip_routing(%opts)>
+
+Turn on SIP-username routing. C<%opts> takes C<auto_map> (default C<1>) and
+C<path> (default C</sip>). Three things happen, in order: the flags are
+stored; a routing callback is registered at C<path> so the served endpoint
+actually consults the username map (without this the map would be
+stored-but-never-read); and, when C<auto_map> is on,
+C<auto_map_sip_usernames> runs immediately.
+
+That last ordering matters: auto-mapping derives usernames from the agent's
+C<name> and C<route> AT THIS MOMENT, so calling C<enable_sip_routing> before
+those are final leaves you with usernames derived from the old values.
+
+At request time the callback returns undef when the extracted username is
+registered here (this agent renders its own SWML) and otherwise delegates to
+the internal C<_on_sip_request> hook, which a subclass or L<AgentServer>
+overrides to return a redirect URL -- turning the response into a 307.
+
+=item C<register_sip_username($username)>
+
+Register one SIP username that routes to this agent. The name is
+B<lower-cased before storage>, so C<Bob>, C<BOB>, and C<bob> collapse to a
+single entry rather than accumulating duplicate routes; matching at request
+time is likewise case-insensitive. Deduplicated. An undef or empty username
+returns early without storing.
+
+=item C<auto_map_sip_usernames()>
+
+Derive and register usernames from the agent itself. Each candidate is
+lower-cased and stripped to C<[a-z0-9_]>: the agent's C<name>, then its
+C<route> (only when it differs from the mapped name), then -- when the mapped
+name is longer than 3 characters -- a vowel-less variant of it (so
+C<support> also answers to C<spprt>). Every registration goes through
+C<register_sip_username>, so all three are deduplicated.
+
+=item C<extract_sip_username($body)>
+
+Pull the SIP caller identity out of a parsed request body hashref. Tries
+C<< call.from >>, then C<sip_from>, then C<from>, matching the user part of a
+C<< sip:user@domain >> URI; failing that, falls back to
+C<< call.caller_id_number >> then C<caller_id_number> and returns it whole.
+Returns empty (C<undef> in scalar context) for a non-hashref body or when
+nothing matches. Callable as a class method -- it never touches C<$self>.
+
+=back
 
 =head2 Skills
 
-C<add_skill>, C<remove_skill>, C<list_skills>, C<has_skill>.
+The skill methods are the one group that does B<not> return C<$self>; they
+are thin delegates to L<SignalWire::Skills::SkillManager> and return its
+values, so they cannot be chained.
 
-=head2 Callbacks and URLs
+=over 4
 
-C<set_dynamic_config_callback>, C<on_summary>, C<on_debug_event>,
-C<set_web_hook_url>, C<set_post_prompt_url>, C<manual_set_proxy_url>,
-C<add_swaig_query_params>, C<clear_swaig_query_params>, C<get_full_url>,
-C<get_name>.
+=item C<add_skill($skill_name, $params)>
+
+Load a skill by registry name with the optional C<$params> hashref
+(defaulting to C<{}>). B<Returns the SkillManager's two-element list
+C<< ($ok, $error) >>>, not C<$self> -- C<(1, '')> on success, C<(0,
+"reason")> on failure. Failure is a RETURN VALUE, not an exception: a
+missing registry entry, a constructor that dies, a duplicate instance that
+does not support multiple instances, missing required environment variables,
+and a failing C<setup> or C<register_tools> all come back as C<(0, ...)>. In
+scalar context you get only the error string, so check it in list context.
+
+Loading is not just registration: the skill's tools are registered on this
+agent, and its hints, global data, and prompt sections are merged into the
+agent's own -- which is why C<set_global_data> merges rather than replaces.
+
+=item C<remove_skill($skill_name)>
+
+Unload a skill, running its C<cleanup>. Returns C<1> when a skill was
+removed, C<0> when nothing matched.
+
+B<The argument is the INSTANCE KEY, not necessarily the skill name.> A skill
+loaded with a C<tool_name> parameter keys as C<"name:tool_name">, so passing
+the bare name will not find it. Use C<list_skills> to see the real keys.
+
+=item C<list_skills()>
+
+An ARRAYREF of the loaded skills' instance keys. Order is unspecified -- it
+comes from a hash, not an insertion list -- so sort it if you need
+determinism.
+
+=item C<has_skill($skill_name)>
+
+C<1>/C<0>. Keys on the instance key, with the same caveat as
+C<remove_skill>.
+
+=back
+
+=head2 Callbacks, URLs, and identity
+
+=over 4
+
+=item C<set_dynamic_config_callback($cb)>
+
+Install the per-request configuration hook, called as
+C<< $cb->($query_params, $body_params, $headers, $agent) >>. The C<$agent>
+it receives is a per-request B<CLONE>, never the shared agent, so anything
+the callback mutates applies to that one request only -- this is how
+multi-tenancy works. The headers hashref is lower-cased before the callback
+sees it. A callback that dies is caught and logged as
+C<error_in_dynamic_config>; the request proceeds with the unmodified clone.
+
+Installing this is not free: every request now deep-copies the agent
+(prompt, tools, contexts, languages, and the rest) before rendering.
+
+=item C<set_web_hook_url($url)>
+
+Pin the SWAIG callback URL, bypassing proxy detection and the
+C<< <route>/swaig >> derivation entirely. Note this also bypasses the
+C<swaig_query_params> append -- an explicitly-set webhook URL is used
+verbatim (basic-auth credentials are still injected into it at render).
+
+=item C<set_post_prompt_url($url)>
+
+The same pin for the post-prompt callback URL.
+
+=item C<manual_set_proxy_url($url)>
+
+Override the external base URL that C<get_full_url> and the callback-URL
+derivation build on -- for the case where the agent sits behind a proxy that
+does not send C<X-Forwarded-*> headers. Overrides AgentBase's parent
+implementation on L<SignalWire::SWML::Service>. Without it the base falls
+back to C<SWML_PROXY_URL_BASE>, then to the request's forwarding headers,
+then to C<< host:port >>.
+
+=item C<add_swaig_query_params(%params)>
+
+MERGE query parameters that get appended to every derived SWAIG callback URL
+(sorted by key, so the URL is stable across renders). Setting any of these
+has a side effect on RENDERING: it makes even an INSECURE tool emit its own
+per-tool C<web_hook_url>, because the params have to be conveyed somewhere.
+With no query params and no C<secure> flag, a tool emits no per-tool URL at
+all and falls back to the shared C<< SWAIG.defaults.web_hook_url >>.
+
+=item C<clear_swaig_query_params()>
+
+Drop all of them, restoring the shared-defaults rendering above.
+
+=item C<on_summary($summary, $raw_data)>
+
+Two roles in one method, dispatched on the first argument's type.
+
+Passing a CODEREF REGISTERS it as the post-prompt summary handler and returns
+C<$self>. The handler is later invoked as C<< $cb->($summary, $raw_data) >>
+when the C</post_prompt> endpoint receives a POST, with C<$summary> taken
+from C<< post_prompt_data.parsed >> falling back to
+C<< post_prompt_data.raw >>, and C<$raw_data> the whole decoded body.
+
+Passing anything else DISPATCHES: it forwards to the registered handler and
+returns that handler's value. With no handler registered it returns empty --
+the base implementation is a deliberate no-op, matching the reference's
+overridable hook.
+
+=item C<on_debug_event($cb)>
+
+Register a handler for debug webhook events, called with
+C<($event_type, $data)>. Returns C<$self>.
+
+B<Currently inert in this port>: the handler is stored on
+C<debug_event_handler> and nothing in the Perl SDK ever reads it -- there is
+no C</debug_events> route in the PSGI app. C<enable_debug_events> still works
+(it renders C<< ai.params.debug_events >>, so the platform emits the stream),
+but the events have nowhere to arrive.
+
+=item C<get_full_url(%opts)>
+
+The agent's externally-reachable base URL: the proxy base if one is
+configured, else C<< http://host:port >>, with the route appended (a bare
+C</> route contributes nothing). Pass C<< include_auth => 1 >> to splice the
+basic-auth credentials into the authority as C<< user:pass@ >>.
+
+Unlike the callback-URL builders this does NOT consult the request's
+C<X-Forwarded-*> headers -- it works off configuration only, so it is
+callable outside a request but will report C<< host:port >> for a
+proxied agent whose proxy base was never set.
+
+=item C<get_name()>
+
+The agent's C<name>. A named getter for callers who prefer it;
+C<< $agent->name >> returns the same value.
+
+=back
 
 =head2 MCP
 
-C<add_mcp_server>, C<enable_mcp_server>.
+=over 4
 
-=head2 Serving
+=item C<add_mcp_server($url, %opts)>
 
-C<render_swml>, C<psgi_app>, C<handle_request>, C<run>, C<serve>,
-C<handle_serverless_request>.
+Register an external MCP server whose tools the platform discovers and
+exposes as SWAIG functions. C<%opts> recognizes C<headers> (a hashref, e.g.
+an Authorization header), C<resources> (truthy means fetch the server's
+resources into C<global_data>; emitted as a JSON boolean C<true>, and OMITTED
+entirely when false), and C<resource_vars> (URI-template substitutions).
+Rendered as C<< ai.mcp_servers >>.
+
+This is the OUTBOUND direction -- the agent consuming someone else's MCP
+server. It is unrelated to C<enable_mcp_server>.
+
+=item C<enable_mcp_server()>
+
+The INBOUND direction: expose this agent's own registered SWAIG tools over
+MCP at C<< <route>/mcp >>. The route is always dispatched by the PSGI app,
+but returns 404 with C<< {"error":"MCP server not enabled"} >> until this is
+called. The endpoint speaks JSON-RPC 2.0 and implements C<initialize>,
+C<notifications/initialized>, C<tools/list>, C<tools/call>, and C<ping>;
+each tool's C<parameters> becomes its C<inputSchema> (wrapped in an
+C<< {type:"object", properties:...} >> envelope when it is not already an
+object schema).
+
+B<This endpoint is not behind the basic-auth check> that guards C</swaig>
+and C</post_prompt>, so enabling it publishes tool discovery and invocation
+unauthenticated unless a C<signing_key> is configured.
+
+=back
+
+=head2 Rendering and serving
+
+=over 4
+
+=item C<render_swml($request_env)>
+
+Build and return the complete SWML document as a HASHREF (not JSON) --
+C<< { version => '1.0.0', sections => { main => [...] } } >>. C<$request_env>
+is an optional PSGI-style env, used only for proxy detection when deriving
+the callback URLs; it defaults to C<{}>, so this is callable with no
+arguments for inspection or testing.
+
+The C<main> section is the five phases described under L</Answer and verb
+insertion>. Basic-auth credentials are spliced into the derived webhook and
+post-prompt URLs unless they already contain an C<@>.
+
+One thing this public entry point CANNOT do is mint per-tool C<__token>
+values: a token is bound to a call id, and the call id is threaded by the
+internal call-aware render that the serving paths use. Rendering an agent
+with SECURE tools outside a served request therefore yields their webhook
+URLs without tokens.
+
+=item C<psgi_app()>
+
+The agent as a PSGI coderef, ready for any Plack handler. Routes:
+C</health> and C</ready> (unauthenticated JSON liveness), the main route
+(SWML -- delegated to C<handle_request>, so it honors routing-callback
+redirects), any registered routing-callback path, C<< <route>/swaig >>,
+C<< <route>/post_prompt >>, and C<< <route>/mcp >>; everything else 404s.
+
+Three wrappers are applied. Request bodies over 1 MB get a 413 (the body is
+buffered and C<psgi.input> replaced so handlers can re-read it).
+C<X-Content-Type-Options>, C<X-Frame-Options>, and C<Cache-Control> are added
+to every response. And when C<signing_key> is set -- explicitly or from
+C<SIGNALWIRE_SIGNING_KEY> -- L<SignalWire::Security::WebhookMiddleware> gates
+POSTs to the main, C</swaig>, and C</post_prompt> paths, rejecting unsigned
+or invalid requests with 403.
+
+B<When C<signing_key> is unset, signature validation is silently OFF> and the
+agent C<carp>s a one-time warning. Note that C<trust_proxy_for_signature>
+defaults false: forwarding headers are spoofable, so URL reconstruction
+ignores them unless you opt in.
+
+=item C<handle_request($method, $url, $headers, $body)>
+
+The framework-free dispatch core -- everything the PSGI main route does,
+over plain primitives. Returns a three-element list
+C<< ($status, \%headers, $body_string) >>, so a port to any other HTTP
+framework only needs to marshal into and out of this.
+
+C<$headers> is B<required>, deliberately: it used to default to C<{}>, which
+turned a forgotten argument into an unauthenticated request instead of an
+error. C<$body> is the only optional one -- an ALREADY-PARSED hashref for
+POST, not a raw string.
+
+Three outcomes: C<401> with a C<WWW-Authenticate> challenge when basic auth
+fails; C<307> with a C<Location> when a registered routing callback for the
+request path returns a URL; otherwise C<200> with the rendered SWML as JSON.
+A routing callback that dies is logged as C<error_in_routing_callback> and
+treated as "no redirect".
+
+Along the way it extracts the call id from C<< body.call_id >> falling back
+to C<< body.call.call_id >>, and threads it into the render so SECURE tools
+get their C<__token>; runs the dynamic-config callback against a clone when
+one is installed; and merges any hashref returned by the C<on_swml_request>
+subclass hook OVER the rendered document (a shallow top-level merge, so
+returning a C<sections> key replaces the whole document body).
+
+=item C<run(%opts)>
+
+Start the agent. Delegates straight to C<serve>, with one guard: when
+C<SWAIG_TEST_INPROCESS> is set in the environment it returns C<$self>
+WITHOUT binding a socket. That guard is what lets C<swaig-test --file> load
+an agent script that ends in C<< $agent->run >> for introspection -- without
+it, every such script would block forever serving. It applies to all agent
+files, not just those that hand-wrote an C<unless caller> guard.
+
+=item C<serve(%opts)>
+
+Bind and serve, blocking until the server stops. C<%opts> takes C<host> and
+C<port>, each defaulting to the corresponding attribute. Carries the same
+C<SWAIG_TEST_INPROCESS> early return as C<run>.
+
+Serves HTTPS directly -- no reverse proxy needed -- when a cert/key pair
+resolves, from either of two sources: explicit C<ssl_cert> + C<ssl_key>
+options (accepted as C<ssl_cert_path> / C<ssl_key_path> too), which always
+force TLS; or the environment, where TLS requires C<SWML_SSL_ENABLED> to be
+C<true>/C<1>/C<yes> B<and> both C<SWML_SSL_CERT_PATH> and
+C<SWML_SSL_KEY_PATH> to be set. A failed TLS bind C<croak>s with the
+underlying SSL error. Otherwise it runs plaintext under
+C<HTTP::Server::PSGI> via C<Plack::Runner>.
+
+=item C<handle_serverless_request(%opts)>
+
+Dispatch a single request in a serverless environment. C<%opts> takes
+C<event>, C<context>, and an optional C<mode>; when C<mode> is omitted it is
+auto-detected from the environment (C<GATEWAY_INTERFACE> means CGI, the
+C<AWS_LAMBDA_*> vars mean Lambda, and so on).
+
+The return shape B<varies by mode>, so a caller must know which one it is in:
+
+C<lambda> returns a Lambda-proxy hashref
+C<< { statusCode, headers, body } >>. This mode does NOT route through the
+PSGI app -- it enforces basic auth itself (401 challenge on failure), then
+dispatches C</swaig> with the function named in the body, or a path-named
+function, or falls back to rendering the SWML document at the root.
+
+C<cgi> reads the body off STDIN per C<CONTENT_LENGTH>, runs the request
+through the PSGI app, and returns just the response BODY STRING -- no status,
+no headers.
+
+C<google_cloud_function> (or C<gcf>) and C<azure_function> (or C<azure>)
+both run through the PSGI app and return C<< { status, headers, body } >> --
+note C<status>, not C<statusCode>, and the header hashref is flattened from
+the PSGI arrayref.
+
+Any other mode falls through to C<< run(host, port) >>, which BLOCKS serving
+-- so an unrecognized mode string does not error, it starts a server.
+
+=back
 
 =head1 SEE ALSO
 

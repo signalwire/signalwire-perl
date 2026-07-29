@@ -367,6 +367,18 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 sched_gate PUBLIC-JARGON res=dayone desc="no porting/internal jargon leaked into the public surface" \
     -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port perl --repo .
 
+# DOC-SURFACE (§6.3): public doc-comment (POD) coverage floor.
+# BLOCKING, and deliberately with NO skip-with-pass guard: a missing gate script must
+# FAIL, not quietly pass — a fail-open guard is how a gate ships green-and-vacuous.
+# perl is measured by NAME, not adjacency: POD documents subs in a trailing block
+# (`=head2 foo`, `=item C<foo($bar)>`) hundreds of lines below the code, so
+# doc_surface.py gives perl its own _measure_perl rather than the generic
+# preceding-comment branch. perl is at 100.0% (715/715) as of the 2026-07-29 burn and
+# .doc_surface_floor is pinned there, so the next undocumented public sub is a real
+# regression with a pinned number to prove it.
+sched_gate DOC-SURFACE desc="public POD doc coverage holds the .doc_surface_floor ratchet (100% — blocking)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_surface.py" --port perl --repo "$PORT_ROOT"
+
 # WIRED-MODES (Part 1.6 / D7): the merge-coherence guard — greps this run-ci.sh for
 # every load-bearing env/mode line declared in WIRED_MODES.md (strict-mocks exports)
 # and fails loud if a merge ever silently drops one, so a wired mode can't vanish and

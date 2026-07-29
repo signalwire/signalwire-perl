@@ -434,6 +434,15 @@ C<max_tokens>). The service returns EXACTLY ONE of C<{summary}> or C<{error}>
 (both on the success envelope), so a failed generation is raised as a
 C<SignalWire::AIChat::SummaryError> -- never a silent empty string.
 
+=item close()
+
+Release the client's transport resources, completing the lifecycle
+contract. In this port it is a B<well-defined no-op>: C<HTTP::Tiny> opens a
+fresh connection per request and keeps no persistent session, so there is
+nothing to tear down. The reference closes a persistent
+C<aiohttp.ClientSession> here. Safe and idempotent — call it as often as
+you like, including never.
+
 =back
 
 =head1 ERRORS

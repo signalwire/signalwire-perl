@@ -270,6 +270,21 @@ config params the skill accepts.
 =item * C<get_instance_key> — the registry key for this skill instance
 (C<skill_name>, optionally suffixed by C<tool_name>).
 
+=item * C<validate_packages> — 1 when every C<required_packages> entry can
+be C<require>d, 0 when any cannot. A successful check leaves those modules
+B<loaded>, matching the reference's C<importlib.import_module>, so it is a
+load as much as a test.
+
+=item * C<get_skill_data($raw_data)> — read this skill instance's slice of
+the call's global data, looked up under the skill's own namespace. Returns
+an empty hashref when the request carries no global data or the namespace
+is absent, never undef.
+
+=item * C<update_skill_data($result, $data)> — write C<$data> into a
+L<SignalWire::SWAIG::FunctionResult> under the skill's namespace, so one
+skill cannot clobber another's state. Returns the B<result> (not C<$self>)
+so the call chains onto the FunctionResult.
+
 =back
 
 =head1 SEE ALSO

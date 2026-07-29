@@ -456,6 +456,34 @@ back to a base L<SignalWire::Relay::Event> carrying the raw type and
 params. Normally called by L<SignalWire::Relay::Client> as it demultiplexes
 the WebSocket stream.
 
+=head2 from_payload
+
+    my $event = SignalWire::Relay::Event::CallState->from_payload($payload);
+
+Class-method constructor that builds an event straight from a decoded
+RELAY frame — C<< { event_type => ..., params => {...} } >>. The base
+implementation stores C<event_type> and C<params> whole, lifts C<timestamp>
+out of the params, and then B<flattens every param key onto the object> so
+the frame's fields are reachable as named accessors.
+
+Several subclasses override it to normalize their own payload shape after
+calling the base:
+
+=over 4
+
+=item *
+
+C<::CallRecord> resolves C<url>, C<duration> and C<size> from a nested
+C<params.record> object, falling back to the flat params and finally to
+empty/zero defaults — so both wire shapes read the same.
+
+=item *
+
+C<::CallQueue> maps the frame's generic C<id> and C<name> onto the more
+specific C<queue_id> and C<queue_name>.
+
+=back
+
 =head1 EVENT TYPES
 
 The recognised C<event_type> strings and their subclasses include the

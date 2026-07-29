@@ -1360,8 +1360,24 @@ Lazily built accessors mirroring the Python reference's schema/verb-registry
 =item C<to_psgi_app>
 
 Return the PSGI app coderef that dispatches this service's routes (main
-SWML, C</swaig>, C</post_prompt>, health/ready). C<as_router> and C<get_app>
-are aliases.
+SWML, C</swaig>, C</post_prompt>, health/ready).
+
+=item C<as_router>
+
+The routable unit for mounting this service — an alias for C<to_psgi_app>.
+Named for the reference's C<as_router>, which returns a FastAPI
+C<APIRouter>; Perl's routable unit is the PSGI app.
+
+=item C<get_app>
+
+The deployable application — also an alias for C<to_psgi_app>, under the
+reference's C<get_app> name (which returns the FastAPI app). Deployment
+adapters mount this.
+
+=item C<stop>
+
+Signal a running C<serve> loop to stop by clearing its running flag.
+Returns nothing; it does not block until the server has actually exited.
 
 =item C<handle_request($method, $url, $headers, $body)>
 
@@ -1401,8 +1417,13 @@ Constant-time-compare the given credentials against the service's.
 
 Return C<($user, $password)>, or C<($user, $password, $source)> when
 C<$include_source> is truthy (source is C<provided>/C<environment>/
-C<generated>). C<get_basic_auth_credentials_with_source> is a convenience
-alias.
+C<generated>).
+
+=item C<get_basic_auth_credentials_with_source>
+
+Always return the three-element C<($user, $password, $source)> form — a
+named alias for C<< get_basic_auth_credentials(1) >>, kept for callers that
+prefer the explicit spelling to a boolean flag.
 
 =item C<extract_sip_username($request_body)>
 
@@ -1453,6 +1474,14 @@ Whether strict schema validation is on.
 
 Override the external base URL used for webhook URLs behind a proxy.
 
+=item C<can($method)>
+
+Overrides UNIVERSAL::can so it also knows about B<schema verbs>. Real
+methods resolve normally; failing that, any verb the SWML schema declares
+resolves to a coderef that dispatches it. Without this override, ordinary
+C<< $service->can('play') >> would report false for verbs the service does
+in fact accept via C<AUTOLOAD>.
+
 =back
 
 =head2 SWAIG tool registry
@@ -1472,10 +1501,21 @@ Register multiple tool definitions at once.
 
 Register a raw SWAIG function definition (e.g. from DataMap).
 
-=item C<has_function($name)>, C<get_function($name)>,
-C<get_all_functions>, C<remove_function($name)>
+=item C<has_function($name)> / C<get_function($name)>
 
-Query and manage the tool registry.
+Query the tool registry: whether a function is registered, and the
+registered definition itself.
+
+=item C<get_all_functions>
+
+A B<shallow copy> of the registry keyed by function name — mutating the
+returned hashref does not affect the service, though the definitions inside
+it are shared.
+
+=item C<remove_function($name)>
+
+Unregister a function, removing it from both the registry and the
+registration order. Returns 1 if it was there and 0 if it was not.
 
 =item C<list_tool_names>
 
@@ -1491,11 +1531,19 @@ Dispatch a function call to its registered handler.
 
 =over 4
 
-=item C<on_request($request_data, $callback_path)> /
-C<on_swml_request($request_data, $callback_path, $request)>
+=item C<on_request($request_data, $callback_path)>
 
-Customization hooks for modifying the SWML based on request data. The
-default returns undef (no modification).
+Called when SWML is requested. The default simply delegates to
+C<on_swml_request> and returns its result, so subclasses normally override
+that instead of this. Return undef to keep the default rendering, or a
+hashref of modifications to merge into the rendered document.
+
+=item C<on_swml_request($request_data, $callback_path, $request)>
+
+The customization point subclasses are meant to override; the default
+implementation returns undef, i.e. no modification. C<$request> is the PSGI
+C<$env> hashref (the reference's optional FastAPI C<Request>), and may be
+ignored by subclasses that do not need direct request access.
 
 =item C<register_routing_callback($callback_fn, $path)>
 

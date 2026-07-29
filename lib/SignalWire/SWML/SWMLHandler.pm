@@ -193,6 +193,8 @@ sub has_handler ( $self, $verb_name ) {
 
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
 SignalWire::SWML::SWMLHandler - SWML verb handler interface and implementations
@@ -227,6 +229,86 @@ C<ai> verb, with prompt/SWAIG validation and config building.
 
 =item * C<SignalWire::SWML::SWMLHandler::VerbHandlerRegistry> - registry that
 auto-registers the AI handler on construction.
+
+=back
+
+=head1 METHODS
+
+=head2 SignalWire::SWML::SWMLHandler
+
+The abstract base. Perl has no abstract methods, so each of these B<dies>
+when called — a subclass that forgets to override one fails loudly instead
+of silently returning undef.
+
+=over 4
+
+=item C<get_verb_name()>
+
+The SWML verb this handler serves. Must be overridden.
+
+=item C<validate_config($config)>
+
+Check a config for this verb. Must be overridden. Returns the two-element
+list C<($is_valid, $errors_arrayref)>.
+
+=item C<build_config(%kwargs)>
+
+Build a config hashref for this verb from keyword arguments. Must be
+overridden.
+
+=back
+
+=head2 SignalWire::SWML::SWMLHandler::AIVerbHandler
+
+=over 4
+
+=item C<get_verb_name()>
+
+Returns the string C<'ai'>.
+
+=item C<validate_config($config)>
+
+Validate an C<ai> verb config, returning C<($is_valid, $errors_arrayref)>.
+It reports B<every> problem it finds rather than stopping at the first,
+except that a missing or non-object C<prompt> short-circuits immediately.
+C<prompt> is required, must be an object, and must carry B<exactly one> of
+C<text> or C<pom> — neither is an error and both is an error. C<prompt.contexts>
+and C<SWAIG>, when present, must each be objects.
+
+=item C<build_config(%kwargs)>
+
+Build an C<ai> verb config. Requires exactly one of C<prompt_text> or
+C<prompt_pom> and B<dies> otherwise — note this is a die, whereas the same
+violation in C<validate_config> is merely reported. C<contexts>,
+C<post_prompt>, C<post_prompt_url> and C<swaig> are consumed by name;
+C<post_prompt> is wrapped as C<< { text => ... } >>.
+
+Every remaining keyword is routed by name: C<languages>, C<hints>,
+C<pronounce> and C<global_data> land at the B<top level>, and everything
+else drops into C<params>. C<params> is always initialised, so it is
+present as an empty hashref even when nothing routes into it.
+
+=back
+
+=head2 SignalWire::SWML::SWMLHandler::VerbHandlerRegistry
+
+Constructing a registry automatically registers the AI verb handler, so
+C<ai> works without any setup.
+
+=over 4
+
+=item C<register_handler($handler)>
+
+Register a handler under the verb name it reports, B<replacing> any
+handler already registered for that verb. Returns nothing useful.
+
+=item C<get_handler($verb_name)>
+
+The handler for that verb, or C<undef> if none is registered.
+
+=item C<has_handler($verb_name)>
+
+1 or 0 — whether a handler is registered for that verb.
 
 =back
 

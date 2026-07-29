@@ -721,28 +721,252 @@ The device hashref (type plus C<from_number> / C<to_number> params).
 
 =head2 Fire-and-response verbs
 
-C<answer>, C<hangup>, C<pass>, C<connect>, C<disconnect>, C<hold>,
-C<unhold>, C<denoise>, C<denoise_stop>, C<transfer>, C<join_conference>,
-C<leave_conference>, C<echo>, C<bind_digit>, C<clear_digit_bindings>,
-C<live_transcribe>, C<live_translate>, C<join_room>, C<leave_room>,
-C<amazon_bedrock>, C<ai_message>, C<ai_hold>, C<ai_unhold>, C<user_event>,
-C<queue_enter>, C<queue_leave>, C<refer>, C<send_digits>. Each forwards
-its keyword arguments to the matching RELAY method.
+Each sends its RELAY method with the call's C<node_id>/C<call_id> plus the
+caller's keyword arguments, and returns the server's decoded result hashref.
+All of them apply the A2 relay contract: a result carrying C<code> 404 or 410
+means the call is already gone, so the verb is a silent no-op; any other
+non-2xx C<code> raises a C<SignalWire::Relay::Client::RelayError>.
+
+=over 4
+
+=item C<answer(%opts)>
+
+Answer an inbound call (C<calling.answer>).
+
+=item C<hangup(%opts)>
+
+End the call (C<calling.end>). C<%opts> may carry a C<reason>.
+
+=item C<pass()>
+
+Decline the call so another consumer in the same context may take it
+(C<calling.pass>). Takes no arguments.
+
+=item C<connect(%opts)>
+
+Dial one or more peer devices and bridge them to this call
+(C<calling.connect>). The C<devices> argument is the serial/parallel nested
+arrayref the RELAY guide describes.
+
+=item C<disconnect()>
+
+Tear down the current peer bridge (C<calling.disconnect>), leaving this leg
+up. Takes no arguments.
+
+=item C<hold()> / C<unhold()>
+
+Place the call on hold and take it off again (C<calling.hold> /
+C<calling.unhold>). Neither takes arguments.
+
+=item C<denoise()> / C<denoise_stop()>
+
+Start and stop server-side background-noise suppression
+(C<calling.denoise> / C<calling.denoise.stop>). Neither takes arguments.
+
+=item C<transfer(%opts)>
+
+Hand the call off to another destination (C<calling.transfer>), ending this
+SDK's control of it.
+
+=item C<join_conference(%opts)> / C<leave_conference(%opts)>
+
+Join and leave a named conference (C<calling.join_conference> /
+C<calling.leave_conference>).
+
+=item C<join_room(%opts)> / C<leave_room(%opts)>
+
+Join and leave a video room (C<calling.join_room> / C<calling.leave_room>).
+
+=item C<echo(%opts)>
+
+Echo the call's own audio back to it (C<calling.echo>) — a media-path
+diagnostic.
+
+=item C<bind_digit(%opts)> / C<clear_digit_bindings(%opts)>
+
+Register a DTMF digit that raises an event when pressed, and clear every
+such binding (C<calling.bind_digit> / C<calling.clear_digit_bindings>).
+
+=item C<live_transcribe($action, %opts)> / C<live_translate($action, %opts)>
+
+Control live transcription and translation
+(C<calling.live_transcribe> / C<calling.live_translate>). C<$action> is
+positional and is sent as the C<action> parameter (e.g. C<start> / C<stop>).
+
+=item C<amazon_bedrock(%opts)>
+
+Attach an Amazon Bedrock agent to the call (C<calling.amazon_bedrock>).
+This is its own RELAY method, not C<calling.ai> with an engine argument.
+
+=item C<ai_message(%opts)> / C<ai_hold()> / C<ai_unhold()>
+
+Inject a message into a running AI session, and hold/unhold that session
+(C<calling.ai_message> / C<calling.ai_hold> / C<calling.ai_unhold>).
+C<ai_hold> and C<ai_unhold> accept keyword arguments but normally take none.
+
+=item C<user_event(%opts)>
+
+Emit an application-defined event onto the call (C<calling.user_event>).
+
+=item C<queue_enter(%opts)> / C<queue_leave(%opts)>
+
+Place the call into a queue and remove it (C<calling.queue.enter> /
+C<calling.queue.leave>).
+
+=item C<refer(%opts)>
+
+Send a SIP REFER (C<calling.refer>).
+
+=item C<send_digits(%opts)>
+
+Send a DTMF string out on the call (C<calling.send_digits>).
+
+=back
 
 =head2 Action-based verbs
 
-C<play>, C<record>, C<detect>, C<collect>, C<play_and_collect>,
-C<send_fax>, C<receive_fax>, C<tap>, C<stream>, C<pay>, C<transcribe>,
-C<ai> — each returns a L<SignalWire::Relay::Action> subclass that tracks a
-C<control_id> and resolves when the operation completes.
+Each starts a long-running operation and returns a
+L<SignalWire::Relay::Action> subclass immediately, B<without> blocking. The
+Action carries a generated C<control_id>, is registered on the call so
+incoming events route to it, and resolves when the operation reaches a
+terminal state — call C<< ->wait >> or C<< ->on_completed >> on it. If the
+call is already gone (404/410) the Action resolves at once; any other
+non-2xx result raises and the Action is not left registered.
+
+=over 4
+
+=item C<play(%opts)>
+
+Play a media list (C<calling.play>). C<play> is an arrayref of RELAY media
+objects. Returns a C<::Play> action.
+
+=item C<record(%opts)>
+
+Start recording (C<calling.record>). Returns a C<::Record> action whose
+C<url>, C<duration> and C<size> are populated on completion.
+
+=item C<detect(%opts)>
+
+Run a detector (C<calling.detect>). Returns a C<::Detect> action that
+resolves on the first detect payload.
+
+=item C<collect(%opts)>
+
+Collect digits or speech with no prompt (C<calling.collect>). Returns a
+C<::StandaloneCollect> action.
+
+=item C<play_and_collect(%opts)>
+
+Play a prompt and collect input in one operation
+(C<calling.play_and_collect>). Returns a C<::Collect> action, which
+deliberately filters C<calling.call.play> events out so a finished prompt
+does not resolve the collect.
+
+=item C<send_fax(%opts)> / C<receive_fax(%opts)>
+
+Send and receive a fax (C<calling.send_fax> / C<calling.receive_fax>).
+Both return a C<::Fax> action; C<receive_fax> constructs it with
+C<method_prefix> C<receive_fax> so its stop verb targets the right method.
+
+=item C<tap(%opts)> / C<stream(%opts)>
+
+Start media tapping and media streaming (C<calling.tap> /
+C<calling.stream>). Return C<::Tap> and C<::Stream> actions, both
+stop-verb-only.
+
+=item C<pay(%opts)>
+
+Run a payment collection flow (C<calling.pay>). Returns a C<::Pay> action.
+
+=item C<transcribe(%opts)>
+
+Start transcription (C<calling.transcribe>). Returns a C<::Transcribe>
+action, stop-verb-only.
+
+=item C<ai(%opts)>
+
+Attach an AI agent to the call (C<calling.ai>). Returns an C<::AI> action,
+stop-verb-only.
+
+=back
 
 =head2 Typed convenience wrappers
 
-C<play_tts>, C<play_audio>, C<play_silence>, C<play_ringtone> build the
-RELAY media object and delegate to C<play>. C<detect_digit>,
-C<detect_answering_machine>, C<detect_fax> build the detect object and
-delegate to C<detect>. C<prompt_tts> / C<prompt_audio> play a prompt and
-collect input via C<play_and_collect>.
+These build the RELAY media/detect object for you and delegate to the verb
+above. Optional parameters are included only when you actually supply them,
+so the emitted wire object carries no C<undef> keys.
+
+=over 4
+
+=item C<play_tts($text, %opts)>
+
+Play synthesized speech. Sends C<< { type => 'tts', params => { text => $text } } >>
+to C<play>; C<language>, C<gender> and C<voice> are folded into the TTS
+params when given, and C<volume> / C<on_completed> are passed to C<play> as
+siblings of the media list.
+
+=item C<play_audio($url, %opts)>
+
+Play the audio file at C<$url> (C<< { type => 'audio' } >>). Accepts
+C<volume> and C<on_completed>.
+
+=item C<play_silence($duration, %opts)>
+
+Play C<$duration> seconds of silence (C<< { type => 'silence' } >>).
+Accepts C<on_completed>. Note it takes no C<volume>.
+
+=item C<play_ringtone($name, %opts)>
+
+Play the named ringtone (C<< { type => 'ringtone' } >>). Accepts
+C<duration>, C<volume> and C<on_completed>.
+
+=item C<detect_digit(%opts)>
+
+Detect DTMF (C<< { type => 'digit' } >>). C<digits> narrows which digits
+count. C<timeout> is a sibling of the detect object, not one of its params.
+
+=item C<detect_answering_machine(%opts)>
+
+Run answering-machine detection (C<< { type => 'machine' } >>). Only the
+AMD knobs you pass are sent — C<initial_timeout>, C<end_silence_timeout>,
+C<machine_voice_threshold>, C<machine_words_threshold>,
+C<detect_interruptions>, C<detect_message_end> — and the server defaults the
+rest.
+
+=item C<detect_fax(%opts)>
+
+Detect fax tones (C<< { type => 'fax' } >>). C<tone> selects which tone.
+
+=item C<prompt_tts($text, $collect, %opts)> / C<prompt_audio($url, $collect, %opts)>
+
+Play a TTS or audio prompt and collect input, via C<play_and_collect>.
+C<$collect> is passed through verbatim as the RELAY collect object; only the
+play media is built for you. Both accept C<volume> and C<on_completed>.
+
+=back
+
+=head2 Blocking state waits
+
+=over 4
+
+=item C<wait_for(%opts)>
+
+Block until the first event matching C<event_type> arrives (optionally
+filtered by a C<predicate> coderef), returning that event, or C<undef> if
+C<timeout> (default 30s) elapses first. This B<pumps the client's read loop>
+while it waits — a bare sleep would never see the event, because listeners
+only fire as frames are dispatched.
+
+=item C<wait_for_ringing(%opts)>, C<wait_for_answered(%opts)>, C<wait_for_ending(%opts)>, C<wait_for_ended(%opts)>
+
+Block until the call reaches that lifecycle state, honouring C<timeout>
+(default 30s). States are ordered
+C<created> E<lt> C<ringing> E<lt> C<answered> E<lt> C<ending> E<lt> C<ended>,
+and a call already at or B<past> the requested state returns immediately with
+a synthetic state event rather than waiting for one that will never come
+again.
+
+=back
 
 =head2 Events
 
@@ -750,10 +974,14 @@ collect input via C<play_and_collect>.
 
 =item * C<on($cb)> — register a listener invoked as
 C<< $cb->($call, $event) >> for every dispatched event. The callback must
-be a coderef.
+be a coderef. Returns C<$self> so calls chain. A callback that dies is
+warned about, not fatal — one bad listener cannot break dispatch.
 
 =item * C<dispatch_event($event)> — apply an incoming event (normally
-called by the client).
+called by the client). Updates C<state>/C<end_reason>/C<peer> from state
+frames, resolves every pending action once the call reaches a terminal
+state, routes the event to the action owning its C<control_id>, then fires
+the C<on> listeners.
 
 =back
 
@@ -774,6 +1002,17 @@ C<< ->is_terminal >> for membership and terminality.
 state (C<ended>). Delegates to L<SignalWire::Relay::CallState> so the
 terminal definition lives in one place; returns false (never dies) on an
 unknown/forward-compatible state.
+
+=back
+
+=head2 Diagnostics
+
+=over 4
+
+=item C<to_string()>
+
+A human-readable C<Call(call_id=..., state=...)> summary, the Perl
+counterpart of the reference's C<__repr__>.
 
 =back
 

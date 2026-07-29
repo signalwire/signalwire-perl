@@ -269,8 +269,60 @@ formats the returned C<{content,score,metadata}> results. The local RAG /
 vector backend (C<signalwire.search.*>) is Python-only and not ported; this
 wrapper is a normal L<SignalWire::Skills::SkillBase> skill.
 
-C<setup> requires the C<remote_url> param (returns false when absent) and
-SSRF-validates it via L<SignalWire::Utils::UrlValidator>.
+=head1 METHODS
+
+These implement the L<SignalWire::Skills::SkillBase> contract; the skill
+manager calls them, so you rarely call them yourself.
+
+=over 4
+
+=item C<setup()>
+
+Read the skill params and prepare the remote client, returning 1 on success
+and B<0 to refuse loading>. It refuses when C<remote_url> is missing or
+empty, and when the URL fails the SSRF check in
+L<SignalWire::Utils::UrlValidator> — which rejects non-HTTP(S) schemes and
+hosts resolving into private, loopback, link-local or cloud-metadata
+ranges. Tests opt out via C<SWML_ALLOW_PRIVATE_URLS>.
+
+Defaults applied here: C<tool_name> C<search_knowledge>, C<count> 3, plus a
+default description and no-results message. Any C<user:pass@> userinfo
+embedded in the URL is B<split out> into a base64 Authorization header and
+stripped from the stored base URL, and a trailing slash is trimmed.
+
+=item C<get_instance_key()>
+
+The key that lets one agent load this skill more than once —
+C<"native_vector_search_E<lt>tool_nameE<gt>">, so two instances differ as
+long as they use different tool names.
+
+=item C<register_tools()>
+
+Register the search tool under C<tool_name>, taking a required C<query>
+string and an optional C<count> integer. The handler closes over a
+B<weakened> reference to the skill, so the closure cannot keep the skill
+alive in a reference cycle.
+
+=item C<get_hints()>
+
+Speech-recognition hints — the five built-ins (search, find, look up,
+documentation, knowledge base) plus any arrayref supplied in the C<hints>
+param. A non-arrayref C<hints> is silently ignored.
+
+=item C<get_global_data()>
+
+Returns C<< { search_mode => 'remote' } >>. This port has no local search
+engine, so there are no index statistics to report — only the mode
+sentinel.
+
+=item C<get_parameter_schema()>
+
+The skill's parameter schema, merged over
+L<SignalWire::Skills::SkillBase>'s base schema. C<remote_url> is the only
+required entry; C<count> defaults to 3 and is bounded 1..20, and
+C<similarity_threshold> defaults to 0.5.
+
+=back
 
 =head1 LICENSE
 

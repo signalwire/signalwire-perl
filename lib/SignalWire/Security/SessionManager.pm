@@ -246,13 +246,24 @@ Return C<$call_id>, generating a random URL-safe id when none is given.
 =item C<generate_token($function_name, $call_id)>
 
 Issue a signed, base64url-encoded token scoped to C<$function_name> and
-C<$call_id>. C<create_tool_token> is an alias with the same signature.
+C<$call_id>.
+
+=item C<create_tool_token($function_name, $call_id)>
+
+Alias for C<generate_token>, with the same argument order.
 
 =item C<validate_token($call_id, $function_name, $token)>
 
 Return C<1> when C<$token> is well-formed, unexpired, and its signature,
-function, and call id all match; C<0> otherwise. C<validate_tool_token>
-is an alias taking C<($function_name, $token, $call_id)>.
+function, and call id all match; C<0> otherwise. Returns 0 rather than
+dying on a malformed or undecodable token.
+
+=item C<validate_tool_token($function_name, $token, $call_id)>
+
+Alias for C<validate_token> — but note the B<argument order differs>:
+C<$function_name, $token, $call_id> here versus
+C<$call_id, $function_name, $token> there. The two are not interchangeable
+positionally, so pick one spelling and keep to it.
 
 =item C<activate_session>, C<end_session>, C<get_session_metadata>, C<set_session_metadata>
 

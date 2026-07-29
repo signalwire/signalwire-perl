@@ -257,8 +257,15 @@ Register C<$skill_class> under C<$skill_name>.
 
 Return the class (or factory) for C<$skill_name>, auto-loading it from
 the C<Builtin::> namespace if not already registered; C<undef> if
-unknown. C<get_skill_class> is the class-returning alias, mirroring
-Python's C<get_skill_class>.
+unknown.
+
+=item C<< get_skill_class($skill_name) >>
+
+The skill's package name, loading it on demand — an alias for
+C<get_factory> under the reference's C<get_skill_class> name. Returns
+C<undef> for an unknown skill. In this port a skill's class B<is> its
+factory, so the two spellings return the same thing; both exist so code
+ported from either idiom reads naturally.
 
 =item C<< list_skills() >> / C<< discover_skills() >>
 

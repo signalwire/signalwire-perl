@@ -1083,42 +1083,504 @@ method (C<< SignalWire::Contexts->create_simple_context('x') >>).
 
 =head1 METHODS
 
-=head2 SignalWire::Contexts::ContextBuilder
+Because five packages share this one file, every method below is labelled
+with the class it belongs to. Three names are declared on more than one
+class — C<add_section>, C<add_bullets> and C<set_history> exist on both
+C<Step> and C<Context>, and C<to_hash> exists on four of the five — and the
+two implementations are B<not> interchangeable, so read the class heading
+before the method.
 
-C<new>, C<attach_agent>, C<reset>, C<add_context>, C<get_context>,
-C<has_contexts>, C<validate>, C<to_hash>. C<validate> enforces the
-single-context-must-be-named-default rule, that every context has steps,
-that C<initial_step>/C<valid_steps>/C<valid_contexts> reference real
-targets, gather-info integrity (non-empty, unique keys, valid
-C<completion_action>), and that no user tool name collides with a reserved
-native tool name.
+Unless a method's entry says otherwise it returns C<$self>, so calls chain.
+Every error in this module is raised with C<die> (a plain string, no
+exception class), so callers wrap in C<eval> to catch.
 
-=head2 SignalWire::Contexts::Context
+=head2 ContextBuilder — workflow assembly
 
-C<add_step>, C<get_step>, C<remove_step>, C<move_step>,
-C<set_initial_step>, C<set_valid_contexts>, C<set_valid_steps>,
-C<set_post_prompt>, C<set_system_prompt>, C<set_consolidate>,
-C<set_full_reset>, C<set_user_prompt>, C<set_isolated>,
-C<add_system_section>, C<add_system_bullets>, C<set_prompt>,
-C<add_section>, C<add_bullets>, C<set_enter_fillers>, C<set_exit_fillers>,
-C<set_history>, C<add_enter_filler>, C<add_exit_filler>, C<to_hash>.
+The top-level builder. C<< SignalWire::Contexts::ContextBuilder->new >>
+takes no arguments; the contexts hash and its insertion order start empty.
 
-=head2 SignalWire::Contexts::Step
+=over 4
 
-C<set_text>, C<add_section>, C<add_bullets>, C<set_step_criteria>,
-C<set_functions>, C<set_valid_steps>, C<set_valid_contexts>, C<set_end>,
-C<set_skip_user_turn>, C<set_skip_to_next_step>, C<set_gather_info>,
-C<add_gather_question>, C<clear_sections>, C<set_reset_system_prompt>,
-C<set_reset_user_prompt>, C<set_reset_consolidate>, C<set_reset_full_reset>,
-C<set_history>, C<to_hash>. Note C<set_functions>' inheritance behavior (a
-step with no declared function set inherits the previous step's active set)
-and that C<set_end> exits step mode but does not end the call.
+=item C<< $builder->add_context($name) >>
 
-=head2 SignalWire::Contexts::GatherInfo and GatherQuestion
+Create a new L</Context> called C<$name>, register it, and append it to the
+insertion order. B<Returns the new Context, not C<$builder>> — this is the
+one builder method that breaks the fluent-C<$self> pattern, because you
+almost always want to keep configuring the context you just made. Dies if
+C<$name> is already taken, or if the builder already holds
+C<$MAX_CONTEXTS> (50) contexts. The name is the only argument: a context's
+prompt is set on the returned object via C<set_prompt> / C<add_section>.
 
-C<GatherInfo> exposes C<add_question> and C<to_hash>; C<GatherQuestion>
-exposes C<to_hash>. Both are normally built via the step-level
-C<set_gather_info> / C<add_gather_question> methods rather than directly.
+=item C<< $builder->get_context($name) >>
+
+Return the L</Context> registered under C<$name>, or C<undef> if there is
+none. Does not create anything and does not die on a miss.
+
+=item C<< $builder->has_contexts() >>
+
+Return C<1> if at least one context is registered, C<0> otherwise. A plain
+boolean, not a count — callers wanting the count should use
+C<< scalar keys >> on the result of their own bookkeeping.
+
+=item C<< $builder->reset() >>
+
+Drop every registered context and clear the insertion order, returning the
+builder to its just-constructed state. The attached agent (see
+C<attach_agent>) is B<not> cleared, so a builder reset mid-configuration
+keeps validating tool names against the same agent.
+
+=item C<< $builder->attach_agent($agent) >>
+
+Record the owning agent so C<validate> can cross-check step function
+whitelists and reserved tool names against the agent's real tool registry.
+The reference is B<weakened> immediately, so attaching does not keep the
+agent alive and does not create a reference cycle between agent and
+builder. C<< AgentBase->define_contexts >> wires this up for you; you only
+call it directly when constructing a builder outside an agent. Passing
+C<undef> clears the agent (the weaken is skipped in that case).
+
+=item C<< $builder->validate() >>
+
+Check the whole workflow and die on the first problem found. B<Returns
+nothing> (an empty list) — it is called for its exceptions, so C<validate>
+is the one non-chainable method here. The checks, in the order they run:
+
+=over 4
+
+=item *
+
+At least one context must exist.
+
+=item *
+
+If there is B<exactly one> context, it must be named C<default>. Two or
+more contexts may be named anything.
+
+=item *
+
+Every context must own at least one step.
+
+=item *
+
+A context's C<initial_step>, if set, must name a step that exists in that
+same context. The error lists the available step names.
+
+=item *
+
+Every entry in a step's C<valid_steps> must name a step in the B<same>
+context. The literal string C<next> is exempt — it is the runtime's
+"advance sequentially" token, not a step name.
+
+=item *
+
+Every entry in a context-level or step-level C<valid_contexts> must name a
+registered context.
+
+=item *
+
+A step's C<gather_info>, if present, must hold at least one question, and
+the question keys must be unique within that step.
+
+=item *
+
+A C<gather_info> C<completion_action> must be one of: C<next_step> (and
+then the step must not be the last in its context's order), C<undef>
+(stay put), or the name of a step in the same context.
+
+=item *
+
+If an agent is attached and can C<list_tool_names>, no registered tool may
+be named C<next_step>, C<change_context> or C<gather_submit> — those are
+injected by the runtime and a user tool of the same name would never be
+reached. The error names every colliding tool.
+
+=item *
+
+If an agent is attached, every name in a step's C<set_functions> B<array>
+whitelist must be either a registered tool or a reserved native name;
+otherwise the step would emit a dangling function reference. Only an
+arrayref is checked — C<undef> (inherit) and the C<"none"> disable-all
+string are not lists of references to resolve. Without an attached agent
+this check is skipped entirely, because a bare builder cannot know the
+tool universe and must not reject a valid document.
+
+=back
+
+=item C<< $builder->to_hash() >>
+
+Run C<validate> (so C<to_hash> dies on any of the problems above), then
+serialize to a hashref keyed by context name, each value being that
+context's C<to_hash>. The contexts are walked in B<insertion order>, so a
+JSON encoder that preserves hash construction order emits them in the order
+you added them.
+
+=back
+
+=head2 Context — a named group of steps
+
+Constructed via C<< $builder->add_context >>, not directly. Carries a
+read-only C<name> plus context-level prompt, history, filler and reset
+settings that apply to every step it owns.
+
+=over 4
+
+=item C<< $ctx->add_step($name, %opts) >>
+
+Create a L</Step> named C<$name>, register it, and append it to the step
+order. B<Returns the new Step, not C<$ctx>>. Dies if the step name is
+already used in this context, or if the context already holds
+C<$MAX_STEPS_PER_CONTEXT> (100) steps.
+
+C<%opts> is a convenience shorthand that forwards to the step's own
+setters, each applied only when the key is defined: C<task> becomes
+C<< $step->add_section('Task', ...) >>, C<bullets> becomes
+C<< $step->add_bullets('Process', ...) >>, and C<criteria>, C<functions>
+and C<valid_steps> forward to C<set_step_criteria>, C<set_functions> and
+C<set_valid_steps>. Any other key is silently ignored — notably there is
+B<no> C<text> or C<valid_contexts> shorthand, so those must be set on the
+returned step. Because C<task>/C<bullets> go through the section path, a
+step created with either of them cannot afterwards use C<set_text>.
+
+=item C<< $ctx->get_step($name) >>
+
+Return the L</Step> registered under C<$name>, or C<undef> if there is
+none.
+
+=item C<< $ctx->remove_step($name) >>
+
+Delete the step and drop it from the step order. A name that is not present
+is B<silently accepted> as a no-op rather than dying. Note that this does
+not scrub references: another step's C<valid_steps>, or the context's
+C<initial_step>, may still point at the removed name, and that only
+surfaces later as a C<validate> failure.
+
+=item C<< $ctx->move_step($name, $position) >>
+
+Reorder an existing step by removing it from the order and splicing it back
+in at index C<$position> (0-based, computed against the list with C<$name>
+already removed). Dies if C<$name> is not a step in this context.
+C<$position> itself is B<not> range-checked: it is handed to C<splice>, so a
+negative index counts from the end and an index past the end appends.
+
+=item C<< $ctx->set_initial_step($step_name) >>
+
+Set which step the context starts on when it is entered. Without this a
+context starts on the first step in its order. Useful to skip a preamble
+step when re-entering a context via C<change_context>. The name is not
+checked here — a step that does not exist is caught later by C<validate>.
+
+=item C<< $ctx->set_prompt($prompt) >>
+
+Set the context prompt as a single block of text. Dies if any prompt POM
+section has already been added via C<add_section>/C<add_bullets> — text and
+sections are mutually exclusive for the context prompt.
+
+=item C<< $ctx->add_section($title, $body) >>
+
+Append a prompt POM section with a title and a body string. Dies if
+C<set_prompt> has already been used. Note this is the B<Context>
+C<add_section> — the same-named C<Step> method fills the step's instruction
+text instead.
+
+=item C<< $ctx->add_bullets($title, $bullets) >>
+
+Append a prompt POM section whose body is the arrayref C<$bullets>,
+rendered as a bullet list. Dies if C<set_prompt> has already been used.
+
+=item C<< $ctx->set_system_prompt($sp) >>
+
+Set the context's system prompt as one block of text. Dies if a system
+prompt section has already been added via C<add_system_section> /
+C<add_system_bullets>. This is tracked separately from C<set_prompt>: a
+context may have both a system prompt and a prompt.
+
+=item C<< $ctx->add_system_section($title, $body) >> / C<< $ctx->add_system_bullets($title, $bullets) >>
+
+Append a titled system-prompt POM section carrying a body string or a
+bullet arrayref respectively. Either dies if C<set_system_prompt> has
+already been used. Unlike the prompt sections, system-prompt sections are
+B<rendered to markdown> before serialization (C<## Title> followed by the
+body or C<- bullet> lines) and emitted as the C<system_prompt> string.
+
+=item C<< $ctx->set_user_prompt($up) >>
+
+Set the context's C<user_prompt> string, emitted verbatim. No validation,
+no interaction with the section machinery.
+
+=item C<< $ctx->set_post_prompt($pp) >>
+
+Set the context's C<post_prompt>, emitted verbatim when defined.
+
+=item C<< $ctx->set_valid_steps($steps) >> / C<< $ctx->set_valid_contexts($contexts) >>
+
+Set the context-level navigation whitelists, each an arrayref of names,
+stored and emitted as given. Declaring either causes the runtime to inject
+the corresponding native tool (C<next_step> / C<change_context>). Both are
+checked by C<validate>, which resolves C<valid_contexts> entries against
+the registered contexts; C<valid_steps> is validated per-B<step>, not here.
+
+=item C<< $ctx->set_isolated($iso) >>
+
+Coerce C<$iso> to 1/0 and mark the context isolated. Entering an isolated
+context via C<change_context> makes the runtime wipe the conversation
+array, so the model starts fresh with only the new context's system prompt
+and step instructions. B<Exception:> if the context also carries a reset
+configuration (C<set_consolidate> or C<set_full_reset>), the wipe is
+skipped in favour of the reset behaviour — use C<consolidate> to summarize
+prior history into one message instead of dropping it. Emitted only when
+true.
+
+=item C<< $ctx->set_consolidate($c) >> / C<< $ctx->set_full_reset($fr) >>
+
+Coerce to 1/0 and set the context-level reset flags, emitted only when
+true. C<consolidate> summarizes prior conversation into a single message;
+C<full_reset> resets it wholesale. Either one also suppresses the
+C<set_isolated> wipe described above.
+
+=item C<< $ctx->set_history($history) >>
+
+Set the default history-visibility mode for every step in this context. A
+step's own C<set_history> overrides it. C<$history> must be one of C<keep>,
+C<default> or C<hide> — see the Step entry for what each does; anything
+else (including C<undef>) dies with a message listing the three modes.
+
+=item C<< $ctx->set_enter_fillers($fillers) >> / C<< $ctx->set_exit_fillers($fillers) >>
+
+Replace the whole enter/exit filler map with C<$fillers>, a hashref keyed
+by language tag (e.g. C<'en-US'>) whose values are arrayrefs of filler
+phrases. B<A non-hashref argument is silently ignored> — the call still
+returns C<$self> and the previous map is left untouched, so a typo here
+fails quietly rather than dying.
+
+=item C<< $ctx->add_enter_filler($lang, $fillers) >> / C<< $ctx->add_exit_filler($lang, $fillers) >>
+
+Set one language's entry in the enter/exit filler map, creating the map if
+it does not exist yet. C<$fillers> is an arrayref of phrases and B<replaces>
+any phrases already stored for C<$lang> rather than appending to them.
+Like the C<set_*> pair, a falsy C<$lang> or a non-arrayref C<$fillers> is
+silently ignored.
+
+=item C<< $ctx->to_hash() >>
+
+Serialize the context. Dies if the context has no steps. Steps are emitted
+under C<steps> in the context's step order. Optional keys appear only when
+set: C<valid_contexts>, C<valid_steps>, C<initial_step>, C<post_prompt>,
+C<user_prompt>, C<enter_fillers>, C<exit_fillers>, C<history>; the boolean
+C<consolidate>, C<full_reset> and C<isolated> appear only when true.
+C<system_prompt> is the rendered markdown of the system sections, or the
+literal C<set_system_prompt> string. The context prompt is emitted as
+B<either> C<pom> — the raw section arrayref, not rendered markdown — when
+sections were used, B<or> C<prompt> when C<set_prompt> was used; sections
+win if somehow both are present.
+
+=back
+
+=head2 Step — one instruction stage within a context
+
+Constructed via C<< $ctx->add_step >>, not directly. Carries a read-only
+C<name>.
+
+=over 4
+
+=item C<< $step->set_text($text) >>
+
+Set the step's instruction text as one block. Dies if any POM section has
+already been added via C<add_section>/C<add_bullets> — a step's text and its
+sections are mutually exclusive. Remember that C<< add_step(task => ...) >>
+adds a section, so a step created that way cannot use C<set_text> until
+C<clear_sections> is called.
+
+=item C<< $step->add_section($title, $body) >>
+
+Append a titled instruction section with a body string. Dies if
+C<set_text> has already been used. This is the B<Step> C<add_section>; the
+C<Context> method of the same name populates the context prompt instead.
+
+=item C<< $step->add_bullets($title, $bullets) >>
+
+Append a titled instruction section whose body is the arrayref C<$bullets>,
+rendered as C<- item> lines. Dies if C<set_text> has already been used.
+
+=item C<< $step->clear_sections() >>
+
+Drop every POM section B<and> clear any text set by C<set_text>. This is
+the escape hatch out of the text-vs-sections lock: after calling it either
+mode is available again. Note that a step left in this state with neither
+text nor sections dies at serialization time.
+
+=item C<< $step->set_step_criteria($criteria) >>
+
+Set the natural-language criteria describing when this step is complete,
+emitted verbatim as C<step_criteria>.
+
+=item C<< $step->set_functions($functions) >>
+
+Set which non-internal functions are callable while this step is active.
+C<$functions> is an arrayref of tool names (a whitelist), an empty arrayref
+(explicit disable-all), or the string C<"none"> (a synonym for the empty
+list). The value is stored and emitted as-is; when an agent is attached,
+C<< ContextBuilder->validate >> rejects an arrayref entry that names no
+registered or reserved tool.
+
+B<Inheritance is the trap here:> a step that does not call this method
+inherits whichever function set was active on the previous step — or on the
+previous context's last step. The runtime resets the active set only when a
+step explicitly declares its C<functions> field, so a forgotten
+C<set_functions> on a later step lets the earlier step's tools leak
+through. Declare it explicitly on every step whose tool set should differ.
+Keep the per-step set small: model tool-selection accuracy degrades past
+roughly seven or eight simultaneously-active tools.
+
+Internal functions such as C<gather_submit> and C<hangup_hook> are always
+protected and cannot be switched off by this whitelist, and the native
+C<next_step> / C<change_context> tools are injected independently — none of
+them need to appear in the list.
+
+=item C<< $step->set_valid_steps($steps) >> / C<< $step->set_valid_contexts($contexts) >>
+
+Set this step's navigation whitelists, each an arrayref of names, stored
+and emitted as given, and overriding the context-level equivalents.
+Declaring either causes the runtime to inject the matching native tool.
+C<validate> resolves every C<valid_steps> entry against the steps of the
+B<same> context, except the literal C<next>, and every C<valid_contexts>
+entry against the registered contexts.
+
+=item C<< $step->set_end($end) >>
+
+Coerce C<$end> to 1/0 and mark the step terminal for the step flow; emitted
+only when true. B<This does not end the conversation or hang up the call.>
+It exits step mode after this step runs, clearing the steps list, the
+current step index, C<valid_steps> and C<valid_contexts>. The agent keeps
+running under the base system prompt and the context prompt, with no
+further step instructions injected and no C<next_step> tool offered. To end
+the call, invoke a hangup tool or define a hangup hook.
+
+=item C<< $step->set_skip_user_turn($skip) >> / C<< $step->set_skip_to_next_step($skip) >>
+
+Coerce to 1/0 and set the two flow-control flags, each emitted only when
+true. C<skip_user_turn> runs the step without waiting for the caller to
+speak; C<skip_to_next_step> advances past the step without an LLM turn.
+
+=item C<< $step->set_gather_info(%opts) >>
+
+Attach a fresh L</GatherInfo> to the step, B<replacing> any gather config
+and questions already there. Recognised options are C<output_key>
+(the key the collected answers are stored under), C<completion_action>
+(C<next_step>, a sibling step name, or C<undef> to stay put),
+C<prompt> (extra instruction text for the gather loop), and C<isolated>
+(coerced to 1/0; emitted only when true). Any other key is ignored. Must
+be called before C<add_gather_question>.
+
+=item C<< $step->add_gather_question(%opts) >>
+
+Append a question to the step's gather config. B<Dies unless
+C<set_gather_info> was called first> — there is no implicit creation.
+C<%opts> is forwarded to L</GatherInfo>'s C<add_question>: C<key> and
+C<question> are required, C<type> defaults to C<'string'>, C<confirm>
+defaults to false, and C<prompt>, C<functions> and C<isolated> default to
+C<undef>.
+
+While the model is working through gather questions the runtime forcibly
+deactivates all of the step's other functions. The only callable tools are
+C<gather_submit> and whatever names this question's C<functions> option
+lists — and those are active for this question only. C<next_step> and
+C<change_context> are filtered out too, so the model cannot navigate away
+until the gather completes; that is deliberate, to force a tight
+ask-submit-next loop. List a tool in C<functions> when a question needs to
+call out mid-gather (validating an email, geocoding a ZIP).
+
+=item C<< $step->set_reset_system_prompt($sp) >> / C<< $step->set_reset_user_prompt($up) >>
+
+Set the system/user prompt to install when this step performs a context
+reset. Both are emitted as C<system_prompt> / C<user_prompt> B<inside> the
+step's C<reset> sub-hash, and only when defined.
+
+=item C<< $step->set_reset_consolidate($c) >> / C<< $step->set_reset_full_reset($fr) >>
+
+Coerce to 1/0 and set the step-level reset flags, emitted inside the
+C<reset> sub-hash only when true. The C<reset> key itself is omitted
+entirely unless at least one of these four C<set_reset_*> values is
+present.
+
+=item C<< $step->set_history($history) >>
+
+Control what the model can still see when this step is entered, overriding
+the context-level default. C<$history> must be one of:
+
+=over 4
+
+=item C<keep>
+
+Clear nothing — every prior step's instructions B<and> the dialogue stay
+visible.
+
+=item C<default>
+
+Hide prior step instructions, keep the dialogue. This is the behaviour when
+history is never set.
+
+=item C<hide>
+
+Hide prior instructions B<and> pull the prior dialogue out of the model's
+context; recover pieces of it with a C<${step_history.*}> reference in this
+step's own text.
+
+=back
+
+Anything else, C<undef> included, dies with a message listing the three
+modes. The mode applies at the moment the step is entered and governs
+everything before it, including the turn that triggered the transition; it
+does not affect the step's own accumulating turns. Nothing is deleted from
+the call log — this only changes what the model sees.
+
+=item C<< $step->to_hash() >>
+
+Serialize the step. C<name> and C<text> are always present; C<text> is
+either the C<set_text> string or the markdown rendering of the POM sections
+(C<## Title> plus the body or C<- bullet> lines, trailing whitespace
+trimmed), and this B<dies> if the step has neither. Optional keys appear
+only when set: C<step_criteria>, C<functions>, C<valid_steps>,
+C<valid_contexts>, C<history>, C<gather_info>, and the C<reset> sub-hash;
+the booleans C<end>, C<skip_user_turn> and C<skip_to_next_step> appear only
+when true.
+
+=back
+
+=head2 GatherInfo and GatherQuestion — structured question collection
+
+Normally built for you by the step-level C<set_gather_info> and
+C<add_gather_question>; construct them directly only when assembling a
+gather payload outside a step.
+
+=over 4
+
+=item C<< $gather->add_question(%opts) >>
+
+Build a C<GatherQuestion> from C<%opts> and append it. C<key> and
+C<question> are required (the underlying attributes are C<required>, so
+omitting either dies in the constructor); C<type> defaults to C<'string'>,
+C<confirm> defaults to C<0>, and C<prompt>, C<functions> and C<isolated>
+default to C<undef>. Returns the GatherInfo for chaining, B<not> the new
+question.
+
+=item C<< $gather->to_hash() >>
+
+Serialize the gather config. B<Dies if no question has been added> — an
+empty gather is never valid. Always emits C<questions>; adds C<prompt>,
+C<output_key> and C<completion_action> when defined, and C<isolated> only
+when true.
+
+=item C<< $question->to_hash() >>
+
+Serialize one question. Always emits C<key> and C<question>. C<type> is
+emitted only when it differs from the C<'string'> default, C<confirm> only
+when true, and C<prompt> / C<functions> only when defined. C<isolated> is
+the exception: because it is tri-state — C<undef> means "inherit the
+gather-level default" — it is emitted whenever it is B<defined>, including
+as an explicit C<false>, so a single question can opt out of an isolated
+gather.
+
+=back
 
 =head1 SEE ALSO
 
