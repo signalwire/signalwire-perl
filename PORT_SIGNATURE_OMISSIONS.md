@@ -161,23 +161,9 @@ signalwire.utils.schema_utils.SchemaUtils.generate_method_signature: reference-o
 
 signalwire.core.data_map.create_expression_tool: Perl `create_expression_tool` is a module free function taking a single `%opts`/`$opts` hash carrying every reference kwarg (name/patterns/parameters); the slurpy sink surfaces as one param vs the reference's 3 named args — loose-param idiom.
 signalwire.core.data_map.create_simple_api_tool: Perl `create_simple_api_tool` is a module free function taking a single `%opts`/`$opts` hash carrying every reference kwarg (name/url/response_template/...); the slurpy sink surfaces as one param vs the reference's 8 named args — loose-param idiom.
-signalwire.core.logging_config.strip_control_chars: Perl `strip_control_chars($event_dict)` takes just the payload to sanitize; the reference is a structlog processor with the `(logger, method_name, event_dict)` processor-protocol arity — Perl's logging pipeline doesn't use structlog's 3-arg processor contract.
 
 
 ## Idiom: reference-only attributes with no Perl method (Plack/PSGI + security)
 
 signalwire.web.web_service.WebService.app: Perl WebService wraps a Plack/PSGI coderef (psgi_app) rather than a FastAPI app instance; the reference's `.app` FastAPI accessor has no direct equivalent in Plack land (mirrors agent_server.AgentServer.app).
 signalwire.web.web_service.WebService.security: Perl WebService applies security headers inline (_security_headers) rather than exposing a SecurityConfig accessor attribute; the reference's `.security` accessor has no first-class Perl equivalent.
-
-
-# ---------------------------------------------------------------------------
-# Typed-surface strictness pass (2026-07): the signature audit now compares
-# PARAM TYPES too. Concrete param types are re-attached by the enumerator's
-# reference-type projection + a hand-param rename table (Perl abbreviations →
-# reference names). The residual below is the Perl Moo *constructor* idiom: a
-# Moo class is built from `has` attributes (keyword construction) whose
-# declaration order does not align with Python's positional __init__, so a
-# positional param comparison mismatches even though the attribute set + call
-# contract match. Not a wire bug — Moo constructors are keyword-only.
-
-signalwire.core.swml_service.SWMLService.register_routing_callback: Perl idiom — SWMLService.register_routing_callback takes `(path, callback)` where Python takes `(callback_fn, path)`; the callback + path are the same two args in swapped order (Perl reads path-first). Same routing contract, argument order idiom
