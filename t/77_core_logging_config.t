@@ -39,4 +39,47 @@ subtest 'configure_logging is idempotent; reset re-arms it' => sub {
     is( $@, '', 'configure_logging runs again after reset' );
 };
 
+# The scrub must be ON THE EMISSION PATH, not merely available.
+#
+# The map-contract subtest above passed for the life of this port while
+# Logger::_log wrote the caller's message to STDERR verbatim — strip_control_chars
+# was correct, exported, and called by NOTHING. Only an assertion that reads what
+# the logger ACTUALLY emitted can tell those two states apart, which is why this
+# captures STDERR and drives the real logger.
+subtest 'log output has control chars stripped (the WIRING)' => sub {
+    require SignalWire::Logging;
+
+    my $captured = '';
+    {
+        # Redirect STDERR into a scalar for this block only; the local() restores
+        # it on scope exit even if the logger dies.
+        local *STDERR;
+        open( STDERR, '>', \$captured ) or die "cannot redirect STDERR: $!";
+        my $logger = SignalWire::Logging::get_logger('inject.test');
+        $logger->info("user\x00said\x1b[31mRED\x07");
+    }
+
+    unlike( $captured, qr/\x00/, 'NUL does not reach the emitted line' );
+    unlike( $captured, qr/\x1b/, 'ESC does not reach the emitted line' );
+    unlike( $captured, qr/\x07/, 'BEL does not reach the emitted line' );
+    like( $captured, qr/\Qusersaid[31mRED\E/, 'the printable text survives' );
+};
+
+# Tab/newline/CR are LEGAL in a log line and must survive — a scrub that ate them
+# would satisfy the assertions above while mangling every multi-line message.
+subtest 'log output keeps legal whitespace' => sub {
+    require SignalWire::Logging;
+
+    my $legal    = "line1\tcol\nline2\r end";
+    my $captured = '';
+    {
+        local *STDERR;
+        open( STDERR, '>', \$captured ) or die "cannot redirect STDERR: $!";
+        my $logger = SignalWire::Logging::get_logger('inject.test');
+        $logger->info($legal);
+    }
+
+    like( $captured, qr/\Q$legal\E/, 'tab/newline/CR survive the scrub' );
+};
+
 done_testing;
