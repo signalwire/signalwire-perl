@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ b1053b5b4254176360453cd01834cc4ba5655183",
+   "generated_from" : "signalwire-perl @ a21eea6fe500c97dbaf31b05408d11fba42f65bc",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -3318,7 +3318,6 @@
                "get_hints",
                "get_instance_key",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "search_knowledge",
                "setup"
@@ -3333,7 +3332,6 @@
                "get_hints",
                "get_instance_key",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "setup"
             ]
@@ -3345,7 +3343,6 @@
             "DateTimeSkill" : [
                "get_hints",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "setup"
             ]
@@ -3357,7 +3354,6 @@
             "GoogleMapsSkill" : [
                "get_hints",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "setup"
             ]
@@ -3382,7 +3378,6 @@
                "get_global_data",
                "get_hints",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "setup"
             ]
@@ -3394,7 +3389,6 @@
             "MathSkill" : [
                "get_hints",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "setup"
             ]
@@ -3407,7 +3401,6 @@
                "get_global_data",
                "get_hints",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "setup"
             ]
@@ -3422,7 +3415,6 @@
                "get_hints",
                "get_instance_key",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "setup"
             ]
@@ -3495,7 +3487,6 @@
                "get_hints",
                "get_instance_key",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "setup"
             ]
@@ -3521,7 +3512,6 @@
                "get_hints",
                "get_instance_key",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "search_web",
                "setup"
@@ -3534,7 +3524,6 @@
             "WikipediaSearchSkill" : [
                "get_hints",
                "get_parameter_schema",
-               "get_prompt_sections",
                "register_tools",
                "search_wiki",
                "setup"

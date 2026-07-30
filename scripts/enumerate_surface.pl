@@ -2324,6 +2324,25 @@ sub collect_surface {
     # reference declares for THAT skill (union; a method already declared on
     # the concrete Perl class is a no-op). Real inherited capability
     # (RULES §2 idiom-via-enumerator), not invented surface.
+    #
+    # ORACLE-GATED, not list-gated. The per-class lists below are HAND-KEPT and
+    # therefore go stale the moment the reference moves a member. They did: the
+    # reference made `SkillBase.get_prompt_sections()` a FINAL template method
+    # carrying the `skip_prompt` guard, delegating to a PROTECTED
+    # `_get_prompt_sections()` hook (signalwire-python core/skill_base.py), which
+    # Perl mirrors exactly (SkillBase.pm:108/113, subclasses override
+    # `_get_prompt_sections`). The public member now exists on the BASE ONLY, so
+    # the oracle dropped it from 11 skill classes — while this list still named
+    # it, projecting 11 phantom `missing-reference` additions.
+    #
+    # So the hand list is an UPPER BOUND, intersected with what the surface
+    # oracle LIVE records for that (module, class). A member the reference stops
+    # exposing stops being projected on the next regen with no hand edit — the
+    # same discipline the `has`-accessor emission above already uses, and the
+    # same one the signature enumerator's PROTECTED_TEMPLATE_PROJECTIONS uses.
+    # No fail-safe fallback is needed here: %REF_SURFACE_MEMBERS is fail-LOUD
+    # (an unresolvable oracle dies at load, above), so an empty intersection can
+    # only mean the reference genuinely stopped recording the member.
     {
         my %SKILL_INHERITED_PROJECTION = (
             DateTimeSkill             => [ 'get_hints', 'get_prompt_sections' ],
@@ -2347,10 +2366,14 @@ sub collect_surface {
             next unless $mod =~ /^signalwire\.skills\.[^.]+\.skill$/;
             my $classes = $modules{$mod}{classes} // {};
             for my $cls ( keys %$classes ) {
-                my $projection = $SKILL_INHERITED_PROJECTION{$cls} or next;
-                my %seen       = map { $_ => 1 } @{ $classes->{$cls} };
+                my $projection  = $SKILL_INHERITED_PROJECTION{$cls} or next;
+                my %seen        = map { $_ => 1 } @{ $classes->{$cls} };
+                my $ref_members = $REF_SURFACE_MEMBERS{"$mod.$cls"} // {};
                 for my $method (@$projection) {
                     next if $seen{$method};
+
+                    # Intersect the hand list with the LIVE oracle (see above).
+                    next unless $ref_members->{$method};
                     push @{ $classes->{$cls} }, $method;
                     $seen{$method} = 1;
                 }
