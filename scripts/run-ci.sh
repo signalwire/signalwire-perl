@@ -193,6 +193,16 @@ sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t
 sched_gate SURFACE res=surface desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port perl --repo "$PORT_ROOT"
 
+# SIGNATURES-FRESH: nothing previously guarded port_signatures.json's freshness —
+# SURFACE-FRESH covers only port_surface.json. That artifact is DRIFT's INPUT, so a
+# stale one means the parity gate compares against a fiction and reports clean while
+# the real surface has moved. Standalone sched_gate ON PURPOSE, not a
+# _surface_commands.py table entry: only 8 of 10 run-ci scripts read that table, so a
+# table entry is silently skipped in the two that don't.
+sched_gate SIGNATURES-FRESH res=surface desc="committed port_signatures.json matches a fresh regen" \
+    -- python3 "$PORTING_SDK_DIR/scripts/suites/_signatures_fresh.py" \
+        --port perl --repo "$PORT_ROOT" --porting-sdk "$PORTING_SDK_DIR"
+
 # TYPE-EROSION: a port may not erase a type the reference DECLARES. compare_param treats
 # `any` on EITHER side as matching anything, so a port emitting `any` silently satisfies
 # every reference declaration — an unlimited opt-out. ConciergeAgent.hours_of_operation is
