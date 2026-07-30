@@ -148,8 +148,7 @@ SignalWire::Skills::Builtin::Datetime - current date/time/timezone skill
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::Datetime> is the Perl port of the Python reference
-C<signalwire.skills.datetime.skill>. It registers two handler-based SWAIG tools:
+L<SignalWire::Skills::Builtin::Datetime> registers two handler-based SWAIG tools:
 
 =over
 

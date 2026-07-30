@@ -133,8 +133,7 @@ SignalWire::Skills::Builtin::DatasphereServerless - DataSphere knowledge search 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::DatasphereServerless> is the Perl port of the
-Python reference C<signalwire.skills.datasphere_serverless.skill>. It registers a
+L<SignalWire::Skills::Builtin::DatasphereServerless> registers a
 DataMap-based SWAIG tool (default name C<search_knowledge>) that searches the
 SignalWire DataSphere knowledge base.
 

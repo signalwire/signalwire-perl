@@ -259,8 +259,7 @@ SignalWire::Prefabs::Survey - ready-made survey-administering AI agent
 
 =head1 DESCRIPTION
 
-L<SignalWire::Prefabs::Survey> is the Perl port of
-C<signalwire.prefabs.survey.SurveyAgent>. It is a ready-made subclass of
+L<SignalWire::Prefabs::Survey> is a ready-made subclass of
 L<SignalWire::Agent::AgentBase> that administers a structured survey:
 it introduces the survey, asks each question in sequence, validates
 responses against each question's constraints, and records them.

@@ -94,8 +94,7 @@ SignalWire::Skills::Builtin::Joke - joke-telling skill backed by the API Ninjas 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::Joke> is the Perl port of the Python reference
-C<signalwire.skills.joke.skill>. It registers a single DataMap-based SWAIG tool
+L<SignalWire::Skills::Builtin::Joke> registers a single DataMap-based SWAIG tool
 (default name C<get_joke>) that fetches a random joke from the API Ninjas joke
 API. The tool's C<type> parameter selects between C<jokes> and C<dadjokes>.
 

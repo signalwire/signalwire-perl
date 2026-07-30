@@ -661,8 +661,7 @@ SignalWire::Relay::Call - a RELAY call handle and its call-control verbs
 
 =head1 DESCRIPTION
 
-L<SignalWire::Relay::Call> is the Perl port of the Python reference's call
-object. It models one RELAY call: it carries call state, demultiplexes
+L<SignalWire::Relay::Call> models one RELAY call: it carries call state, demultiplexes
 incoming events (updating state, routing to the right
 L<SignalWire::Relay::Action> by C<control_id>, and firing listeners), and
 exposes the full set of call-control verbs.
@@ -673,8 +672,8 @@ These objects are created by L<SignalWire::Relay::Client>.
 
 =head2 Call identity attributes
 
-Each of these is settable at construction and readable back, matching the
-Python reference's C<Call.__init__>. L<SignalWire::Relay::Client> populates
+Each of these is settable at construction and readable back.
+L<SignalWire::Relay::Client> populates
 them from the C<calling.call.receive> / C<calling.call.state> / dial-leg
 frames, so an C<on_call> handler can read them directly.
 

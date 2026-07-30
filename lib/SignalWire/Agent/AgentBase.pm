@@ -2931,7 +2931,7 @@ SignalWire::Agent::AgentBase - base class for SignalWire AI agents
 =head1 DESCRIPTION
 
 L<SignalWire::Agent::AgentBase> is the Moo base class for all SignalWire AI
-agents -- the Perl port of C<signalwire.agents.agent_base.AgentBase>. A
+agents. A
 subclass configures its prompt, tools, skills, contexts, languages, hints,
 and answer/verb behavior (typically in C<BUILD>), and the base class renders
 the SWML document, exposes the HTTP endpoints (SWML, SWAIG, post-prompt,
@@ -2942,8 +2942,7 @@ It C<extends> L<SignalWire::SWML::Service>, from which it inherits the tool
 registry and its C<define_tool> / C<register_swaig_function> / C<define_tools>
 methods, plus the C<name>, C<route>, C<host>, C<port>, and basic-auth
 attributes. This is a large "fat" base class; the sections below group its
-own public surface. Consult the Python reference for the authoritative
-per-argument contract. Setters generally return C<$self> for chaining.
+own public surface. Setters generally return C<$self> for chaining.
 
 =head1 ATTRIBUTES
 
@@ -3594,8 +3593,8 @@ overridable hook.
 Register a handler for debug webhook events, called with
 C<($event_type, $data)>. Returns C<$self>.
 
-B<Currently inert in this port>: the handler is stored on
-C<debug_event_handler> and nothing in the Perl SDK ever reads it -- there is
+B<Currently inert>: the handler is stored on
+C<debug_event_handler> and nothing ever reads it -- there is
 no C</debug_events> route in the PSGI app. C<enable_debug_events> still works
 (it renders C<< ai.params.debug_events >>, so the platform emits the stream),
 but the events have nowhere to arrive.

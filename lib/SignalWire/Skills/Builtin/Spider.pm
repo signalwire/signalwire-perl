@@ -245,8 +245,7 @@ SignalWire::Skills::Builtin::Spider - fast web-scraping and crawling skill
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::Spider> is the Perl port of the Python reference
-C<signalwire.skills.spider.skill>. It registers three handler-based SWAIG tools
+L<SignalWire::Skills::Builtin::Spider> registers three handler-based SWAIG tools
 (their names optionally prefixed via the C<tool_prefix> param):
 
 =over
@@ -266,8 +265,8 @@ C<extract_structured_data> - fetch a C<url> and return extracted text.
 =back
 
 The handlers issue an outbound GET and strip HTML down to text (the fast-text
-path). Python's lxml-based structured-extraction and multi-page crawl are out of
-scope for the Perl port. The skill supports multiple instances.
+path). Structured extraction and multi-page crawling are out of scope: the skill
+fetches and flattens a single page. It supports multiple instances.
 
 =head1 METHODS
 

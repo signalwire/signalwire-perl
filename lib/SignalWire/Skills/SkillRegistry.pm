@@ -238,8 +238,7 @@ SignalWire::Skills::SkillRegistry - global registry of available agent skills
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::SkillRegistry> is the Perl port of the Python SDK's
-C<SkillRegistry>. It maps skill names to their classes (or factory
+L<SignalWire::Skills::SkillRegistry> maps skill names to their classes (or factory
 closures) in a process-global registry, auto-loading the shipped built-in
 skills from the C<SignalWire::Skills::Builtin::> namespace on demand
 (snake_case names are camelised to package names). All methods are class
@@ -262,10 +261,9 @@ unknown.
 =item C<< get_skill_class($skill_name) >>
 
 The skill's package name, loading it on demand — an alias for
-C<get_factory> under the reference's C<get_skill_class> name. Returns
-C<undef> for an unknown skill. In this port a skill's class B<is> its
-factory, so the two spellings return the same thing; both exist so code
-ported from either idiom reads naturally.
+C<get_factory>. Returns C<undef> for an unknown skill. A skill's class B<is>
+its factory, so the two spellings return the same thing; both exist because
+either name is a natural thing to reach for.
 
 =item C<< list_skills() >> / C<< discover_skills() >>
 

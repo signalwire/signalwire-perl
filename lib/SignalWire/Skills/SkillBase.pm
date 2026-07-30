@@ -228,8 +228,8 @@ SignalWire::Skills::SkillBase - abstract base class for agent skills
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::SkillBase> is the Perl port of the Python reference's
-C<SkillBase>. Every built-in or custom skill extends it. A skill declares
+L<SignalWire::Skills::SkillBase> is the base class every built-in or custom
+skill extends. A skill declares
 metadata (C<skill_name>, C<skill_description>, C<skill_version>), optional
 package / environment requirements, and overrides the abstract C<setup>
 and C<register_tools> hooks to wire its SWAIG tools onto the owning agent.

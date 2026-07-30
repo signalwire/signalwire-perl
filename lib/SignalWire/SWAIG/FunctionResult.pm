@@ -788,9 +788,8 @@ SignalWire::SWAIG::FunctionResult - build SWAIG function responses and actions
 
 =head1 DESCRIPTION
 
-L<SignalWire::SWAIG::FunctionResult> is the Perl port of
-C<signalwire.core.function_result.FunctionResult>. A SWAIG function
-handler returns one of these to tell the agent what to say and which
+A SWAIG function handler returns an
+L<SignalWire::SWAIG::FunctionResult> to tell the agent what to say and which
 call-control actions to perform. The action list is serialised to the
 wire shape the SignalWire AI engine expects.
 

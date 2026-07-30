@@ -426,8 +426,7 @@ SignalWire::Server::AgentServer - multi-agent PSGI hosting server
 
 =head1 DESCRIPTION
 
-L<SignalWire::Server::AgentServer> is the Perl port of the Python SDK's
-C<AgentServer>. It hosts multiple agents behind one PSGI application,
+L<SignalWire::Server::AgentServer> hosts multiple agents behind one PSGI application,
 dispatching each incoming request to the agent whose registered route is
 the longest matching prefix. It also serves C<< /health >> and
 C<< /ready >> endpoints, optional static file routes (with path-traversal

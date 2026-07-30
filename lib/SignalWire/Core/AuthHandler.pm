@@ -339,17 +339,16 @@ SignalWire::Core::AuthHandler - unified multi-method authentication handler
 
 =head1 DESCRIPTION
 
-L<SignalWire::Core::AuthHandler> is a Perl port of
-C<signalwire.core.auth_handler.AuthHandler>. It handles Basic Auth, Bearer
+L<SignalWire::Core::AuthHandler> handles Basic Auth, Bearer
 tokens, and API keys uniformly across SignalWire services. All credential
 comparisons are timing-safe (a constant-time byte compare).
 
-Python's C<flask_decorator> and C<get_fastapi_dependency> are framework-bound
-(Flask / FastAPI). Perl uses PSGI/Plack as its standard web interface, so the
-analogs are C<plack_middleware> (a PSGI app wrapper enforcing a 401) and
-C<plack_dependency> (a PSGI-env callable returning an auth result); the
-names C<flask_decorator> and C<get_fastapi_dependency> are also provided as
-thin wrappers for callers migrating from the Python SDK.
+PSGI/Plack is the standard Perl web interface, so the framework integration
+points are C<plack_middleware> (a PSGI app wrapper enforcing a 401) and
+C<plack_dependency> (a PSGI-env callable returning an auth result). The names
+C<flask_decorator> and C<get_fastapi_dependency> are also provided as thin
+wrappers over the same two, so equivalent code written against a
+Flask/FastAPI-shaped API keeps working unchanged.
 
 =head1 METHODS
 

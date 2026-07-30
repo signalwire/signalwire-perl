@@ -254,7 +254,7 @@ SignalWire::Skills::Builtin::ClaudeSkills - load Claude SKILL.md files as agent 
 
 =head1 DESCRIPTION
 
-Perl port of Python's C<claude_skills> skill. Walks the configured
+L<SignalWire::Skills::Builtin::ClaudeSkills> walks the configured
 C<skills_path> (via the shared L<SignalWire::Skills::SkillDiscovery> walker),
 parses each subdirectory's C<SKILL.md> (YAML frontmatter + markdown body) and
 supporting C<.md> section files, and registers one SWAIG tool per skill. Each

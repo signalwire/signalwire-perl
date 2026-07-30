@@ -461,8 +461,7 @@ SignalWire::Skills::Builtin::McpGateway - MCP Gateway CLIENT skill (bridge MCP s
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::McpGateway> is the Perl port of the Python
-reference C<signalwire.skills.mcp_gateway.skill> (C<MCPGatewaySkill>). It is the
+L<SignalWire::Skills::Builtin::McpGateway> is the
 B<client> half of the MCP (Model Context Protocol) bridge: it connects to a
 B<running> MCP gateway service over HTTP, authenticates (a Bearer C<auth_token>,
 or HTTP Basic from C<auth_user> / C<auth_password>), discovers the gateway's
@@ -483,7 +482,7 @@ The C<verify_ssl> config param defaults to B<true> (TLS verification ON) and is
 threaded to the outbound L<HTTP::Tiny> client's C<verify_SSL>. This secure
 default is load-bearing on Perl: HTTP::Tiny's own default leaves verification
 OFF. An operator disables C<verify_ssl> only to talk to a self-signed-certificate
-gateway. Mirrors python's C<verify=self.verify_ssl>.
+gateway.
 
 =head1 METHODS
 

@@ -1377,8 +1377,7 @@ SignalWire::SWML::Service - foundation for SWML document management and serving
 
 =head1 DESCRIPTION
 
-L<SignalWire::SWML::Service> is the Perl port of
-C<signalwire.core.swml_service.SWMLService>. It is a Moo class that owns a
+L<SignalWire::SWML::Service> is a Moo class that owns a
 L<SignalWire::SWML::Document>, exposes the document-building API, dispatches
 inbound HTTP requests (SWML render, SWAIG function calls, post-prompt) as a
 PSGI app, and provides basic-auth, routing callbacks, and a SWAIG tool
@@ -1437,8 +1436,8 @@ The SWAIG tool registry, its registration order, and routing callbacks.
 
 =item C<schema_utils>, C<verb_registry>, C<security>
 
-Lazily built accessors mirroring the Python reference's schema/verb-registry
-/security surface.
+Lazily built accessors for the schema utils, the verb-handler registry, and
+the security config.
 
 =back
 

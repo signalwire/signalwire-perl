@@ -1025,9 +1025,8 @@ SignalWire::Contexts - multi-step, multi-context AI agent workflow DSL
 
 =head1 DESCRIPTION
 
-This file defines the Perl port of C<signalwire.core.contexts> — the DSL
-for building multi-step, multi-context AI agent workflows. Loading it
-defines several cooperating packages in one shot:
+This file defines the DSL for building multi-step, multi-context AI agent
+workflows. Loading it defines several cooperating packages in one shot:
 
 =over 4
 
@@ -1073,7 +1072,7 @@ valid step/context history visibility modes (C<keep>, C<default>, C<hide>).
 
 =item C<create_simple_context($name)>
 
-The Perl analog of Python's C<create_simple_context>. Returns a new
+Returns a new
 L</SignalWire::Contexts::Context> named C<$name> (default C<'default'>).
 Callable both as a free function
 (C<< SignalWire::Contexts::create_simple_context('x') >>) and as a class

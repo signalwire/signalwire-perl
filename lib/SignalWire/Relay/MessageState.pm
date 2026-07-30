@@ -141,11 +141,9 @@ C<< SignalWire::Relay::Message->state >> changes: it still reads and writes
 a plain string. Any bare state string is still accepted, so
 forward-compatible server states keep working.
 
-Grounded in the Python reference's C<relay/constants.py>
-(C<MESSAGE_STATE_*> / C<MESSAGE_TERMINAL_STATES>) and the port's
 L<SignalWire::Relay::Constants> (C<MESSAGE_STATES> /
-C<MESSAGE_TERMINAL_STATES>), which are the single source the lists below
-are derived from.
+C<MESSAGE_TERMINAL_STATES>) is the single source the lists below are derived
+from, so the two can never disagree.
 
 =head2 Three distinct state vocabularies
 

@@ -366,8 +366,7 @@ SignalWire::DataMap - build server-side data-map SWAIG tools (no webhooks)
 
 =head1 DESCRIPTION
 
-L<SignalWire::DataMap> is the Perl port of C<signalwire.core.data_map>. It
-is a fluent builder for B<data-map> SWAIG tools -- server-side API
+L<SignalWire::DataMap> is a fluent builder for B<data-map> SWAIG tools -- server-side API
 integrations the SignalWire platform executes directly, without calling
 back to your webhook. You describe the tool (its LLM-facing purpose and
 parameters, one or more webhooks or expression matchers, and the response

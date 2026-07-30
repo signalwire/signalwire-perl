@@ -1191,8 +1191,7 @@ SignalWire::Relay::Client - RELAY WebSocket client (connect, dial, message)
 
 =head1 DESCRIPTION
 
-L<SignalWire::Relay::Client> is the Perl port of the Python reference's
-C<RelayClient>. It owns the RELAY WebSocket transport, performs the
+L<SignalWire::Relay::Client> owns the RELAY WebSocket transport, performs the
 C<signalwire.connect> handshake, runs a synchronous JSON-RPC request/
 response loop, demultiplexes server-initiated events into typed
 L<SignalWire::Relay::Event> objects, and routes them to the right

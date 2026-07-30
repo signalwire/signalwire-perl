@@ -212,8 +212,7 @@ SignalWire::Security::SessionManager - stateless HMAC token issuer/validator for
 
 =head1 DESCRIPTION
 
-L<SignalWire::Security::SessionManager> is the Perl port of the Python
-SDK's stateless C<SessionManager>. It issues and validates per-function,
+L<SignalWire::Security::SessionManager> issues and validates per-function,
 per-call HMAC-SHA256 tokens used to authorise SWAIG tool invocations.
 Tokens embed the call id, function name, an expiry timestamp, and a
 nonce, all signed with a per-instance secret key; validation is

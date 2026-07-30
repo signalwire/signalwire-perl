@@ -221,8 +221,7 @@ SignalWire::SWML::SWMLRenderer - render SWML documents with AI and SWAIG compone
 
 =head1 DESCRIPTION
 
-Perl port of the Python reference C<signalwire.core.swml_renderer.SwmlRenderer>
-(and the Ruby C<SignalWire::SWML::SwmlRenderer>). Two class-method helpers
+Two class-method helpers
 render SWML documents on top of the L<SignalWire::SWML::Service> document model:
 
 =over 4

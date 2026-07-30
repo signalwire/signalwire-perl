@@ -117,8 +117,9 @@ primitive is worse than a loud failure, because the degraded output is
 indistinguishable from the good output. If the platform CSPRNG cannot be
 reached, these subs C<die>.
 
-All subs are underscore-private; there is no public API and no counterpart in
-the Python reference, which calls C<secrets> / C<os.urandom> directly.
+All subs are underscore-private; there is no public API. The module exists
+because Perl has no single core CSPRNG call, so the fallback chain has to
+live somewhere.
 
 =head1 SEE ALSO
 

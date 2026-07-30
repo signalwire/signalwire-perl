@@ -288,8 +288,7 @@ SignalWire::Prefabs::InfoGatherer - ready-made question-and-answer collection AI
 
 =head1 DESCRIPTION
 
-L<SignalWire::Prefabs::InfoGatherer> is the Perl port of
-C<signalwire.prefabs.info_gatherer.InfoGathererAgent>. It is a ready-made
+L<SignalWire::Prefabs::InfoGatherer> is a ready-made
 subclass of L<SignalWire::Agent::AgentBase> that walks a caller through an
 ordered list of questions, one at a time, collecting the answers into
 global data.

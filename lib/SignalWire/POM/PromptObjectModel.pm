@@ -376,8 +376,9 @@ It owns an ordered list of L<SignalWire::POM::Section> objects and
 provides JSON / YAML serialisation, Markdown / XML rendering, recursive
 title-based search, and POM-merging via C<add_pom_as_subsection>.
 
-The serialised form is byte-for-byte identical to the Python reference;
-prompts authored in either language can be loaded by the other.
+The serialised form is the SDK-wide POM interchange format, so a prompt
+authored with any SignalWire SDK loads here unchanged, and one authored here
+loads there.
 
 =head1 CONSTRUCTORS
 

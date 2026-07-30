@@ -414,10 +414,9 @@ SignalWire::Skills::Builtin::WebSearch - web-search skill using the Google Custo
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::WebSearch> is the Perl port of the Python reference
-C<signalwire.skills.web_search.skill> (the C<GoogleSearchScraper> path). It
-registers a handler-based SWAIG tool (default name C<web_search>) that searches
-the web via the Google Custom Search API.
+L<SignalWire::Skills::Builtin::WebSearch> registers a handler-based SWAIG tool
+(default name C<web_search>) that searches the web via the Google Custom Search
+API.
 
 The handler issues an outbound GET to C<customsearch/v1> with C<key>/C<cx>/C<q>,
 parses the JSON C<items[]>, and formats title + snippet + link for the LLM. It is

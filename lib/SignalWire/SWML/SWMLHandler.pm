@@ -214,8 +214,7 @@ SignalWire::SWML::SWMLHandler - SWML verb handler interface and implementations
 
 =head1 DESCRIPTION
 
-Perl port of the Python reference module C<signalwire.core.swml_handler>
-(and the Ruby equivalents). Defines the base verb-handler interface plus the
+Defines the base verb-handler interface plus the
 C<ai>-verb handler and a registry.
 
 =over 4

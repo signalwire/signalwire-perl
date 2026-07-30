@@ -255,8 +255,7 @@ SignalWire::Skills::Builtin::Datasphere - knowledge-base search skill using the 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::Datasphere> is the Perl port of the Python
-reference C<signalwire.skills.datasphere.skill>. It registers a handler-based
+L<SignalWire::Skills::Builtin::Datasphere> registers a handler-based
 SWAIG tool (default name C<search_knowledge>) that performs a
 retrieval-augmented search against the SignalWire DataSphere RAG stack.
 

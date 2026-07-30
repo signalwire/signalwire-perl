@@ -226,8 +226,7 @@ SignalWire::Skills::Builtin::InfoGatherer - collect answers to a configurable li
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::InfoGatherer> is the Perl port of the Python
-reference C<signalwire.skills.info_gatherer.skill>. It drives a small state
+L<SignalWire::Skills::Builtin::InfoGatherer> drives a small state
 machine that asks the user a configured sequence of questions and records the
 answers.
 

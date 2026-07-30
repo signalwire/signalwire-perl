@@ -156,8 +156,7 @@ SignalWire::Skills::SkillManager - load and manage skills for a single agent
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::SkillManager> is the Perl port of the Python SDK's
-per-agent skill manager. It resolves skill classes (via
+L<SignalWire::Skills::SkillManager> resolves skill classes (via
 L<SignalWire::Skills::SkillRegistry> when a class isn't passed
 directly), instantiates them against its owning agent, and wires each
 loaded skill's tools, hints, global data, and prompt sections into that

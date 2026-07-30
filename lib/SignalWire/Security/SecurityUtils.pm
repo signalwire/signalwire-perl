@@ -97,9 +97,7 @@ SignalWire::Security::SecurityUtils - credential-hygiene and hostname-check util
 
 =head1 DESCRIPTION
 
-L<SignalWire::Security::SecurityUtils> is the Perl port of
-C<signalwire.core.security.security_utils> (itself a mirror of the
-TypeScript SDK's SecurityUtils). It keeps credentials out of user
+L<SignalWire::Security::SecurityUtils> keeps credentials out of user
 callbacks and logs and provides a reusable character-level hostname
 check. All three subs are exportable via C<@EXPORT_OK>.
 

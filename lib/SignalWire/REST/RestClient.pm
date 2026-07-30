@@ -109,8 +109,7 @@ SignalWire::REST::RestClient - synchronous SignalWire REST API client
 
 =head1 DESCRIPTION
 
-L<SignalWire::REST::RestClient> is the Perl port of
-C<signalwire.rest.client.RestClient>. It is the entry point for the
+L<SignalWire::REST::RestClient> is the entry point for the
 synchronous REST API: it holds the project/token/host credentials, owns
 the shared L<SignalWire::REST::HttpClient>, and exposes the generated
 resource tree (flat resources such as C<phone_numbers> and C<addresses>,
@@ -124,9 +123,8 @@ client.
 
 Each credential falls back to its C<SIGNALWIRE_*> environment variable
 (C<SIGNALWIRE_PROJECT_ID>, C<SIGNALWIRE_API_TOKEN>, C<SIGNALWIRE_SPACE>)
-when the corresponding constructor argument is omitted, matching the
-Python reference. The constructor dies if any of the three is neither
-passed nor present in the environment.
+when the corresponding constructor argument is omitted. The constructor dies
+if any of the three is neither passed nor present in the environment.
 
 =head1 ATTRIBUTES
 

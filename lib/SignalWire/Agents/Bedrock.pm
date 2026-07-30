@@ -201,8 +201,7 @@ SignalWire::Agents::Bedrock - Amazon Bedrock voice-to-voice agent
 
 =head1 DESCRIPTION
 
-L<SignalWire::Agents::Bedrock> (class C<BedrockAgent>) is the Perl port of
-C<signalwire.agents.bedrock.BedrockAgent>. It extends
+L<SignalWire::Agents::Bedrock> (class C<BedrockAgent>) extends
 L<SignalWire::Agent::AgentBase>, so it keeps every standard agent feature
 (POM, skills, SWAIG functions, post-prompt). The only difference is that
 C<render_swml> transforms the base C<ai> verb into an C<amazon_bedrock>
@@ -245,8 +244,8 @@ rewritten, and a document whose main section is missing or not an arrayref
 is returned untouched.
 
 =item * C<to_string> — the C<BedrockAgent(name=..., route=..., voice=...)>
-representation (also the overloaded stringification; the cross-language
-enumerator maps it onto Python's C<__repr__>).
+representation (also the overloaded stringification, so interpolating the
+agent yields the same text).
 
 =back
 

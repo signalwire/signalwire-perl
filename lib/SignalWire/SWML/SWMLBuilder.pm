@@ -237,15 +237,14 @@ SignalWire::SWML::SWMLBuilder - fluent builder for SWML documents
 
 =head1 DESCRIPTION
 
-Perl port of the Python reference C<signalwire.core.swml_builder.SWMLBuilder>
-(and the Ruby C<SignalWire::SWML::SWMLBuilder>). Provides a fluent interface
+L<SignalWire::SWML::SWMLBuilder> provides a fluent interface
 for building SWML documents by chaining method calls, delegating to an
 underlying L<SignalWire::SWML::Service> for the actual document.
 
 The explicit helpers C<answer>, C<hangup>, C<play>, C<ai>, and C<say> cover the
-common verbs. Every other schema verb is auto-vivified through C<AUTOLOAD>,
-which delegates to C<__getattr__> — the Perl analog of the Python reference's
-runtime C<__getattr__> verb dispatch. All mutators return C<$self> for chaining.
+common verbs. Every other schema verb is auto-vivified at call time through
+C<AUTOLOAD>, so any verb the schema defines is callable without a hand-written
+method. All mutators return C<$self> for chaining.
 
 =head1 CONSTRUCTOR
 

@@ -116,8 +116,7 @@ SignalWire::Skills::Builtin::SwmlTransfer - transfer calls by pattern-matching a
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::SwmlTransfer> is the Perl port of the Python
-reference C<signalwire.skills.swml_transfer.skill>. It registers a single
+L<SignalWire::Skills::Builtin::SwmlTransfer> registers a single
 DataMap-based SWAIG tool (default name C<transfer_call>) that transfers the caller
 to one of a set of configured destinations.
 

@@ -490,10 +490,9 @@ SignalWire::Utils::SchemaUtils - SWML schema loading, verb extraction, and valid
 
 =head1 DESCRIPTION
 
-Perl port of the Python reference C<signalwire.utils.schema_utils.SchemaUtils>
-(and the Ruby C<SignalWire::Utils::SchemaUtils>). Loads the SWML JSON Schema,
+L<SignalWire::Utils::SchemaUtils> loads the SWML JSON Schema,
 extracts verb metadata from the C<SWMLMethod> C<anyOf> union, validates a
-single verb config or a complete document, and generates Python-style method
+single verb config or a complete document, and generates Python-syntax method
 signatures and bodies for code-generation tooling.
 
 The port ships the lightweight validator (verb existence plus required-property

@@ -200,13 +200,12 @@ SignalWire::Skills::Builtin::Math - basic mathematical-calculation skill
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::Math> is the Perl port of the Python reference
-C<signalwire.skills.math.skill>. It registers a single handler-based SWAIG tool,
+L<SignalWire::Skills::Builtin::Math> registers a single handler-based SWAIG tool,
 C<calculate>, that evaluates a mathematical C<expression> supporting the
 operators C<+>, C<->, C<*>, C</>, C<%>, and C<**> (exponentiation).
 
-Expressions are evaluated by a safe recursive-descent parser over a fixed grammar
-(the Perl analog of Python's AST-based C<_safe_eval>): no user input ever reaches
+Expressions are evaluated by a safe recursive-descent parser over a fixed grammar:
+no user input ever reaches
 the Perl compiler, and any malformed input yields a "Could not evaluate" response
 rather than an error. The skill takes no configuration parameters and does not
 support multiple instances.

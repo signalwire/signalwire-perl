@@ -37,7 +37,7 @@ SignalWire::Utils - miscellaneous SDK utility functions
 
 =head1 DESCRIPTION
 
-L<SignalWire::Utils> is the Perl port of C<signalwire.utils>. It collects
+L<SignalWire::Utils> collects
 small cross-cutting helpers. Nothing is exported by default; import from
 C<@EXPORT_OK>.
 

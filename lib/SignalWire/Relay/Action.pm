@@ -425,8 +425,7 @@ L<SignalWire::Relay::Action> is the base class for every long-running
 RELAY operation (play, record, detect, collect, fax, tap, stream, pay,
 transcribe, AI). It tracks the C<control_id> correlation key, accumulates
 events, exposes the latest C<payload>, and resolves when the operation
-reaches a terminal state — mirroring the Python reference's action
-objects.
+reaches a terminal state.
 
 Construction fails fast: C<control_id> must be a non-empty string,
 C<events> must be an arrayref, and C<payload> must be a hashref (Moo

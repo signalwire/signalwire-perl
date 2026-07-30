@@ -437,10 +437,9 @@ SignalWire::Utils::SchemaValidator - focused JSON Schema evaluator for SWML verb
 =head1 DESCRIPTION
 
 A small JSON Schema (Draft 2020-12 subset) evaluator over the bundled SWML
-schema, the Perl analogue of the python reference's jsonschema-rs full
-validator. It enforces the closed-object / typed-key semantics that make a
+schema. It enforces the closed-object / typed-key semantics that make a
 misspelled, unknown, or wrong-typed SWML verb config an ERROR rather than a
-silent accept (the Wave-2 P#5 STRICT-RENDER contract). It supports exactly the
+silent accept. It supports exactly the
 keywords the SWML C<schema.json> uses (C<$ref>, C<allOf>/C<anyOf>/C<oneOf>,
 C<not>, C<if>/C<then>/C<else>, C<type>, C<const>, C<enum>, C<properties>,
 C<required>, C<items>, numeric bounds, and

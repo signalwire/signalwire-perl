@@ -251,8 +251,7 @@ SignalWire::Core::Agent::Prompt::Manager - prompt building and configuration for
 
 =head1 DESCRIPTION
 
-L<SignalWire::Core::Agent::Prompt::Manager> is the Perl port of
-C<signalwire.core.agent.prompt.manager.PromptManager>. It manages a
+L<SignalWire::Core::Agent::Prompt::Manager> manages a
 POM-backed prompt (via L<SignalWire::POM::PromptObjectModel>), an optional
 raw prompt text, a post-prompt, and a contexts configuration.
 

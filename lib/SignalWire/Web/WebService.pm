@@ -426,12 +426,11 @@ SignalWire::Web::WebService - static file serving service with an HTTP API
 
 =head1 DESCRIPTION
 
-L<SignalWire::Web::WebService> is the Perl port of
-C<signalwire.web.web_service.WebService>. It maps URL route prefixes to
+L<SignalWire::Web::WebService> maps URL route prefixes to
 local directories and serves their files over HTTP with security headers,
 extension filtering, path-traversal protection, and optional basic auth.
 
-Python builds a FastAPI/uvicorn app; this port builds a PSGI app served by
+It builds a PSGI app served by
 L<HTTP::Server::PSGI>. C<start> is non-blocking by default (runs the
 server in a forked child and returns the bound port); pass
 C<block =E<gt> 1> to run in the foreground. C<port =E<gt> 0> binds an
