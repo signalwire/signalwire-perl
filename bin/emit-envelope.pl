@@ -60,11 +60,12 @@ no warnings 'experimental::signatures';
 
 use FindBin qw($RealBin);
 use File::Spec;
-use JSON ();
-use HTTP::Tiny ();
+use JSON             ();
+use HTTP::Tiny       ();
 use IO::Socket::INET ();
-use Scalar::Util ();
-use POSIX ();
+use Scalar::Util     ();
+use POSIX            ();
+use Time::HiRes      ();
 
 # Make the SDK importable when run from the repo root (bin/.. = repo root; lib/
 # and t/lib are siblings of bin/).
@@ -187,15 +188,15 @@ sub dead_port {
 # same shape on both sides.
 # --------------------------------------------------------------------------- #
 sub decode_body_error_code ($body) {
-    return undef unless defined $body;
+    return unless defined $body;
     my $decoded = $body;
     if ( !ref $body ) {
         $decoded = eval { JSON::decode_json($body) };
-        return undef if $@ || !defined $decoded;
+        return if $@ || !defined $decoded;
     }
-    return undef unless ref $decoded eq 'HASH';
+    return unless ref $decoded eq 'HASH';
     my $errs = $decoded->{errors};
-    return undef unless ref $errs eq 'ARRAY' && @$errs && ref $errs->[0] eq 'HASH';
+    return unless ref $errs eq 'ARRAY' && @$errs && ref $errs->[0] eq 'HASH';
     my $code = $errs->[0]{code};
     return ( defined $code && !ref $code ) ? $code : undef;
 }
@@ -259,13 +260,16 @@ sub run_case ($case) {
         if ( $method eq 'GET' ) {
             $http->get( $path, request_options => $req_opts );
         } elsif ( $method eq 'POST' ) {
+
             # POST cases carry a body (relay-rest.create_address); drive a real
             # POST so the idempotency-asymmetry retry logic is exercised.
             $http->post( $path, body => $call->{body}, request_options => $req_opts );
         } else {
-            $http->_request( $method, $path,
+            $http->_request(
+                $method, $path,
                 body            => $call->{body},
-                request_options => $req_opts );
+                request_options => $req_opts
+            );
         }
         1;
     } or do {
@@ -278,9 +282,10 @@ sub run_case ($case) {
             # oracle — HTTP::Tiny's status is a string scalar, which JSON would emit
             # as "404". A transport error's status_code is undef and stays null.
             my $sc = $err->status_code;
-            $artifact{status_code} = defined $sc ? ( $sc + 0 ) : undef;
+            $artifact{status_code}     = defined $sc ? ( $sc + 0 ) : undef;
             $artifact{body_error_code} = decode_body_error_code( $err->body );
         } else {
+
             # A BARE error (string die or a non-family object) — the contract
             # violation the differ flags as bare:<Class>.
             my $cls = Scalar::Util::blessed($err) ? ref($err) : 'string';
@@ -315,6 +320,7 @@ sub _probe_health ($base) {
 }
 
 sub ensure_mock {
+
     # Already answering (pre-spawned via MOCK_SIGNALWIRE_PORT, or a reused one)?
     return if _probe_health($MockTest::BASE_URL);
 
@@ -322,7 +328,13 @@ sub ensure_mock {
     my $pkg = MockTest::discover_porting_sdk_package('mock_signalwire');
     if ( defined $pkg ) {
         my $sep = ':';
+
+        # Process-wide on purpose: PYTHONPATH must be inherited by the mock_signalwire
+        # child this script exec's below, so the assignment has to outlive any local
+        # scope.
+        ## no critic (Variables::RequireLocalizedPunctuationVars)
         $ENV{PYTHONPATH} =
+            ## use critic
             defined $ENV{PYTHONPATH} && length $ENV{PYTHONPATH}
             ? "$pkg$sep$ENV{PYTHONPATH}"
             : $pkg;
@@ -338,11 +350,12 @@ sub ensure_mock {
 
         # Child: redirect stdout+stderr to the log FILE (so the mock's startup
         # banner writes succeed — a closed pipe would SIGPIPE it dead), then exec.
-        open( STDOUT, '>', $log ) or POSIX::_exit(127);
+        open( STDOUT, '>',  $log )     or POSIX::_exit(127);
         open( STDERR, '>&', \*STDOUT ) or POSIX::_exit(127);
-        exec( 'python', '-m', 'mock_signalwire',
-            '--host', $MockTest::HOST, '--port', $MockTest::PORT, '--log-level', 'error' )
-            or POSIX::_exit(127);
+        exec(
+            'python', '-m',            'mock_signalwire', '--host', $MockTest::HOST,
+            '--port', $MockTest::PORT, '--log-level',     'error'
+        ) or POSIX::_exit(127);
     }
     $OUR_MOCK_PID = $pid;
 
@@ -355,7 +368,7 @@ sub ensure_mock {
             my $tail = -f $log ? do { local ( @ARGV, $/ ) = $log; <> } : '';
             die "emit-envelope: mock_signalwire died on startup (log $log):\n$tail\n";
         }
-        select( undef, undef, undef, 0.2 );
+        Time::HiRes::sleep(0.2);
     }
     die "emit-envelope: mock_signalwire did not become ready on $MockTest::BASE_URL "
         . "within 30s (log $log)\n";

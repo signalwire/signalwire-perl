@@ -57,8 +57,12 @@ use JSON ();
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
 
 # Keep the SDK logger off stdout (only JSON goes there).
+# Process-wide on purpose: this dump program keeps the SDK logger off stdout for
+# its entire run (only JSON goes there), so the setting must outlive any scope.
+## no critic (Variables::RequireLocalizedPunctuationVars)
 $ENV{SIGNALWIRE_LOG_LEVEL} = 'critical';
 $ENV{SIGNALWIRE_LOG_MODE}  = 'off';
+## use critic
 
 use SignalWire::Agent::AgentBase;
 
@@ -66,12 +70,14 @@ use SignalWire::Agent::AgentBase;
 my $CALL_ID = 'call-secure-default-fixture';
 
 my @CORPUS = (
-    {   id            => 'define_tool_default_is_secure',
+    {
+        id            => 'define_tool_default_is_secure',
         kind          => 'secure_default',
         tool_name     => 'sd_default_secure',
         expect_secure => 1,
     },
-    {   id            => 'define_tool_explicit_insecure',
+    {
+        id            => 'define_tool_explicit_insecure',
         kind          => 'secure_explicit_false',
         tool_name     => 'sd_explicit_insecure',
         expect_secure => 0,

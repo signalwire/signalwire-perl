@@ -13,7 +13,7 @@ use strict;
 use warnings;
 use Test::More;
 use MIME::Base64 ();
-use Digest::SHA qw(hmac_sha256_hex);
+use Digest::SHA  qw(hmac_sha256_hex);
 
 use_ok('SignalWire::Security::SessionManager');
 
@@ -21,7 +21,7 @@ use_ok('SignalWire::Security::SessionManager');
 my $secret = 'a' x 64;
 my $sm     = SignalWire::Security::SessionManager->new( secret_key => $secret );
 
-sub decode { MIME::Base64::decode_base64url( $_[0] ) }
+sub decode { my ($b64) = @_; return MIME::Base64::decode_base64url($b64) }
 
 # (1) A freshly minted token, decoded, has exactly 5 dot-fields with a
 #     NON-EMPTY nonce.
@@ -55,16 +55,18 @@ subtest 'two mints => different nonces' => sub {
 #     (cross-port interop). Signed message = call:fn:expiry:nonce, HMAC-SHA256
 #     of that with the secret, then base64url-wrap the 5-field dot string.
 subtest 'python-oracle-format token validates (interop)' => sub {
-    my $call_id  = 'oracle_call';
-    my $fn       = 'oracle_fn';
-    my $expiry   = time() + 900;
-    my $nonce    = 'deadbeefcafe1234';            # 16 hex chars, python token_hex(8) shape
-    my $message  = "$call_id:$fn:$expiry:$nonce";
-    my $sig      = hmac_sha256_hex( $message, $secret );
-    my $raw      = "$call_id.$fn.$expiry.$nonce.$sig";
-    my $token    = MIME::Base64::encode_base64url( $raw, '' );
-    ok( $sm->validate_token( $call_id, $fn, $token ),
-        'oracle-format token validates in the perl port' );
+    my $call_id = 'oracle_call';
+    my $fn      = 'oracle_fn';
+    my $expiry  = time() + 900;
+    my $nonce   = 'deadbeefcafe1234';                     # 16 hex chars, python token_hex(8) shape
+    my $message = "$call_id:$fn:$expiry:$nonce";
+    my $sig     = hmac_sha256_hex( $message, $secret );
+    my $raw     = "$call_id.$fn.$expiry.$nonce.$sig";
+    my $token   = MIME::Base64::encode_base64url( $raw, '' );
+    ok(
+        $sm->validate_token( $call_id, $fn, $token ),
+        'oracle-format token validates in the perl port'
+    );
 };
 
 # (3b) The minted token is PADDED urlsafe base64, byte-for-byte what the
@@ -77,15 +79,15 @@ subtest 'python-oracle-format token validates (interop)' => sub {
 #      the reference rejected every perl token.
 subtest 'minted token is PADDED urlsafe base64 (reference decodes it)' => sub {
     for my $case (
-        [ 'c',                 'f' ],            # short  -> needs padding
+        [ 'c',                 'f' ],               # short  -> needs padding
         [ 'call_1',            'my_func' ],
         [ 'oracle_call_long1', 'some_function' ],
         )
     {
         my ( $cid, $fn ) = @$case;
         my $token = $sm->generate_token( $fn, $cid );
-        is( length($token) % 4, 0,
-            "token for ($cid,$fn) is a multiple of 4 chars (padded to the base64 boundary)" );
+        is( length($token) % 4,
+            0, "token for ($cid,$fn) is a multiple of 4 chars (padded to the base64 boundary)" );
         unlike( $token, qr{[+/]}, 'urlsafe alphabet only (no + or /)' );
 
         # The padding must be TRAILING `=` only, and re-decoding must round-trip.
@@ -126,13 +128,15 @@ subtest 'tampered signature => invalid' => sub {
 subtest 'constant-time compare (no early return)' => sub {
     no warnings 'once';
     my $cmp = \&SignalWire::Security::SessionManager::_timing_safe_compare;
-    ok( $cmp->( 'abcdef', 'abcdef' ), 'equal strings compare equal' );
+    ok( $cmp->( 'abcdef',  'abcdef' ), 'equal strings compare equal' );
     ok( !$cmp->( 'abcdef', 'abcdeg' ), 'differ in last byte => not equal' );
     ok( !$cmp->( 'abcdef', 'zbcdef' ), 'differ in first byte => not equal' );
+
     # The compare HMACs both operands, so it does not early-return on the
     # first mismatching character: verify it works across differing lengths
     # too (a naive index-by-index loop would need equal length).
-    ok( !$cmp->( 'short', 'a_much_longer_value' ), 'differing lengths => not equal, no length-based early exit' );
+    ok( !$cmp->( 'short', 'a_much_longer_value' ),
+        'differing lengths => not equal, no length-based early exit' );
 };
 
 done_testing();

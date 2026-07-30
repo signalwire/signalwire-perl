@@ -17,7 +17,7 @@ ok( defined $factory, 'factory found for native_vector_search' );
 {
 
     package FakeHttp;
-    sub new { bless { calls => [], resp => $_[1] }, $_[0] }
+    sub new { my ( $class, $resp ) = @_; return bless { calls => [], resp => $resp }, $class }
 
     sub post {
         my ( $self, $url, $opts ) = @_;
@@ -79,8 +79,16 @@ subtest 'handle_search POSTs {query,count} and formats results' => sub {
     my $body = JSON::encode_json(
         {
             results => [
-                { content => 'The sky is blue.',  score => 0.91, metadata => { filename => 'sky.md' } },
-                { content => 'Grass is green.',   score => 0.72, metadata => { filename => 'grass.md' } },
+                {
+                    content  => 'The sky is blue.',
+                    score    => 0.91,
+                    metadata => { filename => 'sky.md' }
+                },
+                {
+                    content  => 'Grass is green.',
+                    score    => 0.72,
+                    metadata => { filename => 'grass.md' }
+                },
             ],
         }
     );
@@ -102,15 +110,15 @@ subtest 'handle_search POSTs {query,count} and formats results' => sub {
     my $call = $fake->{calls}[0];
     like( $call->{url}, qr{/search$}, 'POST to the /search endpoint' );
     my $sent = JSON::decode_json( $call->{opts}{content} );
-    is( $sent->{query}, 'colors', 'query forwarded on the wire' );
-    is( $sent->{count}, 2,        'count forwarded on the wire' );
-    is( $sent->{index_name}, 'docs', 'index_name forwarded on the wire' );
+    is( $sent->{query},      'colors', 'query forwarded on the wire' );
+    is( $sent->{count},      2,        'count forwarded on the wire' );
+    is( $sent->{index_name}, 'docs',   'index_name forwarded on the wire' );
 
     my $text = $result->response;
     like( $text, qr/Search results for 'colors'/, 'header present' );
-    like( $text, qr/The sky is blue\./, 'first result content formatted' );
-    like( $text, qr/relevance: 0\.91/,  'score rendered' );
-    like( $text, qr/=== RESULT 1 ===/,  'result block markers' );
+    like( $text, qr/The sky is blue\./,           'first result content formatted' );
+    like( $text, qr/relevance: 0\.91/,            'score rendered' );
+    like( $text, qr/=== RESULT 1 ===/,            'result block markers' );
 };
 
 subtest 'empty query is guarded before any HTTP call' => sub {
@@ -144,7 +152,7 @@ subtest 'no results yields the no-results message' => sub {
 };
 
 subtest 'service failure is handled gracefully' => sub {
-    my $fake = FakeHttp->new( { success => 0, status => 503, content => '' } );
+    my $fake  = FakeHttp->new( { success => 0, status => 503, content => '' } );
     my $agent = SignalWire::Agent::AgentBase->new( name => 'nvs_fail' );
     my $skill = $factory->new(
         agent  => $agent,

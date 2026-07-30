@@ -24,15 +24,15 @@ use strict;
 use warnings;
 
 use HTTP::Tiny;
-use JSON qw(encode_json decode_json);
-use POSIX ();
+use JSON        qw(encode_json decode_json);
+use POSIX       ();
 use Time::HiRes qw(sleep time);
-use IPC::Open3 ();
-use Symbol ();
-use IO::Handle ();
-use File::Spec ();
-use Cwd ();
-use Config ();
+use IPC::Open3  ();
+use Symbol      ();
+use IO::Handle  ();
+use File::Spec  ();
+use Cwd         ();
+use Config      ();
 
 use SignalWire::Relay::Client;
 
@@ -43,15 +43,17 @@ use PortPicker ();
 # Ports: env overrides win; otherwise pick FREE ports (WS and HTTP control
 # plane independently) rather than hardcoded defaults that collide with a
 # stale/concurrent mock and hang the suite.
-our $HOST      = '127.0.0.1';
-our $WS_PORT   = ( $ENV{MOCK_RELAY_PORT} && $ENV{MOCK_RELAY_PORT} =~ /^[0-9]+$/ )
+our $HOST = '127.0.0.1';
+our $WS_PORT =
+    ( $ENV{MOCK_RELAY_PORT} && $ENV{MOCK_RELAY_PORT} =~ /^[0-9]+$/ )
     ? $ENV{MOCK_RELAY_PORT}
     : PortPicker::pick_free_port($HOST);
-our $HTTP_PORT = ( $ENV{MOCK_RELAY_HTTP_PORT} && $ENV{MOCK_RELAY_HTTP_PORT} =~ /^[0-9]+$/ )
+our $HTTP_PORT =
+    ( $ENV{MOCK_RELAY_HTTP_PORT} && $ENV{MOCK_RELAY_HTTP_PORT} =~ /^[0-9]+$/ )
     ? $ENV{MOCK_RELAY_HTTP_PORT}
     : PortPicker::pick_free_port($HOST);
-our $WS_URL    = "ws://$HOST:$WS_PORT";
-our $HTTP_URL  = "http://$HOST:$HTTP_PORT";
+our $WS_URL     = "ws://$HOST:$WS_PORT";
+our $HTTP_URL   = "http://$HOST:$HTTP_PORT";
 our $RELAY_HOST = "$HOST:$WS_PORT";
 
 our $PROJECT = 'test_proj';
@@ -85,8 +87,8 @@ sub client {
     my %opts = @_;
     _ensure_server();
     if ($_SKIP_REASON) {
-        if (eval { require Test::More; 1 }) {
-            Test::More::plan(skip_all => "RelayMockTest: $_SKIP_REASON");
+        if ( eval { require Test::More; 1 } ) {
+            Test::More::plan( skip_all => "RelayMockTest: $_SKIP_REASON" );
         }
         die "RelayMockTest: $_SKIP_REASON";
     }
@@ -121,9 +123,9 @@ sub scope {
 sub _scope_session {
     my (%opts) = @_;
     return $opts{session_id} if exists $opts{session_id};
-    return undef unless $_ACTIVE_CLIENT;
+    return unless $_ACTIVE_CLIENT;
     my $sid = eval { $_ACTIVE_CLIENT->session_id };
-    return (defined $sid && $sid ne '') ? $sid : undef;
+    return ( defined $sid && $sid ne '' ) ? $sid : undef;
 }
 
 # Connect a fresh client (helper that does both connect_ws + authenticate).
@@ -145,9 +147,10 @@ sub connect_client {
 sub _session_query {
     my ($sid) = @_;
     return '' unless defined $sid && $sid ne '';
+
     # Percent-encode anything outside the unreserved set; session ids are hex
     # in practice, but encode defensively so an arbitrary id is URL-safe.
-    (my $enc = $sid) =~ s/([^A-Za-z0-9_.~-])/sprintf('%%%02X', ord($1))/ge;
+    ( my $enc = $sid ) =~ s/([^A-Za-z0-9_.~-])/sprintf('%%%02X', ord($1))/ge;
     return "?session_id=$enc";
 }
 
@@ -155,12 +158,12 @@ sub _session_query {
 # op doesn't already specify a session_id. Leaves sleep ops untouched. Returns
 # a shallow copy so the caller's ops array is not mutated.
 sub _scope_op {
-    my ($op, $sid) = @_;
+    my ( $op, $sid ) = @_;
     return $op unless ref $op eq 'HASH';
     my %out = %$op;
     for my $key (qw(push expect_recv)) {
         my $spec = $out{$key};
-        if (ref $spec eq 'HASH' && !exists $spec->{session_id}) {
+        if ( ref $spec eq 'HASH' && !exists $spec->{session_id} ) {
             $out{$key} = { %$spec, session_id => $sid };
         }
     }
@@ -173,16 +176,18 @@ sub journal_reset {
     my (%opts) = @_;
     _ensure_server();
     return if $_SKIP_REASON;
-    my $q = _session_query(_scope_session(%opts));
+    my $q = _session_query( _scope_session(%opts) );
+
     # Retry: the mock may be transiently unreachable during cross-test
     # spawn races (HTTP::Tiny 599 = internal connect/timeout).
     my $resp;
-    for my $i (1..10) {
+    for my $i ( 1 .. 10 ) {
         $resp = _ua()->post("$HTTP_URL/__mock__/journal/reset$q");
         last if $resp->{success};
         Time::HiRes::sleep(0.1);
     }
     die "journal_reset failed: $resp->{status}" unless $resp->{success};
+    return;
 }
 
 # scenario_reset clears queued scenarios on the mock. With session_id => <id>,
@@ -191,14 +196,15 @@ sub scenario_reset {
     my (%opts) = @_;
     _ensure_server();
     return if $_SKIP_REASON;
-    my $q = _session_query(_scope_session(%opts));
+    my $q = _session_query( _scope_session(%opts) );
     my $resp;
-    for my $i (1..10) {
+    for my $i ( 1 .. 10 ) {
         $resp = _ua()->post("$HTTP_URL/__mock__/scenarios/reset$q");
         last if $resp->{success};
         Time::HiRes::sleep(0.1);
     }
     die "scenario_reset failed: $resp->{status}" unless $resp->{success};
+    return;
 }
 
 # journal_all returns recorded frames since reset. With session_id => <id>,
@@ -207,10 +213,10 @@ sub journal_all {
     my (%opts) = @_;
     _ensure_server();
     die "RelayMockTest: $_SKIP_REASON" if $_SKIP_REASON;
-    my $q = _session_query(_scope_session(%opts));
+    my $q    = _session_query( _scope_session(%opts) );
     my $resp = _ua()->get("$HTTP_URL/__mock__/journal$q");
     die "journal fetch failed: $resp->{status}" unless $resp->{success};
-    return decode_json($resp->{content} || '[]');
+    return decode_json( $resp->{content} || '[]' );
 }
 
 # journal_last returns the most recently recorded frame (optionally scoped to
@@ -227,12 +233,13 @@ sub journal_last {
 # method and/or scoped to session_id => <id>.
 sub journal_recv {
     my (%opts) = @_;
+
     # Forward an explicit session_id to journal_all; if absent, journal_all
     # applies the active-client default via _scope_session.
-    my %scope = exists $opts{session_id} ? (session_id => $opts{session_id}) : ();
-    my @entries = grep { ($_->{direction} // '') eq 'recv' } @{ journal_all(%scope) };
-    if (defined $opts{method}) {
-        @entries = grep { ($_->{method} // '') eq $opts{method} } @entries;
+    my %scope   = exists $opts{session_id} ? ( session_id => $opts{session_id} ) : ();
+    my @entries = grep { ( $_->{direction} // '' ) eq 'recv' } @{ journal_all(%scope) };
+    if ( defined $opts{method} ) {
+        @entries = grep { ( $_->{method} // '' ) eq $opts{method} } @entries;
     }
     return \@entries;
 }
@@ -240,17 +247,17 @@ sub journal_recv {
 # journal_send returns outbound (server→SDK) frames, optionally filtered by
 # event_type and/or scoped to session_id => <id>.
 sub journal_send {
-    my (%opts) = @_;
-    my %scope = exists $opts{session_id} ? (session_id => $opts{session_id}) : ();
-    my @entries = grep { ($_->{direction} // '') eq 'send' } @{ journal_all(%scope) };
-    if (defined $opts{event_type}) {
+    my (%opts)  = @_;
+    my %scope   = exists $opts{session_id} ? ( session_id => $opts{session_id} ) : ();
+    my @entries = grep { ( $_->{direction} // '' ) eq 'send' } @{ journal_all(%scope) };
+    if ( defined $opts{event_type} ) {
         my $et = $opts{event_type};
         @entries = grep {
-            my $f = $_->{frame} // {};
+            my $f = $_->{frame}  // {};
             my $p = $f->{params} // {};
-            ($f->{method} // '') eq 'signalwire.event'
-              && ref $p eq 'HASH'
-              && ($p->{event_type} // '') eq $et;
+            ( $f->{method} // '' ) eq 'signalwire.event'
+                && ref $p eq 'HASH'
+                && ( $p->{event_type} // '' ) eq $et;
         } @entries;
     }
     return \@entries;
@@ -260,16 +267,17 @@ sub journal_send {
 # With session_id => <id>, the scenario is scoped to that session so a parallel
 # test can't consume it; absent => shared bucket.
 sub arm_method {
-    my ($method, $events, %opts) = @_;
+    my ( $method, $events, %opts ) = @_;
     _ensure_server();
     return if $_SKIP_REASON;
-    my $q = _session_query(_scope_session(%opts));
+    my $q    = _session_query( _scope_session(%opts) );
     my $body = encode_json($events);
     my $resp = _ua()->post(
         "$HTTP_URL/__mock__/scenarios/$method$q",
         { content => $body, headers => { 'Content-Type' => 'application/json' } },
     );
     die "arm_method failed: $resp->{status} - $resp->{content}" unless $resp->{success};
+    return;
 }
 
 # arm_dial queues a dial-dance scenario (winner state events + final dial
@@ -280,29 +288,28 @@ sub arm_dial {
     my (%kwargs) = @_;
     _ensure_server();
     return if $_SKIP_REASON;
-    my %sopt = exists $kwargs{session_id} ? (session_id => delete $kwargs{session_id}) : ();
-    my $q = _session_query(_scope_session(%sopt));
-    my $body = encode_json(\%kwargs);
+    my %sopt = exists $kwargs{session_id} ? ( session_id => delete $kwargs{session_id} ) : ();
+    my $q    = _session_query( _scope_session(%sopt) );
+    my $body = encode_json( \%kwargs );
     my $resp = _ua()->post(
         "$HTTP_URL/__mock__/scenarios/dial$q",
         { content => $body, headers => { 'Content-Type' => 'application/json' } },
     );
     die "arm_dial failed: $resp->{status} - $resp->{content}" unless $resp->{success};
+    return;
 }
 
 # push a single signalwire.event (or other) frame to the SDK over WS.
 sub push_frame {
-    my ($frame, %opts) = @_;
+    my ( $frame, %opts ) = @_;
     _ensure_server();
     return if $_SKIP_REASON;
-    my $url = "$HTTP_URL/__mock__/push" . _session_query(_scope_session(%opts));
-    my $body = encode_json({ frame => $frame });
-    my $resp = _ua()->post(
-        $url,
-        { content => $body, headers => { 'Content-Type' => 'application/json' } },
-    );
+    my $url  = "$HTTP_URL/__mock__/push" . _session_query( _scope_session(%opts) );
+    my $body = encode_json( { frame => $frame } );
+    my $resp = _ua()
+        ->post( $url, { content => $body, headers => { 'Content-Type' => 'application/json' } }, );
     die "push_frame failed: $resp->{status} - $resp->{content}" unless $resp->{success};
-    return decode_json($resp->{content} // '{}');
+    return decode_json( $resp->{content} // '{}' );
 }
 
 # inbound_call pushes a calling.call.receive frame (and optional state events).
@@ -318,18 +325,19 @@ sub inbound_call {
         delay_ms    => $opts{delay_ms}    // 50,
     );
     $body{call_id} = $opts{call_id} if exists $opts{call_id};
+
     # Default to the active client's session so the inbound-call sequence is
     # delivered only to this test's client (parallel-safe); an explicit
     # session_id wins, and an empty string broadcasts (legacy behavior).
     my $sid = _scope_session(%opts);
     $body{session_id} = $sid if defined $sid && $sid ne '';
-    my $payload = encode_json(\%body);
-    my $resp = _ua()->post(
+    my $payload = encode_json( \%body );
+    my $resp    = _ua()->post(
         "$HTTP_URL/__mock__/inbound_call",
         { content => $payload, headers => { 'Content-Type' => 'application/json' } },
     );
     die "inbound_call failed: $resp->{status} - $resp->{content}" unless $resp->{success};
-    return decode_json($resp->{content} // '{}');
+    return decode_json( $resp->{content} // '{}' );
 }
 
 # scenario_play runs a scripted timeline (push/sleep/expect_recv ops). With
@@ -338,44 +346,46 @@ sub inbound_call {
 # timeline targets only that session's client and expect_recv matches only
 # that session's frames — making it parallel-safe. sleep ops are left as-is.
 sub scenario_play {
-    my ($ops, %opts) = @_;
+    my ( $ops, %opts ) = @_;
     _ensure_server();
     return if $_SKIP_REASON;
     my $sid = _scope_session(%opts);
-    if (defined $sid && $sid ne '') {
-        $ops = [ map { _scope_op($_, $sid) } @$ops ];
+    if ( defined $sid && $sid ne '' ) {
+        $ops = [ map { _scope_op( $_, $sid ) } @$ops ];
     }
     my $body = encode_json($ops);
-    my $ua = _ua();
+    my $ua   = _ua();
+
     # scenario_play can take longer due to expect_recv waits; bump timeout.
     my $resp = $ua->post(
         "$HTTP_URL/__mock__/scenario_play",
         { content => $body, headers => { 'Content-Type' => 'application/json' } },
     );
     die "scenario_play failed: $resp->{status} - $resp->{content}" unless $resp->{success};
-    return decode_json($resp->{content} // '{}');
+    return decode_json( $resp->{content} // '{}' );
 }
 
 # pump_for($client, $seconds) drives the client's recv loop for up to N seconds.
 # Useful when a test pushes a server-initiated event and needs the SDK to
 # process it before assertions.
 sub pump_for {
-    my ($client, $seconds, $until_cb) = @_;
+    my ( $client, $seconds, $until_cb ) = @_;
     my $deadline = time() + $seconds;
-    while (time() < $deadline) {
-        eval { $client->_read_once };
+    while ( time() < $deadline ) {
+        eval                      { $client->_read_once };
         last if $until_cb && eval { $until_cb->($client) };
     }
+    return;
 }
 
 # pump_until($client, $seconds, sub { ... predicate ... })
 # Drive the recv loop until the predicate returns truthy or timeout expires.
 sub pump_until {
-    my ($client, $seconds, $cb) = @_;
+    my ( $client, $seconds, $cb ) = @_;
     my $deadline = time() + $seconds;
-    while (time() < $deadline) {
+    while ( time() < $deadline ) {
         return 1 if eval { $cb->() };
-        eval { $client->_read_once };
+        eval             { $client->_read_once };
     }
     return eval { $cb->() } ? 1 : 0;
 }
@@ -399,38 +409,39 @@ sub discover_porting_sdk_package {
 
     my $ok = sub {
         my ($psdk_root) = @_;
-        return undef unless defined $psdk_root && length $psdk_root;
-        my $candidate = File::Spec->catdir($psdk_root, 'test_harness', $name);
-        my $init = File::Spec->catfile($candidate, $name, '__init__.py');
+        return unless defined $psdk_root && length $psdk_root;
+        my $candidate = File::Spec->catdir( $psdk_root, 'test_harness', $name );
+        my $init      = File::Spec->catfile( $candidate, $name, '__init__.py' );
         return -f $init ? $candidate : undef;
     };
 
     if ( defined $ENV{PORTING_SDK} && length $ENV{PORTING_SDK} ) {
-        my $hit = $ok->($ENV{PORTING_SDK});
+        my $hit = $ok->( $ENV{PORTING_SDK} );
         return $hit if $hit;
     }
 
     my $here = Cwd::abs_path(__FILE__);
-    return undef unless defined $here;
-    my $dir = File::Spec->canonpath((File::Spec->splitpath($here))[1]);
+    return unless defined $here;
+    my $dir = File::Spec->canonpath( ( File::Spec->splitpath($here) )[1] );
     $dir =~ s{[/\\]$}{};
     while (1) {
+
         # Cwd::abs_path RESOLVES '..'; File::Spec->canonpath does NOT (it is purely
         # lexical), so the old canonpath form appended another '/..' every pass, the
         # path grew without bound, and `last if $parent eq $dir` could never fire —
         # an infinite loop with a -f syscall per hop. It only LOOKED location-specific
         # because an adjacent checkout finds porting-sdk within a few hops and exits
         # early; the non-termination was always there. (root-caused 2026-07-27)
-        my $parent = Cwd::abs_path(File::Spec->catdir($dir, File::Spec->updir));
+        my $parent = Cwd::abs_path( File::Spec->catdir( $dir, File::Spec->updir ) );
         last unless defined $parent;
-        my $sib = $ok->(File::Spec->catdir($parent, 'porting-sdk'));
+        my $sib = $ok->( File::Spec->catdir( $parent, 'porting-sdk' ) );
         return $sib if $sib;
-        my $nested = $ok->(File::Spec->catdir($dir, 'porting-sdk'));
+        my $nested = $ok->( File::Spec->catdir( $dir, 'porting-sdk' ) );
         return $nested if $nested;
-        last if $parent eq $dir;
+        last           if $parent eq $dir;
         $dir = $parent;
     }
-    return undef;
+    return;
 }
 
 sub _ensure_server {
@@ -438,26 +449,25 @@ sub _ensure_server {
     $_ENSURED = 1;
 
     # Probe first.
-    if (_probe_health()) {
+    if ( _probe_health() ) {
+
         # Reuse whatever's already listening.
         return;
     }
 
     # Find porting-sdk/test_harness/mock_relay/ and put it on PYTHONPATH so
     # `python -m mock_relay` resolves without a prior `pip install -e ...`.
-    my $pkg_dir = discover_porting_sdk_package('mock_relay');
-    my $sep = $Config::Config{path_sep} // ':';
+    my $pkg_dir  = discover_porting_sdk_package('mock_relay');
+    my $sep      = $Config::Config{path_sep} // ':';
     my $existing = defined $ENV{PYTHONPATH} ? $ENV{PYTHONPATH} : '';
-    local $ENV{PYTHONPATH} = defined $pkg_dir
-        ? ($existing ne '' ? "$pkg_dir$sep$existing" : $pkg_dir)
+    local $ENV{PYTHONPATH} =
+        defined $pkg_dir
+        ? ( $existing ne '' ? "$pkg_dir$sep$existing" : $pkg_dir )
         : $existing;
 
     my @cmd = (
-        'python3', '-m', 'mock_relay',
-        '--host', $HOST,
-        '--ws-port',   $WS_PORT,
-        '--http-port', $HTTP_PORT,
-        '--log-level', 'error',
+        'python3', '-m',          'mock_relay', '--host',      $HOST, '--ws-port',
+        $WS_PORT,  '--http-port', $HTTP_PORT,   '--log-level', 'error',
     );
 
     # fork() + redirect stderr/stdout to /dev/null in the child so the
@@ -466,15 +476,17 @@ sub _ensure_server {
     # pipes; once we close them on the parent side the child dies on the
     # next write.
     my $pid = fork();
-    if (!defined $pid) {
+    if ( !defined $pid ) {
         $_SKIP_REASON = "fork failed: $!";
         return;
     }
-    if ($pid == 0) {
+    if ( $pid == 0 ) {
+
         # Child.
-        open(STDIN,  '<', '/dev/null');
-        open(STDOUT, '>', '/dev/null');
-        open(STDERR, '>', '/dev/null');
+        open( STDIN,  '<', '/dev/null' );
+        open( STDOUT, '>', '/dev/null' );
+        open( STDERR, '>', '/dev/null' );
+
         # POSIX::setsid lets the parent's process group not propagate
         # SIGINT to the mock when a test runner Ctrl-C's.
         eval { POSIX::setsid() };
@@ -485,24 +497,28 @@ sub _ensure_server {
     }
     $_MOCK_PID = $pid;
 
-    eval { $SIG{CHLD} = 'IGNORE' };
+    # PROCESS-WIDE on purpose: this reaps the mock child for the REST of the
+    # test run, so `local` would restore the old handler at scope exit and
+    # re-create the zombie this line exists to prevent.
+    eval { $SIG{CHLD} = 'IGNORE' };    ## no critic (Variables::RequireLocalizedPunctuationVars)
 
     # Wait up to 30s for /__mock__/health.
     my $deadline = time + 30;
-    while (time < $deadline) {
+    while ( time < $deadline ) {
         return if _probe_health();
         sleep 0.2;
     }
 
     $_SKIP_REASON = "mock_relay did not become ready on $HTTP_URL within 30s "
-                  . "(clone porting-sdk next to signalwire-perl, or pip install mock_relay)";
+        . "(clone porting-sdk next to signalwire-perl, or pip install mock_relay)";
     eval { kill 'TERM', $_MOCK_PID } if $_MOCK_PID;
+    return;
 }
 
 sub _probe_health {
     my $resp = _ua()->get("$HTTP_URL/__mock__/health");
     return 0 unless $resp->{success};
-    my $payload = eval { decode_json($resp->{content} || '{}') };
+    my $payload = eval { decode_json( $resp->{content} || '{}' ) };
     return 0 if $@;
     return exists $payload->{schemas_loaded};
 }
@@ -510,6 +526,7 @@ sub _probe_health {
 END {
     # Preserve the test's exit status; waitpid otherwise stomps $?.
     local $?;
+
     # We deliberately do NOT kill the spawned mock here.
     #
     # Under `prove -jN` the mock is a per-PORT singleton shared across test-file

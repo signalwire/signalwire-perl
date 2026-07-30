@@ -18,11 +18,11 @@ my $client = SignalWire::REST::RestClient->new(
 );
 
 sub safe {
-    my ($label, $fn) = @_;
+    my ( $label, $fn ) = @_;
     my $result = eval { $fn->() };
     if ($@) {
         print "  $label: failed ($@)\n";
-        return undef;
+        return;
     }
     print "  $label: OK\n";
     return $result;
@@ -30,24 +30,28 @@ sub safe {
 
 # 1. Create a conference room
 print "Creating conference room...\n";
-my $room = $client->fabric->conference_rooms->create(name => 'team-standup');
+my $room    = $client->fabric->conference_rooms->create( name => 'team-standup' );
 my $room_id = $room->{id};
 print "  Created conference room: $room_id\n";
 
 # 2. List conference room addresses
 print "\nListing conference room addresses...\n";
-safe('List addresses', sub {
-    my $addrs = $client->fabric->conference_rooms->list_addresses($room_id);
-    for my $a (@{ $addrs->{data} // [] }) {
-        print "  - " . ($a->{display_name} // $a->{id} // 'unknown') . "\n";
+safe(
+    'List addresses',
+    sub {
+        my $addrs = $client->fabric->conference_rooms->list_addresses($room_id);
+        for my $a ( @{ $addrs->{data} // [] } ) {
+            print "  - " . ( $a->{display_name} // $a->{id} // 'unknown' ) . "\n";
+        }
     }
-});
+);
 
 # 3. Create a cXML script
 print "\nCreating cXML script...\n";
 my $cxml = $client->fabric->cxml_scripts->create(
     display_name => 'Hold Music Script',
-    contents     => '<Response><Say>Please hold.</Say><Play>https://example.com/hold.mp3</Play></Response>',
+    contents     =>
+        '<Response><Say>Please hold.</Say><Play>https://example.com/hold.mp3</Play></Response>',
 );
 my $cxml_id = $cxml->{id};
 print "  Created cXML script: $cxml_id\n";
@@ -72,33 +76,39 @@ print "  Created relay application: $relay_id\n";
 
 # 6. List all fabric resources
 print "\nListing all fabric resources...\n";
-my $resources = safe('List resources', sub { $client->fabric->resources->list });
+my $resources = safe( 'List resources', sub { $client->fabric->resources->list } );
 if ($resources) {
     my @data = @{ $resources->{data} // [] };
-    for my $r (@data[0 .. ($#data < 4 ? $#data : 4)]) {
-        print "  - " . ($r->{type} // 'unknown') . ": "
-            . ($r->{display_name} // $r->{id} // 'unknown') . "\n";
+    for my $r ( @data[ 0 .. ( $#data < 4 ? $#data : 4 ) ] ) {
+        print "  - "
+            . ( $r->{type} // 'unknown' ) . ": "
+            . ( $r->{display_name} // $r->{id} // 'unknown' ) . "\n";
     }
 }
 
 # 7. Get a specific resource
-if ($resources && $resources->{data} && @{ $resources->{data} }) {
+if ( $resources && $resources->{data} && @{ $resources->{data} } ) {
     my $first = $resources->{data}[0];
-    if ($first->{id}) {
-        my $detail = safe('Get resource', sub { $client->fabric->resources->get($first->{id}) });
+    if ( $first->{id} ) {
+        my $detail =
+            safe( 'Get resource', sub { $client->fabric->resources->get( $first->{id} ) } );
         if ($detail) {
-            print "  Resource detail: " . ($detail->{display_name} // 'N/A')
-                . " (" . ($detail->{type} // 'N/A') . ")\n";
+            print "  Resource detail: "
+                . ( $detail->{display_name} // 'N/A' ) . " ("
+                . ( $detail->{type}         // 'N/A' ) . ")\n";
         }
     }
 }
 
 # 8. Assign a domain application (demo)
 print "\nAssigning domain application (demo)...\n";
-safe('Domain app', sub {
-    $client->fabric->resources->assign_domain_application(
-        $relay_id, domain_application_id => '993ed018-9e79-4e50-b97b-984bd5534095');
-});
+safe(
+    'Domain app',
+    sub {
+        $client->fabric->resources->assign_domain_application( $relay_id,
+            domain_application_id => '993ed018-9e79-4e50-b97b-984bd5534095' );
+    }
+);
 
 # NOTE: To bind a phone number to a webhook/agent/flow, set call_handler
 # on the phone number directly — see rest_bind_phone_to_swml_webhook.pl.
@@ -106,30 +116,36 @@ safe('Domain app', sub {
 
 # 9. Generate tokens
 print "\nGenerating tokens...\n";
-safe('Guest token', sub {
-    # A guest token authorizes access to a set of Fabric addresses (up to 10 UUIDs).
-    my $guest = $client->fabric->tokens->create_guest_token(
-        allowed_addresses => ['3fa85f64-5717-4562-b3fc-2c963f66afa6'],
-    );
-    my $t = $guest->{token} // '';
-    print "  Guest token: " . substr($t, 0, 40) . "...\n" if $t;
-});
-safe('Invite token', sub {
-    # An invite token is scoped to a single subscriber address.
-    my $invite = $client->fabric->tokens->create_invite_token(
-        address_id => '3fa85f64-5717-4562-b3fc-2c963f66afa6',
-    );
-    my $t = $invite->{token} // '';
-    print "  Invite token: " . substr($t, 0, 40) . "...\n" if $t;
-});
-safe('Embed token', sub {
-    # An embed token is minted from a Click-to-Call (c2c) token.
-    my $embed = $client->fabric->tokens->create_embed_token(
-        token => 'c2c_7acc0e5e968706a032983cd80cdca219',
-    );
-    my $t = $embed->{token} // '';
-    print "  Embed token: " . substr($t, 0, 40) . "...\n" if $t;
-});
+safe(
+    'Guest token',
+    sub {
+        # A guest token authorizes access to a set of Fabric addresses (up to 10 UUIDs).
+        my $guest = $client->fabric->tokens->create_guest_token(
+            allowed_addresses => ['3fa85f64-5717-4562-b3fc-2c963f66afa6'], );
+        my $t = $guest->{token} // '';
+        print "  Guest token: " . substr( $t, 0, 40 ) . "...\n" if $t;
+    }
+);
+safe(
+    'Invite token',
+    sub {
+        # An invite token is scoped to a single subscriber address.
+        my $invite = $client->fabric->tokens->create_invite_token(
+            address_id => '3fa85f64-5717-4562-b3fc-2c963f66afa6', );
+        my $t = $invite->{token} // '';
+        print "  Invite token: " . substr( $t, 0, 40 ) . "...\n" if $t;
+    }
+);
+safe(
+    'Embed token',
+    sub {
+        # An embed token is minted from a Click-to-Call (c2c) token.
+        my $embed = $client->fabric->tokens->create_embed_token(
+            token => 'c2c_7acc0e5e968706a032983cd80cdca219', );
+        my $t = $embed->{token} // '';
+        print "  Embed token: " . substr( $t, 0, 40 ) . "...\n" if $t;
+    }
+);
 
 # 10. Clean up
 print "\nCleaning up...\n";

@@ -26,12 +26,12 @@ use strict;
 use warnings;
 
 use HTTP::Tiny;
-use JSON qw(decode_json);
-use POSIX ();
+use JSON        qw(decode_json);
+use POSIX       ();
 use Time::HiRes qw(sleep time);
-use File::Spec ();
-use Cwd ();
-use Config ();
+use File::Spec  ();
+use Cwd         ();
+use Config      ();
 
 our $VERSION = '0.01';
 
@@ -42,13 +42,19 @@ use PortPicker ();
 # TLS mocks are test-local (spawned + killed in this suite). Env overrides win;
 # otherwise pick FREE ports rather than hardcoded defaults that collide with a
 # stale/concurrent listener.
-our $HOST            = '127.0.0.1';
-our $HTTPS_PORT      = ( $ENV{MOCK_SIGNALWIRE_TLS_PORT} && $ENV{MOCK_SIGNALWIRE_TLS_PORT} =~ /^[0-9]+$/ )
-    ? $ENV{MOCK_SIGNALWIRE_TLS_PORT}   : PortPicker::pick_free_port($HOST);
-our $WSS_PORT        = ( $ENV{MOCK_RELAY_TLS_WS_PORT} && $ENV{MOCK_RELAY_TLS_WS_PORT} =~ /^[0-9]+$/ )
-    ? $ENV{MOCK_RELAY_TLS_WS_PORT}     : PortPicker::pick_free_port($HOST);
-our $WSS_HTTP_PORT   = ( $ENV{MOCK_RELAY_TLS_HTTP_PORT} && $ENV{MOCK_RELAY_TLS_HTTP_PORT} =~ /^[0-9]+$/ )
-    ? $ENV{MOCK_RELAY_TLS_HTTP_PORT}   : PortPicker::pick_free_port($HOST);
+our $HOST = '127.0.0.1';
+our $HTTPS_PORT =
+    ( $ENV{MOCK_SIGNALWIRE_TLS_PORT} && $ENV{MOCK_SIGNALWIRE_TLS_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_SIGNALWIRE_TLS_PORT}
+    : PortPicker::pick_free_port($HOST);
+our $WSS_PORT =
+    ( $ENV{MOCK_RELAY_TLS_WS_PORT} && $ENV{MOCK_RELAY_TLS_WS_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_RELAY_TLS_WS_PORT}
+    : PortPicker::pick_free_port($HOST);
+our $WSS_HTTP_PORT =
+    ( $ENV{MOCK_RELAY_TLS_HTTP_PORT} && $ENV{MOCK_RELAY_TLS_HTTP_PORT} =~ /^[0-9]+$/ )
+    ? $ENV{MOCK_RELAY_TLS_HTTP_PORT}
+    : PortPicker::pick_free_port($HOST);
 
 our $PROJECT = 'test_proj';
 our $TOKEN   = 'test_tok';
@@ -62,31 +68,33 @@ our $TOKEN   = 'test_tok';
 # absolute certs/ directory, or undef when porting-sdk is not adjacent.
 sub certs_dir {
     my $here = Cwd::abs_path(__FILE__);
-    return undef unless defined $here;
-    my $dir = File::Spec->canonpath((File::Spec->splitpath($here))[1]);
+    return unless defined $here;
+    my $dir = File::Spec->canonpath( ( File::Spec->splitpath($here) )[1] );
     $dir =~ s{[/\\]$}{};
     while (1) {
+
         # Cwd::abs_path RESOLVES '..'; File::Spec->canonpath does NOT (it is purely
         # lexical), so the old canonpath form appended another '/..' every pass, the
         # path grew without bound, and `last if $parent eq $dir` could never fire —
         # an infinite loop with a -f syscall per hop. It only LOOKED location-specific
         # because an adjacent checkout finds porting-sdk within a few hops and exits
         # early; the non-termination was always there. (root-caused 2026-07-27)
-        my $parent = Cwd::abs_path(File::Spec->catdir($dir, File::Spec->updir));
+        my $parent = Cwd::abs_path( File::Spec->catdir( $dir, File::Spec->updir ) );
         last unless defined $parent;
         last if $parent eq $dir;
-        my $tls = File::Spec->catdir($parent, 'porting-sdk', 'test_harness', 'tls');
-        my $gen = File::Spec->catfile($tls, 'gen_certs.sh');
-        if (-f $gen) {
+        my $tls = File::Spec->catdir( $parent, 'porting-sdk', 'test_harness', 'tls' );
+        my $gen = File::Spec->catfile( $tls, 'gen_certs.sh' );
+        if ( -f $gen ) {
+
             # Idempotent: regenerates only when the leaf cert is missing/stale.
             # Capture stdout/stderr so gen_certs.sh's chatter stays out of TAP.
             my $out = `bash \Q$gen\E 2>&1`;
-            return undef if $? != 0;
-            return File::Spec->catdir($tls, 'certs');
+            return if $? != 0;
+            return File::Spec->catdir( $tls, 'certs' );
         }
         $dir = $parent;
     }
-    return undef;
+    return;
 }
 
 # trust_ca returns the path to the CA cert AND sets $ENV{SSL_CERT_FILE} so the
@@ -95,10 +103,18 @@ sub certs_dir {
 # in force before any TLS handshake. Returns undef (skip) when not adjacent.
 sub trust_ca {
     my $certs = certs_dir();
-    return undef unless defined $certs;
-    my $ca = File::Spec->catfile($certs, 'ca.crt');
-    return undef unless -f $ca;
+    return unless defined $certs;
+    my $ca = File::Spec->catfile( $certs, 'ca.crt' );
+    return unless -f $ca;
+
+    # Deliberately process-wide, not `local`: trust_ca() must leave SSL_CERT_FILE in
+    # force for every TLS handshake the CALLING test makes afterwards (a localized
+    # copy would be restored the moment trust_ca returned), and the fork() child
+    # below sets its own env for the exec'd mock — a child's %ENV cannot leak back
+    # to the parent.
+    ## no critic (Variables::RequireLocalizedPunctuationVars)
     $ENV{SSL_CERT_FILE} = $ca;
+    ## use critic
     return $ca;
 }
 
@@ -109,25 +125,26 @@ sub trust_ca {
 sub _discover_pkg {
     my ($name) = @_;
     my $here = Cwd::abs_path(__FILE__);
-    return undef unless defined $here;
-    my $dir = File::Spec->canonpath((File::Spec->splitpath($here))[1]);
+    return unless defined $here;
+    my $dir = File::Spec->canonpath( ( File::Spec->splitpath($here) )[1] );
     $dir =~ s{[/\\]$}{};
     while (1) {
+
         # Cwd::abs_path RESOLVES '..'; File::Spec->canonpath does NOT (it is purely
         # lexical), so the old canonpath form appended another '/..' every pass, the
         # path grew without bound, and `last if $parent eq $dir` could never fire —
         # an infinite loop with a -f syscall per hop. It only LOOKED location-specific
         # because an adjacent checkout finds porting-sdk within a few hops and exits
         # early; the non-termination was always there. (root-caused 2026-07-27)
-        my $parent = Cwd::abs_path(File::Spec->catdir($dir, File::Spec->updir));
+        my $parent = Cwd::abs_path( File::Spec->catdir( $dir, File::Spec->updir ) );
         last unless defined $parent;
         last if $parent eq $dir;
-        my $candidate = File::Spec->catdir($parent, 'porting-sdk', 'test_harness', $name);
-        my $init = File::Spec->catfile($candidate, $name, '__init__.py');
+        my $candidate = File::Spec->catdir( $parent, 'porting-sdk', 'test_harness', $name );
+        my $init      = File::Spec->catfile( $candidate, $name, '__init__.py' );
         return $candidate if -f $init;
         $dir = $parent;
     }
-    return undef;
+    return;
 }
 
 # _spawn_tls_mock(name, \@extra_args, \%env) forks a `python -m <name> --tls`
@@ -135,26 +152,34 @@ sub _discover_pkg {
 # dir to PYTHONPATH and applying %env (SIGNALWIRE_MOCK_TLS=1, ...). Returns the
 # child pid, or undef when the package is not adjacent / fork fails.
 sub _spawn_tls_mock {
-    my ($name, $extra_args, $env) = @_;
+    my ( $name, $extra_args, $env ) = @_;
     my $pkg_dir = _discover_pkg($name);
-    return undef unless defined $pkg_dir;
+    return unless defined $pkg_dir;
 
-    my $sep = $Config::Config{path_sep} // ':';
-    my $existing = defined $ENV{PYTHONPATH} ? $ENV{PYTHONPATH} : '';
-    my $pythonpath = $existing ne '' ? "$pkg_dir$sep$existing" : $pkg_dir;
+    my $sep        = $Config::Config{path_sep} // ':';
+    my $existing   = defined $ENV{PYTHONPATH} ? $ENV{PYTHONPATH}        : '';
+    my $pythonpath = $existing ne ''          ? "$pkg_dir$sep$existing" : $pkg_dir;
 
-    my @cmd = ('python3', '-m', $name, '--tls', '--log-level', 'error', @{ $extra_args || [] });
+    my @cmd = ( 'python3', '-m', $name, '--tls', '--log-level', 'error', @{ $extra_args || [] } );
 
     my $pid = fork();
-    return undef unless defined $pid;
-    if ($pid == 0) {
+    return unless defined $pid;
+    if ( $pid == 0 ) {
+
         # Child: trust env + redirect stdio so the startup banner can't SIGPIPE.
-        $ENV{PYTHONPATH} = $pythonpath;
+        # Deliberately process-wide, not `local`: trust_ca() must leave SSL_CERT_FILE in
+        # force for every TLS handshake the CALLING test makes afterwards (a localized
+        # copy would be restored the moment trust_ca returned), and the fork() child
+        # below sets its own env for the exec'd mock — a child's %ENV cannot leak back
+        # to the parent.
+        ## no critic (Variables::RequireLocalizedPunctuationVars)
+        $ENV{PYTHONPATH}          = $pythonpath;
         $ENV{SIGNALWIRE_MOCK_TLS} = '1';
-        for my $k (keys %{ $env || {} }) { $ENV{$k} = $env->{$k} }
-        open(STDIN,  '<', '/dev/null');
-        open(STDOUT, '>', '/dev/null');
-        open(STDERR, '>', '/dev/null');
+        for my $k ( keys %{ $env || {} } ) { $ENV{$k} = $env->{$k} }
+        ## use critic
+        open( STDIN,  '<', '/dev/null' );
+        open( STDOUT, '>', '/dev/null' );
+        open( STDERR, '>', '/dev/null' );
         eval { POSIX::setsid() };
         exec(@cmd) or POSIX::_exit(127);
     }
@@ -164,12 +189,12 @@ sub _spawn_tls_mock {
 # _wait_health($ua, $url, $key) polls $url for up to 30s, returning true once
 # it answers 200 with a JSON body containing $key (the readiness signal).
 sub _wait_health {
-    my ($ua, $url, $key) = @_;
+    my ( $ua, $url, $key ) = @_;
     my $deadline = time + 30;
-    while (time < $deadline) {
+    while ( time < $deadline ) {
         my $resp = $ua->get($url);
-        if ($resp->{success}) {
-            my $payload = eval { decode_json($resp->{content} || '{}') };
+        if ( $resp->{success} ) {
+            my $payload = eval { decode_json( $resp->{content} || '{}' ) };
             return 1 if !$@ && exists $payload->{$key};
         }
         sleep 0.2;
@@ -192,32 +217,33 @@ sub start_https_mock {
     # Build a CA-trusting client up front. mock_signalwire serves the whole
     # app (control plane included) over HTTPS in --tls mode, so the readiness
     # probe itself crosses a verified TLS session.
-    my $ua = HTTP::Tiny->new(timeout => 5, verify_SSL => 1);
+    my $ua = HTTP::Tiny->new( timeout => 5, verify_SSL => 1 );
 
     # Reuse a mock already listening on the TLS port (idempotent across files).
-    return $base if _probe_now($ua, $base, 'specs_loaded');
+    return $base if _probe_now( $ua, $base, 'specs_loaded' );
 
-    $_SW_PID = _spawn_tls_mock(
-        'mock_signalwire',
-        ['--host', $HOST, '--port', $HTTPS_PORT],
-        {},
-    );
-    return undef unless defined $_SW_PID;
-    eval { $SIG{CHLD} = 'IGNORE' };
+    $_SW_PID =
+        _spawn_tls_mock( 'mock_signalwire', [ '--host', $HOST, '--port', $HTTPS_PORT ], {}, );
+    return unless defined $_SW_PID;
 
-    if (_wait_health($ua, "$base/__mock__/health", 'specs_loaded')) {
+    # PROCESS-WIDE on purpose: this reaps the mock child for the REST of the
+    # test run, so `local` would restore the old handler at scope exit and
+    # re-create the zombie this line exists to prevent.
+    eval { $SIG{CHLD} = 'IGNORE' };    ## no critic (Variables::RequireLocalizedPunctuationVars)
+
+    if ( _wait_health( $ua, "$base/__mock__/health", 'specs_loaded' ) ) {
         return $base;
     }
-    _reap(\$_SW_PID);
-    return undef;
+    _reap( \$_SW_PID );
+    return;
 }
 
 # _probe_now is a single (non-polling) health probe used to decide reuse.
 sub _probe_now {
-    my ($ua, $base, $key) = @_;
+    my ( $ua, $base, $key ) = @_;
     my $resp = $ua->get("$base/__mock__/health");
     return 0 unless $resp->{success};
-    my $p = eval { decode_json($resp->{content} || '{}') };
+    my $p = eval { decode_json( $resp->{content} || '{}' ) };
     return !$@ && exists $p->{$key};
 }
 
@@ -225,10 +251,10 @@ sub _probe_now {
 # mock's (HTTPS) control plane, or dies if the journal is empty.
 sub https_journal_last {
     my $base = "https://$HOST:$HTTPS_PORT";
-    my $ua = HTTP::Tiny->new(timeout => 5, verify_SSL => 1);
+    my $ua   = HTTP::Tiny->new( timeout => 5, verify_SSL => 1 );
     my $resp = $ua->get("$base/__mock__/journal");
     die "https journal fetch failed: $resp->{status} $resp->{reason}" unless $resp->{success};
-    my $entries = decode_json($resp->{content} || '[]');
+    my $entries = decode_json( $resp->{content} || '[]' );
     die "https journal is empty - HTTPS request did not reach the mock" unless @$entries;
     return $entries->[-1];
 }
@@ -245,30 +271,34 @@ our $_RELAY_PID;
 # journal reads), or undef (skip). Reaped on END.
 sub start_wss_mock {
     my $http_base = "http://$HOST:$WSS_HTTP_PORT";
-    my $ua = HTTP::Tiny->new(timeout => 5);  # control plane is plain HTTP
+    my $ua        = HTTP::Tiny->new( timeout => 5 );    # control plane is plain HTTP
 
-    return $http_base if _probe_now($ua, $http_base, 'schemas_loaded');
+    return $http_base if _probe_now( $ua, $http_base, 'schemas_loaded' );
 
     $_RELAY_PID = _spawn_tls_mock(
         'mock_relay',
-        ['--host', $HOST, '--ws-port', $WSS_PORT, '--http-port', $WSS_HTTP_PORT],
+        [ '--host', $HOST, '--ws-port', $WSS_PORT, '--http-port', $WSS_HTTP_PORT ],
         { MOCK_RELAY_PORT => $WSS_PORT },
     );
-    return undef unless defined $_RELAY_PID;
-    eval { $SIG{CHLD} = 'IGNORE' };
+    return unless defined $_RELAY_PID;
 
-    if (_wait_health($ua, "$http_base/__mock__/health", 'schemas_loaded')) {
+    # PROCESS-WIDE on purpose: this reaps the mock child for the REST of the
+    # test run, so `local` would restore the old handler at scope exit and
+    # re-create the zombie this line exists to prevent.
+    eval { $SIG{CHLD} = 'IGNORE' };    ## no critic (Variables::RequireLocalizedPunctuationVars)
+
+    if ( _wait_health( $ua, "$http_base/__mock__/health", 'schemas_loaded' ) ) {
         return $http_base;
     }
-    _reap(\$_RELAY_PID);
-    return undef;
+    _reap( \$_RELAY_PID );
+    return;
 }
 
 # wss_journal_reset clears the relay mock journal (plain-HTTP control plane).
 sub wss_journal_reset {
     my $http_base = "http://$HOST:$WSS_HTTP_PORT";
-    my $ua = HTTP::Tiny->new(timeout => 5);
-    for my $i (1 .. 10) {
+    my $ua        = HTTP::Tiny->new( timeout => 5 );
+    for my $i ( 1 .. 10 ) {
         my $resp = $ua->post("$http_base/__mock__/journal/reset");
         return if $resp->{success};
         sleep 0.1;
@@ -280,14 +310,14 @@ sub wss_journal_reset {
 # (SDK->server) frame with the given JSON-RPC method — proof traffic crossed
 # the wss:// link (the journal is read over the plain-HTTP control plane).
 sub wss_saw_recv {
-    my ($method) = @_;
+    my ($method)  = @_;
     my $http_base = "http://$HOST:$WSS_HTTP_PORT";
-    my $ua = HTTP::Tiny->new(timeout => 5);
-    my $resp = $ua->get("$http_base/__mock__/journal");
+    my $ua        = HTTP::Tiny->new( timeout => 5 );
+    my $resp      = $ua->get("$http_base/__mock__/journal");
     die "wss journal fetch failed: $resp->{status}" unless $resp->{success};
-    my $entries = decode_json($resp->{content} || '[]');
+    my $entries = decode_json( $resp->{content} || '[]' );
     for my $e (@$entries) {
-        return 1 if ($e->{direction} // '') eq 'recv' && ($e->{method} // '') eq $method;
+        return 1 if ( $e->{direction} // '' ) eq 'recv' && ( $e->{method} // '' ) eq $method;
     }
     return 0;
 }
@@ -302,20 +332,21 @@ sub _reap {
     return unless $pid && $pid > 0;
     eval {
         kill 'TERM', $pid;
-        for my $i (1 .. 20) {
+        for my $i ( 1 .. 20 ) {
             last unless kill 0, $pid;
             sleep 0.05;
         }
         kill 'KILL', $pid if kill 0, $pid;
-        waitpid($pid, POSIX::WNOHANG());
+        waitpid( $pid, POSIX::WNOHANG() );
     };
     $$pidref = undef;
+    return;
 }
 
 END {
     local $?;
-    _reap(\$_SW_PID);
-    _reap(\$_RELAY_PID);
+    _reap( \$_SW_PID );
+    _reap( \$_RELAY_PID );
 }
 
 1;

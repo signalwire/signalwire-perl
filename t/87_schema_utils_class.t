@@ -10,7 +10,7 @@ use Test::More;
 
 use_ok('SignalWire::Utils::SchemaUtils');
 
-sub utils { return SignalWire::Utils::SchemaUtils->new(@_) }
+sub utils { my (@args) = @_; return SignalWire::Utils::SchemaUtils->new(@args) }
 
 # ------------------------------------------------------------------
 # Schema loading + verb extraction
@@ -18,7 +18,7 @@ sub utils { return SignalWire::Utils::SchemaUtils->new(@_) }
 subtest 'loads bundled schema and extracts verbs' => sub {
     my $u     = utils();
     my @verbs = $u->get_all_verb_names;
-    ok( scalar(@verbs) >= 38, 'at least 38 verbs extracted' );
+    ok( scalar(@verbs) >= 38,               'at least 38 verbs extracted' );
     ok( ( grep { $_ eq 'answer' } @verbs ), 'includes answer' );
     ok( ( grep { $_ eq 'ai' } @verbs ),     'includes ai' );
 
@@ -59,13 +59,13 @@ subtest 'get_verb_required_properties returns the schema required list' => sub {
 # ------------------------------------------------------------------
 subtest 'validate_verb unknown verb' => sub {
     my ( $valid, $errors ) = utils()->validate_verb( 'not_a_verb', {} );
-    ok( !$valid, 'unknown verb invalid' );
+    ok( !$valid,                              'unknown verb invalid' );
     ok( ( grep { /Unknown verb/ } @$errors ), 'unknown-verb error' );
 };
 
 subtest 'validate_verb missing required property' => sub {
     my ( $valid, $errors ) = utils()->validate_verb( 'execute', {} );
-    ok( !$valid, 'missing required => invalid' );
+    ok( !$valid,                                           'missing required => invalid' );
     ok( ( grep { /required property 'dest'/i } @$errors ), 'names the missing property' );
 };
 
@@ -104,39 +104,40 @@ subtest 'full validation is wired in' => sub {
 # configs (and the deliberate ai.params open door) pass.
 # ------------------------------------------------------------------
 subtest 'strict validate_verb — invalid configs fail' => sub {
-    my $u = utils();
+    my $u   = utils();
     my @bad = (
-        [ 'foobar', {} ],                                            # unknown verb
-        [ 'answer', { maxduration   => 5 } ],                        # misspelled key
-        [ 'answer', { wibble        => 1 } ],                        # unknown key
-        [ 'answer', { max_duration  => 'notanumber' } ],            # wrong type
-        [ 'play',   { urlz          => ['say:hi'] } ],              # misspelled key
-        [ 'play',   { url => 'say:hi', foo => 1 } ],                # valid + unknown key
-        [ 'record', { formatt       => 'wav' } ],                   # misspelled key
-        [ 'ai',     { prompt => { text => 'hi' }, temperatur => 0.5 } ],  # misspelled top key
-        [ 'ai',     { prompt => { text => 'hi' }, zzz => 1 } ],     # unknown top key
-        [ 'ai',     { post_prompt => { text => 'bye' } } ],         # missing required prompt
+        [ 'foobar', {} ],                                                  # unknown verb
+        [ 'answer', { maxduration  => 5 } ],                               # misspelled key
+        [ 'answer', { wibble       => 1 } ],                               # unknown key
+        [ 'answer', { max_duration => 'notanumber' } ],                    # wrong type
+        [ 'play',   { urlz         => ['say:hi'] } ],                      # misspelled key
+        [ 'play',   { url          => 'say:hi', foo => 1 } ],              # valid + unknown key
+        [ 'record', { formatt      => 'wav' } ],                           # misspelled key
+        [ 'ai',     { prompt => { text => 'hi' }, temperatur => 0.5 } ],   # misspelled top key
+        [ 'ai',     { prompt => { text => 'hi' }, zzz => 1 } ],            # unknown top key
+        [ 'ai',     { post_prompt => { text => 'bye' } } ],                # missing required prompt
     );
     for my $c (@bad) {
-        my ( $verb, $config ) = @$c;
+        my ( $verb,  $config ) = @$c;
         my ( $valid, $errors ) = $u->validate_verb( $verb, $config );
-        ok( !$valid, "invalid $verb config is rejected" );
+        ok( !$valid,         "invalid $verb config is rejected" );
         ok( scalar @$errors, "  ... with a diagnostic" );
     }
 };
 
 subtest 'strict validate_verb — valid configs pass' => sub {
-    my $u = utils();
+    my $u    = utils();
     my @good = (
         [ 'answer', { max_duration => 5 } ],
-        [ 'play',   { url => 'say:hi' } ],
-        [ 'ai',     { prompt => { text => 'hi' } } ],
+        [ 'play',   { url          => 'say:hi' } ],
+        [ 'ai',     { prompt       => { text => 'hi' } } ],
+
         # ai.params is the DELIBERATE open door — a key inside it is not a
         # misspelling and must NOT be rejected.
-        [ 'ai',     { prompt => { text => 'hi' }, params => { some_future_param => 1 } } ],
+        [ 'ai', { prompt => { text => 'hi' }, params => { some_future_param => 1 } } ],
     );
     for my $c (@good) {
-        my ( $verb, $config ) = @$c;
+        my ( $verb,  $config ) = @$c;
         my ( $valid, $errors ) = $u->validate_verb( $verb, $config );
         ok( $valid, "valid $verb config passes" )
             or diag( "errors: " . join( '; ', @{ $errors // [] } ) );
@@ -148,15 +149,15 @@ subtest 'strict validate_verb — valid configs pass' => sub {
 # ------------------------------------------------------------------
 subtest 'generate_method_signature' => sub {
     my $sig = utils()->generate_method_signature('answer');
-    like( $sig, qr/\Adef answer\(self, /, 'signature starts with def answer(self, ' );
+    like( $sig, qr/\Adef answer\(self, /,  'signature starts with def answer(self, ' );
     like( $sig, qr/\*\*kwargs\) -> bool:/, 'ends with **kwargs) -> bool:' );
-    like( $sig, qr/max_duration:/,          'includes the max_duration parameter' );
+    like( $sig, qr/max_duration:/,         'includes the max_duration parameter' );
 };
 
 subtest 'generate_method_body' => sub {
     my $body = utils()->generate_method_body('answer');
-    like( $body, qr/config = \{\}/,                       'initialises config' );
-    like( $body, qr/if max_duration is not None:/,        'guards a parameter' );
+    like( $body, qr/config = \{\}/,                             'initialises config' );
+    like( $body, qr/if max_duration is not None:/,              'guards a parameter' );
     like( $body, qr/return self\.add_verb\('answer', config\)/, 'ends with add_verb call' );
 };
 
@@ -170,8 +171,11 @@ subtest 'SchemaValidationError message + fields' => sub {
     );
     is( $err->verb_name, 'ai', 'verb_name' );
     is_deeply( $err->errors, [ 'bad prompt', 'no swaig' ], 'errors' );
-    like( "$err", qr/Schema validation failed for 'ai': bad prompt; no swaig/,
-        'stringifies to composed message' );
+    like(
+        "$err",
+        qr/Schema validation failed for 'ai': bad prompt; no swaig/,
+        'stringifies to composed message'
+    );
 };
 
 done_testing;

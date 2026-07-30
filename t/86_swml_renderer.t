@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More;
-use JSON ();
+use JSON     ();
 use JSON::PP ();
 
 # Tests for SignalWire::SWML::SWMLRenderer->render_swml /
@@ -33,18 +33,19 @@ sub new_strict_service {
 }
 
 sub render_and_parse {
-    return JSON::decode_json( $RENDERER->render_swml(@_) );
+    my (@args) = @_;
+    return JSON::decode_json( $RENDERER->render_swml(@args) );
 }
 
 subtest 'render_swml basic text prompt' => sub {
-    my $doc  = render_and_parse( prompt => 'you are helpful', service       => new_strict_service() );
+    my $doc  = render_and_parse( prompt => 'you are helpful', service => new_strict_service() );
     my $main = $doc->{sections}{main};
     is( scalar @$main, 1, 'one verb' );
     is_deeply( $main->[0]{ai}{prompt}, { text => 'you are helpful' }, 'ai text prompt' );
 };
 
 subtest 'add_answer precedes ai' => sub {
-    my $doc  = render_and_parse( prompt => 'hi', service       => new_strict_service(), add_answer => 1 );
+    my $doc  = render_and_parse( prompt => 'hi', service => new_strict_service(), add_answer => 1 );
     my $main = $doc->{sections}{main};
     is( ( keys %{ $main->[0] } )[0], 'answer', 'answer first' );
     is( ( keys %{ $main->[1] } )[0], 'ai',     'ai second' );
@@ -81,7 +82,7 @@ subtest 'record_call stereo is a JSON boolean, not a number' => sub {
 subtest 'default_webhook_url becomes SWAIG defaults' => sub {
     my $doc = render_and_parse(
         prompt              => 'hi',
-        service       => new_strict_service(),
+        service             => new_strict_service(),
         default_webhook_url => 'https://ex.com/swaig',
     );
     my $ai = $doc->{sections}{main}[0]{ai};
@@ -95,7 +96,7 @@ subtest 'default_webhook_url becomes SWAIG defaults' => sub {
 sub hooks_functions {
     my $doc = render_and_parse(
         prompt           => 'hi',
-        service       => new_strict_service(),
+        service          => new_strict_service(),
         startup_hook_url => 'https://ex.com/start',
         hangup_hook_url  => 'https://ex.com/end',
         swaig_functions  => [
@@ -122,7 +123,7 @@ subtest 'hook wire shape' => sub {
 subtest 'pom prompt' => sub {
     my $pom = [ { title => 'Role', body => 'assistant' } ];
     my $doc =
-        render_and_parse( prompt => $pom, service       => new_strict_service(), prompt_is_pom => 1 );
+        render_and_parse( prompt => $pom, service => new_strict_service(), prompt_is_pom => 1 );
     is_deeply( $doc->{sections}{main}[0]{ai}{prompt}, { pom => $pom }, 'pom prompt' );
 };
 
@@ -156,7 +157,8 @@ subtest 'a params key that is not a top-level ai property is refused' => sub {
 };
 
 subtest 'yaml format' => sub {
-    my $out = $RENDERER->render_swml( prompt => 'hi', service       => new_strict_service(), format => 'yaml' );
+    my $out =
+        $RENDERER->render_swml( prompt => 'hi', service => new_strict_service(), format => 'yaml' );
     require YAML;
     my $parsed = YAML::Load($out);
     is( ( keys %{ $parsed->{sections}{main}[0] } )[0], 'ai', 'yaml round-trips' );
@@ -240,7 +242,7 @@ subtest 'function response empty text skips play' => sub {
         actions       => [ { ai => { prompt => { text => 'x' } } } ],
     );
     my $main = JSON::decode_json($out)->{sections}{main};
-    is( scalar @$main, 1, 'only the action verb' );
+    is( scalar @$main,               1,    'only the action verb' );
     is( ( keys %{ $main->[0] } )[0], 'ai', 'ai action present' );
 };
 

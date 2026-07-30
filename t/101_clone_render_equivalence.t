@@ -49,16 +49,16 @@ sub build_agent {
 my $json = JSON->new->canonical->utf8;
 
 # Baseline: render the agent directly.
-my $orig       = build_agent();
-my $orig_swml  = $json->encode( $orig->render_swml( {} ) );
+my $orig      = build_agent();
+my $orig_swml = $json->encode( $orig->render_swml( {} ) );
 
 # The dynamic-config path: a per-request clone (as handle_request builds), with
 # a NO-OP callback — i.e. the callback changes nothing, so the rendered doc MUST
 # equal the baseline. Render off the clone exactly as handle_request does.
 my $agent = build_agent();
 $agent->dynamic_config_callback( sub { return } );    # no-op
-my $clone      = $agent->_clone_for_request;
-my $noop_cb    = $agent->dynamic_config_callback;
+my $clone   = $agent->_clone_for_request;
+my $noop_cb = $agent->dynamic_config_callback;
 $noop_cb->( {}, {}, {}, $clone );                     # apply the no-op to the clone
 my $clone_swml = $json->encode( $clone->render_swml( {} ) );
 
@@ -70,16 +70,16 @@ my $clone_doc = $clone->render_swml( {} );
 
 # Dig out the AI verb config.
 sub find_ai {
-    my ($doc) = @_;
-    my $sections = $doc->{sections} || {};
+    my ($doc)    = @_;
+    my $sections = $doc->{sections}  || {};
     my $main     = $sections->{main} || [];
     for my $verb (@$main) {
         return $verb->{ai} if ref $verb eq 'HASH' && exists $verb->{ai};
     }
-    return undef;
+    return;
 }
 my $ai = find_ai($clone_doc);
-ok( defined $ai, 'clone renders an ai verb' );
+ok( defined $ai,                    'clone renders an ai verb' );
 ok( exists $ai->{prompt}{contexts}, 'clone carries ai.prompt.contexts (not dropped)' );
 ok( exists $ai->{multilingual},     'clone carries ai.multilingual (not dropped)' );
 
