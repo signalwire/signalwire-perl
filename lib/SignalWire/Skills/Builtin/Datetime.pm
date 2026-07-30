@@ -180,6 +180,11 @@ takes no configuration parameters and does not support multiple instances.
 
 =over
 
+=item C<get_hints>
+
+Returns an empty hint list. Present as an explicit override so speech-recognition
+hints for this skill have a documented place to go.
+
 =item C<register_tools>
 
 Registers the C<get_current_time> and C<get_current_date> tools with the agent.

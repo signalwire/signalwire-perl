@@ -167,6 +167,13 @@ with the agent via C<register_swaig_function>.
 Returns the skill's global-data contribution (C<datasphere_serverless_enabled>,
 C<document_id>, C<knowledge_provider>).
 
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance:
+C<"datasphere_serverless_<tool_name>">, where C<tool_name> defaults to
+C<search_knowledge>. The tool name is folded in ALWAYS, so two instances
+exposing different tool names occupy distinct registry slots.
+
 =item C<get_hints>
 
 Returns an empty hint list.

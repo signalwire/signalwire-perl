@@ -222,6 +222,11 @@ support multiple instances.
 
 =over
 
+=item C<get_hints>
+
+Returns an empty hint list. Present as an explicit override so speech-recognition
+hints for this skill have a documented place to go.
+
 =item C<register_tools>
 
 Registers the C<calculate> tool with the agent.

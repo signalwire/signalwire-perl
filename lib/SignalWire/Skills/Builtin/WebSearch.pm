@@ -460,6 +460,19 @@ Registers the web-search tool (name overridable via C<tool_name>) with the agent
 Performs the Google CSE search for C<$query> and returns the formatted result
 string (or an error / no-results sentinel), enforcing the overall deadline.
 
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance:
+C<"web_search_<search_engine_id>_<tool_name>">, defaulting the engine id to
+C<default> and the tool name to C<web_search>. The engine id is part of the key
+because two instances pointed at different Google Custom Search engines are
+genuinely different skills; keying on the tool name alone would collapse them
+onto one registry slot.
+
+=item C<get_hints>
+
+Returns an empty hint list.
+
 =item C<get_global_data>
 
 Returns the skill's global-data contribution (C<web_search_enabled>,

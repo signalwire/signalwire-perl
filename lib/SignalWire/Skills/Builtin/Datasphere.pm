@@ -310,6 +310,19 @@ C<document_id>, C<knowledge_provider>).
 
 Returns an empty hint list.
 
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance:
+C<"datasphere_<tool_name>">, where C<tool_name> defaults to
+C<search_knowledge>. The tool name is folded in ALWAYS (not only when
+explicitly configured), so two DataSphere instances exposing different tool
+names occupy distinct registry slots.
+
+=item C<cleanup>
+
+Releases the outbound HTTP client when the skill is unloaded. Best-effort and
+idempotent; never dies during teardown.
+
 =item C<setup>
 
 Instance setup hook; returns true.

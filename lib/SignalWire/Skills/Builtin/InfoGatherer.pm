@@ -268,6 +268,15 @@ instances.
 
 =over
 
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance: C<"info_gatherer_<prefix>">
+when a C<prefix> is configured, otherwise C<"info_gatherer">. Keys on C<prefix>
+rather than a tool name because C<prefix> is what actually differentiates two
+instances — it drives both tool names (C<< <prefix>_start_questions >> /
+C<< <prefix>_submit_answer >>) and the global-data namespace. At most one
+un-prefixed instance is therefore possible.
+
 =item C<register_tools>
 
 Registers the C<start_questions> and C<submit_answer> tools with the agent.

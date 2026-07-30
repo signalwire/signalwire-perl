@@ -145,6 +145,13 @@ a C<swml_transfer> action. The skill supports multiple instances.
 Registers the transfer tool with the agent, building one DataMap expression per
 configured transfer pattern.
 
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance:
+C<"swml_transfer_<tool_name>">, where C<tool_name> defaults to
+C<transfer_call>. The tool name is folded in ALWAYS, so two transfer skills
+exposing different tool names occupy distinct registry slots.
+
 =item C<get_hints>
 
 Returns speech hints (C<transfer>, C<connect>, C<speak to>, C<talk to>, plus the

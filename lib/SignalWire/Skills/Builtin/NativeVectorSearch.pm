@@ -308,6 +308,14 @@ The key that lets one agent load this skill more than once —
 C<"native_vector_search_E<lt>tool_nameE<gt>">, so two instances differ as
 long as they use different tool names.
 
+=item C<cleanup()>
+
+Teardown hook, called when the skill is unloaded or the agent shuts down.
+Releases the outbound HTTP client. The reference removes temp directories left
+by the LOCAL index-building backend; that backend is Python-only and not ported,
+so this port — the network/remote-mode wrapper — holds no temp dirs. Best-effort
+and idempotent; never dies during teardown.
+
 =item C<register_tools()>
 
 Register the search tool under C<tool_name>, taking a required C<query>
