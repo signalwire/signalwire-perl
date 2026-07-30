@@ -1177,9 +1177,9 @@ sub list_tool_names {
 #
 # The base SWMLService has no SessionManager, so it enforces nothing;
 # AgentBase overrides this with the real check.
-sub swaig_validate_token {
+sub _swaig_validate_token {
     my ( $self, $function_name, $token, $call_id ) = @_;
-    return undef;
+    return;
 }
 
 # Extension point: invoked between argument parsing and function dispatch
@@ -1188,7 +1188,7 @@ sub swaig_validate_token {
 # on_function_call.
 #
 # The SECURITY half is NOT overridden per-transport: it is delegated here to
-# swaig_validate_token, the request-agnostic core every transport shares. Only
+# _swaig_validate_token, the request-agnostic core every transport shares. Only
 # the credential EXTRACTION is transport-specific — here, the `__token` query
 # parameter and the body's `call_id`, exactly the split _build_webhook_url
 # emits. AgentBase overrides this for the dynamic-config ephemeral clone, which
@@ -1196,11 +1196,14 @@ sub swaig_validate_token {
 sub swaig_pre_dispatch {
     my ( $self, $request_data, $func_name, $env ) = @_;
 
-    my $refusal = $self->swaig_validate_token(
-        $func_name,
-        _swaig_token_from_env($env),
-        _swaig_call_id_from_body($request_data)
-    );
+    # Bind each extractor's result to a SCALAR first. A bare `return` in list
+    # context yields an EMPTY LIST, not undef — inlining these as arguments
+    # would silently collapse a missing token into a shorter arg list and shift
+    # the call_id into the token position.
+    my $token   = _swaig_token_from_env($env);
+    my $call_id = _swaig_call_id_from_body($request_data);
+
+    my $refusal = $self->_swaig_validate_token( $func_name, $token, $call_id );
     return ( $self, $refusal ) if defined $refusal;
 
     return ( $self, undef );
@@ -1210,12 +1213,12 @@ sub swaig_pre_dispatch {
 # accepted as the legacy alias (Python parity: swml_service.py reads
 # `query_params.get("__token") or query_params.get("token")`). Returns undef
 # when absent — an absent credential is a REFUSAL, never a bypass, and that
-# decision belongs to swaig_validate_token, not to this extractor.
+# decision belongs to _swaig_validate_token, not to this extractor.
 sub _swaig_token_from_env {
     my ($env) = @_;
-    return undef unless ref $env eq 'HASH';
+    return unless ref $env eq 'HASH';
     my $qs = $env->{QUERY_STRING};
-    return undef unless defined $qs && length $qs;
+    return unless defined $qs && length $qs;
 
     my %params;
     for my $pair ( split /[&;]/, $qs ) {
@@ -1227,7 +1230,7 @@ sub _swaig_token_from_env {
         my $v = $params{$key};
         return $v if defined $v && length $v;
     }
-    return undef;
+    return;
 }
 
 # The call_id rides the POST BODY, not the query string — the same split the
@@ -1236,7 +1239,7 @@ sub _swaig_token_from_env {
 # an absent one leaves the credential UNVALIDATED.
 sub _swaig_call_id_from_body {
     my ($body) = @_;
-    return undef unless ref $body eq 'HASH';
+    return unless ref $body eq 'HASH';
     my $cid = $body->{call_id};
     return ( defined $cid && length $cid ) ? $cid : undef;
 }
@@ -1640,7 +1643,27 @@ Register a routing callback at a sub-path under the service route.
 =item C<swaig_pre_dispatch($request_data, $func_name, $env)>
 
 Extension point between argument parsing and dispatch on POST C</swaig>;
-returns C<($target, $short_circuit)>.
+returns C<($target, $short_circuit)>. When C<$short_circuit> is defined it is
+returned as the SWAIG response and the handler is never called.
+
+It does B<not> make the security decision itself. That whole decision lives in
+one request-agnostic internal core, C<_swaig_validate_token($function_name,
+$token, $call_id)>, so that every transport -- this HTTP endpoint and each
+serverless mode alike -- reaches the identical check and none re-implements it.
+Only credential B<extraction> is transport-specific: here the C<__token> comes
+off the query string and the C<call_id> out of the request body, the same split
+the rendered C<web_hook_url> emits.
+
+A refusal is delivered as a 200 whose body is the
+L<SignalWire::SWAIG::FunctionResult>, never as an HTTP error status, because
+the engine has no handling for a SWAIG refusal status: the tool reports that it
+cannot execute and the model relays that to the caller.
+
+The base service has no session manager and so enforces nothing;
+L<SignalWire::Agent::AgentBase> supplies the real check, under which a tool
+registered C<< secure => 1 >> (the C<define_tool> default) is refused when the
+token is forged, absent, or carries no C<call_id> to be validated against,
+while a tool registered C<< secure => 0 >> runs ungated in every case.
 
 =item C<handle_additional_route($sub_path, $request_data, $env)>
 

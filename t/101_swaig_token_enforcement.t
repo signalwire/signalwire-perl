@@ -19,22 +19,26 @@
 # engine (mod_openai) has no handling for a SWAIG refusal status, so the tool
 # reports it cannot execute and the model relays that to the caller.
 #
-# TRANSPORTS COVERED — perl has TWO distinct paths that reach on_function_call,
-# and they do NOT share a dispatcher:
+# TRANSPORTS COVERED — perl has THREE distinct paths that reach
+# on_function_call, and they do NOT share a dispatcher. Fixing one would have
+# compiled, read correctly, and enforced nothing:
 #
-#   1. HTTP / PSGI — SignalWire::SWML::Service::_handle_swaig_request, which
-#      calls the `swaig_pre_dispatch` hook. The `cgi`, `google_cloud_function`
-#      and `azure_function` serverless modes ALL funnel through psgi_app into
-#      this same path, so covering it covers them.
-#   2. LAMBDA DIRECT — AgentBase::_run_serverless_lambda ->
-#      _lambda_swaig_response, which calls on_function_call DIRECTLY and never
-#      touches swaig_pre_dispatch. This is the path a fix applied only to the
-#      hook would silently leave unguarded.
+#   1. AgentBase::_handle_swaig — the HTTP/PSGI endpoint agents actually serve
+#      from. AgentBase's own PSGI router sends POST $route/swaig HERE, so
+#      SWMLService::_handle_swaig_request was never on this path at all.
+#   2. SWMLService::_handle_swaig_request -> swaig_pre_dispatch — reached by a
+#      bare SWMLService host. The `cgi`, `google_cloud_function` and
+#      `azure_function` serverless modes all funnel through psgi_app.
+#   3. AgentBase::_lambda_swaig_response — lambda mode handles its event
+#      DIRECTLY, never routing through the PSGI app, so it never consulted the
+#      hook either. Reached from TWO call sites (the /swaig endpoint and
+#      path-based function routing), both exercised below.
 #
 # Regression lock: before this, `swaig_pre_dispatch` was a live no-op with NO
-# override anywhere in the tree, and the lambda path never consulted it at all —
-# so perl validated the `__token` on NO transport. It minted tokens onto the
-# wire and then accepted any request regardless.
+# override anywhere in the tree, and neither the HTTP endpoint agents serve from
+# nor the lambda path consulted it — so perl validated the `__token` on NO
+# transport. It minted tokens onto the wire and then accepted any request
+# regardless.
 
 use strict;
 use warnings;
@@ -342,26 +346,26 @@ subtest 'LAMBDA path-routed function is gated too' => sub {
 # Mirrors the reference's `_swaig_validate_token(function_name, token, call_id)`
 # so every transport reaches the IDENTICAL decision and none re-implements it.
 # ---------------------------------------------------------------------------
-subtest 'swaig_validate_token: the shared decision core' => sub {
+subtest '_swaig_validate_token: the shared decision core' => sub {
     my $agent = build_agent();
 
-    is( $agent->swaig_validate_token( 'secure_tool', valid_token( $agent, 'secure_tool' ), $CALL_ID ),
+    is( $agent->_swaig_validate_token( 'secure_tool', valid_token( $agent, 'secure_tool' ), $CALL_ID ),
         undef, 'valid -> undef (proceed)' );
 
-    my $refusal = $agent->swaig_validate_token( 'secure_tool',
+    my $refusal = $agent->_swaig_validate_token( 'secure_tool',
         forged_token( $agent, 'secure_tool' ), $CALL_ID );
     is( ref $refusal, 'HASH', 'forged -> a refusal hashref' );
     is( $refusal->{response}, $REFUSAL, 'refusal carries the FunctionResult response' );
 
-    isnt( $agent->swaig_validate_token( 'secure_tool', undef, $CALL_ID ), undef,
+    isnt( $agent->_swaig_validate_token( 'secure_tool', undef, $CALL_ID ), undef,
         'absent token -> refusal' );
-    isnt( $agent->swaig_validate_token( 'secure_tool', valid_token( $agent, 'secure_tool' ), undef ),
+    isnt( $agent->_swaig_validate_token( 'secure_tool', valid_token( $agent, 'secure_tool' ), undef ),
         undef, 'absent call_id -> refusal' );
 
-    is( $agent->swaig_validate_token( 'insecure_tool', undef, undef ), undef,
+    is( $agent->_swaig_validate_token( 'insecure_tool', undef, undef ), undef,
         'insecure tool -> undef (proceed) even with nothing at all' );
 
-    is( $agent->swaig_validate_token( 'no_such_tool', undef, undef ), undef,
+    is( $agent->_swaig_validate_token( 'no_such_tool', undef, undef ), undef,
         'unregistered function -> undef; dispatch decides, not the token check' );
 };
 

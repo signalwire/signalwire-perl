@@ -567,7 +567,7 @@ sub validate_tool_token {
     return $result ? 1 : 0;
 }
 
-# swaig_validate_token — enforce `secure => 1` for ONE SWAIG call, independent
+# _swaig_validate_token — enforce `secure => 1` for ONE SWAIG call, independent
 # of transport. This is the real implementation behind SWMLService's
 # request-agnostic extension point, and it is the SOLE security decision for a
 # SWAIG call: the HTTP endpoint and every serverless mode call THIS, so none of
@@ -590,26 +590,26 @@ sub validate_tool_token {
 # emits with a 200 status — NOT an HTTP error. The engine has no handling for a
 # SWAIG refusal status, so the tool reports it cannot execute and the model
 # relays that to the caller.
-sub swaig_validate_token {
+sub _swaig_validate_token {
     my ( $self, $function_name, $token, $call_id ) = @_;
 
     # Not a registered SWAIG function -> nothing to enforce here; dispatch
     # decides what an unknown name means (Python parity: the reference returns
     # None when the function is not in the registry).
-    return undef unless defined $function_name && $self->has_function($function_name);
+    return unless defined $function_name && $self->has_function($function_name);
 
     my $is_valid = 0;
     if ( defined $token && length $token && defined $call_id && length $call_id ) {
         $is_valid = $self->validate_tool_token( $function_name, $token, $call_id ) ? 1 : 0;
     }
-    return undef if $is_valid;
+    return if $is_valid;
 
     # Invalid/absent credential. Refuse only if the tool actually asked to be
     # secure — an insecure tool runs ungated, which is what makes `secure => 0`
     # mean something.
     my $tool   = $self->get_function($function_name);
     my $secure = ( ref $tool eq 'HASH' && exists $tool->{secure} ) ? $tool->{secure} : 1;
-    return undef unless $secure;
+    return unless $secure;
 
     require SignalWire::SWAIG::FunctionResult;
     return SignalWire::SWAIG::FunctionResult->new(
@@ -2606,10 +2606,10 @@ sub _check_lambda_auth {
 # and the one the reference's extractor reads first) and `rawQueryString` (the
 # HTTP API v2 raw `a=b&c=d` fallback). `token` is accepted as the legacy alias,
 # matching the HTTP transport. Returns undef when absent — and an absent
-# credential is a REFUSAL, decided by swaig_validate_token, not here.
+# credential is a REFUSAL, decided by _swaig_validate_token, not here.
 sub _lambda_token_from_event {
     my ($event) = @_;
-    return undef unless ref $event eq 'HASH';
+    return unless ref $event eq 'HASH';
 
     if ( ref $event->{queryStringParameters} eq 'HASH' ) {
         my $params = $event->{queryStringParameters};
@@ -2634,7 +2634,7 @@ sub _lambda_token_from_event {
         }
     }
 
-    return undef;
+    return;
 }
 
 # _lambda_swaig_response — execute a SWAIG function and shape the 200 response.
@@ -2650,7 +2650,7 @@ sub _lambda_swaig_response {
 
     # Same transport-agnostic decision the HTTP path makes. The refusal is a
     # 200 + FunctionResult body, never an HTTP error status.
-    my $refusal = $self->swaig_validate_token( $function_name, $token, $call_id );
+    my $refusal = $self->_swaig_validate_token( $function_name, $token, $call_id );
     if ( defined $refusal ) {
         return {
             statusCode => 200,
@@ -3159,6 +3159,32 @@ Note the argument ORDER: this facade keeps the reference's
 C<(function_name, token, call_id)> so cross-language code reads the same,
 and internally transposes to L<SignalWire::Security::SessionManager>'s
 native C<(call_id, function_name, token)>.
+
+This is the predicate; it is B<not> where the C<secure> policy is decided. That
+decision lives in one request-agnostic internal core,
+C<_swaig_validate_token($function_name, $token, $call_id)>, and it is the reason
+the HTTP endpoint and every serverless mode cannot drift from one another: they
+all call it, and none of them re-implements it. Only credential B<extraction> is
+transport-specific -- the C<__token> rides the query string and the C<call_id>
+rides the request body, the same split the rendered C<web_hook_url> emits. The
+policy it applies:
+
+    valid token       the handler runs
+    forged token      refused
+    absent token      refused -- fail-CLOSED. Omitting the credential is never
+                      weaker than presenting a wrong one, or C<secure> would be
+                      a flag that permits anonymous calls.
+    no call_id        refused -- a token can only be validated against a call,
+                      so with none there is nothing to check it against and it
+                      counts as unvalidated, never as a bypass.
+    insecure tool     runs ungated in every one of the above -- a tool
+                      registered C<< secure => 0 >> is never gated, which is
+                      what makes the flag mean something.
+
+A refusal reaches the caller as a 200 whose body is the
+L<SignalWire::SWAIG::FunctionResult>, never as an HTTP error status: the engine
+has no handling for a SWAIG refusal status, so the tool reports that it cannot
+execute and the model relays that.
 
 =item C<list_tool_names()>
 
