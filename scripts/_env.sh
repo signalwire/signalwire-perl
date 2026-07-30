@@ -197,13 +197,36 @@ _sw_perl_source_files() {
 # no longer match disk). The FMT gate therefore polices only the hand-written
 # tree, where perltidy is the only backstop. (LINT still covers everything via
 # _sw_perl_source_files above — perlcritic has no generator backstop.)
+# WHOLE-TREE SCOPE (widened 2026-07-30). Owner ruling: "all the full directories
+# should be linted and formatted including tests examples and all ... at the
+# levels the shipping code gets, examples and tests are shipping code too."
+#
+# Before that ruling this function named SEVEN files by hand (three of bin/, four
+# of scripts/), so t/ (165 files), examples/ + rest/examples/ + relay/examples/
+# (71 files), and 12 of the 15 bin/ programs were policed by NOTHING. Nowhere in
+# this file, .perlcriticrc, run-lint.sh or run-format.sh recorded WHY — it was an
+# unstated carve-out, which is worse than an explicit one because the decision
+# was never written down and so could never be reviewed.
+#
+# There is now ONE bar and it covers every hand-written Perl file in the repo:
+# lib/ (minus the generated tree, which _sw_perl_source_files adds back for
+# LINT), bin/, scripts/, t/, and the three example trees. Both gates read this
+# one list, so FMT and LINT can never drift apart. The 165 perlcritic findings
+# the widening exposed were burned to zero BEFORE the scope landed, so the gate
+# has never been red.
+#
+# Anything genuinely NOT ours (vendored/third-party) would be excluded here with
+# a stated reason; there is no such tree in this repo today.
 _sw_perl_hand_source_files() {
     find lib -type f -name '*.pm' -not -path '*/Generated/*'
-    echo bin/emit-corpus.pl
-    echo bin/emit-skills.pl
-    echo bin/swaig-test
-    echo scripts/enumerate_surface.pl
-    echo scripts/signature_dump.pl
-    echo scripts/route_registry.pl
-    echo scripts/rest_test_plan.pl
+    # Every hand-written Perl program under bin/ and scripts/. `find` rather than
+    # a hand list so a NEW program is covered the day it lands instead of
+    # silently escaping both gates (which is exactly how the seven-file list
+    # above went stale).
+    find bin -type f \( -name '*.pl' -o -name '*.pm' -o -name 'swaig-test' \)
+    find scripts -type f \( -name '*.pl' -o -name '*.pm' \)
+    # The test tree (.t test files + t/lib harness modules) and the runnable
+    # example trees. Tests and examples ARE shipping code per the owner ruling.
+    find t -type f \( -name '*.t' -o -name '*.pm' -o -name '*.pl' \)
+    find examples rest relay -type f \( -name '*.pl' -o -name '*.pm' \) 2>/dev/null
 }

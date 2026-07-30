@@ -314,22 +314,53 @@ sched_gate COORDINATED-PASS desc="a non-main porting-sdk pin must be declared on
 sched_gate COORDINATED-REFS desc="every coordinated-set checkout (porting-sdk + python oracle + matrix ports) uses PORTING_SDK_REF, not a literal ref" \
     -- python3 "$PORTING_SDK_DIR/scripts/check_coordinated_refs.py" --repo "$PORT_ROOT"
 
-# FMT joins res=surface: run locally (no CI) it rewrites lib/**/*.pm in place via
-# `perltidy -b`, which a concurrent TEST (`perl -c` / module load) or the surface
-# enumerator (loads lib/) would otherwise read mid-write. Under CI (--check) it's
-# read-only, but the label is harmless there and keeps local and CI scheduling
-# identical.
+# FMT joins res=surface: run locally (no CI) it rewrites its whole scope in place
+# via `perltidy -b`, which a concurrent TEST (`perl -c` / module load) or the
+# surface enumerator (loads lib/) would otherwise read mid-write. Under CI
+# (--check) it's read-only, but the label is harmless there and keeps local and CI
+# scheduling identical.
+#
+# The hazard WIDENED on 2026-07-30: FMT's scope went from 79 hand files (lib/ +
+# 7 named programs) to all 346 — it now also rewrites t/, all of bin/ and
+# scripts/, and the three example trees. TEST reads t/ directly, so the
+# read-mid-rewrite window covers the test tree now too. res=surface is what
+# prevents it; do NOT "optimise" this serialization away. A mid-run perlcritic or
+# perl-parse failure here is that mechanism, not a flake.
 sched_gate FMT defer=1 res=surface desc="run-format.sh (local: apply; CI: --check)" \
     -- bash scripts/run-format.sh ${CI:+--check}
 
-# LINT joins res=surface too: run locally, FMT's `perltidy -b` rewrites lib/**/*.pm
-# in place, and perlcritic (run-lint.sh) reads those same files — a concurrent
-# perlcritic reading a file mid-rewrite parse-fails and reds LINT spuriously. Sharing
-# the surface resource serializes LINT against the FMT/SURFACE/TEST mutators while it
-# still overlaps every read-only gate. (Under CI --check FMT is read-only, but the
-# label keeps local and CI scheduling identical.)
+# LINT joins res=surface too: run locally, FMT's `perltidy -b` rewrites the same
+# files perlcritic (run-lint.sh) reads — a concurrent perlcritic reading a file
+# mid-rewrite parse-fails and reds LINT spuriously. Sharing the surface resource
+# serializes LINT against the FMT/SURFACE/TEST mutators while it still overlaps
+# every read-only gate. (Under CI --check FMT is read-only, but the label keeps
+# local and CI scheduling identical.)
+#
+# Scope as of 2026-07-30 (owner ruling — "tests and examples are shipping code
+# too"): the WHOLE hand-written Perl tree plus the generated lib/**/Generated/
+# tree — 1476 files, up from 1186. The 165 findings the widening exposed in t/,
+# examples/ and the 12 previously-unpoliced bin/ programs were burned to zero
+# BEFORE this scope landed, so the gate has never been red.
 sched_gate LINT defer=1 res=surface desc="run-lint.sh (perlcritic severity 4, zero findings)" \
     -- bash scripts/run-lint.sh
+
+# REPO-LINT(py): the 7 hand-written Python programs under scripts/ — the four code
+# generators, the signature enumerator, the REST test generator, and
+# _perltidy_gen.py (which is itself the perltidy backstop every generator runs).
+# They are load-bearing gate infrastructure that, until 2026-07-30, NO gate linted
+# or formatted: the only hand-written code in this repo held to no bar at all,
+# while the Perl they emit was policed on every run. Same LOCAL-applies /
+# CI---check contract as FMT. Rule selection in ruff.toml is copied from the
+# Python reference SDK so the fleet holds one identical Python bar.
+#
+# res=surface too: in APPLY mode `ruff format` rewrites scripts/*.py in place, and
+# the GEN-FRESH* gates EXECUTE those same files — a generator read mid-rewrite
+# fails to parse. Same mechanism that already serializes FMT and LINT.
+#
+# Wired only once the count reached ZERO (57 -> 0): burn before wire, so the gate
+# never lands red.
+sched_gate REPO-LINT defer=1 res=surface desc="run-python-lint.sh (ruff check + format over scripts/*.py; local: apply, CI: --check)" \
+    -- bash scripts/run-python-lint.sh ${CI:+--check}
 
 # ---- §C1 doc/example/CLI execution gates ------------------------------------
 # SNIPPET-COMPILE (documented code fences compile with lib/ on @INC) is HEAVY →
