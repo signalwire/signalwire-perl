@@ -199,19 +199,38 @@ subtest 'function response appends actions' => sub {
 subtest 'function response rejects a schema-invalid action' => sub {
 
     # The whole point of routing through Service::add_verb: an invalid config
-    # must DIE, not ship. 'done' is not a member of the hangup reason enum.
+    # must DIE, not ship.
+    #
+    # This deliberately does NOT use an out-of-union hangup `reason`. That
+    # field is marked `x-sdk-widen` in the schema: its const-union is a HINT,
+    # and the platform accepts other reasons (`no_answer` among them), so
+    # refusing one would make the SDK stricter than the server. See
+    # t/102_schema_sdk_widen.t. An unknown KEY on a closed verb is the real
+    # misshapen-config case this subtest exists to catch, and it is not widened
+    # by anything.
     my $err = '';
     my $ok  = eval {
         $RENDERER->render_function_response_swml(
             response_text => 'bye',
             service       => new_strict_service(),
-            actions       => [ { hangup => { reason => 'done' } } ],
+            actions       => [ { hangup => { reasonn => 'busy' } } ],
         );
         1;
     };
     $err = $@;
-    ok( !$ok, 'invalid hangup reason is refused' );
+    ok( !$ok, 'a misspelled key on a closed verb is refused' );
     like( "$err", qr/hangup/, 'the error names the offending verb' );
+
+    # ...while a widened reason value SHIPS, because the platform takes it.
+    my $widened_ok = eval {
+        $RENDERER->render_function_response_swml(
+            response_text => 'bye',
+            service       => new_strict_service(),
+            actions       => [ { hangup => { reason => 'no_answer' } } ],
+        );
+        1;
+    };
+    ok( $widened_ok, 'a widened hangup reason is NOT refused' ) or diag($@);
 };
 
 subtest 'function response empty text skips play' => sub {
