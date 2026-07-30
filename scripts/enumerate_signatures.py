@@ -29,6 +29,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import re
@@ -44,17 +45,20 @@ PORT_ROOT = HERE.parent
 # Python keyword-argument shape so the cross-language diff doesn't fail
 # on what is functionally the same kwargs contract.
 PSDK_CANDIDATES = [
-    p for p in (
+    p
+    for p in (
         # explicit override wins
         (Path(os.environ["PORTING_SDK"]) / "python_signatures.json")
-        if os.environ.get("PORTING_SDK") else None,
+        if os.environ.get("PORTING_SDK")
+        else None,
         # default adjacency layout: porting-sdk beside the port repo
         PORT_ROOT.parent / "porting-sdk" / "python_signatures.json",
         # CI layout: porting-sdk checked out INSIDE the port repo. surface-audit.yml
         # and doc-audit.yml do exactly this (`path: porting-sdk`) and set no
         # PORTING_SDK, so neither candidate above resolves there.
         PORT_ROOT / "porting-sdk" / "python_signatures.json",
-    ) if p is not None
+    )
+    if p is not None
 ]
 
 
@@ -139,34 +143,76 @@ REF_PARAM_TYPES = _build_ref_param_type_index()
 # Keyed (py_module, py_class_or_None, method) -> {perl_param: reference_param}.
 PERL_HAND_PARAM_RENAMES: dict[tuple, dict[str, str]] = {
     ("signalwire.core.agent_base", "AgentBase", "on_debug_event"): {"cb": "handler"},
-    ("signalwire.core.contexts", "Context", "add_enter_filler"): {"lang": "language_code"},
-    ("signalwire.core.contexts", "Context", "add_exit_filler"): {"lang": "language_code"},
+    ("signalwire.core.contexts", "Context", "add_enter_filler"): {
+        "lang": "language_code"
+    },
+    ("signalwire.core.contexts", "Context", "add_exit_filler"): {
+        "lang": "language_code"
+    },
     ("signalwire.core.contexts", "Context", "set_consolidate"): {"c": "consolidate"},
-    ("signalwire.core.contexts", "Context", "set_enter_fillers"): {"fillers": "enter_fillers"},
-    ("signalwire.core.contexts", "Context", "set_exit_fillers"): {"fillers": "exit_fillers"},
+    ("signalwire.core.contexts", "Context", "set_enter_fillers"): {
+        "fillers": "enter_fillers"
+    },
+    ("signalwire.core.contexts", "Context", "set_exit_fillers"): {
+        "fillers": "exit_fillers"
+    },
     ("signalwire.core.contexts", "Context", "set_full_reset"): {"fr": "full_reset"},
     ("signalwire.core.contexts", "Context", "set_isolated"): {"iso": "isolated"},
     ("signalwire.core.contexts", "Context", "set_post_prompt"): {"pp": "post_prompt"},
-    ("signalwire.core.contexts", "Context", "set_system_prompt"): {"sp": "system_prompt"},
+    ("signalwire.core.contexts", "Context", "set_system_prompt"): {
+        "sp": "system_prompt"
+    },
     ("signalwire.core.contexts", "Context", "set_user_prompt"): {"up": "user_prompt"},
     ("signalwire.core.contexts", "Step", "set_reset_consolidate"): {"c": "consolidate"},
     ("signalwire.core.contexts", "Step", "set_reset_full_reset"): {"fr": "full_reset"},
-    ("signalwire.core.contexts", "Step", "set_reset_system_prompt"): {"sp": "system_prompt"},
-    ("signalwire.core.contexts", "Step", "set_reset_user_prompt"): {"up": "user_prompt"},
+    ("signalwire.core.contexts", "Step", "set_reset_system_prompt"): {
+        "sp": "system_prompt"
+    },
+    ("signalwire.core.contexts", "Step", "set_reset_user_prompt"): {
+        "up": "user_prompt"
+    },
     ("signalwire.core.data_map", "DataMap", "description"): {"desc": "description"},
     ("signalwire.core.data_map", "DataMap", "parameter"): {"type": "param_type"},
     ("signalwire.core.data_map", "DataMap", "purpose"): {"desc": "description"},
-    ("signalwire.core.function_result", "FunctionResult", "set_end_of_speech_timeout"): {"ms": "milliseconds"},
-    ("signalwire.core.function_result", "FunctionResult", "set_speech_event_timeout"): {"ms": "milliseconds"},
-    ("signalwire.core.function_result", "FunctionResult", "toggle_functions"): {"toggles": "function_toggles"},
-    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_internal_fillers"): {"fillers": "internal_fillers"},
-    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_languages"): {"langs": "languages"},
-    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_native_functions"): {"funcs": "function_names"},
-    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_pronunciations"): {"prons": "pronunciations"},
-    ("signalwire.core.mixins.web_mixin", "WebMixin", "manual_set_proxy_url"): {"url": "proxy_url"},
-    ("signalwire.core.mixins.web_mixin", "WebMixin", "set_dynamic_config_callback"): {"cb": "callback"},
-    ("signalwire.core.skill_manager", "SkillManager", "has_skill"): {"key": "skill_identifier"},
-    ("signalwire.core.skill_manager", "SkillManager", "unload_skill"): {"key": "skill_identifier"},
+    (
+        "signalwire.core.function_result",
+        "FunctionResult",
+        "set_end_of_speech_timeout",
+    ): {"ms": "milliseconds"},
+    ("signalwire.core.function_result", "FunctionResult", "set_speech_event_timeout"): {
+        "ms": "milliseconds"
+    },
+    ("signalwire.core.function_result", "FunctionResult", "toggle_functions"): {
+        "toggles": "function_toggles"
+    },
+    (
+        "signalwire.core.mixins.ai_config_mixin",
+        "AIConfigMixin",
+        "set_internal_fillers",
+    ): {"fillers": "internal_fillers"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_languages"): {
+        "langs": "languages"
+    },
+    (
+        "signalwire.core.mixins.ai_config_mixin",
+        "AIConfigMixin",
+        "set_native_functions",
+    ): {"funcs": "function_names"},
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_pronunciations"): {
+        "prons": "pronunciations"
+    },
+    ("signalwire.core.mixins.web_mixin", "WebMixin", "manual_set_proxy_url"): {
+        "url": "proxy_url"
+    },
+    ("signalwire.core.mixins.web_mixin", "WebMixin", "set_dynamic_config_callback"): {
+        "cb": "callback"
+    },
+    ("signalwire.core.skill_manager", "SkillManager", "has_skill"): {
+        "key": "skill_identifier"
+    },
+    ("signalwire.core.skill_manager", "SkillManager", "unload_skill"): {
+        "key": "skill_identifier"
+    },
     ("signalwire.relay.client", "RelayClient", "on_call"): {"cb": "handler"},
     ("signalwire.relay.client", "RelayClient", "on_message"): {"cb": "handler"},
     ("signalwire.relay.message", "Message", "on"): {"cb": "handler"},
@@ -192,10 +238,16 @@ PERL_HAND_PARAM_RENAMES: dict[tuple, dict[str, str]] = {
 # wildcard. Applied ONLY when the port currently records the return as ``any``
 # (never overrides a concrete type the port already carries).
 PERL_RETURN_TYPE_OVERRIDES: dict[tuple, str] = {
-    ("signalwire.core.mixins.web_mixin", "WebMixin", "as_router"):
-        "class:signalwire.core.web.HostAppRouter",
-    ("signalwire.core.swml_service", "SWMLService", "as_router"):
-        "class:signalwire.core.web.HostAppRouter",
+    (
+        "signalwire.core.mixins.web_mixin",
+        "WebMixin",
+        "as_router",
+    ): "class:signalwire.core.web.HostAppRouter",
+    (
+        "signalwire.core.swml_service",
+        "SWMLService",
+        "as_router",
+    ): "class:signalwire.core.web.HostAppRouter",
     # webhook_middleware.validate — the decomposed, framework-free
     # validation core. It returns a PSGI-style reject triple
     # ``[status, headers, body]`` or ``undef`` to pass. The regex parser only
@@ -203,8 +255,11 @@ PERL_RETURN_TYPE_OVERRIDES: dict[tuple, str] = {
     # ``optional<(int, dict<string,string>, string)>`` decision-triple type.
     # (An arrayref IS a PSGI response, so this is the SAME shape dotnet ships
     # as WebhookValidationMiddleware.Validate and Rack/PSGI middleware are.)
-    ("signalwire.core.security.webhook_middleware", None, "validate"):
-        "optional<tuple<int,dict<string,string>,string>>",
+    (
+        "signalwire.core.security.webhook_middleware",
+        None,
+        "validate",
+    ): "optional<tuple<int,dict<string,string>,string>>",
 }
 
 
@@ -212,6 +267,7 @@ def apply_return_type_overrides(out_modules: dict) -> None:
     """Reconcile a named-capability method's idiomatic ``any`` return to the
     canonical reference return type (see PERL_RETURN_TYPE_OVERRIDES). In place.
     Only rewrites a bare ``any`` return — never a concrete type already present."""
+
     def apply(key: tuple, sig: dict) -> None:
         rt = PERL_RETURN_TYPE_OVERRIDES.get(key)
         if rt is not None and sig.get("returns", "any") == "any":
@@ -228,6 +284,7 @@ def apply_return_type_overrides(out_modules: dict) -> None:
 def apply_hand_param_renames(out_modules: dict) -> None:
     """Rewrite Perl-idiom hand-written param identifiers to the reference name so
     the projection + diff compare EQUAL (see PERL_HAND_PARAM_RENAMES). In place."""
+
     def apply(key: tuple, sig: dict) -> None:
         rn = PERL_HAND_PARAM_RENAMES.get(key)
         if not rn:
@@ -249,6 +306,7 @@ def project_reference_param_types(out_modules: dict) -> None:
     """Re-attach reference-documented concrete param types onto hand-written
     params the parser recorded as bare ``any`` (see the block comment above).
     In place."""
+
     def apply(key: tuple, sig: dict) -> None:
         ref_types = REF_PARAM_TYPES.get(key)
         if not ref_types:
@@ -307,6 +365,7 @@ def normalize_defaults_to_type(out_modules: dict) -> None:
     NON-optional type, is left alone: those are genuine mismatches and must
     stay visible.
     """
+
     def fold(p: dict) -> None:
         if "default" not in p:
             return
@@ -320,9 +379,8 @@ def normalize_defaults_to_type(out_modules: dict) -> None:
                 p["default"] = False
             return
 
-        if t.startswith("optional<"):
-            if d == {} or d == [] or d == "":
-                p["default"] = None
+        if t.startswith("optional<") and (d == {} or d == [] or d == ""):
+            p["default"] = None
 
     for me in out_modules.values():
         for ce in me.get("classes", {}).values():
@@ -419,7 +477,15 @@ GENERATED_BASE_MODULE = "signalwire.rest._base"
 
 
 def _load_rest_sidecar() -> dict:
-    p = PORT_ROOT / "lib" / "SignalWire" / "REST" / "Namespaces" / "Generated" / "rest_signatures.json"
+    p = (
+        PORT_ROOT
+        / "lib"
+        / "SignalWire"
+        / "REST"
+        / "Namespaces"
+        / "Generated"
+        / "rest_signatures.json"
+    )
     if p.is_file():
         return json.loads(p.read_text(encoding="utf-8")).get("methods", {})
     return {}
@@ -441,10 +507,12 @@ def python_signature(module: str, cls: str | None, method: str) -> dict | None:
         return cls_entry.get("methods", {}).get(method)
     return mod_entry.get("functions", {}).get(method)
 
+
 # ---------------------------------------------------------------------------
 # Perl→Python mapping. Parsed at import-time from enumerate_surface.pl so the
 # table stays single-sourced.
 # ---------------------------------------------------------------------------
+
 
 def load_package_map() -> dict[str, dict[str, str | None]]:
     pl = (HERE / "enumerate_surface.pl").read_text(encoding="utf-8")
@@ -467,8 +535,16 @@ PACKAGE_TO_PY = load_package_map()
 
 # Methods we never emit (Moo internals + Perl-only helpers)
 SKIP_METHODS = {
-    "BUILDARGS", "BUILD", "DEMOLISH", "DOES",
-    "import", "AUTOLOAD", "DESTROY", "can", "isa", "VERSION",
+    "BUILDARGS",
+    "BUILD",
+    "DEMOLISH",
+    "DOES",
+    "import",
+    "AUTOLOAD",
+    "DESTROY",
+    "can",
+    "isa",
+    "VERSION",
     "new",  # Moo provides ::new automatically
 }
 
@@ -485,11 +561,19 @@ SKIP_METHODS = {
 # emissions on subclasses should be filtered out.
 PARENT_OVERRIDE_FILTER: dict = {
     ("signalwire.core.skill_base", "SkillBase"): {
-        "setup", "cleanup", "get_hints", "get_global_data",
-        "get_parameter_schema", "get_prompt_sections", "get_skill_data",
-        "get_instance_key", "register_tools",
-        "define_tool", "update_skill_data",
-        "validate_env_vars", "validate_packages",
+        "setup",
+        "cleanup",
+        "get_hints",
+        "get_global_data",
+        "get_parameter_schema",
+        "get_prompt_sections",
+        "get_skill_data",
+        "get_instance_key",
+        "register_tools",
+        "define_tool",
+        "update_skill_data",
+        "validate_env_vars",
+        "validate_packages",
     },
     # AgentBase overrides SWMLService.handle_request in Python source, but the
     # signature oracle's AST walker records handle_request ONLY on SWMLService
@@ -594,24 +678,42 @@ PERL_ATTR_ALIASES = {
 # missing-reference (port-only) under signalwire.core.agent_base.AgentBase.
 MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
-        "add_function_include", "add_hint", "add_hints", "add_internal_filler",
-        "add_language", "add_pattern_hint", "add_pronunciation",
-        "add_mcp_server", "enable_mcp_server",
+        "add_function_include",
+        "add_hint",
+        "add_hints",
+        "add_internal_filler",
+        "add_language",
+        "add_pattern_hint",
+        "add_pronunciation",
+        "add_mcp_server",
+        "enable_mcp_server",
         "enable_debug_events",
         "get_language_params",
-        "set_function_includes", "set_global_data", "set_internal_fillers",
+        "set_function_includes",
+        "set_global_data",
+        "set_internal_fillers",
         "set_language_params",
-        "set_languages", "set_multilingual", "set_native_functions",
-        "set_param", "set_params",
-        "set_post_prompt_llm_params", "set_prompt_llm_params",
-        "set_pronunciations", "update_global_data",
+        "set_languages",
+        "set_multilingual",
+        "set_native_functions",
+        "set_param",
+        "set_params",
+        "set_post_prompt_llm_params",
+        "set_prompt_llm_params",
+        "set_pronunciations",
+        "update_global_data",
     ],
     ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
         "contexts",
-        "define_contexts", "get_post_prompt", "get_prompt",
+        "define_contexts",
+        "get_post_prompt",
+        "get_prompt",
         "prompt_add_section",
-        "prompt_add_subsection", "prompt_add_to_section",
-        "prompt_has_section", "reset_contexts", "set_post_prompt",
+        "prompt_add_subsection",
+        "prompt_add_to_section",
+        "prompt_has_section",
+        "reset_contexts",
+        "set_post_prompt",
         "set_prompt_pom",
         "set_prompt_text",
     ],
@@ -626,32 +728,55 @@ MIXIN_PROJECTIONS = {
     # AgentBase methods to PromptManager so the cross-language audit
     # treats both paths as covered.
     ("signalwire.core.agent.prompt.manager", "PromptManager"): [
-        "define_contexts", "get_contexts", "get_post_prompt", "get_prompt",
+        "define_contexts",
+        "get_contexts",
+        "get_post_prompt",
+        "get_prompt",
         "get_raw_prompt",
-        "prompt_add_section", "prompt_add_subsection", "prompt_add_to_section",
-        "prompt_has_section", "set_post_prompt", "set_prompt_pom",
+        "prompt_add_section",
+        "prompt_add_subsection",
+        "prompt_add_to_section",
+        "prompt_has_section",
+        "set_post_prompt",
+        "set_prompt_pom",
         "set_prompt_text",
     ],
     ("signalwire.core.mixins.skill_mixin", "SkillMixin"): [
-        "add_skill", "has_skill", "list_skills", "remove_skill",
+        "add_skill",
+        "has_skill",
+        "list_skills",
+        "remove_skill",
     ],
     ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
-        "define_tool", "define_tools", "on_function_call",
+        "define_tool",
+        "define_tools",
+        "on_function_call",
         "register_swaig_function",
     ],
     ("signalwire.core.agent.tools.registry", "ToolRegistry"): [
-        "define_tool", "register_swaig_function",
-        "has_function", "get_function", "get_all_functions",
+        "define_tool",
+        "register_swaig_function",
+        "has_function",
+        "get_function",
+        "get_all_functions",
         "remove_function",
     ],
     ("signalwire.core.mixins.auth_mixin", "AuthMixin"): [
-        "validate_basic_auth", "get_basic_auth_credentials",
+        "validate_basic_auth",
+        "get_basic_auth_credentials",
     ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
-        "as_router", "enable_debug_routes", "get_app",
-        "manual_set_proxy_url", "register_routing_callback", "run", "serve",
-        "set_dynamic_config_callback", "setup_graceful_shutdown",
-        "on_request", "on_swml_request",
+        "as_router",
+        "enable_debug_routes",
+        "get_app",
+        "manual_set_proxy_url",
+        "register_routing_callback",
+        "run",
+        "serve",
+        "set_dynamic_config_callback",
+        "setup_graceful_shutdown",
+        "on_request",
+        "on_swml_request",
     ],
     ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
         "add_mcp_server",
@@ -687,13 +812,41 @@ PERL_HASHREF_KWARG_METHODS = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "add_internal_filler"),
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "add_function_include"),
     # PhoneNumbersResource: extra kwargs hashref
-    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_ai_agent"),
-    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_call_flow"),
-    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_cxml_application"),
-    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_cxml_webhook"),
-    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_relay_application"),
-    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_relay_topic"),
-    ("signalwire.rest.namespaces.phone_numbers", "PhoneNumbersResource", "set_swml_webhook"),
+    (
+        "signalwire.rest.namespaces.phone_numbers",
+        "PhoneNumbersResource",
+        "set_ai_agent",
+    ),
+    (
+        "signalwire.rest.namespaces.phone_numbers",
+        "PhoneNumbersResource",
+        "set_call_flow",
+    ),
+    (
+        "signalwire.rest.namespaces.phone_numbers",
+        "PhoneNumbersResource",
+        "set_cxml_application",
+    ),
+    (
+        "signalwire.rest.namespaces.phone_numbers",
+        "PhoneNumbersResource",
+        "set_cxml_webhook",
+    ),
+    (
+        "signalwire.rest.namespaces.phone_numbers",
+        "PhoneNumbersResource",
+        "set_relay_application",
+    ),
+    (
+        "signalwire.rest.namespaces.phone_numbers",
+        "PhoneNumbersResource",
+        "set_relay_topic",
+    ),
+    (
+        "signalwire.rest.namespaces.phone_numbers",
+        "PhoneNumbersResource",
+        "set_swml_webhook",
+    ),
     # webhook_middleware.validate — free FUNCTION (class None). The Perl
     # source is ``sub validate { my ($method,$url,$headers,$body,%opts)=@_; }``
     # where the trailing ``%opts`` slurpy carries the reference's keyword-only
@@ -733,7 +886,9 @@ def _project_kwargs_from_python(
     # Skip the python self/cls receiver so we can match against
     # leading_positionals (which already includes self).
     py_after_self = [p for p in py_params if p.get("kind") not in ("self", "cls")]
-    n_perl_pos = len([p for p in leading_positionals if p.get("kind") not in ("self", "cls")])
+    n_perl_pos = len(
+        [p for p in leading_positionals if p.get("kind") not in ("self", "cls")]
+    )
     # The leading positional args from the Perl source map 1:1 to the
     # first N python params. Any python params beyond that are what the
     # Perl ``%opts`` slurpy / hashref carries.
@@ -805,7 +960,9 @@ def _schema_defs() -> dict:
             schema_path = sig_path.parent / "schema.json"
             if schema_path.is_file():
                 try:
-                    _SCHEMA_DEFS_CACHE = json.loads(schema_path.read_text()).get("$defs") or {}
+                    _SCHEMA_DEFS_CACHE = (
+                        json.loads(schema_path.read_text()).get("$defs") or {}
+                    )
                 except Exception:
                     _SCHEMA_DEFS_CACHE = {}
                 break
@@ -857,6 +1014,7 @@ def _surface_fields_by_class() -> dict:
         return result
     try:
         import importlib.util
+
         gen_path = HERE / "generate_swml_verbs.py"
         spec = importlib.util.spec_from_file_location("_gen_swml_verbs", gen_path)
         gen = importlib.util.module_from_spec(spec)
@@ -897,7 +1055,9 @@ def _surface_fields_by_class() -> dict:
                 inner = wdef["properties"][verb]
                 if gen._type_str(inner) == "string" or inner.get("$ref"):
                     continue
-                has_inline = gen._type_str(inner) == "object" and bool(inner.get("properties"))
+                has_inline = gen._type_str(inner) == "object" and bool(
+                    inner.get("properties")
+                )
                 if not inner.get("oneOf") and not has_inline:
                     continue
                 props = gen._flatten_union(defs, inner)
@@ -935,7 +1095,9 @@ def project_swml_verbs(cls: str, type_entry: dict, out_modules: dict) -> None:
             key = attr.rstrip("_")
             if surface.get(key, surface.get(attr, True)) is False:
                 continue
-        methods.setdefault(attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"})
+        methods.setdefault(
+            attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"}
+        )
     out_modules.setdefault(SWML_VERBS_MODULE, {"classes": {}})
     out_modules[SWML_VERBS_MODULE]["classes"].setdefault(cls, {"methods": {}})
     out_modules[SWML_VERBS_MODULE]["classes"][cls]["methods"].update(methods)
@@ -962,7 +1124,9 @@ def project_swaig(sub: str, cls: str, type_entry: dict, out_modules: dict) -> No
         attr = (a.get("name") or "").lstrip("+")
         if not attr or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
             continue
-        methods.setdefault(attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"})
+        methods.setdefault(
+            attr, {"params": [{"name": "self", "kind": "self"}], "returns": "any"}
+        )
     out_modules.setdefault(mod, {"classes": {}})
     out_modules[mod]["classes"].setdefault(cls, {"methods": {}})
     out_modules[mod]["classes"][cls]["methods"].update(methods)
@@ -1044,20 +1208,24 @@ def _sig_from_parsed_method(m: dict, canonical_class=None) -> dict:
         pname = (p.get("name") or "").lstrip("+")
         sigil = p.get("sigil", "")
         if i == 0 and pname in ("self", "class", "s") and not sigil:
-            params_out.append({"name": "self", "kind": "cls" if pname == "class" else "self"})
+            params_out.append(
+                {"name": "self", "kind": "cls" if pname == "class" else "self"}
+            )
             continue
         if not pname or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pname):
             continue
         param: dict = {"name": pname, "type": "any", "required": True}
         if sigil == "@":
-            param["kind"] = "var_positional"; param["type"] = "list<any>"
+            param["kind"] = "var_positional"
+            param["type"] = "list<any>"
             # A slurpy tail (@args / %opts) is a splat door — you can always call
             # without passing anything into it, so it is NEVER required. Marking it
             # required makes the checker treat it as a mandatory extra param and drift
             # vs the reference (whose **kwargs/**params tail is dropped entirely).
             param["required"] = False
         elif sigil == "%":
-            param["kind"] = "var_keyword"; param["type"] = "dict<string,any>"
+            param["kind"] = "var_keyword"
+            param["type"] = "dict<string,any>"
             param["required"] = False  # var_keyword tail is optional (see above)
         _attach_signature_default(param, p, canonical_class, m.get("name"))
         params_out.append(param)
@@ -1071,7 +1239,6 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
     module, unfolding the generator's typed-param SIDECAR onto each own method."""
     # The two generated bases map onto signalwire.rest._base.
     if gname in ("ReadResource", "FabricResource"):
-        cls = "ReadResource" if gname == "ReadResource" else "FabricResource"
         methods: dict = {}
         for meth in type_entry.get("methods", []):
             name = meth.get("name", "")
@@ -1081,23 +1248,35 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
             # houses it on CrudWithAddresses; keep the same base-module class map as
             # the surface enumerator.
             sidecar = REST_SIDECAR.get(f"{gname}::{name}")
-            sig = ({"params": [{"name": "self", "kind": "self"}] + [dict(r) for r in sidecar],
-                    "returns": "any"} if sidecar else _sig_from_parsed_method(meth))
+            sig = (
+                {
+                    "params": [{"name": "self", "kind": "self"}]
+                    + [dict(r) for r in sidecar],
+                    "returns": "any",
+                }
+                if sidecar
+                else _sig_from_parsed_method(meth)
+            )
             # The generated base read verbs (ReadResource.paginate,
             # FabricResource.list_addresses) thread a keyword-only request_options to
             # the transport (PY-7 parity; the perl source `delete`s it out of the
             # slurpy, so the regex parser cannot see it). They are not sidecar
             # methods, so re-attach the oracle-shaped record here to keep DRIFT joined
             # on the reference's ReadResource.paginate / CrudWithAddresses.list_addresses.
-            if not sidecar and name in ("list_addresses", "paginate") \
-                    and not any(p.get("name") == "request_options" for p in sig["params"]):
+            if (
+                not sidecar
+                and name in ("list_addresses", "paginate")
+                and not any(p.get("name") == "request_options" for p in sig["params"])
+            ):
                 # Insert BEFORE any trailing var_keyword slurpy so the positional
                 # diff aligns with the reference (request_options is the last real
                 # param; the port's extra `params` tail is the excused extra).
                 ro = {
-                    "name": "request_options", "kind": "keyword",
+                    "name": "request_options",
+                    "kind": "keyword",
                     "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-                    "required": False, "default": None,
+                    "required": False,
+                    "default": None,
                 }
                 params = sig["params"]
                 at = len(params)
@@ -1105,11 +1284,17 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
                     at -= 1
                 params.insert(at, ro)
             methods[name] = sig
-        target_cls = "CrudWithAddresses" if gname == "FabricResource" else "ReadResource"
+        target_cls = (
+            "CrudWithAddresses" if gname == "FabricResource" else "ReadResource"
+        )
         if methods:
             out_modules.setdefault(GENERATED_BASE_MODULE, {"classes": {}})
-            out_modules[GENERATED_BASE_MODULE]["classes"].setdefault(target_cls, {"methods": {}})
-            out_modules[GENERATED_BASE_MODULE]["classes"][target_cls]["methods"].update(methods)
+            out_modules[GENERATED_BASE_MODULE]["classes"].setdefault(
+                target_cls, {"methods": {}}
+            )
+            out_modules[GENERATED_BASE_MODULE]["classes"][target_cls]["methods"].update(
+                methods
+            )
         return
 
     if gname == "ResourceTree":
@@ -1121,9 +1306,13 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
     mod = _generated_module(ns)
 
     methods = {
-        "__init__": {"params": [{"name": "self", "kind": "self"},
-                                {"name": "http", "type": "any", "required": True}],
-                     "returns": "void"},
+        "__init__": {
+            "params": [
+                {"name": "self", "kind": "self"},
+                {"name": "http", "type": "any", "required": True},
+            ],
+            "returns": "void",
+        },
     }
     for meth in type_entry.get("methods", []):
         name = meth.get("name", "")
@@ -1135,7 +1324,8 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
         sidecar = REST_SIDECAR.get(f"{gname}::{name}")
         if sidecar is not None:
             methods[canon] = {
-                "params": [{"name": "self", "kind": "self"}] + [dict(r) for r in sidecar],
+                "params": [{"name": "self", "kind": "self"}]
+                + [dict(r) for r in sidecar],
                 "returns": "any",
             }
         else:
@@ -1153,10 +1343,19 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
         methods["paginate"] = {
             "params": [
                 {"name": "self", "kind": "self"},
-                {"name": "request_options", "kind": "keyword",
-                 "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-                 "required": False, "default": None},
-                {"name": "params", "type": "dict<string,any>", "required": False, "kind": "var_keyword"},
+                {
+                    "name": "request_options",
+                    "kind": "keyword",
+                    "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                    "required": False,
+                    "default": None,
+                },
+                {
+                    "name": "params",
+                    "type": "dict<string,any>",
+                    "required": False,
+                    "kind": "var_keyword",
+                },
             ],
             "returns": "any",
         }
@@ -1372,17 +1571,23 @@ def collect(raw: dict) -> dict:
         # PARENT_OVERRIDE_FILTER below. Walks ``extends`` recursively
         # via by_full_name.
         ancestor_perl_classes: set = set()
-        def _walk_ancestors(entry: dict, seen: set):
+
+        # `acc` is passed in rather than closed over: a closure that captures a
+        # variable rebound each loop iteration binds LATE (B023), so every
+        # iteration's helper would write into whichever set the LAST iteration
+        # created. Explicit parameters make the target unambiguous.
+        def _walk_ancestors(entry: dict, seen: set, acc: set):
             full = entry.get("full_name")
             if full in seen:
                 return
             seen.add(full)
             for parent_name in entry.get("extends", []) or []:
-                ancestor_perl_classes.add(parent_name)
+                acc.add(parent_name)
                 p = by_full_name.get(parent_name)
                 if p:
-                    _walk_ancestors(p, seen)
-        _walk_ancestors(type_entry, set())
+                    _walk_ancestors(p, seen, acc)
+
+        _walk_ancestors(type_entry, set(), ancestor_perl_classes)
         # Translate ancestor Perl classes into canonical (module, class)
         # tuples so we can index into PARENT_OVERRIDE_FILTER.
         ancestor_canonical: set = set()
@@ -1400,8 +1605,7 @@ def collect(raw: dict) -> dict:
                 # method on this subclass — that's the indicator that
                 # Python keeps the implementation on the base class.
                 py_subclass_methods = (
-                    PYTHON_REFERENCE
-                    .get("modules", {})
+                    PYTHON_REFERENCE.get("modules", {})
                     .get(mod, {})
                     .get("classes", {})
                     .get(canonical_class or "", {})
@@ -1431,7 +1635,11 @@ def collect(raw: dict) -> dict:
             # like ``__iter__``/``__next__``/``__repr__`` that the Python
             # AST walker skips). Match that policy so the Perl iterator
             # doesn't surface false-positive port-only dunders.
-            if native.startswith("__") and native.endswith("__") and native != "__init__":
+            if (
+                native.startswith("__")
+                and native.endswith("__")
+                and native != "__init__"
+            ):
                 continue
             # Free-function name override — preserve PascalCase for the
             # canonical Python ``signalwire.RestClient`` factory.
@@ -1445,7 +1653,6 @@ def collect(raw: dict) -> dict:
             # canonical signature has the right arity.
             if not params and canonical_class is not None:
                 params_out = [{"name": "self", "kind": "self"}]
-                saw_receiver = True
                 methods_out[method_canonical] = {
                     "params": params_out,
                     "returns": "void" if native == "BUILD" else "any",
@@ -1453,7 +1660,6 @@ def collect(raw: dict) -> dict:
                 continue
             # Strip $self / $class as the canonical receiver
             params_out = []
-            saw_receiver = False
             for i, p in enumerate(params):
                 pname = p.get("name", "").lstrip("+")
                 sigil = p.get("sigil", "")
@@ -1469,14 +1675,14 @@ def collect(raw: dict) -> dict:
                 if i == 0 and pname == "class_or_self" and not sigil:
                     # Python's equivalent is a @staticmethod with no
                     # receiver — mirror that by dropping the param.
-                    saw_receiver = True
                     continue
                 if i == 0 and pname in ("self", "class", "s") and not sigil:
-                    params_out.append({
-                        "name": "self",
-                        "kind": "cls" if pname == "class" else "self",
-                    })
-                    saw_receiver = True
+                    params_out.append(
+                        {
+                            "name": "self",
+                            "kind": "cls" if pname == "class" else "self",
+                        }
+                    )
                     continue
                 if not pname:
                     continue
@@ -1498,9 +1704,7 @@ def collect(raw: dict) -> dict:
                     param["kind"] = "var_keyword"
                     param["type"] = "dict<string,any>"
                     param["required"] = False  # var_keyword tail is never required
-                _attach_signature_default(
-                    param, p, canonical_class, method_canonical
-                )
+                _attach_signature_default(param, p, canonical_class, method_canonical)
                 params_out.append(param)
 
             # Perl-idiom projection: the canonical Perl ``%opts`` slurpy
@@ -1541,7 +1745,8 @@ def collect(raw: dict) -> dict:
             # so we never silently swap a real scalar argument.
             elif (
                 canonical_class is not None
-                and (mod, canonical_class, method_canonical) in PERL_HASHREF_KWARG_METHODS
+                and (mod, canonical_class, method_canonical)
+                in PERL_HASHREF_KWARG_METHODS
             ):
                 py_sig = python_signature(mod, canonical_class, method_canonical)
                 # Drop the trailing scalar (it represents the kwargs sink),
@@ -1781,12 +1986,14 @@ def collect(raw: dict) -> dict:
                     elif pyp.get("kind") == "var_keyword":
                         # Python's **kwargs is handled by Perl Moo's open
                         # constructor — emit as var_keyword.
-                        projected.append({
-                            "name": name,
-                            "kind": "var_keyword",
-                            "type": "dict<string,any>",
-                            "required": pyp.get("required", False),
-                        })
+                        projected.append(
+                            {
+                                "name": name,
+                                "kind": "var_keyword",
+                                "type": "dict<string,any>",
+                                "required": pyp.get("required", False),
+                            }
+                        )
                 # Append Perl-only attrs (port-extra) at the end. Moo
                 # accepts them as named args; emit them WITHOUT a
                 # ``kind`` marker so the diff treats them as
@@ -1815,14 +2022,17 @@ def collect(raw: dict) -> dict:
                 # Folding it here — rather than excusing the class — keeps every
                 # other parameter of these classes under comparison.
                 py_param_names = {
-                    pyp.get("name") for pyp in py_params
+                    pyp.get("name")
+                    for pyp in py_params
                     if pyp.get("kind") not in ("self", "cls")
                 }
                 for p in init_params[1:]:
                     if p["name"] not in used_perl_names:
                         port_param = dict(p)
-                        if port_param.get("required") and \
-                                port_param["name"] not in py_param_names:
+                        if (
+                            port_param.get("required")
+                            and port_param["name"] not in py_param_names
+                        ):
                             port_param["required"] = False
                         projected.append(port_param)
                 init_params = projected
@@ -1861,7 +2071,7 @@ def collect(raw: dict) -> dict:
     if ev:
         ev_classes = ev.get("classes", {})
         # (b) parse_event: class-method -> module function.
-        for cls_name, cls_entry in ev_classes.items():
+        for _cls_name, cls_entry in ev_classes.items():
             if "parse_event" in cls_entry.get("methods", {}):
                 cls_entry["methods"].pop("parse_event")
                 ev.setdefault("functions", {})
@@ -1872,15 +2082,24 @@ def collect(raw: dict) -> dict:
                 py_fn = python_signature("signalwire.relay.event", None, "parse_event")
                 if py_fn:
                     fn_sig = {
-                        "params": [{"name": p.get("name", ""), "type": "any",
-                                    "required": p.get("required", True)}
-                                   for p in py_fn.get("params", [])
-                                   if p.get("kind") not in ("self", "cls")],
+                        "params": [
+                            {
+                                "name": p.get("name", ""),
+                                "type": "any",
+                                "required": p.get("required", True),
+                            }
+                            for p in py_fn.get("params", [])
+                            if p.get("kind") not in ("self", "cls")
+                        ],
                         "returns": "any",
                     }
                 else:
-                    fn_sig = {"params": [{"name": "payload", "type": "any",
-                                          "required": True}], "returns": "any"}
+                    fn_sig = {
+                        "params": [
+                            {"name": "payload", "type": "any", "required": True}
+                        ],
+                        "returns": "any",
+                    }
                 ev["functions"].setdefault("parse_event", fn_sig)
         # (a) from_payload: project onto every event class (classmethod shape).
         from_payload_sig = {
@@ -1907,8 +2126,11 @@ def collect(raw: dict) -> dict:
     rc = out_modules.get("signalwire.relay.call", {}).get("classes", {})
     collect_a = rc.get("CollectAction", {}).get("methods", {})
     standalone_a = rc.get("StandaloneCollectAction", {}).get("methods")
-    if standalone_a is not None and "start_input_timers" in collect_a \
-            and "start_input_timers" not in standalone_a:
+    if (
+        standalone_a is not None
+        and "start_input_timers" in collect_a
+        and "start_input_timers" not in standalone_a
+    ):
         standalone_a["start_input_timers"] = dict(collect_a["start_input_timers"])
 
     # -----------------------------------------------------------------
@@ -1947,8 +2169,11 @@ def collect(raw: dict) -> dict:
                 sig = dm_cls.pop(fn_name)
                 dm.setdefault("functions", {})
                 fn_sig = {
-                    "params": [p for p in sig.get("params", [])
-                               if p.get("kind") not in ("self", "cls")],
+                    "params": [
+                        p
+                        for p in sig.get("params", [])
+                        if p.get("kind") not in ("self", "cls")
+                    ],
                     "returns": sig.get("returns", "any"),
                 }
                 dm["functions"].setdefault(fn_name, fn_sig)
@@ -1960,7 +2185,11 @@ def collect(raw: dict) -> dict:
     # __init__ synthesis path doesn't fire. The reference records
     # RelayError.__init__(self, code, message). Project the constructor with the
     # Perl-loose (any-typed) params matching the reference arity.
-    rce = out_modules.get("signalwire.relay.client", {}).get("classes", {}).get("RelayError")
+    rce = (
+        out_modules.get("signalwire.relay.client", {})
+        .get("classes", {})
+        .get("RelayError")
+    )
     if rce is not None and "__init__" not in rce.get("methods", {}):
         py_init = python_signature("signalwire.relay.client", "RelayError", "__init__")
         if py_init:
@@ -1968,20 +2197,31 @@ def collect(raw: dict) -> dict:
             for p in py_init.get("params", []):
                 if p.get("kind") in ("self", "cls"):
                     continue
-                init_params.append({
-                    "name": p.get("name", ""),
-                    "type": "any",
-                    "required": p.get("required", True),
-                })
+                init_params.append(
+                    {
+                        "name": p.get("name", ""),
+                        "type": "any",
+                        "required": p.get("required", True),
+                    }
+                )
             rce.setdefault("methods", {})["__init__"] = {
-                "params": init_params, "returns": "void",
+                "params": init_params,
+                "returns": "void",
             }
 
     # Mixin projection: Perl flattens all mixin methods onto AgentBase via
     # Moo composition; some helpers also live on SWMLService (parent).
     # Project them onto canonical Python mixin paths.
-    ab_entry = out_modules.get("signalwire.core.agent_base", {}).get("classes", {}).get("AgentBase")
-    svc_entry = out_modules.get("signalwire.core.swml_service", {}).get("classes", {}).get("SWMLService")
+    ab_entry = (
+        out_modules.get("signalwire.core.agent_base", {})
+        .get("classes", {})
+        .get("AgentBase")
+    )
+    svc_entry = (
+        out_modules.get("signalwire.core.swml_service", {})
+        .get("classes", {})
+        .get("SWMLService")
+    )
     if ab_entry or svc_entry:
         ab_methods = ab_entry["methods"] if ab_entry else {}
         svc_methods = svc_entry["methods"] if svc_entry else {}
@@ -1999,10 +2239,7 @@ def collect(raw: dict) -> dict:
             re_projected_present: dict = {}
             for m_name, sig in present.items():
                 params = sig.get("params", [])
-                if (
-                    params
-                    and params[-1].get("kind") == "var_keyword"
-                ):
+                if params and params[-1].get("kind") == "var_keyword":
                     py_sig = python_signature(target_mod, target_cls, m_name)
                     leading = params[:-1]
                     proj = _project_kwargs_from_python(py_sig, leading)
@@ -2058,8 +2295,12 @@ def collect(raw: dict) -> dict:
             if (
                 n in svc_methods
                 and PYTHON_REFERENCE.get("modules", {})
-                .get("signalwire.core.swml_service", {}).get("classes", {})
-                .get("SWMLService", {}).get("methods", {}).get(n) is None
+                .get("signalwire.core.swml_service", {})
+                .get("classes", {})
+                .get("SWMLService", {})
+                .get("methods", {})
+                .get(n)
+                is None
             ):
                 svc_methods.pop(n, None)
         if ab_entry and not ab_methods:
@@ -2237,7 +2478,11 @@ def build_construction(modules: dict, superclasses: dict) -> dict:
                 # ``var_positional`` are the open-hash TAIL, not a named
                 # configurable — the named set is what the contract compares.
                 if (p.get("kind") or "positional") in (
-                        "self", "cls", "var_keyword", "var_positional"):
+                    "self",
+                    "cls",
+                    "var_keyword",
+                    "var_positional",
+                ):
                     continue
                 name = p.get("name")
                 if not name or name.startswith("_"):
@@ -2256,8 +2501,12 @@ def build_construction(modules: dict, superclasses: dict) -> dict:
         does NOT flatten that inheritance."""
         params = dict(folded.get(key, {}))
         parent = superclasses.get(key)
-        if (parent and parent in folded and parent not in seen
-                and not _oracle_flattens(key, parent)):
+        if (
+            parent
+            and parent in folded
+            and parent not in seen
+            and not _oracle_flattens(key, parent)
+        ):
             # Drop the params this class only has by inheritance. A name the
             # class ALSO declares itself stays (Moo's ``has '+attr'`` override,
             # and any name the reference records on the child).
@@ -2279,7 +2528,10 @@ def build_construction(modules: dict, superclasses: dict) -> dict:
 def run_dump() -> dict:
     cp = subprocess.run(
         ["perl", str(HERE / "signature_dump.pl"), str(PORT_ROOT / "lib")],
-        cwd=PORT_ROOT, capture_output=True, text=True, timeout=120,
+        cwd=PORT_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
     if cp.returncode != 0:
         raise RuntimeError(f"signature_dump.pl failed:\n{cp.stderr}")
@@ -2339,6 +2591,53 @@ def _has_decl_init_arg(block: str, start: int) -> tuple[str | None, bool]:
 
 _MISSING = object()
 
+# Arithmetic operators a folded default may legitimately use (e.g. "60 * 60").
+_ARITH_BINOPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, ast.Pow, ast.Mod)
+
+
+def _safe_arith(expr: str):
+    """Evaluate a pure-arithmetic constant expression WITHOUT ``eval``.
+
+    Parses ``expr`` and walks the AST, accepting only numeric literals, unary
+    +/-, and the arithmetic binary operators. Anything else — a name, a call, a
+    subscript, an attribute — returns ``_MISSING`` rather than executing. This
+    replaces an ``eval(expr, {"__builtins__": {}}, {})`` whose safety rested
+    entirely on a regex guard at the call site; an AST allowlist keeps holding
+    even if that guard is later loosened.
+    """
+
+    def _walk(node):
+        if isinstance(node, ast.Constant):
+            return node.value if isinstance(node.value, (int, float)) else _MISSING
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+            v = _walk(node.operand)
+            if v is _MISSING:
+                return _MISSING
+            return +v if isinstance(node.op, ast.UAdd) else -v
+        if isinstance(node, ast.BinOp) and isinstance(node.op, _ARITH_BINOPS):
+            left, right = _walk(node.left), _walk(node.right)
+            if left is _MISSING or right is _MISSING:
+                return _MISSING
+            try:
+                return {
+                    ast.Add: lambda a, b: a + b,
+                    ast.Sub: lambda a, b: a - b,
+                    ast.Mult: lambda a, b: a * b,
+                    ast.Div: lambda a, b: a / b,
+                    ast.FloorDiv: lambda a, b: a // b,
+                    ast.Pow: lambda a, b: a**b,
+                    ast.Mod: lambda a, b: a % b,
+                }[type(node.op)](left, right)
+            except (ZeroDivisionError, OverflowError, ValueError):
+                return _MISSING
+        return _MISSING
+
+    try:
+        tree = ast.parse(expr, mode="eval")
+    except SyntaxError:
+        return _MISSING
+    return _walk(tree.body)
+
 
 def _literal_value(expr: str):
     """The Python twin of signature_dump.pl's ``literal_value`` — SAME rule, so
@@ -2365,10 +2664,12 @@ def _literal_value(expr: str):
     if re.fullmatch(r"-?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?", expr):
         return float(expr)
     if re.fullmatch(r"[\d\s.*+\-/()]+", expr) and re.search(r"\d", expr):
-        try:
-            v = eval(expr, {"__builtins__": {}}, {})  # digits/operators only
-        except Exception:
-            return _MISSING
+        # Arithmetic-only constant folding (e.g. a default written "60 * 60").
+        # This used to call eval() with a stripped __builtins__; _safe_arith walks
+        # the parsed AST instead and accepts ONLY numeric literals and the five
+        # arithmetic operators, so nothing outside that grammar can execute even
+        # if the regex guard above is ever loosened.
+        v = _safe_arith(expr)
         return v if isinstance(v, (int, float)) else _MISSING
     m = re.fullmatch(r"'([^'\\]*)'", expr)
     if m:
@@ -2407,7 +2708,7 @@ def _has_decl_default(block: str, start: int):
                     break
         if close_i is None:
             return _MISSING
-        expr = rest[open_i + 1:close_i]
+        expr = rest[open_i + 1 : close_i]
     else:
         expr = re.match(r"[^,)]*", rest).group(0)
     return _literal_value(expr)
@@ -2456,9 +2757,12 @@ def augment_with_bareword_has(raw: dict) -> None:
             # (ALLOWLIST_DISCIPLINE.md §10) and must not depend on which of the
             # two ``has`` spellings a class happens to use.
             new_attrs = [
-                (m.group(1), _has_decl_required(block, m.end()),
-                 _has_decl_init_arg(block, m.end()),
-                 _has_decl_default(block, m.end()))
+                (
+                    m.group(1),
+                    _has_decl_required(block, m.end()),
+                    _has_decl_init_arg(block, m.end()),
+                    _has_decl_default(block, m.end()),
+                )
                 for m in bareword_has.finditer(block)
             ]
             if not new_attrs:
@@ -2495,10 +2799,12 @@ def augment_with_bareword_has(raw: dict) -> None:
 # $ref-carrying schema); AIObject is a small cross-check (9 → 7). Values verified live and
 # recorded in r5/perl_R5.md.
 _PREDICATE_ANCHORS = {
-    "AIParams": (92, 60),   # (total fields, surface fields)
+    "AIParams": (92, 60),  # (total fields, surface fields)
     "AIObject": (9, 7),
 }
-_PREDICATE_MIN_CLASSES = 100  # 155 today; a big drop = the replay broke → vacuous predicate
+_PREDICATE_MIN_CLASSES = (
+    100  # 155 today; a big drop = the replay broke → vacuous predicate
+)
 
 
 def run_predicate_selftest() -> int:
@@ -2508,25 +2814,33 @@ def run_predicate_selftest() -> int:
     sf = _surface_fields_by_class()
     ok = True
     if len(sf) < _PREDICATE_MIN_CLASSES:
-        print(f"[predicate-selftest] FAIL: only {len(sf)} classes classified "
-              f"(< {_PREDICATE_MIN_CLASSES}) — the generator schema replay likely broke, "
-              f"so the predicate is vacuous.", file=sys.stderr)
+        print(
+            f"[predicate-selftest] FAIL: only {len(sf)} classes classified "
+            f"(< {_PREDICATE_MIN_CLASSES}) — the generator schema replay likely broke, "
+            f"so the predicate is vacuous.",
+            file=sys.stderr,
+        )
         ok = False
     for cls, (want_total, want_surface) in _PREDICATE_ANCHORS.items():
         fields = sf.get(cls)
         if fields is None:
-            print(f"[predicate-selftest] FAIL: anchor class {cls} absent from the "
-                  f"predicate output — replay broke or the class was renamed.", file=sys.stderr)
+            print(
+                f"[predicate-selftest] FAIL: anchor class {cls} absent from the "
+                f"predicate output — replay broke or the class was renamed.",
+                file=sys.stderr,
+            )
             ok = False
             continue
         total = len(fields)
         surface = sum(1 for v in fields.values() if v)
         if (total, surface) != (want_total, want_surface):
-            print(f"[predicate-selftest] FAIL: {cls} = {total}/{surface} surface fields, "
-                  f"expected {want_total}/{want_surface} — the field-surface predicate "
-                  f"DRIFTED (it is silently trimming or adding generated payload surface). "
-                  f"If this is an intentional schema change, update _PREDICATE_ANCHORS.",
-                  file=sys.stderr)
+            print(
+                f"[predicate-selftest] FAIL: {cls} = {total}/{surface} surface fields, "
+                f"expected {want_total}/{want_surface} — the field-surface predicate "
+                f"DRIFTED (it is silently trimming or adding generated payload surface). "
+                f"If this is an intentional schema change, update _PREDICATE_ANCHORS.",
+                file=sys.stderr,
+            )
             ok = False
     # Fail-CLOSED check: a schema-less field must default to KEEP (surface toward
     # visibility), never silently drop. _field_is_surface returns False only for a
@@ -2540,18 +2854,26 @@ def run_predicate_selftest() -> int:
     for schema, want, label in (
         ({"$ref": "#/$defs/Foo"}, True, "$ref -> surface"),
         ({"type": "string"}, False, "concrete primitive -> not surface"),
-        ({"anyOf": [{"type": "boolean"}, {"$ref": "#/$defs/SWMLVar"}]}, True,
-         "anyOf containing a $ref -> surface"),
+        (
+            {"anyOf": [{"type": "boolean"}, {"$ref": "#/$defs/SWMLVar"}]},
+            True,
+            "anyOf containing a $ref -> surface",
+        ),
     ):
         got = _field_is_surface(schema, defs)
         if got is not want:
-            print(f"[predicate-selftest] FAIL: {label}: _field_is_surface returned "
-                  f"{got!r}, expected {want!r} — the primitive-vs-$ref discrimination "
-                  f"is broken.", file=sys.stderr)
+            print(
+                f"[predicate-selftest] FAIL: {label}: _field_is_surface returned "
+                f"{got!r}, expected {want!r} — the primitive-vs-$ref discrimination "
+                f"is broken.",
+                file=sys.stderr,
+            )
             ok = False
     if ok:
-        print("[predicate-selftest] PASS: field-surface predicate at locked anchors "
-              f"(AIParams 92/60, AIObject 9/7, {len(sf)} classes) + $ref discrimination intact.")
+        print(
+            "[predicate-selftest] PASS: field-surface predicate at locked anchors "
+            f"(AIParams 92/60, AIObject 9/7, {len(sf)} classes) + $ref discrimination intact."
+        )
         return 0
     return 1
 
@@ -2560,9 +2882,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=PORT_ROOT / "port_signatures.json")
-    parser.add_argument("--selftest", action="store_true",
-                        help="GATE-SELFTEST: assert the field-surface predicate holds its "
-                             "locked anchor counts (AIParams 92/60, AIObject 9/7). Exit 0 = intact.")
+    parser.add_argument(
+        "--selftest",
+        action="store_true",
+        help="GATE-SELFTEST: assert the field-surface predicate holds its "
+        "locked anchor counts (AIParams 92/60, AIObject 9/7). Exit 0 = intact.",
+    )
     args = parser.parse_args()
 
     if args.selftest:
@@ -2574,10 +2899,17 @@ def main() -> int:
         raw = run_dump()
 
     canonical = collect(raw)
-    args.out.write_text(json.dumps(canonical, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    args.out.write_text(
+        json.dumps(canonical, indent=2, sort_keys=False) + "\n", encoding="utf-8"
+    )
     n_mods = len(canonical["modules"])
-    n_methods = sum(sum(len(c["methods"]) for c in m.get("classes", {}).values()) for m in canonical["modules"].values())
-    print(f"enumerate_signatures: wrote {args.out} ({n_mods} modules, {n_methods} methods)")
+    n_methods = sum(
+        sum(len(c["methods"]) for c in m.get("classes", {}).values())
+        for m in canonical["modules"].values()
+    )
+    print(
+        f"enumerate_signatures: wrote {args.out} ({n_mods} modules, {n_methods} methods)"
+    )
     return 0
 
 

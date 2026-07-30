@@ -50,17 +50,17 @@ Usage:
     python3 scripts/generate_swaig_payloads.py --check    # GEN-FRESH: fail if stale
     python3 scripts/generate_swaig_payloads.py --out DIR  # scratch: emit into DIR
 """
+
 from __future__ import annotations
 
 import argparse
 import importlib.util
-import os
 import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _perltidy_gen import perltidy_outputs  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _perltidy_gen import perltidy_outputs
 
 
 # ---------------------------------------------------------------------------
@@ -68,9 +68,12 @@ from _perltidy_gen import perltidy_outputs  # noqa: E402
 # generators never diverge on the emit rule.
 # ---------------------------------------------------------------------------
 
+
 def _load_rest_generator():
     here = Path(__file__).resolve().parent
-    spec = importlib.util.spec_from_file_location("generate_rest", here / "generate_rest.py")
+    spec = importlib.util.spec_from_file_location(
+        "generate_rest", here / "generate_rest.py"
+    )
     if spec is None or spec.loader is None:  # pragma: no cover
         raise SystemExit("generate_swaig_payloads.py: cannot load generate_rest.py")
     mod = importlib.util.module_from_spec(spec)
@@ -109,7 +112,9 @@ SWAIG_HEADER = (
 )
 
 
-def _emit_class(pl_name: str, properties: dict, spec: str, sub: str, source_desc: str) -> str:
+def _emit_class(
+    pl_name: str, properties: dict, spec: str, sub: str, source_desc: str
+) -> str:
     """Emit one method-less Moo data package for a SWAIG payload object schema."""
     pkg = f"SignalWire::SWAIG::Generated::{sub}::{pl_name}"
     desc = f"Generated SWAIG payload wire type {pl_name!r} ({source_desc})."
@@ -119,7 +124,9 @@ def _emit_class(pl_name: str, properties: dict, spec: str, sub: str, source_desc
     out += "use warnings;\n"
     out += "use Moo;\n\n"
     out += "# Pure data DTO: one read-only accessor per property carrying the snake\n"
-    out += "# wire key; no methods (the reference records this as a method-less type).\n"
+    out += (
+        "# wire key; no methods (the reference records this as a method-less type).\n"
+    )
     used: set[str] = set()
     for wire_key in properties:
         attr = GR.perl_attr_name(wire_key)
@@ -143,6 +150,7 @@ def _pascal_verb(verb: str) -> str:
 # ``<Sub>/<Class>.pm`` (the subdir routes the enumerators to the oracle module).
 # ---------------------------------------------------------------------------
 
+
 def _build_swaig_request(psdk: Path) -> dict:
     """swaig-request.yaml -> SwaigRequest (+ lifted SwaigArgument)."""
     spec_file = "swaig-request.yaml"
@@ -155,10 +163,15 @@ def _build_swaig_request(psdk: Path) -> dict:
     arg = props.get("argument")
     if isinstance(arg, dict) and arg.get("properties"):
         outs[f"{sub}/SwaigArgument.pm"] = _emit_class(
-            "SwaigArgument", arg["properties"], spec_file, sub,
-            "inline swaig-request `argument` object")
+            "SwaigArgument",
+            arg["properties"],
+            spec_file,
+            sub,
+            "inline swaig-request `argument` object",
+        )
     outs[f"{sub}/SwaigRequest.pm"] = _emit_class(
-        "SwaigRequest", props, spec_file, sub, "swaig-request `SwaigRequest` schema")
+        "SwaigRequest", props, spec_file, sub, "swaig-request `SwaigRequest` schema"
+    )
     return outs
 
 
@@ -181,8 +194,12 @@ def _build_post_prompt(psdk: Path) -> dict:
             continue
         emitted.add(pl_name)
         outs[f"{sub}/{pl_name}.pm"] = _emit_class(
-            pl_name, node.get("properties") or {}, spec_file, sub,
-            f"post-prompt components/schemas {raw_name!r}")
+            pl_name,
+            node.get("properties") or {},
+            spec_file,
+            sub,
+            f"post-prompt components/schemas {raw_name!r}",
+        )
     return outs
 
 
@@ -195,7 +212,11 @@ def _build_swaig_actions(psdk: Path) -> dict:
     actions = spec["components"]["schemas"]["SwaigAction"]["properties"]
 
     def _is_obj(s) -> bool:
-        return isinstance(s, dict) and s.get("type") == "object" and bool(s.get("properties"))
+        return (
+            isinstance(s, dict)
+            and s.get("type") == "object"
+            and bool(s.get("properties"))
+        )
 
     outs: dict = {}
     emitted: set = set()
@@ -209,14 +230,20 @@ def _build_swaig_actions(psdk: Path) -> dict:
             if not _is_obj(b):
                 continue
             obj_i += 1
-            action_name = _pascal_verb(verb) + "Action" + ("" if obj_i == 1 else str(obj_i))
+            action_name = (
+                _pascal_verb(verb) + "Action" + ("" if obj_i == 1 else str(obj_i))
+            )
             pl_name = GR.type_name(action_name)
             if pl_name in emitted:
                 continue
             emitted.add(pl_name)
             outs[f"{sub}/{pl_name}.pm"] = _emit_class(
-                pl_name, b.get("properties") or {}, spec_file, sub,
-                f"swaig-response action {verb!r} value object")
+                pl_name,
+                b.get("properties") or {},
+                spec_file,
+                sub,
+                f"swaig-response action {verb!r} value object",
+            )
     return outs
 
 
@@ -241,9 +268,12 @@ def build_outputs(psdk: Path) -> dict:
 # Driver.
 # ---------------------------------------------------------------------------
 
+
 def main(argv) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true", help="GEN-FRESH: exit non-zero if stale")
+    ap.add_argument(
+        "--check", action="store_true", help="GEN-FRESH: exit non-zero if stale"
+    )
     ap.add_argument("--out", default="", help="scratch: emit into this dir")
     args = ap.parse_args(argv)
 
@@ -268,11 +298,15 @@ def main(argv) -> int:
                 if rel not in expected:
                     stale.append(f"{p} (leftover — not in generator output)")
         if stale:
-            sys.stderr.write("GEN-FRESH FAIL: %d generated SWAIG-payload file(s) stale:\n" % len(stale))
+            sys.stderr.write(
+                f"GEN-FRESH FAIL: {len(stale)} generated SWAIG-payload file(s) stale:\n"
+            )
             for s in stale:
-                sys.stderr.write("  - %s\n" % s)
+                sys.stderr.write(f"  - {s}\n")
             return 1
-        print("GEN-FRESH: generated SWAIG-payload files match porting-sdk/swaig-specs/*.yaml.")
+        print(
+            "GEN-FRESH: generated SWAIG-payload files match porting-sdk/swaig-specs/*.yaml."
+        )
         return 0
 
     out_dir.mkdir(parents=True, exist_ok=True)

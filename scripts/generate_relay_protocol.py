@@ -49,18 +49,18 @@ Usage:
     python3 scripts/generate_relay_protocol.py --check    # GEN-FRESH: fail if stale
     python3 scripts/generate_relay_protocol.py --out DIR  # scratch: emit into DIR
 """
+
 from __future__ import annotations
 
 import argparse
 import importlib.util
 import json
-import os
 import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _perltidy_gen import perltidy_outputs  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _perltidy_gen import perltidy_outputs
 
 
 # ---------------------------------------------------------------------------
@@ -69,9 +69,12 @@ from _perltidy_gen import perltidy_outputs  # noqa: E402
 # the emit rule — exactly like generate_swml_verbs.py.
 # ---------------------------------------------------------------------------
 
+
 def _load_rest_generator():
     here = Path(__file__).resolve().parent
-    spec = importlib.util.spec_from_file_location("generate_rest", here / "generate_rest.py")
+    spec = importlib.util.spec_from_file_location(
+        "generate_rest", here / "generate_rest.py"
+    )
     if spec is None or spec.loader is None:  # pragma: no cover
         raise SystemExit("generate_relay_protocol.py: cannot load generate_rest.py")
     mod = importlib.util.module_from_spec(spec)
@@ -135,7 +138,9 @@ def _emit_class(pl_name: str, properties: dict, source_desc: str) -> str:
     out += "use warnings;\n"
     out += "use Moo;\n\n"
     out += "# Pure data DTO: one read-only accessor per property carrying the snake\n"
-    out += "# wire key; no methods (the reference records this as a method-less type).\n"
+    out += (
+        "# wire key; no methods (the reference records this as a method-less type).\n"
+    )
     used: set[str] = set()
     for wire_key in properties:
         attr = GR.perl_attr_name(wire_key)
@@ -184,7 +189,8 @@ def build_outputs(psdk: Path) -> dict:
                 continue
             emitted_names.add(pl_name)
             outs[f"{pl_name}.pm"] = _emit_class(
-                pl_name, node.get("properties") or {}, f"method {method!r}, {phase}")
+                pl_name, node.get("properties") or {}, f"method {method!r}, {phase}"
+            )
 
     # §5 format backstop: tidy every generated .pm so GEN-FRESH and the FMT
     # gate both pass (perltidy aligns consecutive `has` declarations, which a
@@ -197,9 +203,12 @@ def build_outputs(psdk: Path) -> dict:
 # Driver.
 # ---------------------------------------------------------------------------
 
+
 def main(argv) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true", help="GEN-FRESH: exit non-zero if stale")
+    ap.add_argument(
+        "--check", action="store_true", help="GEN-FRESH: exit non-zero if stale"
+    )
     ap.add_argument("--out", default="", help="scratch: emit into this dir")
     args = ap.parse_args(argv)
 
@@ -224,11 +233,15 @@ def main(argv) -> int:
                 if rel not in expected:
                     stale.append(f"{p} (leftover — not in generator output)")
         if stale:
-            sys.stderr.write("GEN-FRESH FAIL: %d generated RELAY-protocol file(s) stale:\n" % len(stale))
+            sys.stderr.write(
+                f"GEN-FRESH FAIL: {len(stale)} generated RELAY-protocol file(s) stale:\n"
+            )
             for s in stale:
-                sys.stderr.write("  - %s\n" % s)
+                sys.stderr.write(f"  - {s}\n")
             return 1
-        print("GEN-FRESH: generated RELAY-protocol files match porting-sdk/relay-protocol/*.json.")
+        print(
+            "GEN-FRESH: generated RELAY-protocol files match porting-sdk/relay-protocol/*.json."
+        )
         return 0
 
     out_dir.mkdir(parents=True, exist_ok=True)
