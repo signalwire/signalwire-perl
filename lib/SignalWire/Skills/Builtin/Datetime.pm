@@ -115,6 +115,14 @@ sub register_tools {
     );
 }
 
+# Speech-recognition hints for this skill. Empty by design — the reference
+# ships the same explicit empty override as the documented extension point
+# (e.g. "time", "date", "today", "now", "timezone" would go here). Python
+# parity: ``DateTimeSkill.get_hints``.
+sub get_hints {
+    return [];
+}
+
 sub _get_prompt_sections {
     return [
         {

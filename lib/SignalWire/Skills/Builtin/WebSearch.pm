@@ -139,6 +139,20 @@ sub _snippets_only {
     return $self->params->{snippets_only} ? 1 : 0;
 }
 
+# Registry key for this skill instance. Overrides SkillBase's default (which
+# keys on tool_name alone) to key on the search-engine id AS WELL — two
+# web_search instances pointed at different Custom Search engines are
+# genuinely different skills, and under the base key they would collide on one
+# registry slot. Python parity: ``WebSearchSkill.get_instance_key``. Note the
+# reference reads `search_engine_id` only, not the `cx` alias this port also
+# accepts for the request itself; the key formula follows the reference.
+sub get_instance_key {
+    my ($self)    = @_;
+    my $engine_id = $self->params->{search_engine_id} // 'default';
+    my $tool_name = $self->params->{tool_name}        // 'web_search';
+    return $self->skill_name . '_' . $engine_id . '_' . $tool_name;
+}
+
 sub register_tools {
     my ($self) = @_;
     my $tool_name = $self->params->{tool_name} // 'web_search';
@@ -314,6 +328,13 @@ sub _wrap_response {
     $text = "$prefix\n\n$text"  if length $prefix;
     $text = "$text\n\n$postfix" if length $postfix;
     return $text;
+}
+
+# Speech-recognition hints for this skill. Empty by design — the reference
+# ships the same explicit empty override as the documented extension point.
+# Python parity: ``WebSearchSkill.get_hints``.
+sub get_hints {
+    return [];
 }
 
 sub get_global_data {

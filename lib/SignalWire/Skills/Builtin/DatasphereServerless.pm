@@ -14,6 +14,16 @@ has '+skill_description' => ( default =>
         sub { 'Search knowledge using SignalWire DataSphere with serverless DataMap execution' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
+# Registry key for this skill instance. Overrides SkillBase's default because
+# the tool is named `search_knowledge`, not `datasphere_serverless` — the tool
+# name must fold into the key ALWAYS, including when defaulted. Python parity:
+# ``DataSphereServerlessSkill.get_instance_key``.
+sub get_instance_key {
+    my ($self) = @_;
+    my $tool_name = $self->params->{tool_name} // 'search_knowledge';
+    return $self->skill_name . '_' . $tool_name;
+}
+
 sub setup { return 1 }
 
 sub register_tools {

@@ -12,6 +12,17 @@ has '+skill_description' =>
     ( default => sub { 'Transfer calls between agents based on pattern matching' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
+# Registry key for this skill instance. Overrides SkillBase's default because
+# the tool is named `transfer_call`, not `swml_transfer` — the tool name must
+# fold into the key ALWAYS, including when defaulted, so two transfer skills
+# configured with different tool names occupy distinct registry slots. Python
+# parity: ``SWMLTransferSkill.get_instance_key``.
+sub get_instance_key {
+    my ($self) = @_;
+    my $tool_name = $self->params->{tool_name} // 'transfer_call';
+    return $self->skill_name . '_' . $tool_name;
+}
+
 sub setup { return 1 }
 
 sub register_tools {

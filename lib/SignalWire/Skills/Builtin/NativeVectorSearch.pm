@@ -98,6 +98,18 @@ sub get_instance_key ($self) {
     return "native_vector_search_$tool";
 }
 
+# Teardown when the skill is unloaded or the agent shuts down. The reference's
+# ``NativeVectorSearchSkill.cleanup`` removes temp dirs left by the LOCAL
+# index-building backend (signalwire.search.*), which is Python-only and
+# deliberately not ported — this port is the network/remote-mode wrapper, so it
+# holds no temp dirs. The HTTP client is the one resource it does own; drop the
+# lazily-built handle so any keep-alive socket is released. Best-effort and
+# idempotent: teardown must not raise.
+sub cleanup ($self) {
+    $self->{_http} = undef;
+    return;
+}
+
 sub register_tools ($self) {
     my $tool_name = $self->params->{tool_name} // 'search_knowledge';
 

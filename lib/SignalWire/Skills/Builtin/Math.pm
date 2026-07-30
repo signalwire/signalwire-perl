@@ -167,6 +167,14 @@ sub _safe_eval {
     return $result;
 }
 
+# Speech-recognition hints for this skill. Empty by design — the reference
+# ships the same explicit empty override as the documented extension point
+# (e.g. "calculate", "plus", "minus", "times", "divide" would go here). Python
+# parity: ``MathSkill.get_hints``.
+sub get_hints {
+    return [];
+}
+
 sub _get_prompt_sections {
     return [
         {

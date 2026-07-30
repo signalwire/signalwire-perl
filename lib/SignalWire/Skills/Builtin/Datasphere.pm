@@ -54,6 +54,29 @@ has '_http' => (
     },
 );
 
+# Release the HTTP client when the skill is unloaded. Python parity:
+# ``DataSphereSkill.cleanup`` closes its ``requests.Session``. HTTP::Tiny holds
+# no session object to close explicitly, so dropping the lazily-built handle is
+# the equivalent teardown: the next use rebuilds it and any keep-alive socket
+# the object owned is released with it. Must not raise during teardown, and is
+# idempotent (a second call finds the slot already cleared).
+sub cleanup {
+    my ($self) = @_;
+    $self->{_http} = undef;
+    return;
+}
+
+# Registry key for this skill instance. Overrides SkillBase's default
+# ("<skill_name>" / "<skill_name>:<tool_name>") because DataSphere's tool is
+# named `search_knowledge`, not `datasphere` — so the key must fold the tool
+# name in ALWAYS, including when it is defaulted. Python parity:
+# ``DataSphereSkill.get_instance_key`` (skills/datasphere/skill.py).
+sub get_instance_key {
+    my ($self) = @_;
+    my $tool_name = $self->params->{tool_name} // 'search_knowledge';
+    return $self->skill_name . '_' . $tool_name;
+}
+
 sub setup {
     my ($self) = @_;
 

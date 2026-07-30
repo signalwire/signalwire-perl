@@ -661,6 +661,30 @@ PERL_METHOD_RENAMES = {
 }
 
 
+# PROTECTED-name -> PUBLIC-name template-method projections.
+#
+# ``SkillBase`` defines a template pair, in BOTH the reference and this port:
+# the public ``get_prompt_sections`` applies the ``skip_prompt`` gate and then
+# delegates to the protected ``_get_prompt_sections``, which subclasses are
+# documented to override.
+#
+# The reference's OWN subclasses do not follow that contract — 11 of its 13
+# prompt-contributing skills override the PUBLIC ``get_prompt_sections``
+# directly (only claude_skills and info_gatherer override the protected one).
+# The Perl port overrides the protected hook uniformly. Same delivered prompt
+# sections either way when ``skip_prompt`` is unset — which is the functional
+# contract the parity gate compares — so the difference is override-point
+# idiom, folded here at the enumerator rather than papered over as an omission.
+#
+# Deliberately NOT a per-package hand list: the guards at the call site key the
+# projection off the reference itself, so it applies to exactly the subclasses
+# where the reference declares the public method and stops applying the moment
+# the reference stops declaring it. Adding a skill needs no edit here.
+PROTECTED_TEMPLATE_PROJECTIONS = {
+    "_get_prompt_sections": "get_prompt_sections",
+}
+
+
 # Moo attribute renames: Perl's leading-underscore private attrs that
 # map to Python's public attribute name. Same pattern as
 # PERL_METHOD_ALIASES — emit the synthesized getter under both names.
@@ -1615,6 +1639,12 @@ def collect(raw: dict) -> dict:
                     if name not in py_subclass_methods:
                         skipped_due_to_parent.add(name)
 
+        # The set of sub names this Perl class defines literally. Used to keep
+        # PROTECTED_TEMPLATE_PROJECTIONS from firing on a class that defines
+        # both halves of a template pair (SkillBase), which would emit the
+        # public name twice and clobber the real public signature.
+        native_method_names = {m.get("name", "") for m in type_entry.get("methods", [])}
+
         for m in type_entry.get("methods", []):
             native = m.get("name", "")
             # Per-package method rename (reserved-word / dunder). Apply before
@@ -1624,6 +1654,18 @@ def collect(raw: dict) -> dict:
             renamed = PERL_METHOD_RENAMES.get((full, native))
             if renamed is not None:
                 native = renamed
+            # Template-method projection (see PROTECTED_TEMPLATE_PROJECTIONS).
+            # Scoped by construction: fires only when the Perl class does NOT
+            # itself define the public name (so SkillBase, which defines BOTH
+            # halves of the template pair, is untouched) and the reference
+            # DOES declare the public name on this very subclass.
+            projected = PROTECTED_TEMPLATE_PROJECTIONS.get(native)
+            if (
+                projected is not None
+                and projected not in native_method_names
+                and python_signature(mod, canonical_class, projected) is not None
+            ):
+                native = projected
             if native in SKIP_METHODS:
                 continue
             if native in skipped_due_to_parent:

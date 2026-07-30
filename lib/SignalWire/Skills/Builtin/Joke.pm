@@ -50,6 +50,14 @@ sub register_tools {
     );
 }
 
+# Speech-recognition hints for this skill. Empty by design — the reference
+# ships the same explicit empty override as the documented extension point
+# (e.g. "joke", "funny", "make me laugh" would go here). Python parity:
+# ``JokeSkill.get_hints``.
+sub get_hints {
+    return [];
+}
+
 sub get_global_data {
     return { joke_skill_enabled => JSON::true };
 }
