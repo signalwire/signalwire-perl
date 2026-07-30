@@ -166,10 +166,14 @@ sub AUTOLOAD ( $self, @args ) {
 
 # Add a verb to the underlying document's main section.
 #
-# Bridges to the Perl Document::add_verb($section, $verb, $data) signature
-# (the Python/Ruby references implicitly target the "main" section).
+# Routes through the VALIDATING Service::add_verb (verb handler + schema pass)
+# rather than the raw Document::add_verb. Going straight to the document was
+# the bypass that let schema-forbidden configs — a `play` with a `text` key, a
+# `hangup` with a reason outside the closed enum — ship silently: the schema
+# rejects them, but nothing consulted the schema. Service::add_verb targets the
+# "main" section, matching the Python/Ruby references.
 sub _add_verb ( $self, $name, $config ) {
-    $self->service->document->add_verb( 'main', $name, $config );
+    $self->service->add_verb( $name, $config );
     return;
 }
 

@@ -7,6 +7,8 @@ use Moo;
 use feature 'signatures';
 no warnings 'experimental::signatures';
 
+use JSON::PP ();
+
 use SignalWire::SWML::SWMLBuilder;
 
 # SWMLRenderer — Perl port of the Python reference
@@ -67,8 +69,14 @@ sub render_function_response_swml ( $class, %opts ) {
     my $actions       = $opts{actions} // [];
     my $format        = $opts{format}  // 'json';
 
-    $service->document->sections( {} );
-    $service->document->add_verb( 'main', 'play', { text => $response_text } )
+    $service->reset_document;
+
+    # The SWML `play` verb has NO `text` key — its config is
+    # PlayWithURL/PlayWithURLS, and spoken text goes through the `say:` URL
+    # scheme (reference: swml_renderer.py's `{"url": f"say:{response_text}"}`).
+    # Emitting {text => ...} produced a document schema.json rejects; it went
+    # unnoticed only because this call bypassed the validating entry point.
+    $service->add_verb( 'play', { url => "say:$response_text" } )
         if defined $response_text && length $response_text;
     _add_response_action( $service, $_ ) for @$actions;
 
@@ -82,10 +90,27 @@ sub render_function_response_swml ( $class, %opts ) {
 # ------------------------------------------------------------------
 
 # Add the record_call verb with its exact wire keys (format + stereo).
+#
+# $defs/RecordCall.stereo is anyOf<boolean, SWMLVar>, so a bare Perl 1/0 (which
+# JSON-encodes as the NUMBER 1/0) is schema-invalid. Normalise to a real JSON
+# boolean, then route through the VALIDATING Service::add_verb.
 sub _add_record_call ( $service, $record_format, $record_stereo ) {
-    $service->document->add_verb( 'main', 'record_call',
-        { format => $record_format, stereo => $record_stereo } );
+    $service->add_verb(
+        'record_call',
+        {
+            format => $record_format,
+            stereo => _json_bool($record_stereo),
+        }
+    );
     return;
+}
+
+# Coerce a Perl truth value to a JSON boolean, passing an already-boolean (or a
+# SWMLVar string like "%{vars.x}") through untouched.
+sub _json_bool ($value) {
+    return $value if ref $value;
+    return $value if defined $value && $value =~ /\A\s*%\{/;
+    return $value ? JSON::PP::true() : JSON::PP::false();
 }
 
 # Emit the ai verb on the builder from the renderer's inputs.
@@ -107,10 +132,12 @@ sub _render_in ( $builder, $format ) {
     return lc("$format") eq 'yaml' ? _render_yaml( $builder->build ) : $builder->render;
 }
 
-# Add the first recognised action verb from an action hashref to the document.
+# Add the first recognised action verb from an action hashref to the document,
+# through the VALIDATING Service::add_verb so a schema-invalid action config
+# dies instead of shipping (the raw Document path never consulted the schema).
 sub _add_response_action ( $service, $action ) {
     my ($verb) = grep { exists $action->{$_} } @RESPONSE_ACTION_VERBS;
-    $service->document->add_verb( 'main', $verb, $action->{$verb} ) if defined $verb;
+    $service->add_verb( $verb, $action->{$verb} ) if defined $verb;
     return;
 }
 

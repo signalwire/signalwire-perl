@@ -324,7 +324,13 @@ sub AUTOLOAD {
         } else {
             $data = shift // {};
         }
-        $self->document->add_verb( $section, $method, $data );
+
+        # Route through the VALIDATING add_verb_to_section, not the raw
+        # Document::add_verb. AUTOLOAD lives on the Service and reads like the
+        # validating surface, but it went straight to the document — so an
+        # auto-vivified verb (`$svc->play({text => ...})`) skipped the verb
+        # handler AND the schema pass that would have refused it.
+        $self->add_verb_to_section( $section, $method, $data );
         return $self;
     }
 
