@@ -112,7 +112,10 @@ sub reduce_lambda ($res) {
     return { status => $res->{statusCode}, body => $body };
 }
 
-sub serverless_swaig {
+# The agent both serverless SWAIG fixtures drive: one SECURE tool (define_tool's
+# default) whose handler returns a distinctive string, so "did it run?" is a
+# direct observation rather than an inference from a status code.
+sub serverless_agent {
     my $a = SignalWire::Agent::AgentBase->new(
         name                => 'demo',
         route               => '/demo',
@@ -128,6 +131,13 @@ sub serverless_swaig {
             return SignalWire::SWAIG::FunctionResult->new('hello there');
         },
     );
+    return $a;
+}
+
+# The NEGATIVE half of the serverless token contract: a secure tool invoked with
+# NO `__token` anywhere. The golden pins the REFUSAL.
+sub serverless_swaig {
+    my $a   = serverless_agent();
     my $res = $a->handle_serverless_request(
         mode  => 'lambda',
         event => {
@@ -136,6 +146,43 @@ sub serverless_swaig {
                 authorization  => basic_auth( $USER, $PASSWORD ),
                 'content-type' => 'application/json',
             },
+            body           => '{"function":"say_hello","argument":{"parsed":[{}]},"call_id":"c1"}',
+            requestContext => { http => { method => 'POST' } },
+        },
+    );
+    return reduce_lambda($res);
+}
+
+# The POSITIVE half. Identical to serverless_swaig in every respect EXCEPT that
+# it carries a GENUINELY MINTED `__token` in the lambda query string — so it
+# pins that a valid credential is ACCEPTED and the secure tool RUNS. Without it
+# the contract would only ever be proven in the refusing direction, and a port
+# that refuses EVERYTHING (never validating, just always denying) would sail
+# through.
+#
+# The token CANNOT be a literal: it is HMAC-SHA256 keyed by this agent's
+# SessionManager `secret_key` (a per-process random value) and it expires. So it
+# is minted here from the SAME agent instance the fixture then drives — exactly
+# the round trip a real deployment performs, where the rendered webhook URL
+# carries the token the engine POSTs back. Each port mints with its own session
+# manager; only the ACCEPT/REFUSE outcome is compared cross-port.
+#
+# WHERE THE CREDENTIAL RIDES: `queryStringParameters` (the parsed query mapping
+# both the REST API v1 and HTTP API v2 lambda payload shapes provide) carries
+# the `__token`; the call_id rides the POST BODY. That is the identical split
+# the HTTP transport uses — serverless is not a weaker envelope.
+sub serverless_swaig_valid_token {
+    my $a     = serverless_agent();
+    my $token = $a->session_manager->create_tool_token( 'say_hello', 'c1' );
+    my $res   = $a->handle_serverless_request(
+        mode  => 'lambda',
+        event => {
+            rawPath => '/swaig',
+            headers => {
+                authorization  => basic_auth( $USER, $PASSWORD ),
+                'content-type' => 'application/json',
+            },
+            queryStringParameters => { __token => $token },
             body           => '{"function":"say_hello","argument":{"parsed":[{}]},"call_id":"c1"}',
             requestContext => { http => { method => 'POST' } },
         },
@@ -226,8 +273,9 @@ sub main {
         { 'x-twilio-signature' => webhook_sig( $WH_URL, $WH_BODY, $SIGNING_KEY ) }, $SIGNING_KEY );
 
     # ---- serverless (lambda) ----
-    $out{http_serverless_lambda_swaig}       = serverless_swaig();
-    $out{http_serverless_lambda_noauth_401} = serverless_noauth();
+    $out{http_serverless_lambda_swaig}                   = serverless_swaig();
+    $out{http_serverless_lambda_swaig_valid_token}       = serverless_swaig_valid_token();
+    $out{http_serverless_lambda_noauth_401}              = serverless_noauth();
 
     print JSON->new->canonical->encode( \%out ), "\n";
     return 0;

@@ -567,6 +567,56 @@ sub validate_tool_token {
     return $result ? 1 : 0;
 }
 
+# swaig_validate_token — enforce `secure => 1` for ONE SWAIG call, independent
+# of transport. This is the real implementation behind SWMLService's
+# request-agnostic extension point, and it is the SOLE security decision for a
+# SWAIG call: the HTTP endpoint and every serverless mode call THIS, so none of
+# them can drift from the others.
+#
+# Python parity: agent_base.AgentBase._swaig_validate_token — three nullable
+# strings in ($function_name, $token, $call_id), nullable out.
+#
+#   valid token     -> undef (proceed)
+#   forged token    -> refusal hashref
+#   absent token    -> refusal hashref  (fail-CLOSED: omitting the credential
+#                      must never be weaker than presenting a wrong one, or
+#                      `secure` would be a flag that permits anonymous calls)
+#   call_id absent  -> refusal hashref  (a token can ONLY be validated against
+#                      a call_id; with none there is nothing to check it
+#                      against, so it counts as UNVALIDATED, never a bypass)
+#   insecure tool   -> undef (proceed) in all of the above
+#
+# The refusal is returned as a FunctionResult-shaped hashref that the caller
+# emits with a 200 status — NOT an HTTP error. The engine has no handling for a
+# SWAIG refusal status, so the tool reports it cannot execute and the model
+# relays that to the caller.
+sub swaig_validate_token {
+    my ( $self, $function_name, $token, $call_id ) = @_;
+
+    # Not a registered SWAIG function -> nothing to enforce here; dispatch
+    # decides what an unknown name means (Python parity: the reference returns
+    # None when the function is not in the registry).
+    return undef unless defined $function_name && $self->has_function($function_name);
+
+    my $is_valid = 0;
+    if ( defined $token && length $token && defined $call_id && length $call_id ) {
+        $is_valid = $self->validate_tool_token( $function_name, $token, $call_id ) ? 1 : 0;
+    }
+    return undef if $is_valid;
+
+    # Invalid/absent credential. Refuse only if the tool actually asked to be
+    # secure — an insecure tool runs ungated, which is what makes `secure => 0`
+    # mean something.
+    my $tool   = $self->get_function($function_name);
+    my $secure = ( ref $tool eq 'HASH' && exists $tool->{secure} ) ? $tool->{secure} : 1;
+    return undef unless $secure;
+
+    require SignalWire::SWAIG::FunctionResult;
+    return SignalWire::SWAIG::FunctionResult->new(
+              "I'm sorry, the security token for this function is invalid "
+            . "or expired. I cannot execute this action." )->to_hash;
+}
+
 # ---------- AI Config methods ----------
 
 sub add_hint {
@@ -2175,6 +2225,12 @@ sub _handle_swml {
     return [ 200, [ 'Content-Type' => 'application/json' ], [$json] ];
 }
 
+# _handle_swaig — the HTTP/PSGI SWAIG endpoint. AgentBase routes POST
+# $route/swaig HERE, NOT to SWMLService::_handle_swaig_request, so this is a
+# THIRD dispatch path into on_function_call and it must consult the shared
+# security core itself. (Wiring the token check only into
+# SWMLService::swaig_pre_dispatch would compile, read correctly, and enforce
+# nothing on the transport agents actually serve from.)
 sub _handle_swaig {
     my ( $self, $env, $req ) = @_;
 
@@ -2204,6 +2260,19 @@ sub _handle_swaig {
     {
         $args = $body->{argument}{parsed}[0] // {};
     }
+
+    # `secure => 1` enforcement, via the SAME transport-agnostic core the
+    # lambda path uses. Only the credential EXTRACTION is transport-specific:
+    # the `__token` comes off the query string, the call_id out of the POST
+    # body — the split _build_webhook_url emits. The refusal is a 200 +
+    # FunctionResult body, never an HTTP error status: the engine has no
+    # handling for a SWAIG refusal status, so the tool reports that it cannot
+    # execute and the model relays that.
+    my ( $target, $short_circuit ) = $self->swaig_pre_dispatch( $body, $func_name, $env );
+    if ( defined $short_circuit ) {
+        return [ 200, [ 'Content-Type' => 'application/json' ], [ encode_json($short_circuit) ] ];
+    }
+    $self = $target if defined $target;
 
     my $result = $self->on_function_call( $func_name, $args, $body );
     unless ( defined $result ) {
@@ -2495,17 +2564,25 @@ sub _run_serverless_lambda {
         };    # best-effort parse; empty args on failure (Python parity)
     }
 
+    # The `__token` credential rides the QUERY STRING (the call_id rides the
+    # body, parsed above) — the identical split _build_webhook_url emits for
+    # the HTTP transport, so serverless is not a weaker envelope. Lambda offers
+    # the query in two shapes: `queryStringParameters` (the parsed mapping, in
+    # both the REST API v1 and HTTP API v2 payloads) and `rawQueryString` (the
+    # HTTP API v2 raw form). Read the parsed one first, then fall back.
+    my $token = _lambda_token_from_event($event);
+
     # /swaig endpoint with the function named in the body.
     if (   ( $path eq 'swaig' || $path eq 'swaig/' )
         && defined $function_name
         && length $function_name )
     {
-        return $self->_lambda_swaig_response( $function_name, $args, $call_id, $raw_data );
+        return $self->_lambda_swaig_response( $function_name, $args, $call_id, $raw_data, $token );
     }
 
     # Path-based function routing (e.g. /say_hello).
     if ( length $path && $path ne 'swaig' && $path ne 'swaig/' ) {
-        return $self->_lambda_swaig_response( $path, $args, $call_id, $raw_data );
+        return $self->_lambda_swaig_response( $path, $args, $call_id, $raw_data, $token );
     }
 
     # Root path (or /swaig without a function) -> SWML. The body's call_id (parsed
@@ -2523,10 +2600,65 @@ sub _check_lambda_auth {
     return $self->_check_basic_auth_headers($headers) ? 1 : 0;
 }
 
+# _lambda_token_from_event — pull the `__token` credential out of a Lambda
+# event's query string. Handles BOTH payload shapes: `queryStringParameters`
+# (the parsed mapping, provided by the REST API v1 and HTTP API v2 shapes alike,
+# and the one the reference's extractor reads first) and `rawQueryString` (the
+# HTTP API v2 raw `a=b&c=d` fallback). `token` is accepted as the legacy alias,
+# matching the HTTP transport. Returns undef when absent — and an absent
+# credential is a REFUSAL, decided by swaig_validate_token, not here.
+sub _lambda_token_from_event {
+    my ($event) = @_;
+    return undef unless ref $event eq 'HASH';
+
+    if ( ref $event->{queryStringParameters} eq 'HASH' ) {
+        my $params = $event->{queryStringParameters};
+        for my $key (qw(__token token)) {
+            my $v = $params->{$key};
+            return $v if defined $v && length $v;
+        }
+    }
+
+    my $raw = $event->{rawQueryString};
+    if ( defined $raw && length $raw ) {
+        my %params;
+        for my $pair ( split /[&;]/, $raw ) {
+            my ( $k, $v ) = split /=/, $pair, 2;
+            next unless defined $k && length $k;
+            $params{ SignalWire::SWML::Service::_urldecode($k) } =
+                defined $v ? SignalWire::SWML::Service::_urldecode($v) : '';
+        }
+        for my $key (qw(__token token)) {
+            my $v = $params{$key};
+            return $v if defined $v && length $v;
+        }
+    }
+
+    return undef;
+}
+
 # _lambda_swaig_response — execute a SWAIG function and shape the 200 response.
+#
+# This is a SECOND dispatch path into on_function_call: the lambda mode handles
+# its event DIRECTLY and never routes through the PSGI app, so it never reaches
+# SWMLService::swaig_pre_dispatch. It must therefore consult the shared security
+# core itself — a token check wired only into the HTTP hook would leave this
+# path silently unguarded, which is exactly the state this fixed.
 sub _lambda_swaig_response {
-    my ( $self, $function_name, $args, $call_id, $raw_data ) = @_;
+    my ( $self, $function_name, $args, $call_id, $raw_data, $token ) = @_;
     $args //= {};
+
+    # Same transport-agnostic decision the HTTP path makes. The refusal is a
+    # 200 + FunctionResult body, never an HTTP error status.
+    my $refusal = $self->swaig_validate_token( $function_name, $token, $call_id );
+    if ( defined $refusal ) {
+        return {
+            statusCode => 200,
+            headers    => { 'Content-Type' => 'application/json' },
+            body       => JSON::encode_json($refusal),
+        };
+    }
+
     my $result = $self->on_function_call( $function_name, $args, $raw_data );
 
     my $result_hash;

@@ -104,9 +104,21 @@ subtest 'swaig-test integration with live agent' => sub {
     ok(scalar @$funcs >= 1, 'at least one SWAIG function found');
     is($funcs->[0]{function}, 'greet', 'greet function found');
 
-    # Simulate POST to /swaig
+    # Simulate POST to /swaig.
+    #
+    # `greet` is secure (define_tool's default), so this POST must carry a
+    # valid per-call `__token` exactly as the engine's would: the credential on
+    # the QUERY STRING, the call_id in the BODY — the split the rendered
+    # web_hook_url emits. Minted from this agent's own SessionManager because
+    # the token is HMAC-keyed by a per-process secret and expires, so it can
+    # never be a literal. Without it the call is refused, which is the
+    # contract, not a defect of this test.
+    my $call_id = 'cli-test-call';
+    my $token   = $agent->session_manager->create_tool_token( 'greet', $call_id );
+
     my $swaig_payload = encode_json({
         function => 'greet',
+        call_id  => $call_id,
         argument => {
             parsed => [{ name => 'World' }],
         },
@@ -119,6 +131,7 @@ subtest 'swaig-test integration with live agent' => sub {
         SCRIPT_NAME        => '',
         SERVER_NAME        => 'localhost',
         SERVER_PORT        => 3000,
+        QUERY_STRING       => "__token=$token",
         HTTP_AUTHORIZATION => "Basic $auth",
         CONTENT_TYPE       => 'application/json',
         CONTENT_LENGTH     => length($swaig_payload),

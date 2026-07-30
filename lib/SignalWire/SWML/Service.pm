@@ -1157,13 +1157,95 @@ sub list_tool_names {
     return @{ $self->tool_order };
 }
 
+# Extension point: transport-agnostic `secure => 1` token enforcement.
+#
+# This is the SOLE security decision for a SWAIG call, deliberately kept free of
+# any request/transport type ($env, PSGI, Lambda event) so that EVERY transport
+# — the HTTP endpoint and all four serverless modes (lambda, cgi,
+# google_cloud_function, azure_function) — reaches the identical check with the
+# identical semantics. Each transport is responsible only for EXTRACTING the
+# credential from its own payload shape; none of them re-implements the decision.
+#
+# Python parity: swml_service.SWMLService._swaig_validate_token — three nullable
+# strings in, nullable out.
+#
+# Returns undef to proceed with dispatch, or a FunctionResult-shaped hashref to
+# return INSTEAD of dispatching (the refusal). The refusal is always delivered
+# as a 200 + FunctionResult body, never an HTTP error status — the engine
+# (mod_openai) has no handling for a SWAIG refusal status, so the tool reports
+# that it cannot execute and the model relays that.
+#
+# The base SWMLService has no SessionManager, so it enforces nothing;
+# AgentBase overrides this with the real check.
+sub swaig_validate_token {
+    my ( $self, $function_name, $token, $call_id ) = @_;
+    return undef;
+}
+
 # Extension point: invoked between argument parsing and function dispatch
 # on POST /swaig. Returns ($target, $short_circuit). If $short_circuit is
 # defined, it's encoded as the SWAIG response without calling
-# on_function_call. AgentBase may override to add session-token validation.
+# on_function_call.
+#
+# The SECURITY half is NOT overridden per-transport: it is delegated here to
+# swaig_validate_token, the request-agnostic core every transport shares. Only
+# the credential EXTRACTION is transport-specific — here, the `__token` query
+# parameter and the body's `call_id`, exactly the split _build_webhook_url
+# emits. AgentBase overrides this for the dynamic-config ephemeral clone, which
+# genuinely needs the request; it does NOT re-implement the token check.
 sub swaig_pre_dispatch {
     my ( $self, $request_data, $func_name, $env ) = @_;
+
+    my $refusal = $self->swaig_validate_token(
+        $func_name,
+        _swaig_token_from_env($env),
+        _swaig_call_id_from_body($request_data)
+    );
+    return ( $self, $refusal ) if defined $refusal;
+
     return ( $self, undef );
+}
+
+# Pull the `__token` credential out of a PSGI env's QUERY_STRING. `token` is
+# accepted as the legacy alias (Python parity: swml_service.py reads
+# `query_params.get("__token") or query_params.get("token")`). Returns undef
+# when absent — an absent credential is a REFUSAL, never a bypass, and that
+# decision belongs to swaig_validate_token, not to this extractor.
+sub _swaig_token_from_env {
+    my ($env) = @_;
+    return undef unless ref $env eq 'HASH';
+    my $qs = $env->{QUERY_STRING};
+    return undef unless defined $qs && length $qs;
+
+    my %params;
+    for my $pair ( split /[&;]/, $qs ) {
+        my ( $k, $v ) = split /=/, $pair, 2;
+        next unless defined $k && length $k;
+        $params{ _urldecode($k) } = defined $v ? _urldecode($v) : '';
+    }
+    for my $key (qw(__token token)) {
+        my $v = $params{$key};
+        return $v if defined $v && length $v;
+    }
+    return undef;
+}
+
+# The call_id rides the POST BODY, not the query string — the same split the
+# reference uses (swml_service.py reads `body.get("call_id")` while the token
+# comes off the query params). A token is only checkable against a call_id, so
+# an absent one leaves the credential UNVALIDATED.
+sub _swaig_call_id_from_body {
+    my ($body) = @_;
+    return undef unless ref $body eq 'HASH';
+    my $cid = $body->{call_id};
+    return ( defined $cid && length $cid ) ? $cid : undef;
+}
+
+sub _urldecode {
+    my ($s) = @_;
+    $s =~ tr/+/ /;
+    $s =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/ge;
+    return $s;
 }
 
 # Extension point: subclasses may override to add /post_prompt, /mcp etc.
