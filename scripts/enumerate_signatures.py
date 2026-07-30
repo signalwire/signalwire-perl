@@ -2532,10 +2532,23 @@ def run_predicate_selftest() -> int:
     # visibility), never silently drop. _field_is_surface returns False only for a
     # concrete no-$ref schema; the CALLER defaults unknown/schema-less fields to keep.
     # Verify the primitive-vs-$ref discrimination directly.
+    # These three were `assert`s. In a GATE self-test that is a live hazard:
+    # `python3 -O` strips assert statements entirely, so the discrimination check
+    # would silently vanish and the gate would print PASS having verified nothing.
+    # Explicit checks that set ok=False cannot be optimized away.
     defs: dict = {}
-    assert _field_is_surface({"$ref": "#/$defs/Foo"}, defs) is True
-    assert _field_is_surface({"type": "string"}, defs) is False
-    assert _field_is_surface({"anyOf": [{"type": "boolean"}, {"$ref": "#/$defs/SWMLVar"}]}, defs) is True
+    for schema, want, label in (
+        ({"$ref": "#/$defs/Foo"}, True, "$ref -> surface"),
+        ({"type": "string"}, False, "concrete primitive -> not surface"),
+        ({"anyOf": [{"type": "boolean"}, {"$ref": "#/$defs/SWMLVar"}]}, True,
+         "anyOf containing a $ref -> surface"),
+    ):
+        got = _field_is_surface(schema, defs)
+        if got is not want:
+            print(f"[predicate-selftest] FAIL: {label}: _field_is_surface returned "
+                  f"{got!r}, expected {want!r} — the primitive-vs-$ref discrimination "
+                  f"is broken.", file=sys.stderr)
+            ok = False
     if ok:
         print("[predicate-selftest] PASS: field-surface predicate at locked anchors "
               f"(AIParams 92/60, AIObject 9/7, {len(sf)} classes) + $ref discrimination intact.")
