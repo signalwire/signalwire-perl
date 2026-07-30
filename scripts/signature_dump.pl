@@ -33,7 +33,18 @@ find( sub { push @files, $File::Find::name if /\.pm$/ }, $lib_root );
 
 my @types;
 for my $file (@files) {
-    open my $fh, '<', $file or next;
+
+    # FAIL LOUD on an unreadable source file. This used to be `or next`, which
+    # silently SKIPPED the file and still exited 0 — and this program produces the
+    # artifact the DRIFT gate compares against, so a skipped .pm means a SHORTER
+    # recorded surface that still looks perfectly valid. DRIFT then reports the
+    # missing members as the PORT's omissions, pointing the investigation at the
+    # SDK when the real fault is a file this loop could not open.
+    # (Measured: chmod 000 on one .pm silently dropped 1279 -> 1277 types, rc=0.)
+    open my $fh, '<', $file
+        or die "signature_dump: cannot read $file: $!\n"
+        . "Refusing to emit a partial surface — a short dump exits 0 and DRIFT "
+        . "would blame the port for members this file defines.\n";
     my @lines = <$fh>;
     close $fh;
     push @types, parse_file( $file, \@lines );
