@@ -23,171 +23,207 @@ subtest 'documents_create_success' => sub {
     my $client = MockTest::client();
     $client->datasphere->documents->create();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'datasphere.create_document', 'matched_route datasphere.create_document');
+    is( $last->{method}, 'POST', 'method POST' );
+    is( $last->{matched_route},
+        'datasphere.create_document', 'matched_route datasphere.create_document' );
 };
 
 subtest 'documents_create_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.create_document', 500, { error => 'x' });
+    MockTest::scenario_set( 'datasphere.create_document', 500, { error => 'x' } );
     my $ok = eval { $client->datasphere->documents->create(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.create_document', 'matched_route datasphere.create_document');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'datasphere.create_document', 'matched_route datasphere.create_document' );
 };
 
 subtest 'documents_delete_success' => sub {
     my $client = MockTest::client();
     $client->datasphere->documents->delete('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'DELETE', 'method DELETE');
-    is($last->{matched_route}, 'datasphere.delete_document', 'matched_route datasphere.delete_document');
+    is( $last->{method}, 'DELETE', 'method DELETE' );
+    is( $last->{matched_route},
+        'datasphere.delete_document', 'matched_route datasphere.delete_document' );
 };
 
 subtest 'documents_delete_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.delete_document', 500, { error => 'x' });
+    MockTest::scenario_set( 'datasphere.delete_document', 500, { error => 'x' } );
     my $ok = eval { $client->datasphere->documents->delete('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.delete_document', 'matched_route datasphere.delete_document');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'datasphere.delete_document', 'matched_route datasphere.delete_document' );
 };
 
 subtest 'documents_delete_chunk_success' => sub {
     my $client = MockTest::client();
-    $client->datasphere->documents->delete_chunk('x', 'x');
+    $client->datasphere->documents->delete_chunk( 'x', 'x' );
     my $last = MockTest::journal_last();
-    is($last->{method}, 'DELETE', 'method DELETE');
-    is($last->{matched_route}, 'datasphere.delete_document_chunk', 'matched_route datasphere.delete_document_chunk');
+    is( $last->{method}, 'DELETE', 'method DELETE' );
+    is(
+        $last->{matched_route},
+        'datasphere.delete_document_chunk',
+        'matched_route datasphere.delete_document_chunk'
+    );
 };
 
 subtest 'documents_delete_chunk_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.delete_document_chunk', 500, { error => 'x' });
-    my $ok = eval { $client->datasphere->documents->delete_chunk('x', 'x'); 1 };
-    ok(!$ok, 'call raised');
+    MockTest::scenario_set( 'datasphere.delete_document_chunk', 500, { error => 'x' } );
+    my $ok = eval { $client->datasphere->documents->delete_chunk( 'x', 'x' ); 1 };
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.delete_document_chunk', 'matched_route datasphere.delete_document_chunk');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is(
+        MockTest::journal_last()->{matched_route},
+        'datasphere.delete_document_chunk',
+        'matched_route datasphere.delete_document_chunk'
+    );
 };
 
 subtest 'documents_get_success' => sub {
     my $client = MockTest::client();
     $client->datasphere->documents->get('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'GET', 'method GET');
-    is($last->{matched_route}, 'datasphere.get_document', 'matched_route datasphere.get_document');
+    is( $last->{method}, 'GET', 'method GET' );
+    is( $last->{matched_route}, 'datasphere.get_document',
+        'matched_route datasphere.get_document' );
 };
 
 subtest 'documents_get_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.get_document', 500, { error => 'x' });
+    MockTest::scenario_set( 'datasphere.get_document', 500, { error => 'x' } );
     my $ok = eval { $client->datasphere->documents->get('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.get_document', 'matched_route datasphere.get_document');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'datasphere.get_document', 'matched_route datasphere.get_document' );
 };
 
 subtest 'documents_get_chunk_success' => sub {
     my $client = MockTest::client();
-    $client->datasphere->documents->get_chunk('x', 'x');
+    $client->datasphere->documents->get_chunk( 'x', 'x' );
     my $last = MockTest::journal_last();
-    is($last->{method}, 'GET', 'method GET');
-    is($last->{matched_route}, 'datasphere.get_document_chunk', 'matched_route datasphere.get_document_chunk');
+    is( $last->{method}, 'GET', 'method GET' );
+    is(
+        $last->{matched_route},
+        'datasphere.get_document_chunk',
+        'matched_route datasphere.get_document_chunk'
+    );
 };
 
 subtest 'documents_get_chunk_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.get_document_chunk', 500, { error => 'x' });
-    my $ok = eval { $client->datasphere->documents->get_chunk('x', 'x'); 1 };
-    ok(!$ok, 'call raised');
+    MockTest::scenario_set( 'datasphere.get_document_chunk', 500, { error => 'x' } );
+    my $ok = eval { $client->datasphere->documents->get_chunk( 'x', 'x' ); 1 };
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.get_document_chunk', 'matched_route datasphere.get_document_chunk');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is(
+        MockTest::journal_last()->{matched_route},
+        'datasphere.get_document_chunk',
+        'matched_route datasphere.get_document_chunk'
+    );
 };
 
 subtest 'documents_list_success' => sub {
     my $client = MockTest::client();
     $client->datasphere->documents->list();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'GET', 'method GET');
-    is($last->{matched_route}, 'datasphere.list_documents', 'matched_route datasphere.list_documents');
+    is( $last->{method}, 'GET', 'method GET' );
+    is( $last->{matched_route},
+        'datasphere.list_documents', 'matched_route datasphere.list_documents' );
 };
 
 subtest 'documents_list_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.list_documents', 500, { error => 'x' });
+    MockTest::scenario_set( 'datasphere.list_documents', 500, { error => 'x' } );
     my $ok = eval { $client->datasphere->documents->list(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.list_documents', 'matched_route datasphere.list_documents');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'datasphere.list_documents', 'matched_route datasphere.list_documents' );
 };
 
 subtest 'documents_list_chunks_success' => sub {
     my $client = MockTest::client();
     $client->datasphere->documents->list_chunks('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'GET', 'method GET');
-    is($last->{matched_route}, 'datasphere.list_document_chunks', 'matched_route datasphere.list_document_chunks');
+    is( $last->{method}, 'GET', 'method GET' );
+    is(
+        $last->{matched_route},
+        'datasphere.list_document_chunks',
+        'matched_route datasphere.list_document_chunks'
+    );
 };
 
 subtest 'documents_list_chunks_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.list_document_chunks', 500, { error => 'x' });
+    MockTest::scenario_set( 'datasphere.list_document_chunks', 500, { error => 'x' } );
     my $ok = eval { $client->datasphere->documents->list_chunks('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.list_document_chunks', 'matched_route datasphere.list_document_chunks');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is(
+        MockTest::journal_last()->{matched_route},
+        'datasphere.list_document_chunks',
+        'matched_route datasphere.list_document_chunks'
+    );
 };
 
 subtest 'documents_search_success' => sub {
     my $client = MockTest::client();
     $client->datasphere->documents->search();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'datasphere.search_documents', 'matched_route datasphere.search_documents');
+    is( $last->{method}, 'POST', 'method POST' );
+    is( $last->{matched_route},
+        'datasphere.search_documents', 'matched_route datasphere.search_documents' );
 };
 
 subtest 'documents_search_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.search_documents', 500, { error => 'x' });
+    MockTest::scenario_set( 'datasphere.search_documents', 500, { error => 'x' } );
     my $ok = eval { $client->datasphere->documents->search(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.search_documents', 'matched_route datasphere.search_documents');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'datasphere.search_documents', 'matched_route datasphere.search_documents' );
 };
 
 subtest 'documents_update_success' => sub {
     my $client = MockTest::client();
     $client->datasphere->documents->update('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'PATCH', 'method PATCH');
-    is($last->{matched_route}, 'datasphere.update_document', 'matched_route datasphere.update_document');
+    is( $last->{method}, 'PATCH', 'method PATCH' );
+    is( $last->{matched_route},
+        'datasphere.update_document', 'matched_route datasphere.update_document' );
 };
 
 subtest 'documents_update_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('datasphere.update_document', 500, { error => 'x' });
+    MockTest::scenario_set( 'datasphere.update_document', 500, { error => 'x' } );
     my $ok = eval { $client->datasphere->documents->update('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'datasphere.update_document', 'matched_route datasphere.update_document');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'datasphere.update_document', 'matched_route datasphere.update_document' );
 };
 
 done_testing();

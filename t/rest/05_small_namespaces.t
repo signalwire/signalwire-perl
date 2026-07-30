@@ -19,58 +19,60 @@ use MockTest;
 subtest 'TestAddresses' => sub {
     subtest 'list' => sub {
         my $client = MockTest::client();
-        my $body = $client->addresses->list(page_size => 10);
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{data}, 'list response has data key');
-        is(ref $body->{data}, 'ARRAY', 'data is arrayref');
+        my $body   = $client->addresses->list( page_size => 10 );
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{data}, 'list response has data key' );
+        is( ref $body->{data}, 'ARRAY', 'data is arrayref' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},   '/api/relay/rest/addresses', 'path matches');
-        isnt($j->{matched_route}, undef, 'matched_route set');
-        is_deeply($j->{query_params}{page_size}, ['10'], 'page_size on query');
+        is( $j->{method}, 'GET',                       'GET recorded' );
+        is( $j->{path},   '/api/relay/rest/addresses', 'path matches' );
+        isnt( $j->{matched_route}, undef, 'matched_route set' );
+        is_deeply( $j->{query_params}{page_size}, ['10'], 'page_size on query' );
     };
 
     subtest 'create' => sub {
         my $client = MockTest::client();
-        my $body = $client->addresses->create(
+        my $body   = $client->addresses->create(
             address_type => 'commercial',
             first_name   => 'Ada',
             last_name    => 'Lovelace',
             country      => 'US',
         );
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'address resource has id');
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'address resource has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'POST', 'POST recorded');
-        is($j->{path},   '/api/relay/rest/addresses', 'path matches');
+        is( $j->{method}, 'POST',                      'POST recorded' );
+        is( $j->{path},   '/api/relay/rest/addresses', 'path matches' );
         my $sent = $j->{body} || {};
-        is($sent->{address_type}, 'commercial', 'address_type forwarded');
-        is($sent->{first_name},   'Ada',         'first_name forwarded');
-        is($sent->{country},      'US',          'country forwarded');
+        is( $sent->{address_type}, 'commercial', 'address_type forwarded' );
+        is( $sent->{first_name},   'Ada',        'first_name forwarded' );
+        is( $sent->{country},      'US',         'country forwarded' );
     };
 
     subtest 'get' => sub {
         my $client = MockTest::client();
-        my $body = $client->addresses->get('addr-123');
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'address resource has id');
+        my $body   = $client->addresses->get('addr-123');
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'address resource has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},   '/api/relay/rest/addresses/addr-123', 'path includes id');
-        isnt($j->{matched_route}, undef, 'matched_route set');
+        is( $j->{method}, 'GET',                                'GET recorded' );
+        is( $j->{path},   '/api/relay/rest/addresses/addr-123', 'path includes id' );
+        isnt( $j->{matched_route}, undef, 'matched_route set' );
     };
 
     subtest 'delete' => sub {
         my $client = MockTest::client();
-        my $body = $client->addresses->delete('addr-123');
-        is(ref $body, 'HASH', 'delete returns a hashref');
+        my $body   = $client->addresses->delete('addr-123');
+        is( ref $body, 'HASH', 'delete returns a hashref' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'DELETE', 'DELETE recorded');
-        is($j->{path},   '/api/relay/rest/addresses/addr-123', 'path matches');
-        ok($j->{response_status} == 200
-              || $j->{response_status} == 202
-              || $j->{response_status} == 204,
-            "response_status in (200,202,204): got $j->{response_status}");
+        is( $j->{method}, 'DELETE',                             'DELETE recorded' );
+        is( $j->{path},   '/api/relay/rest/addresses/addr-123', 'path matches' );
+        ok(
+            $j->{response_status} == 200
+                || $j->{response_status} == 202
+                || $j->{response_status} == 204,
+            "response_status in (200,202,204): got $j->{response_status}"
+        );
     };
 };
 
@@ -79,37 +81,39 @@ subtest 'TestAddresses' => sub {
 subtest 'TestRecordings' => sub {
     subtest 'list' => sub {
         my $client = MockTest::client();
-        my $body = $client->recordings->list(page_size => 5);
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{data}, 'list has data');
-        is(ref $body->{data}, 'ARRAY', 'data is arrayref');
+        my $body   = $client->recordings->list( page_size => 5 );
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{data}, 'list has data' );
+        is( ref $body->{data}, 'ARRAY', 'data is arrayref' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},   '/api/relay/rest/recordings', 'path matches');
-        is_deeply($j->{query_params}{page_size}, ['5'], 'page_size on query');
+        is( $j->{method}, 'GET',                        'GET recorded' );
+        is( $j->{path},   '/api/relay/rest/recordings', 'path matches' );
+        is_deeply( $j->{query_params}{page_size}, ['5'], 'page_size on query' );
     };
 
     subtest 'get' => sub {
         my $client = MockTest::client();
-        my $body = $client->recordings->get('rec-123');
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'recording has id');
+        my $body   = $client->recordings->get('rec-123');
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'recording has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},   '/api/relay/rest/recordings/rec-123', 'path includes id');
+        is( $j->{method}, 'GET',                                'GET recorded' );
+        is( $j->{path},   '/api/relay/rest/recordings/rec-123', 'path includes id' );
     };
 
     subtest 'delete' => sub {
         my $client = MockTest::client();
-        my $body = $client->recordings->delete('rec-123');
-        is(ref $body, 'HASH', 'delete returns a hashref');
+        my $body   = $client->recordings->delete('rec-123');
+        is( ref $body, 'HASH', 'delete returns a hashref' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'DELETE', 'DELETE recorded');
-        is($j->{path},   '/api/relay/rest/recordings/rec-123', 'path matches');
-        ok($j->{response_status} == 200
-              || $j->{response_status} == 202
-              || $j->{response_status} == 204,
-            "response_status in (200,202,204): got $j->{response_status}");
+        is( $j->{method}, 'DELETE',                             'DELETE recorded' );
+        is( $j->{path},   '/api/relay/rest/recordings/rec-123', 'path matches' );
+        ok(
+            $j->{response_status} == 200
+                || $j->{response_status} == 202
+                || $j->{response_status} == 204,
+            "response_status in (200,202,204): got $j->{response_status}"
+        );
     };
 };
 
@@ -118,35 +122,35 @@ subtest 'TestRecordings' => sub {
 subtest 'TestShortCodes' => sub {
     subtest 'list' => sub {
         my $client = MockTest::client();
-        my $body = $client->short_codes->list(page_size => 20);
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{data}, 'list has data');
-        is(ref $body->{data}, 'ARRAY', 'data is arrayref');
+        my $body   = $client->short_codes->list( page_size => 20 );
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{data}, 'list has data' );
+        is( ref $body->{data}, 'ARRAY', 'data is arrayref' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},   '/api/relay/rest/short_codes', 'path matches');
+        is( $j->{method}, 'GET',                         'GET recorded' );
+        is( $j->{path},   '/api/relay/rest/short_codes', 'path matches' );
     };
 
     subtest 'get' => sub {
         my $client = MockTest::client();
-        my $body = $client->short_codes->get('sc-1');
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'short_code has id');
+        my $body   = $client->short_codes->get('sc-1');
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'short_code has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},   '/api/relay/rest/short_codes/sc-1', 'path includes id');
+        is( $j->{method}, 'GET',                              'GET recorded' );
+        is( $j->{path},   '/api/relay/rest/short_codes/sc-1', 'path includes id' );
     };
 
     subtest 'update' => sub {
         my $client = MockTest::client();
-        my $body = $client->short_codes->update('sc-1', name => 'Marketing SMS');
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'short_code has id');
+        my $body   = $client->short_codes->update( 'sc-1', name => 'Marketing SMS' );
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'short_code has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'PUT', 'short_codes update uses PUT');
-        is($j->{path},   '/api/relay/rest/short_codes/sc-1', 'path matches');
+        is( $j->{method}, 'PUT',                              'short_codes update uses PUT' );
+        is( $j->{path},   '/api/relay/rest/short_codes/sc-1', 'path matches' );
         my $sent = $j->{body} || {};
-        is($sent->{name}, 'Marketing SMS', 'name forwarded');
+        is( $sent->{name}, 'Marketing SMS', 'name forwarded' );
     };
 };
 
@@ -155,20 +159,20 @@ subtest 'TestShortCodes' => sub {
 subtest 'TestImportedNumbers' => sub {
     subtest 'create' => sub {
         my $client = MockTest::client();
-        my $body = $client->imported_numbers->create(
+        my $body   = $client->imported_numbers->create(
             number       => '+15551234567',
             number_type  => 'longcode',
-            capabilities => ['sms', 'voice'],
+            capabilities => [ 'sms', 'voice' ],
         );
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'imported number has id');
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'imported number has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'POST', 'POST recorded');
-        is($j->{path},   '/api/relay/rest/imported_phone_numbers', 'path matches');
+        is( $j->{method}, 'POST',                                   'POST recorded' );
+        is( $j->{path},   '/api/relay/rest/imported_phone_numbers', 'path matches' );
         my $sent = $j->{body} || {};
-        is($sent->{number},      '+15551234567',      'number forwarded');
-        is($sent->{number_type}, 'longcode',           'number_type forwarded');
-        is_deeply($sent->{capabilities}, ['sms', 'voice'], 'capabilities forwarded');
+        is( $sent->{number},      '+15551234567', 'number forwarded' );
+        is( $sent->{number_type}, 'longcode',     'number_type forwarded' );
+        is_deeply( $sent->{capabilities}, [ 'sms', 'voice' ], 'capabilities forwarded' );
     };
 };
 
@@ -177,23 +181,24 @@ subtest 'TestImportedNumbers' => sub {
 subtest 'TestMfa' => sub {
     subtest 'call' => sub {
         my $client = MockTest::client();
+
         # The wire field is `from` (MfaRequest schema). Python needs the
         # `from_` escape for its keyword; Perl hash keys don't, so callers
         # pass the wire name directly.
         my $body = $client->mfa->call(
-            to       => '+15551234567',
-            from     => '+15559876543',
-            message  => 'Your code is {code}',
+            to      => '+15551234567',
+            from    => '+15559876543',
+            message => 'Your code is {code}',
         );
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'mfa response has id');
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'mfa response has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'POST', 'POST recorded');
-        is($j->{path},   '/api/relay/rest/mfa/call', 'path matches');
+        is( $j->{method}, 'POST',                     'POST recorded' );
+        is( $j->{path},   '/api/relay/rest/mfa/call', 'path matches' );
         my $sent = $j->{body} || {};
-        is($sent->{to},      '+15551234567',          'to forwarded');
-        is($sent->{from},    '+15559876543',          'from forwarded');
-        is($sent->{message}, 'Your code is {code}',    'message forwarded');
+        is( $sent->{to},      '+15551234567',        'to forwarded' );
+        is( $sent->{from},    '+15559876543',        'from forwarded' );
+        is( $sent->{message}, 'Your code is {code}', 'message forwarded' );
     };
 };
 
@@ -202,19 +207,21 @@ subtest 'TestMfa' => sub {
 subtest 'TestSipProfile' => sub {
     subtest 'update' => sub {
         my $client = MockTest::client();
-        my $body = $client->sip_profile->update(
+        my $body   = $client->sip_profile->update(
             domain_identifier => 'myco.sip.signalwire.com',
-            default_codecs    => ['PCMU', 'PCMA'],
+            default_codecs    => [ 'PCMU', 'PCMA' ],
         );
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{domain_identifier} || exists $body->{default_codecs},
-            'sip_profile resource has domain_identifier or default_codecs');
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok(
+            exists $body->{domain_identifier} || exists $body->{default_codecs},
+            'sip_profile resource has domain_identifier or default_codecs'
+        );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'PUT', 'sip_profile update uses PUT');
-        is($j->{path},   '/api/relay/rest/sip_profile', 'path matches');
+        is( $j->{method}, 'PUT',                         'sip_profile update uses PUT' );
+        is( $j->{path},   '/api/relay/rest/sip_profile', 'path matches' );
         my $sent = $j->{body} || {};
-        is($sent->{domain_identifier}, 'myco.sip.signalwire.com', 'domain_identifier forwarded');
-        is_deeply($sent->{default_codecs}, ['PCMU', 'PCMA'], 'default_codecs forwarded');
+        is( $sent->{domain_identifier}, 'myco.sip.signalwire.com', 'domain_identifier forwarded' );
+        is_deeply( $sent->{default_codecs}, [ 'PCMU', 'PCMA' ], 'default_codecs forwarded' );
     };
 };
 
@@ -223,29 +230,30 @@ subtest 'TestSipProfile' => sub {
 subtest 'TestNumberGroups' => sub {
     subtest 'list_memberships' => sub {
         my $client = MockTest::client();
-        my $body = $client->number_groups->list_memberships('ng-1', page_size => 10);
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{data}, 'list has data');
-        is(ref $body->{data}, 'ARRAY', 'data is arrayref');
+        my $body   = $client->number_groups->list_memberships( 'ng-1', page_size => 10 );
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{data}, 'list has data' );
+        is( ref $body->{data}, 'ARRAY', 'data is arrayref' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},
-           '/api/relay/rest/number_groups/ng-1/number_group_memberships',
-           'path matches');
-        is_deeply($j->{query_params}{page_size}, ['10'], 'page_size on query');
+        is( $j->{method}, 'GET', 'GET recorded' );
+        is( $j->{path}, '/api/relay/rest/number_groups/ng-1/number_group_memberships',
+            'path matches' );
+        is_deeply( $j->{query_params}{page_size}, ['10'], 'page_size on query' );
     };
 
     subtest 'delete_membership' => sub {
         my $client = MockTest::client();
-        my $body = $client->number_groups->delete_membership('mem-1');
-        is(ref $body, 'HASH', 'delete returns a hashref');
+        my $body   = $client->number_groups->delete_membership('mem-1');
+        is( ref $body, 'HASH', 'delete returns a hashref' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'DELETE', 'DELETE recorded');
-        is($j->{path},   '/api/relay/rest/number_group_memberships/mem-1', 'path matches');
-        ok($j->{response_status} == 200
-              || $j->{response_status} == 202
-              || $j->{response_status} == 204,
-            "response_status in (200,202,204): got $j->{response_status}");
+        is( $j->{method}, 'DELETE',                                         'DELETE recorded' );
+        is( $j->{path},   '/api/relay/rest/number_group_memberships/mem-1', 'path matches' );
+        ok(
+            $j->{response_status} == 200
+                || $j->{response_status} == 202
+                || $j->{response_status} == 204,
+            "response_status in (200,202,204): got $j->{response_status}"
+        );
     };
 };
 
@@ -254,27 +262,29 @@ subtest 'TestNumberGroups' => sub {
 subtest 'TestProjectTokens' => sub {
     subtest 'update' => sub {
         my $client = MockTest::client();
-        my $body = $client->project->tokens->update('tok-1', name => 'renamed-token');
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'project token has id');
+        my $body   = $client->project->tokens->update( 'tok-1', name => 'renamed-token' );
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'project token has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'PATCH', 'PATCH recorded');
-        is($j->{path},   '/api/project/tokens/tok-1', 'path matches');
+        is( $j->{method}, 'PATCH',                     'PATCH recorded' );
+        is( $j->{path},   '/api/project/tokens/tok-1', 'path matches' );
         my $sent = $j->{body} || {};
-        is($sent->{name}, 'renamed-token', 'name forwarded');
+        is( $sent->{name}, 'renamed-token', 'name forwarded' );
     };
 
     subtest 'delete' => sub {
         my $client = MockTest::client();
-        my $body = $client->project->tokens->delete('tok-1');
-        is(ref $body, 'HASH', 'delete returns a hashref');
+        my $body   = $client->project->tokens->delete('tok-1');
+        is( ref $body, 'HASH', 'delete returns a hashref' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'DELETE', 'DELETE recorded');
-        is($j->{path},   '/api/project/tokens/tok-1', 'path matches');
-        ok($j->{response_status} == 200
-              || $j->{response_status} == 202
-              || $j->{response_status} == 204,
-            "response_status in (200,202,204): got $j->{response_status}");
+        is( $j->{method}, 'DELETE',                    'DELETE recorded' );
+        is( $j->{path},   '/api/project/tokens/tok-1', 'path matches' );
+        ok(
+            $j->{response_status} == 200
+                || $j->{response_status} == 202
+                || $j->{response_status} == 204,
+            "response_status in (200,202,204): got $j->{response_status}"
+        );
     };
 };
 
@@ -283,14 +293,12 @@ subtest 'TestProjectTokens' => sub {
 subtest 'TestDatasphere' => sub {
     subtest 'get_chunk' => sub {
         my $client = MockTest::client();
-        my $body = $client->datasphere->documents->get_chunk('doc-1', 'chunk-99');
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{id}, 'chunk has id');
+        my $body   = $client->datasphere->documents->get_chunk( 'doc-1', 'chunk-99' );
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{id}, 'chunk has id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},
-           '/api/datasphere/documents/doc-1/chunks/chunk-99',
-           'path matches');
+        is( $j->{method}, 'GET',                                             'GET recorded' );
+        is( $j->{path},   '/api/datasphere/documents/doc-1/chunks/chunk-99', 'path matches' );
     };
 };
 
@@ -299,13 +307,13 @@ subtest 'TestDatasphere' => sub {
 subtest 'TestQueues' => sub {
     subtest 'get_member' => sub {
         my $client = MockTest::client();
-        my $body = $client->queues->get_member('q-1', 'mem-7');
-        is(ref $body, 'HASH', 'response is a hashref');
-        ok(exists $body->{queue_id} || exists $body->{call_id},
-            'queue member has queue_id or call_id');
+        my $body   = $client->queues->get_member( 'q-1', 'mem-7' );
+        is( ref $body, 'HASH', 'response is a hashref' );
+        ok( exists $body->{queue_id} || exists $body->{call_id},
+            'queue member has queue_id or call_id' );
         my $j = MockTest::journal_last();
-        is($j->{method}, 'GET', 'GET recorded');
-        is($j->{path},   '/api/relay/rest/queues/q-1/members/mem-7', 'path matches');
+        is( $j->{method}, 'GET',                                      'GET recorded' );
+        is( $j->{path},   '/api/relay/rest/queues/q-1/members/mem-7', 'path matches' );
     };
 };
 

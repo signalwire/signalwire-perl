@@ -25,8 +25,8 @@ subtest 'bare property map is wrapped into an object schema' => sub {
         handler     => sub { },
     );
     my $p = $a->get_function('get_weather')->{parameters};
-    is( $p->{type}, 'object', 'type => object injected' );
-    is( ref $p->{properties}, 'HASH', 'properties is a hash' );
+    is( $p->{type},                   'object', 'type => object injected' );
+    is( ref $p->{properties},         'HASH',   'properties is a hash' );
     is( $p->{properties}{city}{type}, 'string', 'the bare map is nested under properties' );
     ok( !exists $p->{city}, 'the property is NOT left at the top level (was the bug)' );
 };
@@ -42,6 +42,7 @@ subtest 'required list is merged into the wrapped schema' => sub {
     my $p = $a->get_function('book')->{parameters};
     is( $p->{type}, 'object', 'wrapped' );
     is_deeply( $p->{required}, ['date'], 'required merged' );
+
     # `required` must not leak into the tool definition as a sibling of parameters.
     ok( !exists $a->get_function('book')->{required},
         'required is consumed, not stored as a top-level tool field' );
@@ -60,7 +61,7 @@ subtest 'a full object schema passes through unchanged' => sub {
         handler     => sub { },
     );
     my $p = $a->get_function('calc')->{parameters};
-    is( $p->{type}, 'object', 'type preserved' );
+    is( $p->{type},                'object', 'type preserved' );
     is( $p->{properties}{x}{type}, 'number', 'properties preserved' );
     is_deeply( $p->{required}, ['x'], 'required preserved' );
 };

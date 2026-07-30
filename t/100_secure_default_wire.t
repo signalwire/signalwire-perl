@@ -70,7 +70,7 @@ sub rendered_functions {
 
 subtest 'define_tool defaults secure => TRUE; explicit secure => 0 is honored' => sub {
     my $agent = build_agent();
-    ok( $agent->tools->{default_tool}{secure}, 'no explicit secure => recorded SECURE' );
+    ok( $agent->tools->{default_tool}{secure},   'no explicit secure => recorded SECURE' );
     ok( !$agent->tools->{insecure_tool}{secure}, 'explicit secure => 0 => recorded INSECURE' );
 };
 
@@ -81,11 +81,8 @@ subtest 'rendered with a call_id: __token IFF the tool is secure' => sub {
     ok( exists $fns->{default_tool},  'default_tool rendered' );
     ok( exists $fns->{insecure_tool}, 'insecure_tool rendered' );
 
-    like(
-        $fns->{default_tool}{web_hook_url},
-        qr/[?&]__token=/,
-        'SECURE tool webhook carries a per-tool __token'
-    );
+    like( $fns->{default_tool}{web_hook_url},
+        qr/[?&]__token=/, 'SECURE tool webhook carries a per-tool __token' );
 
     # The INSECURE tool must have NO `web_hook_url` KEY AT ALL — not an empty
     # string, not undef, not a tokenless URL. Emitting one publishes an
@@ -97,8 +94,10 @@ subtest 'rendered with a call_id: __token IFF the tool is secure' => sub {
     # This is asserted as KEY ABSENCE deliberately. The previous `unlike(...,
     # qr/__token=/)` passed VACUOUSLY once the value was undef, which is how a
     # tokenless per-tool webhook survived here unnoticed.
-    ok( !exists $fns->{insecure_tool}{web_hook_url},
-        'INSECURE tool has NO per-tool web_hook_url key at all' );
+    ok(
+        !exists $fns->{insecure_tool}{web_hook_url},
+        'INSECURE tool has NO per-tool web_hook_url key at all'
+    );
 };
 
 # Dropping the per-tool key is only SAFE because a shared fallback endpoint
@@ -120,24 +119,21 @@ subtest 'SWAIG.defaults.web_hook_url is the fallback for tools with no own key' 
         $swaig = $entry->{ai}{SWAIG};
         last if $swaig;
     }
-    ok( ref $swaig eq 'HASH', 'SWAIG object rendered' );
+    ok( ref $swaig eq 'HASH',      'SWAIG object rendered' );
     ok( exists $swaig->{defaults}, 'SWAIG.defaults emitted when functions exist' );
-    like(
-        $swaig->{defaults}{web_hook_url},
-        qr{/swaig$},
-        'defaults.web_hook_url points at the agent SWAIG endpoint'
-    );
+    like( $swaig->{defaults}{web_hook_url},
+        qr{/swaig$}, 'defaults.web_hook_url points at the agent SWAIG endpoint' );
+
     # The shared default is the UNTOKENIZED agent endpoint — the per-call token
     # lives only on a secure tool's own URL, never on the shared fallback.
-    unlike( $swaig->{defaults}{web_hook_url}, qr/__token=/,
-        'the shared default carries no per-tool __token' );
+    unlike( $swaig->{defaults}{web_hook_url},
+        qr/__token=/, 'the shared default carries no per-tool __token' );
 };
 
 subtest '`secure` never reaches the SWAIG wire' => sub {
     my $agent = build_agent();
     my $fns   = rendered_functions( $agent->_render_swml_for_call( {}, $CALL_ID ) );
-    ok( !exists $fns->{default_tool}{secure},
-        'no `secure` key on the rendered SECURE function' );
+    ok( !exists $fns->{default_tool}{secure}, 'no `secure` key on the rendered SECURE function' );
     ok( !exists $fns->{insecure_tool}{secure},
         'no `secure` key on the rendered INSECURE function' );
 };
@@ -145,13 +141,13 @@ subtest '`secure` never reaches the SWAIG wire' => sub {
 subtest 'no call_id => no token is mintable, so none is emitted' => sub {
     my $agent = build_agent();
     my $fns   = rendered_functions( $agent->render_swml( {} ) );
-    unlike( $fns->{default_tool}{web_hook_url}, qr/__token=/,
-        'a render without a call_id emits no __token even for a secure tool' );
+    unlike( $fns->{default_tool}{web_hook_url},
+        qr/__token=/, 'a render without a call_id emits no __token even for a secure tool' );
 };
 
 subtest 'the __token on the wire is a token that VALIDATES' => sub {
-    my $agent = build_agent();
-    my $fns   = rendered_functions( $agent->_render_swml_for_call( {}, $CALL_ID ) );
+    my $agent   = build_agent();
+    my $fns     = rendered_functions( $agent->_render_swml_for_call( {}, $CALL_ID ) );
     my ($token) = $fns->{default_tool}{web_hook_url} =~ /[?&]__token=([^&]+)/;
     ok( defined $token && length $token, 'extracted the __token off the wire' );
     ok(
@@ -172,23 +168,23 @@ subtest 'render_call_id is per-render state, cleared after the render' => sub {
 
     # A later plain render must NOT reuse the previous call_id's token.
     my $fns = rendered_functions( $agent->render_swml( {} ) );
-    unlike( $fns->{default_tool}{web_hook_url}, qr/__token=/,
-        'a stale call_id does not leak into a subsequent plain render' );
+    unlike( $fns->{default_tool}{web_hook_url},
+        qr/__token=/, 'a stale call_id does not leak into a subsequent plain render' );
 };
 
 subtest 'the served path threads the body call_id into the render' => sub {
     my $agent = build_agent();
     my ( $status, $headers, $body ) = $agent->handle_request(
-        'POST',
-        'http://localhost:3000/sd',
+        'POST', 'http://localhost:3000/sd',
         { Authorization => 'Basic ' . MIME::Base64::encode_base64( 'u:p', '' ) },
-        { call_id => $CALL_ID },
+        { call_id       => $CALL_ID },
     );
     is( $status, 200, 'served 200' );
     require JSON;
     my $fns = rendered_functions( JSON::decode_json($body) );
-    like( $fns->{default_tool}{web_hook_url}, qr/[?&]__token=/,
-        'the served document tokenizes the secure tool from the body call_id' );
+    like( $fns->{default_tool}{web_hook_url},
+        qr/[?&]__token=/, 'the served document tokenizes the secure tool from the body call_id' );
+
     # Key ABSENCE, not just token-absence: on the real served path an insecure
     # tool must still fall back to SWAIG.defaults rather than be handed its own
     # unauthenticated per-function callback.
@@ -199,16 +195,15 @@ subtest 'the served path threads the body call_id into the render' => sub {
 subtest 'the served path accepts the nested body.call.call_id form' => sub {
     my $agent = build_agent();
     my ( $status, $headers, $body ) = $agent->handle_request(
-        'POST',
-        'http://localhost:3000/sd',
+        'POST', 'http://localhost:3000/sd',
         { Authorization => 'Basic ' . MIME::Base64::encode_base64( 'u:p', '' ) },
-        { call => { call_id => $CALL_ID } },
+        { call          => { call_id => $CALL_ID } },
     );
     is( $status, 200, 'served 200' );
     require JSON;
     my $fns = rendered_functions( JSON::decode_json($body) );
-    like( $fns->{default_tool}{web_hook_url}, qr/[?&]__token=/,
-        'body.call.call_id is honored as the fallback (python parity)' );
+    like( $fns->{default_tool}{web_hook_url},
+        qr/[?&]__token=/, 'body.call.call_id is honored as the fallback (python parity)' );
 };
 
 done_testing();

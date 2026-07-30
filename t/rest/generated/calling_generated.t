@@ -23,19 +23,20 @@ subtest 'calling_ai_hold_success' => sub {
     my $client = MockTest::client();
     $client->calling->ai_hold();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'calling.call-commands', 'matched_route calling.call-commands');
+    is( $last->{method},        'POST',                  'method POST' );
+    is( $last->{matched_route}, 'calling.call-commands', 'matched_route calling.call-commands' );
 };
 
 subtest 'calling_ai_hold_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('calling.call-commands', 500, { error => 'x' });
+    MockTest::scenario_set( 'calling.call-commands', 500, { error => 'x' } );
     my $ok = eval { $client->calling->ai_hold(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'calling.call-commands', 'matched_route calling.call-commands');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'calling.call-commands', 'matched_route calling.call-commands' );
 };
 
 done_testing();

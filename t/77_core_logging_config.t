@@ -7,16 +7,16 @@ use SignalWire::Core::LoggingConfig;
 
 subtest 'strip_control_chars removes C0/C1 controls' => sub {
     my $event = {
-        msg   => "hello\x00world\x1f!",
-        keep  => "tab\ttab newline\nok",       # tab/newline preserved
-        num   => 42,                           # non-string left alone
-        ref   => [ 'x' ],                      # ref left alone
+        msg  => "hello\x00world\x1f!",
+        keep => "tab\ttab newline\nok",    # tab/newline preserved
+        num  => 42,                        # non-string left alone
+        ref  => ['x'],                     # ref left alone
     };
     my $out = SignalWire::Core::LoggingConfig::strip_control_chars($event);
-    is( $out, $event, 'returns the same hashref' );
-    is( $out->{msg},  'helloworld!',            'null + control byte stripped' );
-    is( $out->{keep}, "tab\ttab newline\nok",   'tab and newline preserved' );
-    is( $out->{num},  42,                        'numeric value unchanged' );
+    is( $out,         $event,                 'returns the same hashref' );
+    is( $out->{msg},  'helloworld!',          'null + control byte stripped' );
+    is( $out->{keep}, "tab\ttab newline\nok", 'tab and newline preserved' );
+    is( $out->{num},  42,                     'numeric value unchanged' );
     is_deeply( $out->{ref}, ['x'], 'ref value unchanged' );
 
     # a DEL / C1 char is stripped too
@@ -25,6 +25,7 @@ subtest 'strip_control_chars removes C0/C1 controls' => sub {
 };
 
 subtest 'configure_logging is idempotent; reset re-arms it' => sub {
+
     # Should not die on repeated calls.
     eval {
         SignalWire::Core::LoggingConfig::configure_logging();

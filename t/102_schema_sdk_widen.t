@@ -85,6 +85,7 @@ subtest 'x-sdk-widen relaxes the VALUE SET, never the TYPE' => sub {
 };
 
 subtest 'widening is scoped to the marked node only' => sub {
+
     # A const with NO marker keeps enforcing. Driven directly against the
     # validator so the assertion is about the widen rule itself rather than
     # about whichever schema fields happen to carry the marker today.
@@ -104,8 +105,7 @@ subtest 'widening is scoped to the marked node only' => sub {
     ok( $v->is_valid( { open => 'other' } ), 'a MARKED const accepts a value outside it' )
         or diag( join( '; ', $v->validate( { open => 'other' } ) ) );
 
-    ok( !$v->is_valid( { open => 42 } ),
-        'the marked field still enforces its declared type' );
+    ok( !$v->is_valid( { open => 42 } ), 'the marked field still enforces its declared type' );
 };
 
 subtest 'a marked enum widens the same way a marked const does' => sub {
@@ -119,14 +119,12 @@ subtest 'a marked enum widens the same way a marked const does' => sub {
         },
     );
 
-    ok( !$v->is_valid( { closed => 'c' } ),
-        'an UNMARKED enum still rejects a value outside it' );
+    ok( !$v->is_valid( { closed => 'c' } ), 'an UNMARKED enum still rejects a value outside it' );
 
     ok( $v->is_valid( { open => 'c' } ), 'a MARKED enum accepts a value outside it' )
         or diag( join( '; ', $v->validate( { open => 'c' } ) ) );
 
-    ok( !$v->is_valid( { open => 42 } ),
-        'the marked enum field still enforces its declared type' );
+    ok( !$v->is_valid( { open => 42 } ), 'the marked enum field still enforces its declared type' );
 };
 
 done_testing();

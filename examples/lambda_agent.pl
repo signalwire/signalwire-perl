@@ -25,14 +25,13 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
+$agent->prompt_add_section( 'Role', 'You are a helpful AI assistant running in AWS Lambda.', );
 $agent->prompt_add_section(
-    'Role',
-    'You are a helpful AI assistant running in AWS Lambda.',
-);
-$agent->prompt_add_section('Instructions', '',
+    'Instructions',
+    '',
     bullets => [
         'Greet users warmly and offer help',
         'Use the greet_user function when asked to greet someone',
@@ -50,11 +49,9 @@ $agent->define_tool(
         },
     },
     handler => sub {
-        my ($args, $raw) = @_;
+        my ( $args, $raw ) = @_;
         my $name = $args->{name} // 'friend';
-        return SignalWire::SWAIG::FunctionResult->new(
-            "Hello $name! I'm running in AWS Lambda!"
-        );
+        return SignalWire::SWAIG::FunctionResult->new("Hello $name! I'm running in AWS Lambda!");
     },
 );
 
@@ -63,11 +60,9 @@ $agent->define_tool(
     description => 'Get the current time',
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
-        my ($args, $raw) = @_;
-        my $time = strftime('%Y-%m-%dT%H:%M:%S', localtime);
-        return SignalWire::SWAIG::FunctionResult->new(
-            "Current time: $time"
-        );
+        my ( $args, $raw ) = @_;
+        my $time = strftime( '%Y-%m-%dT%H:%M:%S', localtime );
+        return SignalWire::SWAIG::FunctionResult->new("Current time: $time");
     },
 );
 

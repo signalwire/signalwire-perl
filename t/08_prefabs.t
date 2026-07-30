@@ -20,16 +20,16 @@ subtest 'InfoGatherer construction' => sub {
             { key_name => 'email',     question_text => 'What is your email?', confirm => 1 },
         ],
     );
-    is($agent->name, 'info_gatherer', 'default name');
-    is($agent->route, '/info_gatherer', 'default route');
-    ok(exists $agent->tools->{start_questions}, 'start_questions tool registered');
-    ok(exists $agent->tools->{submit_answer}, 'submit_answer tool registered');
-    ok($agent->prompt_has_section('Information Gathering'), 'prompt section added');
+    is( $agent->name,  'info_gatherer',  'default name' );
+    is( $agent->route, '/info_gatherer', 'default route' );
+    ok( exists $agent->tools->{start_questions},             'start_questions tool registered' );
+    ok( exists $agent->tools->{submit_answer},               'submit_answer tool registered' );
+    ok( $agent->prompt_has_section('Information Gathering'), 'prompt section added' );
 
     # Check global data
     my $gdata = $agent->global_data;
-    is(scalar @{$gdata->{questions}}, 2, 'questions in global data');
-    is($gdata->{question_index}, 0, 'question_index starts at 0');
+    is( scalar @{ $gdata->{questions} }, 2, 'questions in global data' );
+    is( $gdata->{question_index},        0, 'question_index starts at 0' );
 };
 
 # ============================================================
@@ -37,15 +37,12 @@ subtest 'InfoGatherer construction' => sub {
 # ============================================================
 subtest 'InfoGatherer render_swml' => sub {
     my $agent = SignalWire::Prefabs::InfoGatherer->new(
-        questions => [
-            { key_name => 'name', question_text => 'Your name?' },
-        ],
-    );
+        questions => [ { key_name => 'name', question_text => 'Your name?' }, ], );
     my $swml = $agent->render_swml;
-    is($swml->{version}, '1.0.0', 'SWML version');
+    is( $swml->{version}, '1.0.0', 'SWML version' );
     my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
-    ok(scalar @ai >= 1, 'AI verb present');
-    ok(exists $ai[0]{ai}{SWAIG}{functions}, 'functions in SWAIG');
+    ok( scalar @ai >= 1,                     'AI verb present' );
+    ok( exists $ai[0]{ai}{SWAIG}{functions}, 'functions in SWAIG' );
 };
 
 # ============================================================
@@ -53,16 +50,13 @@ subtest 'InfoGatherer render_swml' => sub {
 # ============================================================
 subtest 'InfoGatherer tool execution' => sub {
     my $agent = SignalWire::Prefabs::InfoGatherer->new(
-        questions => [
-            { key_name => 'name', question_text => 'What is your name?' },
-        ],
-    );
+        questions => [ { key_name => 'name', question_text => 'What is your name?' }, ], );
 
-    my $result = $agent->on_function_call('start_questions', {}, {});
-    ok(defined $result, 'start_questions returns result');
+    my $result = $agent->on_function_call( 'start_questions', {}, {} );
+    ok( defined $result, 'start_questions returns result' );
 
-    my $answer = $agent->on_function_call('submit_answer', { answer => 'John' }, {});
-    ok(defined $answer, 'submit_answer returns result');
+    my $answer = $agent->on_function_call( 'submit_answer', { answer => 'John' }, {} );
+    ok( defined $answer, 'submit_answer returns result' );
 };
 
 # ============================================================
@@ -70,18 +64,18 @@ subtest 'InfoGatherer tool execution' => sub {
 # ============================================================
 subtest 'Survey construction' => sub {
     my $agent = SignalWire::Prefabs::Survey->new(
-        survey_name      => 'Satisfaction Survey',
-        questions => [
+        survey_name => 'Satisfaction Survey',
+        questions   => [
             { id => 'q1', text => 'Rate our service', type => 'rating', scale => 5, required => 1 },
             { id => 'q2', text => 'Any comments?',    type => 'open_ended', required => 0 },
         ],
         introduction => 'Welcome to our survey.',
     );
-    is($agent->name, 'survey', 'default name');
-    is($agent->route, '/survey', 'default route');
-    ok(exists $agent->tools->{submit_survey_answer}, 'survey tool registered');
-    ok($agent->prompt_has_section('Survey Introduction'), 'survey intro section');
-    ok($agent->prompt_has_section('Survey Questions'), 'survey questions section');
+    is( $agent->name,  'survey',  'default name' );
+    is( $agent->route, '/survey', 'default route' );
+    ok( exists $agent->tools->{submit_survey_answer},      'survey tool registered' );
+    ok( $agent->prompt_has_section('Survey Introduction'), 'survey intro section' );
+    ok( $agent->prompt_has_section('Survey Questions'),    'survey questions section' );
 };
 
 # ============================================================
@@ -89,15 +83,14 @@ subtest 'Survey construction' => sub {
 # ============================================================
 subtest 'Survey render_swml' => sub {
     my $agent = SignalWire::Prefabs::Survey->new(
-        survey_name      => 'Test Survey',
-        questions => [
-            { id => 'q1', text => 'Question?', type => 'rating', scale => 5, required => 1 },
-        ],
+        survey_name => 'Test Survey',
+        questions   =>
+            [ { id => 'q1', text => 'Question?', type => 'rating', scale => 5, required => 1 }, ],
     );
     my $swml = $agent->render_swml;
-    is($swml->{version}, '1.0.0', 'version');
+    is( $swml->{version}, '1.0.0', 'version' );
     my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
-    ok(scalar @ai >= 1, 'AI verb present');
+    ok( scalar @ai >= 1, 'AI verb present' );
 };
 
 # ============================================================
@@ -106,32 +99,30 @@ subtest 'Survey render_swml' => sub {
 subtest 'Receptionist construction' => sub {
     my $agent = SignalWire::Prefabs::Receptionist->new(
         departments => [
-            { name => 'sales',   description => 'For purchasing',    number => '+15551235555' },
-            { name => 'support', description => 'For tech help',     number => '+15551236666' },
+            { name => 'sales',   description => 'For purchasing', number => '+15551235555' },
+            { name => 'support', description => 'For tech help',  number => '+15551236666' },
         ],
         greeting => 'Welcome to Acme Corp!',
     );
-    is($agent->name, 'receptionist', 'default name');
-    is($agent->route, '/receptionist', 'default route');
-    ok(exists $agent->tools->{transfer_to_department}, 'transfer tool registered');
-    ok($agent->prompt_has_section('Receptionist Role'), 'role section added');
+    is( $agent->name,  'receptionist',  'default name' );
+    is( $agent->route, '/receptionist', 'default route' );
+    ok( exists $agent->tools->{transfer_to_department},  'transfer tool registered' );
+    ok( $agent->prompt_has_section('Receptionist Role'), 'role section added' );
 
     my $gdata = $agent->global_data;
-    is(scalar @{$gdata->{departments}}, 2, 'departments in global data');
+    is( scalar @{ $gdata->{departments} }, 2, 'departments in global data' );
 };
 
 # ============================================================
 # 7. Receptionist transfer tool
 # ============================================================
 subtest 'Receptionist transfer' => sub {
-    my $agent = SignalWire::Prefabs::Receptionist->new(
-        departments => [
-            { name => 'sales', description => 'Sales dept', number => '+15551235555' },
-        ],
-    );
+    my $agent = SignalWire::Prefabs::Receptionist->new( departments =>
+            [ { name => 'sales', description => 'Sales dept', number => '+15551235555' }, ], );
 
-    my $result = $agent->on_function_call('transfer_to_department', { department => 'sales' }, {});
-    ok(defined $result, 'transfer returns result');
+    my $result =
+        $agent->on_function_call( 'transfer_to_department', { department => 'sales' }, {} );
+    ok( defined $result, 'transfer returns result' );
 };
 
 # ============================================================
@@ -145,12 +136,12 @@ subtest 'FAQBot construction' => sub {
         ],
         suggest_related => 1,
     );
-    is($agent->name, 'faq_bot', 'default name');
-    is($agent->route, '/faq', 'default route');
-    ok(exists $agent->tools->{lookup_faq}, 'lookup tool registered');
-    ok($agent->prompt_has_section('Personality'), 'personality section');
-    ok($agent->prompt_has_section('FAQ Knowledge Base'), 'faq knowledge section');
-    ok($agent->prompt_has_section('Related Questions'), 'related questions section');
+    is( $agent->name,  'faq_bot', 'default name' );
+    is( $agent->route, '/faq',    'default route' );
+    ok( exists $agent->tools->{lookup_faq},               'lookup tool registered' );
+    ok( $agent->prompt_has_section('Personality'),        'personality section' );
+    ok( $agent->prompt_has_section('FAQ Knowledge Base'), 'faq knowledge section' );
+    ok( $agent->prompt_has_section('Related Questions'),  'related questions section' );
 };
 
 # ============================================================
@@ -158,13 +149,10 @@ subtest 'FAQBot construction' => sub {
 # ============================================================
 subtest 'FAQBot lookup' => sub {
     my $agent = SignalWire::Prefabs::FAQBot->new(
-        faqs => [
-            { question => 'What is SignalWire?', answer => 'Cloud comms platform.' },
-        ],
-    );
+        faqs => [ { question => 'What is SignalWire?', answer => 'Cloud comms platform.' }, ], );
 
-    my $result = $agent->on_function_call('lookup_faq', { query => 'signalwire' }, {});
-    ok(defined $result, 'lookup returns result');
+    my $result = $agent->on_function_call( 'lookup_faq', { query => 'signalwire' }, {} );
+    ok( defined $result, 'lookup returns result' );
 };
 
 # ============================================================
@@ -173,25 +161,25 @@ subtest 'FAQBot lookup' => sub {
 subtest 'Concierge construction' => sub {
     my $agent = SignalWire::Prefabs::Concierge->new(
         venue_name => 'Grand Hotel',
-        services   => ['room service', 'spa bookings', 'restaurant reservations'],
+        services   => [ 'room service', 'spa bookings', 'restaurant reservations' ],
         amenities  => {
             pool => { hours => '7 AM - 10 PM', location => '2nd Floor' },
             gym  => { hours => '24 hours',     location => '3rd Floor' },
         },
         hours_of_operation => {
-            Monday => '9 AM - 5 PM',
+            Monday  => '9 AM - 5 PM',
             Tuesday => '9 AM - 5 PM',
         },
         special_instructions => ['VIP guests get priority'],
     );
-    is($agent->name, 'concierge', 'default name');
-    is($agent->route, '/concierge', 'default route');
-    ok(exists $agent->tools->{check_availability}, 'availability tool registered');
-    ok($agent->prompt_has_section('Concierge Role'), 'role section');
-    ok($agent->prompt_has_section('Available Services'), 'services section');
-    ok($agent->prompt_has_section('Amenities'), 'amenities section');
-    ok($agent->prompt_has_section('Hours of Operation'), 'hours section');
-    ok($agent->prompt_has_section('Special Instructions'), 'special instructions section');
+    is( $agent->name,  'concierge',  'default name' );
+    is( $agent->route, '/concierge', 'default route' );
+    ok( exists $agent->tools->{check_availability},         'availability tool registered' );
+    ok( $agent->prompt_has_section('Concierge Role'),       'role section' );
+    ok( $agent->prompt_has_section('Available Services'),   'services section' );
+    ok( $agent->prompt_has_section('Amenities'),            'amenities section' );
+    ok( $agent->prompt_has_section('Hours of Operation'),   'hours section' );
+    ok( $agent->prompt_has_section('Special Instructions'), 'special instructions section' );
 };
 
 # ============================================================
@@ -204,11 +192,11 @@ subtest 'Concierge render_swml' => sub {
         amenities  => { pool => { hours => '9-5' } },
     );
     my $swml = $agent->render_swml;
-    is($swml->{version}, '1.0.0', 'version');
+    is( $swml->{version}, '1.0.0', 'version' );
     my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
-    ok(scalar @ai >= 1, 'AI verb present');
-    ok(exists $ai[0]{ai}{global_data}, 'global data present');
-    is($ai[0]{ai}{global_data}{venue_name}, 'Test Hotel', 'venue name in global data');
+    ok( scalar @ai >= 1,                'AI verb present' );
+    ok( exists $ai[0]{ai}{global_data}, 'global data present' );
+    is( $ai[0]{ai}{global_data}{venue_name}, 'Test Hotel', 'venue name in global data' );
 };
 
 # ============================================================
@@ -217,17 +205,18 @@ subtest 'Concierge render_swml' => sub {
 subtest 'all prefabs have psgi_app' => sub {
     my @prefabs = (
         SignalWire::Prefabs::InfoGatherer->new(
-            questions => [{ key_name => 'n', question_text => 'Name?' }],
+            questions => [ { key_name => 'n', question_text => 'Name?' } ],
         ),
         SignalWire::Prefabs::Survey->new(
-            survey_name      => 'Test',
-            questions => [{ id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 }],
+            survey_name => 'Test',
+            questions   =>
+                [ { id => 'q1', text => 'Q?', type => 'rating', scale => 5, required => 1 } ],
         ),
         SignalWire::Prefabs::Receptionist->new(
-            departments => [{ name => 'sales', description => 'Sales', number => '+1555' }],
+            departments => [ { name => 'sales', description => 'Sales', number => '+1555' } ],
         ),
         SignalWire::Prefabs::FAQBot->new(
-            faqs => [{ question => 'Q?', answer => 'A.' }],
+            faqs => [ { question => 'Q?', answer => 'A.' } ],
         ),
         SignalWire::Prefabs::Concierge->new(
             venue_name => 'Hotel',
@@ -240,7 +229,7 @@ subtest 'all prefabs have psgi_app' => sub {
         my $class = ref $prefab;
         $class =~ s/.*:://;
         my $app = $prefab->psgi_app;
-        is(ref $app, 'CODE', "$class has psgi_app");
+        is( ref $app, 'CODE', "$class has psgi_app" );
     }
 };
 
@@ -249,12 +238,11 @@ subtest 'all prefabs have psgi_app' => sub {
 # ============================================================
 subtest 'prefabs inherit AgentBase' => sub {
     my $agent = SignalWire::Prefabs::InfoGatherer->new(
-        questions => [{ key_name => 'n', question_text => 'Name?' }],
-    );
-    ok($agent->isa('SignalWire::Agent::AgentBase'), 'InfoGatherer isa AgentBase');
-    ok($agent->can('render_swml'), 'has render_swml');
-    ok($agent->can('add_skill'), 'has add_skill');
-    ok($agent->can('define_tool'), 'has define_tool');
+        questions => [ { key_name => 'n', question_text => 'Name?' } ], );
+    ok( $agent->isa('SignalWire::Agent::AgentBase'), 'InfoGatherer isa AgentBase' );
+    ok( $agent->can('render_swml'),                  'has render_swml' );
+    ok( $agent->can('add_skill'),                    'has add_skill' );
+    ok( $agent->can('define_tool'),                  'has define_tool' );
 };
 
 # ============================================================
@@ -264,10 +252,10 @@ subtest 'prefab custom name/route' => sub {
     my $agent = SignalWire::Prefabs::FAQBot->new(
         name  => 'my_faq',
         route => '/my_faq',
-        faqs  => [{ question => 'Q?', answer => 'A.' }],
+        faqs  => [ { question => 'Q?', answer => 'A.' } ],
     );
-    is($agent->name, 'my_faq', 'custom name');
-    is($agent->route, '/my_faq', 'custom route');
+    is( $agent->name,  'my_faq',  'custom name' );
+    is( $agent->route, '/my_faq', 'custom route' );
 };
 
 done_testing;

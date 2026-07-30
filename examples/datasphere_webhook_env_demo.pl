@@ -30,22 +30,25 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/datasphere-webhook',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
-$agent->prompt_add_section('Role',
-    'You are a knowledge assistant using webhook-based DataSphere for retrieval.');
+$agent->prompt_add_section( 'Role',
+    'You are a knowledge assistant using webhook-based DataSphere for retrieval.' );
 
 eval { $agent->add_skill('datetime') };
 eval { $agent->add_skill('math') };
 
 eval {
-    $agent->add_skill('datasphere', {
-        document_id => $document_id,
-        count       => $count,
-        distance    => $distance,
-        mode        => 'webhook',
-    });
+    $agent->add_skill(
+        'datasphere',
+        {
+            document_id => $document_id,
+            count       => $count,
+            distance    => $distance,
+            mode        => 'webhook',
+        }
+    );
     print "Added DataSphere webhook skill\n";
 };
 print "DataSphere error: $@\n" if $@;

@@ -71,7 +71,11 @@ subtest 'discovers SKILL.md skills under a valid load-path' => sub {
     # 'greeter' (with frontmatter) and 'plain' (no frontmatter, dir-name
     # fallback) are discovered; 'not-a-skill' (no SKILL.md) is NOT.
     ok( $by_name{greeter}, 'greeter skill discovered' );
-    is( $by_name{greeter}{description}, 'Greet the caller warmly', 'frontmatter description parsed' );
+    is(
+        $by_name{greeter}{description},
+        'Greet the caller warmly',
+        'frontmatter description parsed'
+    );
     like( $by_name{greeter}{body}, qr/Say hello to \$ARGUMENTS/, 'body parsed' );
 
     ok( $by_name{plain}, 'no-frontmatter skill discovered via dir-name fallback' );

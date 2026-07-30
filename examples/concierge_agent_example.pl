@@ -30,12 +30,14 @@ my $agent = SignalWire::Prefabs::Concierge->new(
         'spa' => {
             hours       => '9:00 AM - 8:00 PM',
             location    => 'Lower Level, East Wing',
-            description => 'Full-service luxury spa offering massages, facials, and body treatments.',
+            description =>
+                'Full-service luxury spa offering massages, facials, and body treatments.',
         },
         'fitness center' => {
             hours       => '24 hours',
             location    => '2nd Floor, North Wing',
-            description => 'State-of-the-art fitness center with cardio equipment, weights, and yoga studio.',
+            description =>
+                'State-of-the-art fitness center with cardio equipment, weights, and yoga studio.',
         },
         'beach access' => {
             hours       => 'Dawn to Dusk',
@@ -62,8 +64,8 @@ my $agent = SignalWire::Prefabs::Concierge->new(
         . 'How may I help you today?',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 print "Starting Concierge Agent for Oceanview Resort\n";
 print "Available at: http://localhost:3000/concierge\n";

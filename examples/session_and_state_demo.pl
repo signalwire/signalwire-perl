@@ -32,11 +32,13 @@ $agent->prompt_add_section(
 );
 
 # Initial global data for every session
-$agent->set_global_data({
-    company     => 'Acme Corp',
-    department  => 'customer_service',
-    call_reason => 'unknown',
-});
+$agent->set_global_data(
+    {
+        company     => 'Acme Corp',
+        department  => 'customer_service',
+        call_reason => 'unknown',
+    }
+);
 
 # Post-prompt for summary
 $agent->set_post_prompt(<<'POST');
@@ -50,17 +52,19 @@ Summarize the conversation as JSON:
 POST
 
 # Summary callback
-$agent->on_summary(sub {
-    my ($summary, $raw) = @_;
-    if ($summary) {
-        print "CONVERSATION SUMMARY:\n";
-        if (ref $summary) {
-            print encode_json($summary) . "\n";
-        } else {
-            print "$summary\n";
+$agent->on_summary(
+    sub {
+        my ( $summary, $raw ) = @_;
+        if ($summary) {
+            print "CONVERSATION SUMMARY:\n";
+            if ( ref $summary ) {
+                print encode_json($summary) . "\n";
+            } else {
+                print "$summary\n";
+            }
         }
     }
-});
+);
 
 # --- Tool: check_account ---
 $agent->define_tool(
@@ -74,17 +78,19 @@ $agent->define_tool(
         required => ['identifier'],
     },
     handler => sub {
-        my ($args, $raw) = @_;
-        my $id = $args->{identifier} // 'unknown';
+        my ( $args, $raw ) = @_;
+        my $id     = $args->{identifier} // 'unknown';
         my $result = SignalWire::SWAIG::FunctionResult->new(
-            "Found account for $id: Premium tier, active since 2020."
-        );
+            "Found account for $id: Premium tier, active since 2020.");
+
         # Update global data so the AI knows the customer
-        $result->update_global_data({
-            customer_name => $id,
-            account_tier  => 'premium',
-            call_reason   => 'account_inquiry',
-        });
+        $result->update_global_data(
+            {
+                customer_name => $id,
+                account_tier  => 'premium',
+                call_reason   => 'account_inquiry',
+            }
+        );
         return $result;
     },
 );
@@ -96,19 +102,19 @@ $agent->define_tool(
     parameters  => {
         type       => 'object',
         properties => {
-            email_notifications => { type => 'boolean', description => 'Enable email notifications' },
-            sms_notifications   => { type => 'boolean', description => 'Enable SMS notifications' },
+            email_notifications =>
+                { type => 'boolean', description => 'Enable email notifications' },
+            sms_notifications => { type => 'boolean', description => 'Enable SMS notifications' },
         },
     },
     handler => sub {
-        my ($args, $raw) = @_;
+        my ( $args, $raw ) = @_;
         my @prefs;
         push @prefs, 'email' if $args->{email_notifications};
         push @prefs, 'SMS'   if $args->{sms_notifications};
-        my $pref_str = @prefs ? join(' and ', @prefs) : 'none';
+        my $pref_str = @prefs ? join( ' and ', @prefs ) : 'none';
         return SignalWire::SWAIG::FunctionResult->new(
-            "Preferences updated: $pref_str notifications enabled."
-        );
+            "Preferences updated: $pref_str notifications enabled.");
     },
 );
 
@@ -118,17 +124,15 @@ $agent->define_tool(
     description => 'End the call after saying goodbye',
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
-        my ($args, $raw) = @_;
-        my $result = SignalWire::SWAIG::FunctionResult->new(
-            'Thank you for calling. Goodbye!'
-        );
+        my ( $args, $raw ) = @_;
+        my $result = SignalWire::SWAIG::FunctionResult->new('Thank you for calling. Goodbye!');
         $result->hangup;
         return $result;
     },
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 print "Starting Session State Demo\n";
 print "Available at: http://localhost:3000/session-state\n";

@@ -18,8 +18,7 @@ use warnings;
 use Test::More;
 
 BEGIN {
-    plan skip_all =>
-        'live smoke is opt-in: set SWSDK_LIVE_TESTS=1 to enable'
+    plan skip_all => 'live smoke is opt-in: set SWSDK_LIVE_TESTS=1 to enable'
         unless $ENV{SWSDK_LIVE_TESTS};
 }
 
@@ -27,8 +26,7 @@ my $project = $ENV{SIGNALWIRE_PROJECT_ID};
 my $token   = $ENV{SIGNALWIRE_API_TOKEN};
 my $space   = $ENV{SIGNALWIRE_SPACE};
 
-plan skip_all =>
-    'live smoke needs SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN / SIGNALWIRE_SPACE'
+plan skip_all => 'live smoke needs SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN / SIGNALWIRE_SPACE'
     unless $project && $token && $space;
 
 # 1. REST: auth + one list against the real API.
@@ -40,16 +38,16 @@ subtest 'REST list against the real platform' => sub {
         host    => $space,
     );
     my $res = eval { $client->phone_numbers->list };
-    ok( !$@, 'phone_numbers->list did not die' ) or diag("REST error: $@");
+    ok( !$@,          'phone_numbers->list did not die' ) or diag("REST error: $@");
     ok( defined $res, 'phone_numbers->list returned a defined response' );
 };
 
 # 2. SWML render (no network — proves the document renders end-to-end).
 subtest 'SWML render' => sub {
     require SignalWire::SWML::Service;
-    my $svc = SignalWire::SWML::Service->new;
+    my $svc  = SignalWire::SWML::Service->new;
     my $swml = eval { $svc->render_swml };
-    ok( !$@, 'render_swml did not die' ) or diag("SWML error: $@");
+    ok( !$@,           'render_swml did not die' ) or diag("SWML error: $@");
     ok( defined $swml, 'render_swml returned a document' );
 };
 

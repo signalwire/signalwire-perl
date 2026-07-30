@@ -13,7 +13,7 @@ use Test::More;
 
 use SignalWire::REST::HttpClient;
 use SignalWire::REST::RestClient;
-use Scalar::Util qw(blessed);
+use Scalar::Util     qw(blessed);
 use IO::Socket::INET ();
 
 # --- The typed transport error class ---------------------------------------
@@ -26,11 +26,13 @@ use IO::Socket::INET ();
     isa_ok( $e, 'SignalWireRestTransportError', 'transport error' );
     isa_ok( $e, 'SignalWireRestError',
         'transport error is a member of the SignalWireRestError family' );
-    ok( $e->isa('SignalWire::REST::HttpClient::Error'),
-        'transport error also isa the back-compat alias' );
+    ok(
+        $e->isa('SignalWire::REST::HttpClient::Error'),
+        'transport error also isa the back-compat alias'
+    );
     is( $e->status_code, undef, 'transport error status_code is undef (no HTTP status)' );
-    is( $e->method, 'GET', 'transport error carries the method' );
-    is( $e->url, '/api/fabric/addresses', 'transport error carries the url/path' );
+    is( $e->method,      'GET', 'transport error carries the method' );
+    is( $e->url,         '/api/fabric/addresses', 'transport error carries the url/path' );
     like(
         "$e",
         qr/GET .*failed to reach the server.*Connection refused/,
@@ -57,22 +59,31 @@ use IO::Socket::INET ();
     );
     is( $e->request_id, 'req-abc123',
         '6.6: request_id is pulled from X-Request-Id (case-insensitive)' );
-    is( $e->headers->{'Content-Type'}, 'application/json',
-        '6.6: the full response header map is exposed' );
-    like( "$e", qr/\(request-id: req-abc123\)/,
-        '6.6: the request id is appended to the stringified error' );
+    is( $e->headers->{'Content-Type'},
+        'application/json', '6.6: the full response header map is exposed' );
+    like(
+        "$e",
+        qr/\(request-id: req-abc123\)/,
+        '6.6: the request id is appended to the stringified error'
+    );
 
     # Preference order: x-request-id wins over x-amzn-requestid when both present.
     my $e2 = SignalWireRestError->new(
-        status_code => 502, body => 'bad gateway', url => 'http://x/y', method => 'GET',
-        headers => { 'x-amzn-requestid' => 'amzn-1', 'x-request-id' => 'sw-1' },
+        status_code => 502,
+        body        => 'bad gateway',
+        url         => 'http://x/y',
+        method      => 'GET',
+        headers     => { 'x-amzn-requestid' => 'amzn-1', 'x-request-id' => 'sw-1' },
     );
     is( $e2->request_id, 'sw-1', '6.6: x-request-id takes precedence over x-amzn-requestid' );
 
     # No matching header → undef request_id, no "(request-id: ...)" suffix.
     my $e3 = SignalWireRestError->new(
-        status_code => 404, body => 'nope', url => 'http://x/z', method => 'GET',
-        headers => { 'Content-Type' => 'text/plain' },
+        status_code => 404,
+        body        => 'nope',
+        url         => 'http://x/z',
+        method      => 'GET',
+        headers     => { 'Content-Type' => 'text/plain' },
     );
     is( $e3->request_id, undef, '6.6: no request-id header → request_id is undef' );
     unlike( "$e3", qr/request-id/, '6.6: no request-id suffix when none present' );
@@ -136,7 +147,7 @@ use IO::Socket::INET ();
     };
     $err = $@ unless $ok;
 
-    ok( !$ok, 'a connection-refused GET raises (does not return)' );
+    ok( !$ok,          'a connection-refused GET raises (does not return)' );
     ok( blessed($err), 'the raised error is an object, not a bare string die' )
         or diag("raised: $err");
     isa_ok( $err, 'SignalWireRestTransportError', 'the raised transport error' );
@@ -145,13 +156,19 @@ use IO::Socket::INET ();
     is( $err->status_code, undef,
         'the raised transport error has status_code undef (NOT a raw 599)' );
     isnt( "$err", '599', 'the error is not a bare 599' );
-    like( "$err", qr/failed to reach the server/,
-        'the raised transport error stringifies as a transport failure' );
+    like(
+        "$err",
+        qr/failed to reach the server/,
+        'the raised transport error stringifies as a transport failure'
+    );
 
     # D1 (owner-approved): error.url is the FULL url (scheme+host+path), not the
     # bare path — so a caught error tells you exactly which endpoint failed.
-    is( $err->url, "http://127.0.0.1:$dead/api/fabric/addresses",
-        'D1: transport error url is the full absolute URL (scheme+host+path)' );
+    is(
+        $err->url,
+        "http://127.0.0.1:$dead/api/fabric/addresses",
+        'D1: transport error url is the full absolute URL (scheme+host+path)'
+    );
 }
 
 # --- D1: an HTTP-error (>=400) error carries the FULL url INCLUDING query -----
@@ -179,9 +196,12 @@ use IO::Socket::INET ();
     eval { $client->_http->get( '/api/things', params => { page => 2, q => 'a b' } ); 1 }
         or $err = $@;
     ok( blessed($err), 'query-bearing GET raised a typed error' );
-    like( $err->url, qr{^http://127\.0\.0\.1:\Q$dead\E/api/things\?},
-        'D1: error url is absolute and includes the query string' );
-    like( $err->url, qr/page=2/, 'D1: error url preserves the page query param' );
+    like(
+        $err->url,
+        qr{^http://127\.0\.0\.1:\Q$dead\E/api/things\?},
+        'D1: error url is absolute and includes the query string'
+    );
+    like( $err->url, qr/page=2/,         'D1: error url preserves the page query param' );
     like( $err->url, qr/q=a(?:%20|\+)b/, 'D1: error url preserves + encodes the q param' );
 }
 

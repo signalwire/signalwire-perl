@@ -48,26 +48,24 @@ subtest 'every reference accessor is reachable on the composed client' => sub {
 # chosen so each covers a different shape of the tree. The expected path is the
 # resource's own base path; we assert the wire request the mock recorded.
 my @WIRE_PROBES = (
+
     # [ label, coderef issuing the call, expected request path ]
-    [   'calling (flat resource, direct verb)',
+    [
+        'calling (flat resource, direct verb)',
         sub { $client->calling->dial( to => '+15551230000', from => '+15559990000' ) },
-        '/api/calling/calls',
-        'POST',
+        '/api/calling/calls', 'POST',
     ],
-    [   'phone_numbers (flat resource, list)',
-        sub { $client->phone_numbers->list },
-        '/api/relay/rest/phone_numbers',
-        'GET',
+    [
+        'phone_numbers (flat resource, list)', sub { $client->phone_numbers->list },
+        '/api/relay/rest/phone_numbers',       'GET',
     ],
-    [   'fabric (namespace container -> sub-resource)',
-        sub { $client->fabric->ai_agents->list },
-        '/api/fabric/resources/ai_agents',
-        'GET',
+    [
+        'fabric (namespace container -> sub-resource)', sub { $client->fabric->ai_agents->list },
+        '/api/fabric/resources/ai_agents',              'GET',
     ],
-    [   'video (namespace container -> sub-resource)',
-        sub { $client->video->rooms->list },
-        '/api/video/rooms',
-        'GET',
+    [
+        'video (namespace container -> sub-resource)', sub { $client->video->rooms->list },
+        '/api/video/rooms',                            'GET',
     ],
 );
 
@@ -76,7 +74,7 @@ subtest 'accessor path produces a real request on the mock' => sub {
         my ( $label, $call, $expect_path, $expect_method ) = @$probe;
         eval { $call->(); 1 } or diag("call for $label returned an error: $@");
         my $entry = MockTest::journal_last();
-        is( $entry->{path}, $expect_path, "$label -> path $expect_path" );
+        is( $entry->{path},               $expect_path,   "$label -> path $expect_path" );
         is( uc( $entry->{method} // '' ), $expect_method, "$label -> $expect_method" );
     }
 };

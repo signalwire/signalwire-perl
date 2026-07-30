@@ -50,7 +50,8 @@ my @offenders;
 
 my @files;
 File::Find::find(
-    {   no_chdir => 1,
+    {
+        no_chdir => 1,
         wanted   => sub { push @files, $File::Find::name if /\.(?:t|pm)\z/ },
     },
     $tdir,
@@ -66,7 +67,7 @@ for my $file ( sort @files ) {
         my $line = $lines[$i];
 
         # Skip POD blocks entirely.
-        if ( $line =~ /^=cut\b/ )      { $in_pod = 0; next }
+        if ( $line =~ /^=cut\b/ )       { $in_pod = 0; next }
         if ( $line =~ /^=[a-zA-Z]\w*/ ) { $in_pod = 1; next }
         next if $in_pod;
 
@@ -98,7 +99,8 @@ for my $file ( sort @files ) {
 }
 
 if (@offenders) {
-    print STDERR "BOUNDED-REAP: unbounded waitpid(\$pid, 0) found — a stuck child hangs the WHOLE suite.\n\n";
+    print STDERR
+"BOUNDED-REAP: unbounded waitpid(\$pid, 0) found — a stuck child hangs the WHOLE suite.\n\n";
     print STDERR "  $_\n" for @offenders;
     print STDERR <<'HINT';
 

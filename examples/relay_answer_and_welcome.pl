@@ -21,34 +21,40 @@ my $client = SignalWire::Relay::Client->new(
     contexts => ['default'],
 );
 
-$client->on_call(sub {
-    my ($call) = @_;
-    print "Incoming call from RELAY: " . $call->call_id . "\n";
-    $call->answer;
+$client->on_call(
+    sub {
+        my ($call) = @_;
+        print "Incoming call from RELAY: " . $call->call_id . "\n";
+        $call->answer;
 
-    # Play a welcome message
-    my $action = $call->play(
-        play => [{
-            type   => 'tts',
-            params => { text => 'Hello! This is a demo of the RELAY client in Perl.' },
-        }],
-    );
-    $action->wait;
+        # Play a welcome message
+        my $action = $call->play(
+            play => [
+                {
+                    type   => 'tts',
+                    params => { text => 'Hello! This is a demo of the RELAY client in Perl.' },
+                }
+            ],
+        );
+        $action->wait;
 
-    # Say goodbye
-    my $bye = $call->play(
-        play => [{
-            type   => 'tts',
-            params => { text => 'Thank you for testing. Goodbye!' },
-        }],
-    );
-    $bye->wait;
+        # Say goodbye
+        my $bye = $call->play(
+            play => [
+                {
+                    type   => 'tts',
+                    params => { text => 'Thank you for testing. Goodbye!' },
+                }
+            ],
+        );
+        $bye->wait;
 
-    $call->hangup;
-    print "Call ended: " . $call->call_id . "\n";
-});
+        $call->hangup;
+        print "Call ended: " . $call->call_id . "\n";
+    }
+);
 
-$client->connect_ws  or die "WebSocket connection failed\n";
+$client->connect_ws or die "WebSocket connection failed\n";
 $client->authenticate;
 
 print "RELAY Demo: Waiting for inbound calls...\n";

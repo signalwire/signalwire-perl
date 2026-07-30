@@ -40,7 +40,7 @@ my $operation = $ENV{REST_OPERATION}
     or die_with("REST_OPERATION is not set");
 my $fixture_url = $ENV{REST_FIXTURE_URL}
     or die_with("REST_FIXTURE_URL is not set");
-my $args_json = $ENV{REST_OPERATION_ARGS} // '{}';
+my $args_json = $ENV{REST_OPERATION_ARGS}   // '{}';
 my $project   = $ENV{SIGNALWIRE_PROJECT_ID} // 'audit-project';
 my $token     = $ENV{SIGNALWIRE_API_TOKEN}  // 'audit-token';
 
@@ -58,6 +58,7 @@ my $client = SignalWire::REST::RestClient->new(
 
 my %dispatchers = (
     'calling.list_calls' => sub {
+
         # In Python, "calling.list_calls" maps to the LAML compat
         # /Calls listing, not the Relay /api/calling/calls endpoint.
         # The audit's expected_path_substring is
@@ -66,15 +67,17 @@ my %dispatchers = (
         return $list;
     },
     'messaging.send' => sub {
+
         # The audit's expected_path_substring is "Messages" — the
         # LAML compat Messages endpoint, not the Relay messaging RPC.
         # Python's "messaging.send" maps to compat.messages.create.
         my %p = %$args;
+
         # Python uses `from_` to avoid the reserved keyword; map it
         # to the wire-level `From` field (LAML uses CamelCase). The
         # audit just checks the body got POSTed; field names aren't
         # asserted on the wire side, so simple pass-through works.
-        if (exists $p{from_}) {
+        if ( exists $p{from_} ) {
             $p{from} = delete $p{from_};
         }
         return $client->compat->messages->create(%p);
@@ -98,6 +101,6 @@ die_with("operation died: $@") if $@;
 
 # Print the parsed response. The audit checks stdout for the sentinel
 # value the fixture seeded into its canned response.
-print JSON::encode_json($reply // {});
+print JSON::encode_json( $reply // {} );
 print "\n";
 exit 0;

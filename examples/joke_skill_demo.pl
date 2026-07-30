@@ -15,7 +15,7 @@ use SignalWire::Agent::AgentBase;
 my $api_key = $ENV{API_NINJAS_KEY};
 unless ($api_key) {
     die "Error: API_NINJAS_KEY environment variable is required.\n"
-      . "Get your free API key from https://api.api-ninjas.com/\n";
+        . "Get your free API key from https://api.api-ninjas.com/\n";
 }
 
 my $agent = SignalWire::Agent::AgentBase->new(
@@ -23,12 +23,14 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/joke-skill',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
-$agent->prompt_add_section('Personality',
-    'You are a cheerful comedian who loves sharing jokes and making people laugh.');
-$agent->prompt_add_section('Instructions', '',
+$agent->prompt_add_section( 'Personality',
+    'You are a cheerful comedian who loves sharing jokes and making people laugh.' );
+$agent->prompt_add_section(
+    'Instructions',
+    '',
     bullets => [
         'When users ask for jokes, use your joke functions to provide them',
         'Be enthusiastic and fun in your responses',
@@ -36,7 +38,7 @@ $agent->prompt_add_section('Instructions', '',
     ],
 );
 
-$agent->add_skill('joke', { api_key => $api_key });
+$agent->add_skill( 'joke', { api_key => $api_key } );
 
 print "Joke Skill Demo (modular skills system)\n";
 print "  Benefits over raw DataMap:\n";

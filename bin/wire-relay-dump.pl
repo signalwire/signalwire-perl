@@ -119,9 +119,11 @@ sub capture_verbs ($out) {
 
     # relay_play
     $c = new_client();
-    new_call($c)
-        ->play( play => [ { type => 'audio', params => { url => 'https://x/a.mp3' } } ],
-        volume => 5.0, control_id => $CID );
+    new_call($c)->play(
+        play       => [ { type => 'audio', params => { url => 'https://x/a.mp3' } } ],
+        volume     => 5.0,
+        control_id => $CID
+    );
     $out->{relay_play} = $c->last_frame;
 
     # relay_play_tts
@@ -131,15 +133,18 @@ sub capture_verbs ($out) {
 
     # relay_record
     $c = new_client();
-    new_call($c)->record( record => { audio => { format => 'mp3', beep => JSON::true } }, control_id => $CID );
+    new_call($c)->record(
+        record     => { audio => { format => 'mp3', beep => JSON::true } },
+        control_id => $CID
+    );
     $out->{relay_record} = $c->last_frame;
 
     # relay_connect
     $c = new_client();
     new_call($c)->connect(
-        devices  => [ [ { type => 'phone', params => { to_number => '+15551112222' } } ] ],
-        ringback => [ { type => 'ringtone', params => { name => 'us' } } ],
-        tag      => 'leg-1',
+        devices      => [ [ { type => 'phone', params => { to_number => '+15551112222' } } ] ],
+        ringback     => [ { type => 'ringtone', params => { name => 'us' } } ],
+        tag          => 'leg-1',
         max_duration => 3600,
     );
     $out->{relay_connect} = $c->last_frame;
@@ -147,7 +152,7 @@ sub capture_verbs ($out) {
     # relay_collect
     $c = new_client();
     new_call($c)->collect(
-        digits          => { max => 4, terminators => '#' },
+        digits          => { max      => 4, terminators => '#' },
         speech          => { language => 'en-US' },
         initial_timeout => 5.0,
         partial_results => JSON::true,
@@ -157,14 +162,17 @@ sub capture_verbs ($out) {
 
     # relay_prompt (play_and_collect via prompt_tts)
     $c = new_client();
-    new_call($c)->prompt_tts( 'Enter your PIN', { digits => { max => 4 } }, voice => 'en-US-Neural' );
+    new_call($c)
+        ->prompt_tts( 'Enter your PIN', { digits => { max => 4 } }, voice => 'en-US-Neural' );
     $out->{relay_prompt} = $c->last_frame;
 
     # relay_detect
     $c = new_client();
-    new_call($c)
-        ->detect( detect => { type => 'machine', params => { initial_timeout => 4.0 } },
-        timeout => 30.0, control_id => $CID );
+    new_call($c)->detect(
+        detect     => { type => 'machine', params => { initial_timeout => 4.0 } },
+        timeout    => 30.0,
+        control_id => $CID
+    );
     $out->{relay_detect} = $c->last_frame;
 
     # relay_detect_amd
@@ -179,8 +187,8 @@ sub capture_verbs ($out) {
     # relay_tap
     $c = new_client();
     new_call($c)->tap(
-        tap    => { type => 'audio', params => { direction => 'both' } },
-        device => { type => 'ws',    params => { uri       => 'wss://x/tap' } },
+        tap        => { type => 'audio', params => { direction => 'both' } },
+        device     => { type => 'ws',    params => { uri       => 'wss://x/tap' } },
         control_id => $CID,
     );
     $out->{relay_tap} = $c->last_frame;
@@ -203,25 +211,27 @@ sub capture_verbs ($out) {
 
     # relay_live_translate: same contract, plus optional sibling status_url.
     $c = new_client();
-    new_call($c)->live_translate(
-        { start => { from_lang => 'en', to_lang => 'es' } },
-        status_url => 'https://x/cb',
-    );
+    new_call($c)->live_translate( { start => { from_lang => 'en', to_lang => 'es' } },
+        status_url => 'https://x/cb', );
     $out->{relay_live_translate} = $c->last_frame;
 
     # ---- control-ops (Action methods) ----
     # relay_play_stop
     $c = new_client();
-    my $pa = new_call($c)
-        ->play( play => [ { type => 'audio', params => { url => 'https://x/a.mp3' } } ], control_id => $CID );
+    my $pa = new_call($c)->play(
+        play       => [ { type => 'audio', params => { url => 'https://x/a.mp3' } } ],
+        control_id => $CID
+    );
     $c->clear_frames;
     $pa->stop;
     $out->{relay_play_stop} = $c->last_frame;
 
     # relay_play_pause
     $c = new_client();
-    my $pa2 = new_call($c)
-        ->play( play => [ { type => 'audio', params => { url => 'https://x/a.mp3' } } ], control_id => $CID );
+    my $pa2 = new_call($c)->play(
+        play       => [ { type => 'audio', params => { url => 'https://x/a.mp3' } } ],
+        control_id => $CID
+    );
     $c->clear_frames;
     $pa2->pause('silence');
     $out->{relay_play_pause} = $c->last_frame;
@@ -235,8 +245,10 @@ sub capture_verbs ($out) {
 
     # relay_play_volume
     $c = new_client();
-    my $pa3 = new_call($c)
-        ->play( play => [ { type => 'audio', params => { url => 'https://x/a.mp3' } } ], control_id => $CID );
+    my $pa3 = new_call($c)->play(
+        play       => [ { type => 'audio', params => { url => 'https://x/a.mp3' } } ],
+        control_id => $CID
+    );
     $c->clear_frames;
     $pa3->volume(3.5);
     $out->{relay_play_volume} = $c->last_frame;
@@ -265,8 +277,8 @@ sub capture_client ($out) {
     # relay_dial (the calling.dial frame; execute() resolves the pending dial)
     $c = new_client();
     $c->dial(
-        devices => [ [ { type => 'phone', params => { to_number => '+15551112222' } } ] ],
-        tag     => 'dial-1',
+        devices      => [ [ { type => 'phone', params => { to_number => '+15551112222' } } ] ],
+        tag          => 'dial-1',
         max_duration => 600,
     );
     for my $fr ( @{ $c->frames } ) {
@@ -280,10 +292,16 @@ sub decode_events ($out) {
 
     # relay_evt_queue
     my $q = SignalWire::Relay::Event::CallQueue->from_payload(
-        {   event_type => 'calling.call.queue',
+        {
+            event_type => 'calling.call.queue',
             params     => {
-                call_id => $CALL, control_id => $CID, status => 'waiting',
-                id      => 'q-42', name => 'support', position => 3, size => 10,
+                call_id    => $CALL,
+                control_id => $CID,
+                status     => 'waiting',
+                id         => 'q-42',
+                name       => 'support',
+                position   => 3,
+                size       => 10,
             },
         }
     );
@@ -298,10 +316,13 @@ sub decode_events ($out) {
 
     # relay_evt_record (url/duration/size fall back from nested record{})
     my $rec = SignalWire::Relay::Event::CallRecord->from_payload(
-        {   event_type => 'calling.call.record',
+        {
+            event_type => 'calling.call.record',
             params     => {
-                call_id => $CALL, control_id => $CID, state => 'finished',
-                record  => { url => 'https://x/rec.mp3', duration => 12.5, size => 4096 },
+                call_id    => $CALL,
+                control_id => $CID,
+                state      => 'finished',
+                record     => { url => 'https://x/rec.mp3', duration => 12.5, size => 4096 },
             },
         }
     );
@@ -326,11 +347,14 @@ sub decode_events ($out) {
 
     # relay_evt_collect
     my $col = SignalWire::Relay::Event::CallCollect->from_payload(
-        {   event_type => 'calling.call.collect',
+        {
+            event_type => 'calling.call.collect',
             params     => {
-                call_id => $CALL, control_id => $CID, state => 'finished',
-                result  => { type => 'digit', params => { digits => '1234' } },
-                final   => JSON::true,
+                call_id    => $CALL,
+                control_id => $CID,
+                state      => 'finished',
+                result     => { type => 'digit', params => { digits => '1234' } },
+                final      => JSON::true,
             },
         }
     );

@@ -21,22 +21,27 @@ use SignalWire::SWML::Service;
 
 my $choice = $ARGV[0] // 'greeting';
 
-if ($choice eq 'router') {
+if ( $choice eq 'router' ) {
+
     # --- Call Router Service ---
-    my $svc = SignalWire::SWML::Service->new(
-        route => '/router',
-    );
+    my $svc = SignalWire::SWML::Service->new( route => '/router', );
 
     my $doc = $svc->document;
-    $svc->add_verb('answer', {});
-    $svc->add_verb('play', {
-        url => 'say:Thank you for calling. We will connect you with an available agent.',
-    });
-    $svc->add_verb('connect', {
-        to      => '+15551234567',
-        timeout => 30,
-    });
-    $svc->add_verb('hangup', {});
+    $svc->add_verb( 'answer', {} );
+    $svc->add_verb(
+        'play',
+        {
+            url => 'say:Thank you for calling. We will connect you with an available agent.',
+        }
+    );
+    $svc->add_verb(
+        'connect',
+        {
+            to      => '+15551234567',
+            timeout => 30,
+        }
+    );
+    $svc->add_verb( 'hangup', {} );
 
     print "Starting Call Router Service\n";
     print "Route: /router\n";
@@ -46,46 +51,64 @@ if ($choice eq 'router') {
     $svc->serve;
 
 } else {
+
     # --- Dynamic Greeting Service ---
-    my $svc = SignalWire::SWML::Service->new(
-        route => '/greeting',
-    );
+    my $svc = SignalWire::SWML::Service->new( route => '/greeting', );
 
     my $doc = $svc->document;
 
     # Default greeting document
-    $svc->add_verb('answer', {});
-    $svc->add_verb('play', {
-        url => 'say:Hello, thank you for calling our service.',
-    });
-    $svc->add_verb('prompt', {
-        play          => 'say:Please press 1 for sales, 2 for support, or 3 to leave a message.',
-        max_digits    => 1,
-        terminators   => '#',
-    });
-    $svc->add_verb('hangup', {});
+    $svc->add_verb( 'answer', {} );
+    $svc->add_verb(
+        'play',
+        {
+            url => 'say:Hello, thank you for calling our service.',
+        }
+    );
+    $svc->add_verb(
+        'prompt',
+        {
+            play        => 'say:Please press 1 for sales, 2 for support, or 3 to leave a message.',
+            max_digits  => 1,
+            terminators => '#',
+        }
+    );
+    $svc->add_verb( 'hangup', {} );
 
     # VIP section
     $svc->add_section('vip');
-    $svc->add_verb_to_section('vip', 'answer', {});
-    $svc->add_verb_to_section('vip', 'play', {
-        url => 'say:As a VIP customer, you will be connected to our priority support team immediately.',
-    });
-    $svc->add_verb_to_section('vip', 'connect', {
-        to             => '+15551234567',
-        timeout        => 30,
-        answer_on_bridge => JSON::true,
-    });
-    $svc->add_verb_to_section('vip', 'hangup', {});
+    $svc->add_verb_to_section( 'vip', 'answer', {} );
+    $svc->add_verb_to_section(
+        'vip', 'play',
+        {
+            url =>
+'say:As a VIP customer, you will be connected to our priority support team immediately.',
+        }
+    );
+    $svc->add_verb_to_section(
+        'vip',
+        'connect',
+        {
+            to               => '+15551234567',
+            timeout          => 30,
+            answer_on_bridge => JSON::true,
+        }
+    );
+    $svc->add_verb_to_section( 'vip', 'hangup', {} );
 
     # New customer section
     $svc->add_section('new_customer');
-    $svc->add_verb_to_section('new_customer', 'answer', {});
-    $svc->add_verb_to_section('new_customer', 'prompt', {
-        play       => 'say:Please press 1 to learn about our products, 2 to speak with sales, or 3 for a demo.',
-        max_digits => 1,
-    });
-    $svc->add_verb_to_section('new_customer', 'hangup', {});
+    $svc->add_verb_to_section( 'new_customer', 'answer', {} );
+    $svc->add_verb_to_section(
+        'new_customer',
+        'prompt',
+        {
+            play =>
+'say:Please press 1 to learn about our products, 2 to speak with sales, or 3 for a demo.',
+            max_digits => 1,
+        }
+    );
+    $svc->add_verb_to_section( 'new_customer', 'hangup', {} );
 
     print "Starting Dynamic Greeting Service\n";
     print "Route: /greeting\n";

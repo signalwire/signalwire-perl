@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use JSON ();
 use IO::Socket::INET;
-use POSIX ();
+use POSIX       ();
 use Time::HiRes ();
 
 # =============================================================================
@@ -59,7 +59,7 @@ my $RESPONSE_BODY = JSON::encode_json(
     {
         results => [
             { content => 'The sky is blue.', score => 0.91, metadata => { filename => 'sky.md' } },
-            { content => 'Grass is green.',  score => 0.72, metadata => { filename => 'grass.md' } },
+            { content => 'Grass is green.', score => 0.72, metadata => { filename => 'grass.md' } },
         ],
     }
 );
@@ -68,6 +68,7 @@ my $pid = fork();
 defined $pid or plan skip_all => "cannot fork mock server: $!";
 
 if ( $pid == 0 ) {
+
     # ---- child: accept ONE request, capture it, reply with the canned body ----
     my $client = $listener->accept;
     if ($client) {
@@ -80,13 +81,13 @@ if ( $pid == 0 ) {
         my ( $headers_done, $need ) = ( 0, 0 );
         while (1) {
             my $chunk = '';
-            my $n = sysread( $client, $chunk, 4096 );
+            my $n     = sysread( $client, $chunk, 4096 );
             last unless $n;    # EOF or error
             $data .= $chunk;
 
             if ( !$headers_done && $data =~ /\r?\n\r?\n/ ) {
                 $headers_done = 1;
-                $need = ( $data =~ /^Content-Length:\s*(\d+)/mi ) ? $1 : 0;
+                $need         = ( $data =~ /^Content-Length:\s*(\d+)/mi ) ? $1 : 0;
             }
             if ($headers_done) {
                 my ($hdr_len) = $data =~ /\A(.*?\r?\n\r?\n)/s;
@@ -108,7 +109,8 @@ if ( $pid == 0 ) {
         my $resp =
               "HTTP/1.1 200 OK\r\n"
             . "Content-Type: application/json\r\n"
-            . "Content-Length: " . length($RESPONSE_BODY) . "\r\n"
+            . "Content-Length: "
+            . length($RESPONSE_BODY) . "\r\n"
             . "Connection: close\r\n\r\n"
             . $RESPONSE_BODY;
         print {$client} $resp;
@@ -156,7 +158,9 @@ while ( time < $nvs_deadline ) {
 unless ($nvs_reaped) {
     kill 'KILL', $pid;
     waitpid( $pid, 0 );
-    diag("92_tier2_nvs_remote_http: server child $pid exceeded 30s reap deadline — killed to avoid suite hang");
+    diag(
+"92_tier2_nvs_remote_http: server child $pid exceeded 30s reap deadline — killed to avoid suite hang"
+    );
 }
 
 ok( $ok, 'search invocation completed against the real server' ) or diag($err);

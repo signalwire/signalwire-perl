@@ -16,40 +16,54 @@ use lib 'lib';
 use SignalWire;
 use SignalWire::SWML::Service;
 
-my $svc = SignalWire::SWML::Service->new(
-    route => '/main',
-);
+my $svc = SignalWire::SWML::Service->new( route => '/main', );
 
 my $doc = $svc->document;
 
 # --- Main section (default greeting) ---
-$svc->add_verb('answer', {});
-$svc->add_verb('play', { url => 'say:Hello from the main service!' });
-$svc->add_verb('hangup', {});
+$svc->add_verb( 'answer', {} );
+$svc->add_verb( 'play',   { url => 'say:Hello from the main service!' } );
+$svc->add_verb( 'hangup', {} );
 
 # --- Customer section ---
 $svc->add_section('customer_section');
-$svc->add_verb_to_section('customer_section', 'answer', {});
-$svc->add_verb_to_section('customer_section', 'play', {
-    url => 'say:Hello from the customer service!',
-});
-$svc->add_verb_to_section('customer_section', 'prompt', {
-    play       => 'say:Press 1 for account management, 2 for billing, or 3 for technical support.',
-    max_digits => 1,
-});
-$svc->add_verb_to_section('customer_section', 'hangup', {});
+$svc->add_verb_to_section( 'customer_section', 'answer', {} );
+$svc->add_verb_to_section(
+    'customer_section',
+    'play',
+    {
+        url => 'say:Hello from the customer service!',
+    }
+);
+$svc->add_verb_to_section(
+    'customer_section',
+    'prompt',
+    {
+        play => 'say:Press 1 for account management, 2 for billing, or 3 for technical support.',
+        max_digits => 1,
+    }
+);
+$svc->add_verb_to_section( 'customer_section', 'hangup', {} );
 
 # --- Product section ---
 $svc->add_section('product_section');
-$svc->add_verb_to_section('product_section', 'answer', {});
-$svc->add_verb_to_section('product_section', 'play', {
-    url => 'say:Hello from the product service!',
-});
-$svc->add_verb_to_section('product_section', 'prompt', {
-    play       => 'say:Press 1 for product info, 2 for pricing, or 3 for a demo.',
-    max_digits => 1,
-});
-$svc->add_verb_to_section('product_section', 'hangup', {});
+$svc->add_verb_to_section( 'product_section', 'answer', {} );
+$svc->add_verb_to_section(
+    'product_section',
+    'play',
+    {
+        url => 'say:Hello from the product service!',
+    }
+);
+$svc->add_verb_to_section(
+    'product_section',
+    'prompt',
+    {
+        play       => 'say:Press 1 for product info, 2 for pricing, or 3 for a demo.',
+        max_digits => 1,
+    }
+);
+$svc->add_verb_to_section( 'product_section', 'hangup', {} );
 
 print "Starting SWML Service with Routing\n";
 print "Route: " . $svc->route . "\n";

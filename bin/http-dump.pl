@@ -32,9 +32,9 @@ no warnings 'experimental::signatures';
 
 use FindBin qw($RealBin);
 use File::Spec;
-use JSON ();
+use JSON         ();
 use MIME::Base64 ();
-use Digest::SHA ();
+use Digest::SHA  ();
 
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
 
@@ -60,8 +60,9 @@ sub webhook_sig ( $url, $body, $key ) {
 # artifact — the Perl mirror of diff_port_http._observe_response.
 sub observe_response ( $status, $headers, $body_str, $kind ) {
     my %out = ( status => $status, header_keys => [ sort keys %$headers ] );
-    $out{location}         = $headers->{Location}           if exists $headers->{Location};
-    $out{www_authenticate} = $headers->{'WWW-Authenticate'} if exists $headers->{'WWW-Authenticate'};
+    $out{location}         = $headers->{Location} if exists $headers->{Location};
+    $out{www_authenticate} = $headers->{'WWW-Authenticate'}
+        if exists $headers->{'WWW-Authenticate'};
     if ( $kind eq 'response_full' ) {
         if ( defined $body_str && length $body_str ) {
             my $parsed = eval { JSON::decode_json($body_str) };
@@ -95,8 +96,8 @@ sub extract_username ($body) {
 }
 
 sub webhook_decision ( $method, $url, $body, $headers, $key ) {
-    my $rej = SignalWire::Security::WebhookMiddleware::validate(
-        $method, $url, $headers, $body, signing_key => $key );
+    my $rej = SignalWire::Security::WebhookMiddleware::validate( $method, $url, $headers, $body,
+        signing_key => $key );
     return { decision => 'pass' } unless defined $rej;
     return { decision => 'reject', status => $rej->[0] };
 }
@@ -210,43 +211,55 @@ sub main {
     # ---- handle_request: 200 SWML happy path ----
     {
         my $svc = new_service();
-        my ( $status, $headers, $body ) = $svc->handle_request( 'GET',
-            'http://localhost:3000/swml', { Authorization => basic_auth( $USER, $PASSWORD ) }, undef );
-        $out{http_handle_request_200_swml} = observe_response( $status, $headers, $body, 'response_full' );
+        my ( $status, $headers, $body ) =
+            $svc->handle_request( 'GET',
+            'http://localhost:3000/swml', { Authorization => basic_auth( $USER, $PASSWORD ) },
+            undef );
+        $out{http_handle_request_200_swml} =
+            observe_response( $status, $headers, $body, 'response_full' );
     }
+
     # ---- handle_request: 401 no auth ----
     {
         my $svc = new_service();
         my ( $status, $headers, $body ) =
             $svc->handle_request( 'GET', 'http://localhost:3000/swml', {}, undef );
-        $out{http_handle_request_401_no_auth} = observe_response( $status, $headers, $body, 'response_full' );
+        $out{http_handle_request_401_no_auth} =
+            observe_response( $status, $headers, $body, 'response_full' );
     }
+
     # ---- handle_request: 401 bad password (status+headers only) ----
     {
         my $svc = new_service();
-        my ( $status, $headers, $body ) = $svc->handle_request( 'GET',
-            'http://localhost:3000/swml', { Authorization => basic_auth( $USER, 'wrong' ) }, undef );
+        my ( $status, $headers, $body ) =
+            $svc->handle_request( 'GET',
+            'http://localhost:3000/swml', { Authorization => basic_auth( $USER, 'wrong' ) },
+            undef );
         $out{http_handle_request_401_bad_password} =
             observe_response( $status, $headers, $body, 'response_status_headers' );
     }
+
     # ---- handle_request: 307 redirect via routing callback ----
     {
         my $svc = new_service();
         $svc->register_routing_callback( \&redirect_cb, '/sip' );
         my ( $status, $headers, $body ) = $svc->handle_request(
-            'POST', 'http://localhost:3000/swml/sip',
+            'POST',
+            'http://localhost:3000/swml/sip',
             { Authorization => basic_auth( $USER, $PASSWORD ) },
             { call          => { to => 'sip:redirect-me@space' } },
         );
         $out{http_handle_request_307_redirect} =
             observe_response( $status, $headers, $body, 'response_full' );
     }
+
     # ---- handle_request: callback returns undef -> normal 200 SWML ----
     {
         my $svc = new_service();
         $svc->register_routing_callback( \&redirect_cb, '/sip' );
         my ( $status, $headers, $body ) = $svc->handle_request(
-            'POST', 'http://localhost:3000/swml/sip',
+            'POST',
+            'http://localhost:3000/swml/sip',
             { Authorization => basic_auth( $USER, $PASSWORD ) },
             { call          => { to => 'sip:keep@space' } },
         );
@@ -257,13 +270,16 @@ sub main {
     # ---- extract_sip_username: pure extractor ----
     $out{http_extract_sip_username_sip} =
         extract_username( { call => { to => 'sip:alice@agents.signalwire.com' } } );
-    $out{http_extract_sip_username_tel}  = extract_username( { call => { to => 'tel:+15551234567' } } );
-    $out{http_extract_sip_username_plain} = extract_username( { call => { to => 'support' } } );
+    $out{http_extract_sip_username_tel} =
+        extract_username( { call => { to => 'tel:+15551234567' } } );
+    $out{http_extract_sip_username_plain}   = extract_username( { call => { to => 'support' } } );
     $out{http_extract_sip_username_missing} = extract_username( { vars => {} } );
 
     # ---- webhook validate ----
-    $out{http_webhook_validate_ok} = webhook_decision( 'POST', $WH_URL, $WH_BODY,
-        { 'x-signalwire-signature' => webhook_sig( $WH_URL, $WH_BODY, $SIGNING_KEY ) }, $SIGNING_KEY );
+    $out{http_webhook_validate_ok} =
+        webhook_decision( 'POST', $WH_URL, $WH_BODY,
+        { 'x-signalwire-signature' => webhook_sig( $WH_URL, $WH_BODY, $SIGNING_KEY ) },
+        $SIGNING_KEY );
     $out{http_webhook_validate_bad_sig} =
         webhook_decision( 'POST', $WH_URL, $WH_BODY, { 'x-signalwire-signature' => 'deadbeef' x 5 },
         $SIGNING_KEY );
@@ -273,9 +289,9 @@ sub main {
         { 'x-twilio-signature' => webhook_sig( $WH_URL, $WH_BODY, $SIGNING_KEY ) }, $SIGNING_KEY );
 
     # ---- serverless (lambda) ----
-    $out{http_serverless_lambda_swaig}                   = serverless_swaig();
-    $out{http_serverless_lambda_swaig_valid_token}       = serverless_swaig_valid_token();
-    $out{http_serverless_lambda_noauth_401}              = serverless_noauth();
+    $out{http_serverless_lambda_swaig}             = serverless_swaig();
+    $out{http_serverless_lambda_swaig_valid_token} = serverless_swaig_valid_token();
+    $out{http_serverless_lambda_noauth_401}        = serverless_noauth();
 
     print JSON->new->canonical->encode( \%out ), "\n";
     return 0;

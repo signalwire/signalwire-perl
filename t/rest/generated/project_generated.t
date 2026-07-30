@@ -23,57 +23,60 @@ subtest 'tokens_create_success' => sub {
     my $client = MockTest::client();
     $client->project->tokens->create();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'project.create_token', 'matched_route project.create_token');
+    is( $last->{method},        'POST',                 'method POST' );
+    is( $last->{matched_route}, 'project.create_token', 'matched_route project.create_token' );
 };
 
 subtest 'tokens_create_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('project.create_token', 500, { error => 'x' });
+    MockTest::scenario_set( 'project.create_token', 500, { error => 'x' } );
     my $ok = eval { $client->project->tokens->create(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'project.create_token', 'matched_route project.create_token');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'project.create_token', 'matched_route project.create_token' );
 };
 
 subtest 'tokens_delete_success' => sub {
     my $client = MockTest::client();
     $client->project->tokens->delete('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'DELETE', 'method DELETE');
-    is($last->{matched_route}, 'project.delete_token', 'matched_route project.delete_token');
+    is( $last->{method},        'DELETE',               'method DELETE' );
+    is( $last->{matched_route}, 'project.delete_token', 'matched_route project.delete_token' );
 };
 
 subtest 'tokens_delete_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('project.delete_token', 500, { error => 'x' });
+    MockTest::scenario_set( 'project.delete_token', 500, { error => 'x' } );
     my $ok = eval { $client->project->tokens->delete('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'project.delete_token', 'matched_route project.delete_token');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'project.delete_token', 'matched_route project.delete_token' );
 };
 
 subtest 'tokens_update_success' => sub {
     my $client = MockTest::client();
     $client->project->tokens->update('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'PATCH', 'method PATCH');
-    is($last->{matched_route}, 'project.update_token', 'matched_route project.update_token');
+    is( $last->{method},        'PATCH',                'method PATCH' );
+    is( $last->{matched_route}, 'project.update_token', 'matched_route project.update_token' );
 };
 
 subtest 'tokens_update_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('project.update_token', 500, { error => 'x' });
+    MockTest::scenario_set( 'project.update_token', 500, { error => 'x' } );
     my $ok = eval { $client->project->tokens->update('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'project.update_token', 'matched_route project.update_token');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'project.update_token', 'matched_route project.update_token' );
 };
 
 done_testing();

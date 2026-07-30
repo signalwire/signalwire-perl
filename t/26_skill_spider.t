@@ -2,49 +2,49 @@
 use strict;
 use warnings;
 use Test::More;
-use POSIX ();
-use Time::HiRes ();
+use POSIX          ();
+use Time::HiRes    ();
 use File::Basename qw(dirname);
-use File::Path ();
+use File::Path     ();
 use File::Spec;
 
 use SignalWire::Agent::AgentBase;
 use SignalWire::Skills::SkillRegistry;
 
 # Repo root, for the .sw-tmp fallback scratch dir (never /tmp).
-my $repo_root = File::Spec->rel2abs(
-    File::Spec->catdir( dirname(__FILE__), File::Spec->updir ) );
+my $repo_root = File::Spec->rel2abs( File::Spec->catdir( dirname(__FILE__), File::Spec->updir ) );
 
 my $factory = SignalWire::Skills::SkillRegistry->get_factory('spider');
-ok(defined $factory, 'factory found');
+ok( defined $factory, 'factory found' );
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'sp');
-    my $skill = $factory->new(agent => $agent, params => {});
-    is($skill->skill_name, 'spider', 'skill_name');
-    ok($skill->supports_multiple_instances, 'multi-instance');
+    my $agent = SignalWire::Agent::AgentBase->new( name => 'sp' );
+    my $skill = $factory->new( agent => $agent, params => {} );
+    is( $skill->skill_name, 'spider', 'skill_name' );
+    ok( $skill->supports_multiple_instances, 'multi-instance' );
 };
 
 subtest 'registers 3 tools' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'sp_reg');
-    my $skill = $factory->new(agent => $agent, params => {});
+    my $agent = SignalWire::Agent::AgentBase->new( name => 'sp_reg' );
+    my $skill = $factory->new( agent => $agent, params => {} );
     $skill->setup;
     $skill->register_tools;
-    ok(exists $agent->tools->{scrape_url}, 'scrape_url');
-    ok(exists $agent->tools->{crawl_site}, 'crawl_site');
-    ok(exists $agent->tools->{extract_structured_data}, 'extract_structured_data');
+    ok( exists $agent->tools->{scrape_url},              'scrape_url' );
+    ok( exists $agent->tools->{crawl_site},              'crawl_site' );
+    ok( exists $agent->tools->{extract_structured_data}, 'extract_structured_data' );
 };
 
 subtest 'hints' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'sp_hints');
-    my $skill = $factory->new(agent => $agent, params => {});
+    my $agent = SignalWire::Agent::AgentBase->new( name => 'sp_hints' );
+    my $skill = $factory->new( agent => $agent, params => {} );
     my $hints = $skill->get_hints;
-    ok(scalar @$hints > 0, 'has hints');
-    ok(grep({ $_ eq 'spider' } @$hints), 'includes spider');
-    ok(grep({ $_ eq 'scrape' } @$hints), 'includes scrape');
+    ok( scalar @$hints > 0,                 'has hints' );
+    ok( grep( { $_ eq 'spider' } @$hints ), 'includes spider' );
+    ok( grep( { $_ eq 'scrape' } @$hints ), 'includes scrape' );
 };
 
 subtest 'tool execution against fixture' => sub {
+
     # WIN32: skipped, because this fixture needs a REAL fork + a signallable child.
     #
     # `fork` on Win32 is emulated with interpreter threads, so the "child" is a
@@ -110,7 +110,8 @@ PSGI_SERVER
 
     my $pid = fork;
     die "fork: $!" unless defined $pid;
-    if ($pid == 0) {
+    if ( $pid == 0 ) {
+
         # Fully detached real process — no shared sockets / interpreter state.
         # Pass THIS process's @INC through with -I: the exec'd perl gets a fresh
         # interpreter, so without it the child cannot find HTTP::Server::PSGI (it
@@ -124,7 +125,7 @@ PSGI_SERVER
 
     # Wait for the server to come up.
     my $up = 0;
-    for (1..30) {
+    for ( 1 .. 30 ) {
         my $sock = IO::Socket::INET->new(
             PeerAddr => '127.0.0.1',
             PeerPort => $port,
@@ -137,21 +138,20 @@ PSGI_SERVER
     # $up was computed and never checked: if the fixture never came up, the test
     # went on to fail on a confusing HTTP error instead of saying so. Assert it, so
     # a fixture-startup problem is reported as a fixture-startup problem.
-    ok($up, 'fixture HTTP server came up') or diag("fixture server on port $port never accepted a connection");
+    ok( $up, 'fixture HTTP server came up' )
+        or diag("fixture server on port $port never accepted a connection");
 
     eval {
         local $ENV{SPIDER_BASE_URL} = "http://127.0.0.1:$port";
-        my $agent = SignalWire::Agent::AgentBase->new(name => 'sp_exec');
-        my $skill = $factory->new(agent => $agent, params => {});
+        my $agent = SignalWire::Agent::AgentBase->new( name => 'sp_exec' );
+        my $skill = $factory->new( agent => $agent, params => {} );
         $skill->setup;
         $skill->register_tools;
-        my $result = $agent->on_function_call(
-            'scrape_url',
-            { url => 'https://upstream.invalid/somepage' },
-            {},
-        );
-        ok(defined $result, 'scrape returns result');
-        like($result->response, qr/zazzle/, 'mentions fixture sentinel from real HTTP');
+        my $result =
+            $agent->on_function_call( 'scrape_url', { url => 'https://upstream.invalid/somepage' },
+            {}, );
+        ok( defined $result, 'scrape returns result' );
+        like( $result->response, qr/zazzle/, 'mentions fixture sentinel from real HTTP' );
     };
     my $err = $@;
 
@@ -172,7 +172,9 @@ PSGI_SERVER
     unless ($reaped) {
         kill 'KILL', $pid;
         waitpid( $pid, 0 );
-        diag("26_skill_spider: fixture server $pid exceeded 30s reap deadline — killed to avoid suite hang");
+        diag(
+"26_skill_spider: fixture server $pid exceeded 30s reap deadline — killed to avoid suite hang"
+        );
     }
     unlink $server_pl;
     die $err if $err;
@@ -180,8 +182,8 @@ PSGI_SERVER
 
 subtest 'parameter schema' => sub {
     my $schema = $factory->get_parameter_schema;
-    ok(exists $schema->{max_pages}, 'has max_pages');
-    ok(exists $schema->{timeout}, 'has timeout');
+    ok( exists $schema->{max_pages}, 'has max_pages' );
+    ok( exists $schema->{timeout},   'has timeout' );
 };
 
 done_testing;

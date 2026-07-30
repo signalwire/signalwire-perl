@@ -26,9 +26,11 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/joke-agent',
 );
 
-$agent->prompt_add_section('Personality', 'You are a funny assistant who loves to tell jokes.');
-$agent->prompt_add_section('Goal', 'Make people laugh with great jokes.');
-$agent->prompt_add_section('Instructions', '',
+$agent->prompt_add_section( 'Personality', 'You are a funny assistant who loves to tell jokes.' );
+$agent->prompt_add_section( 'Goal',        'Make people laugh with great jokes.' );
+$agent->prompt_add_section(
+    'Instructions',
+    '',
     bullets => [
         'Use the get_joke function to tell jokes when asked',
         'You can tell either regular jokes or dad jokes',
@@ -37,48 +39,51 @@ $agent->prompt_add_section('Instructions', '',
 );
 
 # Register the joke function with raw data_map configuration
-$agent->register_swaig_function({
-    function    => 'get_joke',
-    description => 'tell a joke',
-    data_map    => {
-        webhooks => [
-            {
-                url     => "https://api.api-ninjas.com/v1/%{args.type}",
-                headers => { 'X-Api-Key' => $api_key },
-                output  => {
-                    response => 'Tell the user: %{array[0].joke}',
-                    action   => [
-                        {
-                            SWML => {
-                                sections => {
-                                    main => [{ set => { dad_joke => '%{array[0].joke}' } }],
+$agent->register_swaig_function(
+    {
+        function    => 'get_joke',
+        description => 'tell a joke',
+        data_map    => {
+            webhooks => [
+                {
+                    url     => "https://api.api-ninjas.com/v1/%{args.type}",
+                    headers => { 'X-Api-Key' => $api_key },
+                    output  => {
+                        response => 'Tell the user: %{array[0].joke}',
+                        action   => [
+                            {
+                                SWML => {
+                                    sections => {
+                                        main => [ { set => { dad_joke => '%{array[0].joke}' } } ],
+                                    },
+                                    version => '1.0.0',
                                 },
-                                version => '1.0.0',
                             },
-                        },
-                    ],
+                        ],
+                    },
+                    error_keys => 'error',
+                    method     => 'GET',
                 },
-                error_keys => 'error',
-                method     => 'GET',
-            },
-        ],
-        output => {
-            response => 'Tell the user that the joke service is not working right now and just make up a joke on your own',
-        },
-    },
-    parameters => {
-        type       => 'object',
-        properties => {
-            type => {
-                description => "must either be 'jokes' or 'dadjokes'",
-                type        => 'string',
+            ],
+            output => {
+                response =>
+'Tell the user that the joke service is not working right now and just make up a joke on your own',
             },
         },
-    },
-});
+        parameters => {
+            type       => 'object',
+            properties => {
+                type => {
+                    description => "must either be 'jokes' or 'dadjokes'",
+                    type        => 'string',
+                },
+            },
+        },
+    }
+);
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 print "Starting Joke Agent\n";
 print "Available at: http://localhost:3000/joke-agent\n";

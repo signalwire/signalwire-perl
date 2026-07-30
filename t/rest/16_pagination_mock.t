@@ -24,43 +24,48 @@ my $FABRIC_ADDRESSES_ENDPOINT_ID = 'fabric.list_fabric_addresses';
 
 subtest 'TestPaginatedIterator' => sub {
     subtest 'test_init_state' => sub {
+
         # Constructor records http/path/params/data_key WITHOUT fetching.
         my $client = MockTest::client();
-        my $it = SignalWire::REST::Pagination::PaginatedIterator->new(
+        my $it     = SignalWire::REST::Pagination::PaginatedIterator->new(
             http     => $client->_http,
             path     => $FABRIC_ADDRESSES_PATH,
             params   => { page_size => 2 },
             data_key => 'data',
         );
-        is($it->http,     $client->_http,           'http stored');
-        is($it->path,     $FABRIC_ADDRESSES_PATH,   'path stored');
-        is_deeply($it->params, { page_size => 2 },  'params stored');
-        is($it->data_key, 'data',                   'data_key stored');
-        is($it->_index,   0,                        'index starts at 0');
-        is_deeply($it->_items, [],                  '_items starts empty');
-        ok(!$it->_done,                             '_done starts false');
+        is( $it->http, $client->_http,         'http stored' );
+        is( $it->path, $FABRIC_ADDRESSES_PATH, 'path stored' );
+        is_deeply( $it->params, { page_size => 2 }, 'params stored' );
+        is( $it->data_key, 'data', 'data_key stored' );
+        is( $it->_index,   0,      'index starts at 0' );
+        is_deeply( $it->_items, [], '_items starts empty' );
+        ok( !$it->_done, '_done starts false' );
+
         # Journal must be empty - no HTTP went out.
         my $j = MockTest::journal_all();
-        is(scalar(@$j), 0, 'journal empty after construction');
+        is( scalar(@$j), 0, 'journal empty after construction' );
     };
 
     subtest 'test_iter_returns_self' => sub {
         my $client = MockTest::client();
-        my $it = SignalWire::REST::Pagination::PaginatedIterator->new(
+        my $it     = SignalWire::REST::Pagination::PaginatedIterator->new(
             http     => $client->_http,
             path     => $FABRIC_ADDRESSES_PATH,
             data_key => 'data',
         );
+
         # Call the dunder directly so the static coverage audit sees it.
         my $same = $it->__iter__;
-        is($same, $it, '__iter__ returns self');
+        is( $same, $it, '__iter__ returns self' );
+
         # Still no HTTP yet.
         my $j = MockTest::journal_all();
-        is(scalar(@$j), 0, 'journal empty after __iter__');
+        is( scalar(@$j), 0, 'journal empty after __iter__' );
     };
 
     subtest 'test_next_pages_through_all_items' => sub {
         my $client = MockTest::client();
+
         # journal_all() is cumulative across subtests (per-process auth), so
         # snapshot this subtest's path-GET count before iterating and assert the
         # delta rather than an absolute count.
@@ -68,24 +73,26 @@ subtest 'TestPaginatedIterator' => sub {
             [ grep { $_->{path} eq $FABRIC_ADDRESSES_PATH } @{ MockTest::journal_all() } ];
         };
         my $before = scalar @{ $addr_gets->() };
+
         # Page 1 has a next cursor.
         MockTest::scenario_set(
-            $FABRIC_ADDRESSES_ENDPOINT_ID, 200,
+            $FABRIC_ADDRESSES_ENDPOINT_ID,
+            200,
             {
-                data => [
-                    { id => 'addr-1', name => 'first' },
-                    { id => 'addr-2', name => 'second' },
-                ],
+                data =>
+                    [ { id => 'addr-1', name => 'first' }, { id => 'addr-2', name => 'second' }, ],
                 links => {
                     next => 'http://example.com/api/fabric/addresses?page_token=page2',
                 },
             },
         );
+
         # Page 2 is terminal (no next).
         MockTest::scenario_set(
-            $FABRIC_ADDRESSES_ENDPOINT_ID, 200,
+            $FABRIC_ADDRESSES_ENDPOINT_ID,
+            200,
             {
-                data  => [{ id => 'addr-3', name => 'third' }],
+                data  => [ { id => 'addr-3', name => 'third' } ],
                 links => {},
             },
         );
@@ -96,42 +103,45 @@ subtest 'TestPaginatedIterator' => sub {
             data_key => 'data',
         );
         my @collected = $it->all;
+
         # All three items, in order.
         is_deeply(
             [ map { $_->{id} } @collected ],
             [ 'addr-1', 'addr-2', 'addr-3' ],
             'collected ids match across pages',
         );
+
         # This subtest's own two GETs (delta against the pre-iteration snapshot).
         my @gets = @{ $addr_gets->() };
         my @mine = @gets[ $before .. $#gets ];
-        is(scalar(@mine), 2, 'two paginated GETs recorded');
+        is( scalar(@mine), 2, 'two paginated GETs recorded' );
+
         # The second fetch carries page_token=page2 from the first response's
         # links.next.
-        is_deeply($mine[1]{query_params}{page_token}, ['page2'],
-            'second fetch carries page_token=page2');
+        is_deeply( $mine[1]{query_params}{page_token},
+            ['page2'], 'second fetch carries page_token=page2' );
     };
 
     subtest 'test_resource_paginate_walks_all_pages' => sub {
+
         # Exercise the ReadResource->paginate() convenience wired on the
         # generated resource base (Python parity: ReadResource.paginate).
         # It must return a PaginatedIterator wired to the resource's own
         # list endpoint and follow the links.next cursor across pages.
         my $client = MockTest::client();
         MockTest::scenario_set(
-            $FABRIC_ADDRESSES_ENDPOINT_ID, 200,
+            $FABRIC_ADDRESSES_ENDPOINT_ID,
+            200,
             {
-                data => [
-                    { id => 'pg-1', name => 'first' },
-                    { id => 'pg-2', name => 'second' },
-                ],
+                data  => [ { id => 'pg-1', name => 'first' }, { id => 'pg-2', name => 'second' }, ],
                 links => {
                     next => 'http://example.com/api/fabric/addresses?page_token=next2',
                 },
             },
         );
         MockTest::scenario_set(
-            $FABRIC_ADDRESSES_ENDPOINT_ID, 200,
+            $FABRIC_ADDRESSES_ENDPOINT_ID,
+            200,
             {
                 data  => [ { id => 'pg-3', name => 'third' } ],
                 links => {},
@@ -148,11 +158,15 @@ subtest 'TestPaginatedIterator' => sub {
         my $before = scalar @{ $addr_gets->() };
 
         my $it = $client->fabric->addresses->paginate( page_size => 2 );
-        isa_ok($it, 'SignalWire::REST::Pagination::PaginatedIterator',
-            'paginate() returns a PaginatedIterator');
+        isa_ok(
+            $it,
+            'SignalWire::REST::Pagination::PaginatedIterator',
+            'paginate() returns a PaginatedIterator'
+        );
+
         # No HTTP until we iterate.
-        is(scalar(@{ $addr_gets->() }) - $before, 0,
-            'paginate() is lazy - no fetch before iteration');
+        is( scalar( @{ $addr_gets->() } ) - $before,
+            0, 'paginate() is lazy - no fetch before iteration' );
 
         my @collected = $it->all;
         is_deeply(
@@ -162,18 +176,20 @@ subtest 'TestPaginatedIterator' => sub {
         );
         my @gets = @{ $addr_gets->() };
         my @mine = @gets[ $before .. $#gets ];    # only this subtest's GETs
-        is(scalar(@mine), 2, 'paginate() issued exactly two page GETs');
-        is_deeply($mine[1]{query_params}{page_token}, ['next2'],
-            'second page fetch carried page_token=next2 from links.next');
+        is( scalar(@mine), 2, 'paginate() issued exactly two page GETs' );
+        is_deeply( $mine[1]{query_params}{page_token},
+            ['next2'], 'second page fetch carried page_token=next2 from links.next' );
     };
 
     subtest 'test_next_raises_stop_iteration_when_done' => sub {
+
         # One terminal page.
         my $client = MockTest::client();
         MockTest::scenario_set(
-            $FABRIC_ADDRESSES_ENDPOINT_ID, 200,
+            $FABRIC_ADDRESSES_ENDPOINT_ID,
+            200,
             {
-                data  => [{ id => 'only-one' }],
+                data  => [ { id => 'only-one' } ],
                 links => {},
             },
         );
@@ -182,12 +198,14 @@ subtest 'TestPaginatedIterator' => sub {
             path     => $FABRIC_ADDRESSES_PATH,
             data_key => 'data',
         );
+
         # Call __next__ explicitly so the static coverage audit sees it.
         my $first = $it->__next__;
-        is_deeply($first, { id => 'only-one' }, 'first __next__ returns item');
+        is_deeply( $first, { id => 'only-one' }, 'first __next__ returns item' );
+
         # Exhausted - returns undef (Perl-idiomatic StopIteration).
         my $second = $it->__next__;
-        ok(!defined $second, 'second __next__ returns undef (exhausted)');
+        ok( !defined $second, 'second __next__ returns undef (exhausted)' );
     };
 };
 

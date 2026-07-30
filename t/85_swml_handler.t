@@ -23,11 +23,11 @@ subtest 'get_verb_name' => sub {
 subtest 'build_config text prompt wire keys' => sub {
     my $config = $AI->new->build_config( prompt_text => 'hello' );
     is_deeply( $config->{prompt}, { text => 'hello' }, 'prompt is object {text}' );
-    is_deeply( $config->{params}, {}, 'params always initialised' );
+    is_deeply( $config->{params}, {},                  'params always initialised' );
 };
 
 subtest 'build_config pom prompt' => sub {
-    my $pom = [ { title => 'Role', body => 'assistant' } ];
+    my $pom    = [ { title => 'Role', body => 'assistant' } ];
     my $config = $AI->new->build_config( prompt_pom => $pom );
     is_deeply( $config->{prompt}, { pom => $pom }, 'prompt is object {pom}' );
 };
@@ -83,27 +83,27 @@ subtest 'validate_config valid' => sub {
 
 subtest 'validate_config missing prompt' => sub {
     my ( $valid, $errors ) = $AI->new->validate_config( {} );
-    ok( !$valid, 'invalid' );
+    ok( !$valid,                                                       'invalid' );
     ok( ( grep { $_ eq "Missing required field 'prompt'" } @$errors ), 'missing prompt error' );
 };
 
 subtest 'validate_config prompt not object' => sub {
     my ( $valid, $errors ) = $AI->new->validate_config( { prompt => 'a bare string' } );
-    ok( !$valid, 'invalid' );
+    ok( !$valid,                                                  'invalid' );
     ok( ( grep { $_ eq "'prompt' must be an object" } @$errors ), 'prompt-not-object error' );
 };
 
 subtest 'validate_config both text and pom' => sub {
     my ( $valid, $errors ) =
         $AI->new->validate_config( { prompt => { text => 'a', pom => [] } } );
-    ok( !$valid, 'invalid' );
+    ok( !$valid,                                    'invalid' );
     ok( ( grep { /mutually exclusive/ } @$errors ), 'mutual-exclusion error' );
 };
 
 subtest 'validate_config bad swaig' => sub {
     my ( $valid, $errors ) =
         $AI->new->validate_config( { prompt => { text => 'a' }, SWAIG => 'nope' } );
-    ok( !$valid, 'invalid' );
+    ok( !$valid,                                                 'invalid' );
     ok( ( grep { $_ eq "'SWAIG' must be an object" } @$errors ), 'bad-SWAIG error' );
 };
 
@@ -146,7 +146,7 @@ done_testing;
 package CustomVerbHandler;
 use Moo;
 extends 'SignalWire::SWML::SWMLHandler';
-sub get_verb_name  { return 'custom' }
+sub get_verb_name   { return 'custom' }
 sub validate_config { return ( 1, [] ) }
 sub build_config    { return {} }
 1;

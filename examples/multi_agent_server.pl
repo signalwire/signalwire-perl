@@ -28,7 +28,7 @@ my $healthcare = SignalWire::Agent::AgentBase->new(
 $healthcare->prompt_add_section(
     'Healthcare Role',
     'You are a HIPAA-compliant healthcare AI assistant. You help patients and '
-    . 'healthcare providers with information, scheduling, and basic guidance.',
+        . 'healthcare providers with information, scheduling, and basic guidance.',
 );
 $healthcare->prompt_add_section(
     'Compliance Guidelines',
@@ -41,26 +41,30 @@ $healthcare->prompt_add_section(
     ],
 );
 
-$healthcare->set_dynamic_config_callback(sub {
-    my ($qp, $bp, $headers, $a) = @_;
-    my $urgency = lc($qp->{urgency} // 'normal');
+$healthcare->set_dynamic_config_callback(
+    sub {
+        my ( $qp, $bp, $headers, $a ) = @_;
+        my $urgency = lc( $qp->{urgency} // 'normal' );
 
-    if ($urgency eq 'high') {
-        $a->add_language(name => 'English', code => 'en-US', voice => 'inworld.Sarah');
-        $a->set_params({ ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 300 });
-    } else {
-        $a->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-        $a->set_params({ ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 500 });
+        if ( $urgency eq 'high' ) {
+            $a->add_language( name => 'English', code => 'en-US', voice => 'inworld.Sarah' );
+            $a->set_params( { ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 300 } );
+        } else {
+            $a->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+            $a->set_params( { ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 500 } );
+        }
+
+        $a->set_global_data(
+            {
+                customer_id      => $qp->{customer_id} // '',
+                urgency_level    => $urgency,
+                department       => $qp->{department} // 'general',
+                compliance_level => 'hipaa',
+                session_type     => 'healthcare',
+            }
+        );
     }
-
-    $a->set_global_data({
-        customer_id      => $qp->{customer_id} // '',
-        urgency_level    => $urgency,
-        department       => $qp->{department} // 'general',
-        compliance_level => 'hipaa',
-        session_type     => 'healthcare',
-    });
-});
+);
 
 # --- Finance Agent ---
 
@@ -74,7 +78,7 @@ my $finance = SignalWire::Agent::AgentBase->new(
 $finance->prompt_add_section(
     'Financial Services Role',
     'You are a financial services AI assistant specializing in banking, '
-    . 'investments, and financial planning guidance.',
+        . 'investments, and financial planning guidance.',
 );
 $finance->prompt_add_section(
     'Regulatory Compliance',
@@ -87,26 +91,30 @@ $finance->prompt_add_section(
     ],
 );
 
-$finance->set_dynamic_config_callback(sub {
-    my ($qp, $bp, $headers, $a) = @_;
-    my $account_type = lc($qp->{account_type} // 'standard');
+$finance->set_dynamic_config_callback(
+    sub {
+        my ( $qp, $bp, $headers, $a ) = @_;
+        my $account_type = lc( $qp->{account_type} // 'standard' );
 
-    if ($account_type eq 'premium') {
-        $a->add_language(name => 'English', code => 'en-US', voice => 'inworld.Sarah');
-        $a->set_params({ ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 600 });
-    } else {
-        $a->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-        $a->set_params({ ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 400 });
+        if ( $account_type eq 'premium' ) {
+            $a->add_language( name => 'English', code => 'en-US', voice => 'inworld.Sarah' );
+            $a->set_params( { ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 600 } );
+        } else {
+            $a->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+            $a->set_params( { ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 400 } );
+        }
+
+        $a->set_global_data(
+            {
+                customer_id      => $qp->{customer_id} // '',
+                account_type     => $account_type,
+                service_area     => $qp->{service} // 'general',
+                compliance_level => 'financial',
+                session_type     => 'finance',
+            }
+        );
     }
-
-    $a->set_global_data({
-        customer_id      => $qp->{customer_id} // '',
-        account_type     => $account_type,
-        service_area     => $qp->{service} // 'general',
-        compliance_level => 'financial',
-        session_type     => 'finance',
-    });
-});
+);
 
 # --- Retail Agent ---
 
@@ -120,7 +128,7 @@ my $retail = SignalWire::Agent::AgentBase->new(
 $retail->prompt_add_section(
     'Customer Service Role',
     'You are a friendly retail customer service AI assistant focused on '
-    . 'providing excellent customer experiences and sales support.',
+        . 'providing excellent customer experiences and sales support.',
 );
 $retail->prompt_add_section(
     'Service Excellence',
@@ -133,25 +141,29 @@ $retail->prompt_add_section(
     ],
 );
 
-$retail->set_dynamic_config_callback(sub {
-    my ($qp, $bp, $headers, $a) = @_;
-    my $tier = lc($qp->{customer_tier} // 'standard');
+$retail->set_dynamic_config_callback(
+    sub {
+        my ( $qp, $bp, $headers, $a ) = @_;
+        my $tier = lc( $qp->{customer_tier} // 'standard' );
 
-    if ($tier eq 'vip') {
-        $a->add_language(name => 'English', code => 'en-US', voice => 'inworld.Sarah');
-        $a->set_params({ ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 600 });
-    } else {
-        $a->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-        $a->set_params({ ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 400 });
+        if ( $tier eq 'vip' ) {
+            $a->add_language( name => 'English', code => 'en-US', voice => 'inworld.Sarah' );
+            $a->set_params( { ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 600 } );
+        } else {
+            $a->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+            $a->set_params( { ai_model => 'gpt-4.1-nano', end_of_speech_timeout => 400 } );
+        }
+
+        $a->set_global_data(
+            {
+                customer_id   => $qp->{customer_id} // '',
+                department    => $qp->{department}  // 'general',
+                customer_tier => $tier,
+                session_type  => 'retail',
+            }
+        );
     }
-
-    $a->set_global_data({
-        customer_id   => $qp->{customer_id} // '',
-        department    => $qp->{department} // 'general',
-        customer_tier => $tier,
-        session_type  => 'retail',
-    });
-});
+);
 
 # --- Server Setup ---
 

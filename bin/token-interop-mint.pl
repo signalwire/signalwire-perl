@@ -37,8 +37,8 @@ sub required {
     my $value = $ENV{$name};
     unless ( defined $value && length $value ) {
         print STDERR "$name is not set — the TOKEN-INTEROP checker supplies the "
-          . "fixed mint inputs in the environment; run this via "
-          . "diff_port_token_interop.py --mint-cmd.\n";
+            . "fixed mint inputs in the environment; run this via "
+            . "diff_port_token_interop.py --mint-cmd.\n";
         exit 1;
     }
     return $value;
@@ -50,7 +50,7 @@ my $function_name = required('SW_TOKEN_INTEROP_FUNCTION_NAME');
 
 # Default expiry — the token must carry a FUTURE expiry, which the checker verifies.
 my $manager = SignalWire::Security::SessionManager->new(
-    secret_key       => $secret_key,
+    secret_key        => $secret_key,
     token_expiry_secs => 900,
 );
 print $manager->generate_token( $function_name, $call_id ), "\n";

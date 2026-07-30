@@ -23,114 +23,124 @@ subtest 'projects_create_success' => sub {
     my $client = MockTest::client();
     $client->projects->create();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'projects.create_subproject', 'matched_route projects.create_subproject');
+    is( $last->{method}, 'POST', 'method POST' );
+    is( $last->{matched_route},
+        'projects.create_subproject', 'matched_route projects.create_subproject' );
 };
 
 subtest 'projects_create_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('projects.create_subproject', 500, { error => 'x' });
+    MockTest::scenario_set( 'projects.create_subproject', 500, { error => 'x' } );
     my $ok = eval { $client->projects->create(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'projects.create_subproject', 'matched_route projects.create_subproject');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'projects.create_subproject', 'matched_route projects.create_subproject' );
 };
 
 subtest 'projects_delete_success' => sub {
     my $client = MockTest::client();
     $client->projects->delete('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'DELETE', 'method DELETE');
-    is($last->{matched_route}, 'projects.delete_subproject', 'matched_route projects.delete_subproject');
+    is( $last->{method}, 'DELETE', 'method DELETE' );
+    is( $last->{matched_route},
+        'projects.delete_subproject', 'matched_route projects.delete_subproject' );
 };
 
 subtest 'projects_delete_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('projects.delete_subproject', 500, { error => 'x' });
+    MockTest::scenario_set( 'projects.delete_subproject', 500, { error => 'x' } );
     my $ok = eval { $client->projects->delete('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'projects.delete_subproject', 'matched_route projects.delete_subproject');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'projects.delete_subproject', 'matched_route projects.delete_subproject' );
 };
 
 subtest 'projects_get_success' => sub {
     my $client = MockTest::client();
     $client->projects->get('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'GET', 'method GET');
-    is($last->{matched_route}, 'projects.get_project', 'matched_route projects.get_project');
+    is( $last->{method},        'GET',                  'method GET' );
+    is( $last->{matched_route}, 'projects.get_project', 'matched_route projects.get_project' );
 };
 
 subtest 'projects_get_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('projects.get_project', 500, { error => 'x' });
+    MockTest::scenario_set( 'projects.get_project', 500, { error => 'x' } );
     my $ok = eval { $client->projects->get('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'projects.get_project', 'matched_route projects.get_project');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'projects.get_project', 'matched_route projects.get_project' );
 };
 
 subtest 'projects_list_success' => sub {
     my $client = MockTest::client();
     $client->projects->list();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'GET', 'method GET');
-    is($last->{matched_route}, 'projects.list_projects', 'matched_route projects.list_projects');
+    is( $last->{method},        'GET',                    'method GET' );
+    is( $last->{matched_route}, 'projects.list_projects', 'matched_route projects.list_projects' );
 };
 
 subtest 'projects_list_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('projects.list_projects', 500, { error => 'x' });
+    MockTest::scenario_set( 'projects.list_projects', 500, { error => 'x' } );
     my $ok = eval { $client->projects->list(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'projects.list_projects', 'matched_route projects.list_projects');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'projects.list_projects', 'matched_route projects.list_projects' );
 };
 
 subtest 'projects_rotate_signing_key_success' => sub {
     my $client = MockTest::client();
     $client->projects->rotate_signing_key('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'projects.rotate_signing_key', 'matched_route projects.rotate_signing_key');
+    is( $last->{method}, 'POST', 'method POST' );
+    is( $last->{matched_route},
+        'projects.rotate_signing_key', 'matched_route projects.rotate_signing_key' );
 };
 
 subtest 'projects_rotate_signing_key_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('projects.rotate_signing_key', 500, { error => 'x' });
+    MockTest::scenario_set( 'projects.rotate_signing_key', 500, { error => 'x' } );
     my $ok = eval { $client->projects->rotate_signing_key('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'projects.rotate_signing_key', 'matched_route projects.rotate_signing_key');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'projects.rotate_signing_key', 'matched_route projects.rotate_signing_key' );
 };
 
 subtest 'projects_update_success' => sub {
     my $client = MockTest::client();
     $client->projects->update('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'PATCH', 'method PATCH');
-    is($last->{matched_route}, 'projects.update_project', 'matched_route projects.update_project');
+    is( $last->{method}, 'PATCH', 'method PATCH' );
+    is( $last->{matched_route}, 'projects.update_project',
+        'matched_route projects.update_project' );
 };
 
 subtest 'projects_update_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('projects.update_project', 500, { error => 'x' });
+    MockTest::scenario_set( 'projects.update_project', 500, { error => 'x' } );
     my $ok = eval { $client->projects->update('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'projects.update_project', 'matched_route projects.update_project');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'projects.update_project', 'matched_route projects.update_project' );
 };
 
 done_testing();

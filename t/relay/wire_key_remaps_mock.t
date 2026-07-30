@@ -124,11 +124,11 @@ subtest 'play: media lands under wire key "play"' => sub {
         sub { $call->play( play => [ { type => 'tts', params => { text => 'hi' } } ] ) } );
 
     my $p = _wire_params( 'calling.play', 'play' );
-    ok( exists $p->{play}, 'wire key "play" present' );
+    ok( exists $p->{play},   'wire key "play" present' );
     ok( !exists $p->{media}, 'reference-side param name "media" is NOT on the wire' );
-    is( ref $p->{play}, 'ARRAY', '"play" carries the media list' );
-    is( $p->{play}[0]{type}, 'tts', '"play"[0].type survived the spread' );
-    is( $p->{play}[0]{params}{text}, 'hi', '"play"[0].params.text survived the spread' );
+    is( ref $p->{play},              'ARRAY', '"play" carries the media list' );
+    is( $p->{play}[0]{type},         'tts',   '"play"[0].type survived the spread' );
+    is( $p->{play}[0]{params}{text}, 'hi',    '"play"[0].params.text survived the spread' );
 
     $client->disconnect;
 };
@@ -147,11 +147,11 @@ subtest 'play_and_collect: media lands under wire key "play"' => sub {
     );
 
     my $p = _wire_params( 'calling.play_and_collect', 'play_and_collect' );
-    ok( exists $p->{play}, 'wire key "play" present' );
+    ok( exists $p->{play},   'wire key "play" present' );
     ok( !exists $p->{media}, 'reference-side param name "media" is NOT on the wire' );
-    is( $p->{play}[0]{type},         'tts', '"play"[0].type survived the spread' );
+    is( $p->{play}[0]{type},         'tts',     '"play"[0].type survived the spread' );
     is( $p->{play}[0]{params}{text}, 'Press 1', '"play"[0].params.text survived' );
-    is( $p->{collect}{digits}{max},  1, 'sibling "collect" key unharmed' );
+    is( $p->{collect}{digits}{max},  1,         'sibling "collect" key unharmed' );
 
     $client->disconnect;
 };
@@ -175,10 +175,9 @@ subtest 'pay: input method lands under wire key "input"' => sub {
 
     my $p = _wire_params( 'calling.pay', 'pay' );
     is( $p->{input}, 'dtmf', 'wire key "input" carries the value' );
-    ok( !exists $p->{input_method},
-        'reference-side param name "input_method" is NOT on the wire' );
-    is( $p->{payment_connector_url}, 'https://pay.example/connect',
-        'sibling "payment_connector_url" unharmed' );
+    ok( !exists $p->{input_method}, 'reference-side param name "input_method" is NOT on the wire' );
+    is( $p->{payment_connector_url},
+        'https://pay.example/connect', 'sibling "payment_connector_url" unharmed' );
 
     $client->disconnect;
 };
@@ -201,10 +200,12 @@ subtest 'join_conference: stream object lands under wire key "stream"' => sub {
     );
 
     my $p = _wire_params( 'calling.join_conference', 'join_conference' );
-    is_deeply( $p->{stream}, { url => 'wss://stream.example/sock' },
-        'wire key "stream" carries the stream object' );
-    ok( !exists $p->{stream_obj},
-        'reference-side param name "stream_obj" is NOT on the wire' );
+    is_deeply(
+        $p->{stream},
+        { url => 'wss://stream.example/sock' },
+        'wire key "stream" carries the stream object'
+    );
+    ok( !exists $p->{stream_obj}, 'reference-side param name "stream_obj" is NOT on the wire' );
     is( $p->{name}, 'room-1', 'sibling "name" unharmed' );
 
     $client->disconnect;
@@ -228,7 +229,7 @@ subtest 'bind_digit: bind params land under wire key "params"' => sub {
             $call->bind_digit(
                 digits      => '123',
                 bind_method => 'calling.play',
-                params => { play => [ { type => 'tts', params => { text => 'bound' } } ] },
+                params      => { play => [ { type => 'tts', params => { text => 'bound' } } ] },
             );
         }
     );
@@ -237,8 +238,7 @@ subtest 'bind_digit: bind params land under wire key "params"' => sub {
     ok( exists $p->{params}, 'wire key "params" present inside the RPC params object' );
     is( $p->{params}{play}[0]{params}{text},
         'bound', '"params" carries the nested bind payload intact' );
-    ok( !exists $p->{bind_params},
-        'reference-side param name "bind_params" is NOT on the wire' );
+    ok( !exists $p->{bind_params}, 'reference-side param name "bind_params" is NOT on the wire' );
     is( $p->{digits},      '123',          'sibling "digits" unharmed' );
     is( $p->{bind_method}, 'calling.play', 'sibling "bind_method" unharmed' );
 
@@ -252,7 +252,7 @@ subtest 'ai: ai params land under wire key "params"' => sub {
         'ai',
         sub {
             $call->ai(
-                prompt => { text => 'You are helpful.' },
+                prompt => { text        => 'You are helpful.' },
                 params => { temperature => '0.7', barge_confidence => '0.5' },
             );
         }
@@ -260,11 +260,9 @@ subtest 'ai: ai params land under wire key "params"' => sub {
 
     my $p = _wire_params( 'calling.ai', 'ai' );
     ok( exists $p->{params}, 'wire key "params" present inside the RPC params object' );
-    is( $p->{params}{temperature}, '0.7', '"params".temperature survived the spread' );
-    is( $p->{params}{barge_confidence},
-        '0.5', '"params".barge_confidence survived the spread' );
-    ok( !exists $p->{ai_params},
-        'reference-side param name "ai_params" is NOT on the wire' );
+    is( $p->{params}{temperature},      '0.7', '"params".temperature survived the spread' );
+    is( $p->{params}{barge_confidence}, '0.5', '"params".barge_confidence survived the spread' );
+    ok( !exists $p->{ai_params}, 'reference-side param name "ai_params" is NOT on the wire' );
     is_deeply( $p->{prompt}, { text => 'You are helpful.' }, 'sibling "prompt" unharmed' );
 
     $client->disconnect;
@@ -277,7 +275,7 @@ subtest 'amazon_bedrock: ai params land under wire key "params"' => sub {
         'amazon_bedrock',
         sub {
             $call->amazon_bedrock(
-                prompt => { text => 'You are helpful.' },
+                prompt => { text        => 'You are helpful.' },
                 params => { temperature => '0.7' },
             );
         }
@@ -286,8 +284,7 @@ subtest 'amazon_bedrock: ai params land under wire key "params"' => sub {
     my $p = _wire_params( 'calling.amazon_bedrock', 'amazon_bedrock' );
     ok( exists $p->{params}, 'wire key "params" present inside the RPC params object' );
     is( $p->{params}{temperature}, '0.7', '"params".temperature survived the spread' );
-    ok( !exists $p->{ai_params},
-        'reference-side param name "ai_params" is NOT on the wire' );
+    ok( !exists $p->{ai_params}, 'reference-side param name "ai_params" is NOT on the wire' );
     is_deeply( $p->{prompt}, { text => 'You are helpful.' }, 'sibling "prompt" unharmed' );
 
     # amazon_bedrock is its own RPC, not calling.ai with an engine switch.

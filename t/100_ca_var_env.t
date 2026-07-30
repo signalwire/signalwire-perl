@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 use Test::More;
-use FindBin ();
+use FindBin    ();
 use File::Spec ();
 use lib "$FindBin::Bin/lib";
 
@@ -40,9 +40,10 @@ my $bogus_ca =
     File::Spec->catfile( ( File::Spec->splitpath($ca) )[1], 'no-such-ca.crt' );
 
 subtest 'SIGNALWIRE_REST_CA_FILE is the REST client trust root' => sub {
+
     # Default trust store trusts NOTHING (points at a nonexistent file); the ONLY
     # path to trusting the mock leaf is SIGNALWIRE_REST_CA_FILE.
-    local $ENV{SSL_CERT_FILE}          = $bogus_ca;
+    local $ENV{SSL_CERT_FILE}           = $bogus_ca;
     local $ENV{SIGNALWIRE_REST_CA_FILE} = $ca;
 
     my $client = SignalWire::REST::RestClient->new(
@@ -51,14 +52,13 @@ subtest 'SIGNALWIRE_REST_CA_FILE is the REST client trust root' => sub {
         host    => $base,
     );
     my $body = eval { $client->fabric->addresses->list() };
-    ok( defined $body,
-        'verified https GET succeeded, trusting via SIGNALWIRE_REST_CA_FILE only' )
+    ok( defined $body, 'verified https GET succeeded, trusting via SIGNALWIRE_REST_CA_FILE only' )
         or diag("error: $@");
     is( ref $body, 'HASH', 'JSON object body returned over TLS' );
 };
 
 subtest 'a WRONG SIGNALWIRE_REST_CA_FILE fails (verification is genuine)' => sub {
-    local $ENV{SSL_CERT_FILE}          = $bogus_ca;
+    local $ENV{SSL_CERT_FILE}           = $bogus_ca;
     local $ENV{SIGNALWIRE_REST_CA_FILE} = $bogus_ca;
 
     my $client = SignalWire::REST::RestClient->new(
@@ -67,8 +67,7 @@ subtest 'a WRONG SIGNALWIRE_REST_CA_FILE fails (verification is genuine)' => sub
         host    => $base,
     );
     my $body = eval { $client->fabric->addresses->list() };
-    ok( !defined $body || $@,
-        'GET fails when neither trust source trusts the leaf' );
+    ok( !defined $body || $@, 'GET fails when neither trust source trusts the leaf' );
 };
 
 done_testing;

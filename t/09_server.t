@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More;
-use JSON qw(encode_json decode_json);
+use JSON         qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
 use_ok('SignalWire::Server::AgentServer');
@@ -13,10 +13,10 @@ use_ok('SignalWire::Agent::AgentBase');
 # ============================================================
 subtest 'server construction' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    is($server->host, '0.0.0.0', 'default host');
-    ok($server->port, 'port has value');
-    is(ref $server->agents, 'HASH', 'agents is hashref');
-    is(scalar keys %{$server->agents}, 0, 'no agents initially');
+    is( $server->host, '0.0.0.0', 'default host' );
+    ok( $server->port, 'port has value' );
+    is( ref $server->agents,              'HASH', 'agents is hashref' );
+    is( scalar keys %{ $server->agents }, 0,      'no agents initially' );
 };
 
 # ============================================================
@@ -30,8 +30,8 @@ subtest 'register agent' => sub {
     );
 
     $server->register($agent);
-    ok(exists $server->agents->{'/support'}, 'agent registered at /support');
-    is($server->agents->{'/support'}->name, 'support', 'agent name matches');
+    ok( exists $server->agents->{'/support'}, 'agent registered at /support' );
+    is( $server->agents->{'/support'}->name, 'support', 'agent name matches' );
 };
 
 # ============================================================
@@ -44,9 +44,9 @@ subtest 'register with route override' => sub {
         route => '/original',
     );
 
-    $server->register($agent, '/sales');
-    ok(exists $server->agents->{'/sales'}, 'agent at overridden route');
-    is($agent->route, '/sales', 'agent route updated');
+    $server->register( $agent, '/sales' );
+    ok( exists $server->agents->{'/sales'}, 'agent at overridden route' );
+    is( $agent->route, '/sales', 'agent route updated' );
 };
 
 # ============================================================
@@ -54,12 +54,12 @@ subtest 'register with route override' => sub {
 # ============================================================
 subtest 'register duplicate route' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    my $agent1 = SignalWire::Agent::AgentBase->new(name => 'a1', route => '/test');
-    my $agent2 = SignalWire::Agent::AgentBase->new(name => 'a2', route => '/test');
+    my $agent1 = SignalWire::Agent::AgentBase->new( name => 'a1', route => '/test' );
+    my $agent2 = SignalWire::Agent::AgentBase->new( name => 'a2', route => '/test' );
 
     $server->register($agent1);
     eval { $server->register($agent2) };
-    like($@, qr/already registered/, 'duplicate route throws error');
+    like( $@, qr/already registered/, 'duplicate route throws error' );
 };
 
 # ============================================================
@@ -67,13 +67,13 @@ subtest 'register duplicate route' => sub {
 # ============================================================
 subtest 'unregister agent' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    my $agent  = SignalWire::Agent::AgentBase->new(name => 'temp', route => '/temp');
+    my $agent  = SignalWire::Agent::AgentBase->new( name => 'temp', route => '/temp' );
 
     $server->register($agent);
-    ok(exists $server->agents->{'/temp'}, 'agent registered');
+    ok( exists $server->agents->{'/temp'}, 'agent registered' );
 
     $server->unregister('/temp');
-    ok(!exists $server->agents->{'/temp'}, 'agent unregistered');
+    ok( !exists $server->agents->{'/temp'}, 'agent unregistered' );
 };
 
 # ============================================================
@@ -81,17 +81,13 @@ subtest 'unregister agent' => sub {
 # ============================================================
 subtest 'list agents' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    $server->register(
-        SignalWire::Agent::AgentBase->new(name => 'a', route => '/a')
-    );
-    $server->register(
-        SignalWire::Agent::AgentBase->new(name => 'b', route => '/b')
-    );
+    $server->register( SignalWire::Agent::AgentBase->new( name => 'a', route => '/a' ) );
+    $server->register( SignalWire::Agent::AgentBase->new( name => 'b', route => '/b' ) );
 
     my $list = $server->list_agents;
-    is(scalar @$list, 2, 'two agents listed');
-    ok(grep({ $_ eq '/a' } @$list), '/a listed');
-    ok(grep({ $_ eq '/b' } @$list), '/b listed');
+    is( scalar @$list, 2, 'two agents listed' );
+    ok( grep( { $_ eq '/a' } @$list ), '/a listed' );
+    ok( grep( { $_ eq '/b' } @$list ), '/b listed' );
 };
 
 # ============================================================
@@ -99,14 +95,14 @@ subtest 'list agents' => sub {
 # ============================================================
 subtest 'get agent' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'x', route => '/x');
+    my $agent  = SignalWire::Agent::AgentBase->new( name => 'x', route => '/x' );
     $server->register($agent);
 
     my $found = $server->get_agent('/x');
-    is($found, $agent, 'get_agent returns the agent');
+    is( $found, $agent, 'get_agent returns the agent' );
 
     my $missing = $server->get_agent('/y');
-    ok(!defined $missing, 'get_agent returns undef for missing');
+    ok( !defined $missing, 'get_agent returns undef for missing' );
 };
 
 # ============================================================
@@ -114,12 +110,10 @@ subtest 'get agent' => sub {
 # ============================================================
 subtest 'psgi_app construction' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    $server->register(
-        SignalWire::Agent::AgentBase->new(name => 'test', route => '/test')
-    );
+    $server->register( SignalWire::Agent::AgentBase->new( name => 'test', route => '/test' ) );
 
     my $app = $server->psgi_app;
-    is(ref $app, 'CODE', 'psgi_app returns coderef');
+    is( ref $app, 'CODE', 'psgi_app returns coderef' );
 };
 
 # ============================================================
@@ -127,23 +121,23 @@ subtest 'psgi_app construction' => sub {
 # ============================================================
 subtest 'health endpoint' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    $server->register(
-        SignalWire::Agent::AgentBase->new(name => 'agent1', route => '/agent1')
-    );
+    $server->register( SignalWire::Agent::AgentBase->new( name => 'agent1', route => '/agent1' ) );
 
     my $app = $server->psgi_app;
-    my $res = $app->({
-        REQUEST_METHOD => 'GET',
-        PATH_INFO      => '/health',
-        SCRIPT_NAME    => '',
-        SERVER_NAME    => 'localhost',
-        SERVER_PORT    => 3000,
-    });
+    my $res = $app->(
+        {
+            REQUEST_METHOD => 'GET',
+            PATH_INFO      => '/health',
+            SCRIPT_NAME    => '',
+            SERVER_NAME    => 'localhost',
+            SERVER_PORT    => 3000,
+        }
+    );
 
-    is($res->[0], 200, 'health returns 200');
-    my $body = decode_json($res->[2][0]);
-    is($body->{status}, 'healthy', 'status is healthy');
-    ok(exists $body->{agents}, 'agents list in response');
+    is( $res->[0], 200, 'health returns 200' );
+    my $body = decode_json( $res->[2][0] );
+    is( $body->{status}, 'healthy', 'status is healthy' );
+    ok( exists $body->{agents}, 'agents list in response' );
 };
 
 # ============================================================
@@ -151,18 +145,20 @@ subtest 'health endpoint' => sub {
 # ============================================================
 subtest 'ready endpoint' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    my $app = $server->psgi_app;
-    my $res = $app->({
-        REQUEST_METHOD => 'GET',
-        PATH_INFO      => '/ready',
-        SCRIPT_NAME    => '',
-        SERVER_NAME    => 'localhost',
-        SERVER_PORT    => 3000,
-    });
+    my $app    = $server->psgi_app;
+    my $res    = $app->(
+        {
+            REQUEST_METHOD => 'GET',
+            PATH_INFO      => '/ready',
+            SCRIPT_NAME    => '',
+            SERVER_NAME    => 'localhost',
+            SERVER_PORT    => 3000,
+        }
+    );
 
-    is($res->[0], 200, 'ready returns 200');
-    my $body = decode_json($res->[2][0]);
-    is($body->{status}, 'ready', 'status is ready');
+    is( $res->[0], 200, 'ready returns 200' );
+    my $body = decode_json( $res->[2][0] );
+    is( $body->{status}, 'ready', 'status is ready' );
 };
 
 # ============================================================
@@ -171,8 +167,8 @@ subtest 'ready endpoint' => sub {
 subtest 'agent routing' => sub {
     my $server = SignalWire::Server::AgentServer->new;
     my $agent  = SignalWire::Agent::AgentBase->new(
-        name               => 'routed',
-        route              => '/routed',
+        name                => 'routed',
+        route               => '/routed',
         basic_auth_user     => 'user',
         basic_auth_password => 'pass',
     );
@@ -181,20 +177,22 @@ subtest 'agent routing' => sub {
     my $app = $server->psgi_app;
 
     # Access the agent endpoint with auth
-    my $auth = encode_base64('user:pass', '');
-    my $res = $app->({
-        REQUEST_METHOD     => 'GET',
-        PATH_INFO          => '/routed',
-        SCRIPT_NAME        => '',
-        SERVER_NAME        => 'localhost',
-        SERVER_PORT        => 3000,
-        HTTP_AUTHORIZATION => "Basic $auth",
-        'psgi.input'       => do { open my $fh, '<', \(''); $fh },
-    });
+    my $auth = encode_base64( 'user:pass', '' );
+    my $res  = $app->(
+        {
+            REQUEST_METHOD     => 'GET',
+            PATH_INFO          => '/routed',
+            SCRIPT_NAME        => '',
+            SERVER_NAME        => 'localhost',
+            SERVER_PORT        => 3000,
+            HTTP_AUTHORIZATION => "Basic $auth",
+            'psgi.input'       => do { open my $fh, '<', \(''); $fh },
+        }
+    );
 
-    is($res->[0], 200, 'routed agent responds 200');
-    my $body = decode_json($res->[2][0]);
-    is($body->{version}, '1.0.0', 'returns SWML from routed agent');
+    is( $res->[0], 200, 'routed agent responds 200' );
+    my $body = decode_json( $res->[2][0] );
+    is( $body->{version}, '1.0.0', 'returns SWML from routed agent' );
 };
 
 # ============================================================
@@ -202,15 +200,17 @@ subtest 'agent routing' => sub {
 # ============================================================
 subtest '404 for unknown route' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    my $app = $server->psgi_app;
-    my $res = $app->({
-        REQUEST_METHOD => 'GET',
-        PATH_INFO      => '/unknown',
-        SCRIPT_NAME    => '',
-        SERVER_NAME    => 'localhost',
-        SERVER_PORT    => 3000,
-    });
-    is($res->[0], 404, 'unknown route returns 404');
+    my $app    = $server->psgi_app;
+    my $res    = $app->(
+        {
+            REQUEST_METHOD => 'GET',
+            PATH_INFO      => '/unknown',
+            SCRIPT_NAME    => '',
+            SERVER_NAME    => 'localhost',
+            SERVER_PORT    => 3000,
+        }
+    );
+    is( $res->[0], 404, 'unknown route returns 404' );
 };
 
 # ============================================================
@@ -218,55 +218,59 @@ subtest '404 for unknown route' => sub {
 # ============================================================
 subtest 'security headers' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    my $app = $server->psgi_app;
-    my $res = $app->({
-        REQUEST_METHOD => 'GET',
-        PATH_INFO      => '/health',
-        SCRIPT_NAME    => '',
-        SERVER_NAME    => 'localhost',
-        SERVER_PORT    => 3000,
-    });
+    my $app    = $server->psgi_app;
+    my $res    = $app->(
+        {
+            REQUEST_METHOD => 'GET',
+            PATH_INFO      => '/health',
+            SCRIPT_NAME    => '',
+            SERVER_NAME    => 'localhost',
+            SERVER_PORT    => 3000,
+        }
+    );
 
     my %headers = @{ $res->[1] };
-    is($headers{'X-Content-Type-Options'}, 'nosniff', 'nosniff header');
-    is($headers{'X-Frame-Options'}, 'DENY', 'DENY frame header');
-    is($headers{'Cache-Control'}, 'no-store', 'no-store cache header');
+    is( $headers{'X-Content-Type-Options'}, 'nosniff',  'nosniff header' );
+    is( $headers{'X-Frame-Options'},        'DENY',     'DENY frame header' );
+    is( $headers{'Cache-Control'},          'no-store', 'no-store cache header' );
 };
 
 # ============================================================
 # 14. Multiple agents routing
 # ============================================================
 subtest 'multiple agents routing' => sub {
-    my $server = SignalWire::Server::AgentServer->new;
+    my $server  = SignalWire::Server::AgentServer->new;
     my $agent_a = SignalWire::Agent::AgentBase->new(
-        name               => 'alpha',
-        route              => '/alpha',
+        name                => 'alpha',
+        route               => '/alpha',
         basic_auth_user     => 'user',
         basic_auth_password => 'pass',
     );
     my $agent_b = SignalWire::Agent::AgentBase->new(
-        name               => 'beta',
-        route              => '/beta',
+        name                => 'beta',
+        route               => '/beta',
         basic_auth_user     => 'user',
         basic_auth_password => 'pass',
     );
     $server->register($agent_a);
     $server->register($agent_b);
 
-    my $app = $server->psgi_app;
-    my $auth = encode_base64('user:pass', '');
+    my $app  = $server->psgi_app;
+    my $auth = encode_base64( 'user:pass', '' );
 
-    for my $route ('/alpha', '/beta') {
-        my $res = $app->({
-            REQUEST_METHOD     => 'GET',
-            PATH_INFO          => $route,
-            SCRIPT_NAME        => '',
-            SERVER_NAME        => 'localhost',
-            SERVER_PORT        => 3000,
-            HTTP_AUTHORIZATION => "Basic $auth",
-            'psgi.input'       => do { open my $fh, '<', \(''); $fh },
-        });
-        is($res->[0], 200, "$route returns 200");
+    for my $route ( '/alpha', '/beta' ) {
+        my $res = $app->(
+            {
+                REQUEST_METHOD     => 'GET',
+                PATH_INFO          => $route,
+                SCRIPT_NAME        => '',
+                SERVER_NAME        => 'localhost',
+                SERVER_PORT        => 3000,
+                HTTP_AUTHORIZATION => "Basic $auth",
+                'psgi.input'       => do { open my $fh, '<', \(''); $fh },
+            }
+        );
+        is( $res->[0], 200, "$route returns 200" );
     }
 };
 
@@ -275,10 +279,10 @@ subtest 'multiple agents routing' => sub {
 # ============================================================
 subtest 'route normalization' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    my $agent  = SignalWire::Agent::AgentBase->new(name => 'norm');
+    my $agent  = SignalWire::Agent::AgentBase->new( name => 'norm' );
 
-    $server->register($agent, 'no_slash');
-    ok(exists $server->agents->{'/no_slash'}, 'route normalized with leading /');
+    $server->register( $agent, 'no_slash' );
+    ok( exists $server->agents->{'/no_slash'}, 'route normalized with leading /' );
 };
 
 # ============================================================
@@ -286,10 +290,9 @@ subtest 'route normalization' => sub {
 # ============================================================
 subtest 'method chaining' => sub {
     my $server = SignalWire::Server::AgentServer->new;
-    my $ret = $server->register(
-        SignalWire::Agent::AgentBase->new(name => 'chain', route => '/chain')
-    );
-    is($ret, $server, 'register returns server for chaining');
+    my $ret    = $server->register(
+        SignalWire::Agent::AgentBase->new( name => 'chain', route => '/chain' ) );
+    is( $ret, $server, 'register returns server for chaining' );
 };
 
 done_testing;

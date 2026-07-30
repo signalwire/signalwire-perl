@@ -61,10 +61,13 @@ subtest 'create_simple_context(name="default")' => sub {
 # Reference: validate_url(url, allow_private: bool = False)
 # -------------------------------------------------------------------------
 subtest 'validate_url(allow_private=False)' => sub {
+
     # A private address must be REJECTED when allow_private is omitted — that
     # is the security-relevant half of the default.
-    ok( !SignalWire::Utils::UrlValidator::validate_url('http://127.0.0.1/x'),
-        'omitted allow_private defaults to false -> private URL rejected' );
+    ok(
+        !SignalWire::Utils::UrlValidator::validate_url('http://127.0.0.1/x'),
+        'omitted allow_private defaults to false -> private URL rejected'
+    );
 
     ok( SignalWire::Utils::UrlValidator::validate_url( 'http://127.0.0.1/x', 1 ),
         'explicit allow_private=1 accepts the same URL' );
@@ -109,25 +112,39 @@ subtest 'get_basic_auth_credentials(include_source=False)' => sub {
 # -------------------------------------------------------------------------
 subtest 'FunctionResult defaults land in the emitted action' => sub {
     my $held = SignalWire::SWAIG::FunctionResult->new->hold;
-    is_deeply( $held->action->[0], { hold => 300 },
-        'omitted timeout emits the reference default 300' );
+    is_deeply(
+        $held->action->[0],
+        { hold => 300 },
+        'omitted timeout emits the reference default 300'
+    );
 
     my $capped = SignalWire::SWAIG::FunctionResult->new->hold(1200);
-    is_deeply( $capped->action->[0], { hold => 900 },
-        'an explicit timeout is still clamped to the 900 ceiling' );
+    is_deeply(
+        $capped->action->[0],
+        { hold => 900 },
+        'an explicit timeout is still clamped to the 900 ceiling'
+    );
 
     my $ext = SignalWire::SWAIG::FunctionResult->new->enable_extensive_data;
-    is_deeply( $ext->action->[0], { extensive_data => JSON::true() },
-        'omitted enabled emits the reference default true' );
+    is_deeply(
+        $ext->action->[0],
+        { extensive_data => JSON::true() },
+        'omitted enabled emits the reference default true'
+    );
 
     my $fot = SignalWire::SWAIG::FunctionResult->new->enable_functions_on_timeout;
-    is_deeply( $fot->action->[0],
+    is_deeply(
+        $fot->action->[0],
         { functions_on_speaker_timeout => JSON::true() },
-        'omitted enabled emits the reference default true' );
+        'omitted enabled emits the reference default true'
+    );
 
     my $rep = SignalWire::SWAIG::FunctionResult->new->replace_in_history;
-    is_deeply( $rep->action->[0], { replace_in_history => JSON::true() },
-        'omitted text emits the reference default true' );
+    is_deeply(
+        $rep->action->[0],
+        { replace_in_history => JSON::true() },
+        'omitted text emits the reference default true'
+    );
 };
 
 # -------------------------------------------------------------------------
@@ -138,15 +155,13 @@ subtest 'Section render defaults' => sub {
     my $sec = SignalWire::POM::Section->new( title => 'T', body => 'B' );
 
     my $md = $sec->render_markdown;
-    like( $md, qr/^\#\# T/m,
-        'omitted level renders at the reference default heading depth 2' );
+    like( $md, qr/^\#\# T/m, 'omitted level renders at the reference default heading depth 2' );
 
     my $md3 = $sec->render_markdown(3);
     like( $md3, qr/^\#\#\# T/m, 'an explicit level still applies' );
 
     my $xml = $sec->render_xml;
-    like( $xml, qr/^<section>/m,
-        'omitted indent renders at the reference default column 0' );
+    like( $xml, qr/^<section>/m, 'omitted indent renders at the reference default column 0' );
 
     my $xml2 = $sec->render_xml(2);
     like( $xml2, qr/^ {4}<section>/m, 'an explicit indent still applies' );
@@ -165,8 +180,7 @@ subtest 'register_routing_callback(callback_fn, path="/sip")' => sub {
     $svc->register_routing_callback($cb);
     is_deeply( [ sort keys %{ $svc->routing_callbacks } ],
         ['/sip'], 'omitted path registers at the reference default "/sip"' );
-    is( $svc->routing_callbacks->{'/sip'}, $cb,
-        'the FIRST argument is the callback' );
+    is( $svc->routing_callbacks->{'/sip'}, $cb, 'the FIRST argument is the callback' );
 
     my $svc2 = new_service();
     $svc2->register_routing_callback( $cb, 'voice' );
@@ -201,17 +215,17 @@ subtest 'optional hook parameters may be omitted' => sub {
     my $agent = new_agent();
     my $svc   = new_service();
 
-    ok( eval { $agent->on_summary('s');            1 }, 'on_summary(raw_data omitted)' )      or diag($@);
-    ok( eval { $svc->on_request();                 1 }, 'on_request(both omitted)' )          or diag($@);
-    ok( eval { $svc->on_swml_request();            1 }, 'on_swml_request(all omitted)' )      or diag($@);
-    ok( eval { $svc->on_function_call( 'f', {} );  1 }, 'on_function_call(raw_data omitted)' ) or diag($@);
-    ok( eval { $agent->add_answer_verb();          1 }, 'add_answer_verb(config omitted)' )   or diag($@);
-    ok( eval { $agent->define_contexts();          1 }, 'define_contexts(contexts omitted)' ) or diag($@);
+    ok( eval { $agent->on_summary('s'); 1 }, 'on_summary(raw_data omitted)' ) or diag($@);
+    ok( eval { $svc->on_request();      1 }, 'on_request(both omitted)' )     or diag($@);
+    ok( eval { $svc->on_swml_request(); 1 }, 'on_swml_request(all omitted)' ) or diag($@);
+    ok( eval { $svc->on_function_call( 'f', {} ); 1 }, 'on_function_call(raw_data omitted)' )
+        or diag($@);
+    ok( eval { $agent->add_answer_verb(); 1 }, 'add_answer_verb(config omitted)' )   or diag($@);
+    ok( eval { $agent->define_contexts(); 1 }, 'define_contexts(contexts omitted)' ) or diag($@);
 
     # add_answer_verb's omitted config must produce the empty-config answer
     # verb, not a crash and not a phantom value.
-    is_deeply( $agent->answer_config, {},
-        'omitted config yields an empty answer config' );
+    is_deeply( $agent->answer_config, {}, 'omitted config yields an empty answer config' );
 };
 
 # -------------------------------------------------------------------------
@@ -224,9 +238,11 @@ subtest 'prompt_add_section / prompt_add_subsection body="" default' => sub {
 
     my ($sec) = grep { $_->{title} eq 'Only Title' } @{ $agent->pom_sections };
     ok( $sec, 'section added with body omitted' );
-    ok( !exists $sec->{body},
+    ok(
+        !exists $sec->{body},
         'an empty default body is not emitted (reference Section.to_dict '
-            . 'writes body only when non-empty)' );
+            . 'writes body only when non-empty)'
+    );
 
     $agent->prompt_add_subsection( 'Only Title', 'Sub' );
     my ($sub) = grep { $_->{title} eq 'Sub' } @{ $sec->{subsections} || [] };
@@ -242,6 +258,7 @@ subtest 'prompt_add_section / prompt_add_subsection body="" default' => sub {
 # which is the only way to keep an invented default from creeping back.
 # =========================================================================
 subtest 'reference-REQUIRED parameters have no invented default' => sub {
+
     # Each of these asserts the ARITY error specifically. A bare ``!eval`` is
     # not enough — several of these methods can die for unrelated reasons, and
     # a test that only checks "it died" would stay green against a port that
@@ -253,10 +270,8 @@ subtest 'reference-REQUIRED parameters have no invented default' => sub {
         )
     {
         my ( $pkg, $label ) = @$cls;
-        ok( !eval { $pkg->from_payload(); 1 },
-            "$label.from_payload requires payload" );
-        like( $@, qr/Too few arguments/,
-            "...and it is an ARITY error ($label)" );
+        ok( !eval { $pkg->from_payload(); 1 }, "$label.from_payload requires payload" );
+        like( $@, qr/Too few arguments/, "...and it is an ARITY error ($label)" );
     }
 
     my $client = SignalWire::Relay::Client->new(
@@ -264,30 +279,37 @@ subtest 'reference-REQUIRED parameters have no invented default' => sub {
         token   => 't',
         host    => 'example.signalwire.com',
     );
+
     # Assert on the ARITY error specifically. A bare ``!eval`` is vacuous here:
     # with no live websocket ``execute`` dies for an unrelated reason too, so a
     # port that re-invented ``$params //= {}`` would still "fail" and the test
     # would pass while proving nothing. (Caught by mutation-testing this file.)
-    ok( !eval { $client->execute('calling.answer'); 1 },
-        'RelayClient.execute requires params' );
-    like( $@, qr/Too few arguments/,
-        '...and it is an ARITY error, not an incidental connection failure' );
+    ok( !eval { $client->execute('calling.answer'); 1 }, 'RelayClient.execute requires params' );
+    like(
+        $@,
+        qr/Too few arguments/,
+        '...and it is an ARITY error, not an incidental connection failure'
+    );
 
     my $svc = new_service();
-    ok( !eval { $svc->handle_request( 'GET', 'http://x/' ); 1 },
-        'SWMLService.handle_request requires headers' );
-    like( $@, qr/Too few arguments/,
-        '...and it is an ARITY error (handle_request)' );
+    ok(
+        !eval { $svc->handle_request( 'GET', 'http://x/' ); 1 },
+        'SWMLService.handle_request requires headers'
+    );
+    like( $@, qr/Too few arguments/, '...and it is an ARITY error (handle_request)' );
 
     # ...while the parameters the reference DOES default still work omitted,
     # so the mirror assertions above are not just "everything dies".
     ok( eval { SignalWire::Relay::Event->from_payload( {} ); 1 },
         'from_payload accepts an explicit payload' );
-    ok( eval { $svc->handle_request( 'GET', 'http://x/', {} ); 1 },
-        'handle_request accepts headers with body omitted (body IS optional)' );
+    ok(
+        eval { $svc->handle_request( 'GET', 'http://x/', {} ); 1 },
+        'handle_request accepts headers with body omitted (body IS optional)'
+    );
 };
 
 subtest 'SkillBase.get_skill_data requires raw_data' => sub {
+
     # SkillBase is abstract (``_skill_namespace`` dies without a skill_name),
     # so exercise the inherited method through a concrete subclass.
     require SignalWire::Skills::Builtin::InfoGatherer;
@@ -298,14 +320,10 @@ subtest 'SkillBase.get_skill_data requires raw_data' => sub {
 
     ok( !eval { $skill->get_skill_data(); 1 },
         'get_skill_data requires raw_data (no invented {} default)' );
-    like( $@, qr/Too few arguments/,
-        '...and it is an ARITY error (get_skill_data)' );
-    is_deeply( $skill->get_skill_data( {} ), {},
-        'get_skill_data accepts an explicit payload' );
+    like( $@, qr/Too few arguments/, '...and it is an ARITY error (get_skill_data)' );
+    is_deeply( $skill->get_skill_data( {} ), {}, 'get_skill_data accepts an explicit payload' );
     is_deeply(
-        $skill->get_skill_data(
-            { global_data => { $skill->_skill_namespace => { seen => 1 } } }
-        ),
+        $skill->get_skill_data( { global_data => { $skill->_skill_namespace => { seen => 1 } } } ),
         { seen => 1 },
         'and reads the skill namespace out of the supplied payload'
     );

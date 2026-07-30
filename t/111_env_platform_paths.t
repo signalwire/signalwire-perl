@@ -49,32 +49,33 @@ sub slurp {
 
 my $env_src = slurp($env_sh);
 
-like(
-    $env_src,
-    qr/\$Config\{path_sep\}/,
+like( $env_src, qr/\$Config\{path_sep\}/,
     '_env.sh derives the path separator from $Config{path_sep}, not a literal',
 );
 
 # The specific regression: no PERL5LIB assignment may hardcode ':' as the join.
 my @bad_joins = grep { /PERL5LIB=.*\$\{PERL5LIB:\+:/ } split /\n/, $env_src;
-is_deeply( \@bad_joins, [],
-    'no PERL5LIB assignment joins with a hardcoded ":" (Win32 uses ";")' );
+is_deeply( \@bad_joins, [], 'no PERL5LIB assignment joins with a hardcoded ":" (Win32 uses ";")' );
 
 # Every PERL5LIB prepend must interpolate the computed separator instead.
 my @joins = grep { /export PERL5LIB=/ } split /\n/, $env_src;
 ok( scalar(@joins) >= 2, 'found the PERL5LIB prepend sites' );
 for my $line (@joins) {
     next unless $line =~ /\$\{PERL5LIB:\+/;
-    like( $line, qr/\$\{PERL5LIB:\+\$SW_PATH_SEP\$PERL5LIB\}/,
-        'PERL5LIB prepend uses $SW_PATH_SEP' );
+    like(
+        $line,
+        qr/\$\{PERL5LIB:\+\$SW_PATH_SEP\$PERL5LIB\}/,
+        'PERL5LIB prepend uses $SW_PATH_SEP'
+    );
 }
 
 # Behavioural check: a Windows-shaped value joined with ';' must split back into
 # entries that are each a real drive-lettered path -- and joining with ':'
 # (the old code) must NOT. This is what actually broke @INC.
 {
-    my $incoming = 'D:\\a\\p\\local\\lib\\perl5;D:\\a\\p\\local\\lib\\perl5\\MSWin32-x64-multi-thread';
-    my $ll       = 'C:\\ll\\lib\\perl5';
+    my $incoming =
+        'D:\\a\\p\\local\\lib\\perl5;D:\\a\\p\\local\\lib\\perl5\\MSWin32-x64-multi-thread';
+    my $ll = 'C:\\ll\\lib\\perl5';
 
     my $good = $ll . ';' . $incoming;
     my @got  = split /;/, $good;
@@ -86,12 +87,12 @@ for my $line (@joins) {
     # the stray colon -- `C:\ll\lib\perl5:D:\a\p\local\lib\perl5` -- so the
     # local::lib is silently lost. A valid Win32 entry has exactly ONE drive
     # colon; this one has two.
-    my $bad = $ll . ':' . $incoming;
-    my @bad = split /;/, $bad;
+    my $bad      = $ll . ':' . $incoming;
+    my @bad      = split /;/, $bad;
     my ($welded) = grep { ( () = /:/g ) > 1 } @bad;
-    ok( defined $welded,
-        'the old ":" join welds two paths into one entry (the original defect)' );
-    like( ( $welded // '' ), qr/\Q$ll\E:D:/,
+    ok( defined $welded, 'the old ":" join welds two paths into one entry (the original defect)' );
+    like( ( $welded // '' ),
+        qr/\Q$ll\E:D:/,
         'the welded entry is the local::lib fused to the next path, so both are lost' );
 }
 
@@ -101,14 +102,15 @@ for my $line (@joins) {
 
 my $rt_src = slurp($run_tests);
 
-unlike(
-    $rt_src,
-    qr/^\s*(?:exec\s+)?prove\b/m,
+unlike( $rt_src, qr/^\s*(?:exec\s+)?prove\b/m,
     'run-tests.sh never invokes a bare `prove` from PATH',
 );
 
-like( $rt_src, qr/_sw_perl_tool\s+App::Prove/,
-    'run-tests.sh drives App::Prove through the resolved interpreter' );
+like(
+    $rt_src,
+    qr/_sw_perl_tool\s+App::Prove/,
+    'run-tests.sh drives App::Prove through the resolved interpreter'
+);
 
 like( $env_src, qr/SW_PERL=/, '_env.sh exports SW_PERL (the one chosen interpreter)' );
 
@@ -133,8 +135,7 @@ like( $env_src, qr/_pick_perl\.sh/,
     ok( -e $picker, 'scripts/_pick_perl.sh exists' );
 
     my $psrc = slurp($picker);
-    like( $psrc, qr/-MApp::Prove -e1/,
-        'picker validates a candidate by loading App::Prove' );
+    like( $psrc, qr/-MApp::Prove -e1/, 'picker validates a candidate by loading App::Prove' );
     like( $psrc, qr/RUNNER_TOOL_CACHE/,
         'picker considers the actions-setup-perl toolcache install' );
 
@@ -150,7 +151,7 @@ like( $env_src, qr/_pick_perl\.sh/,
     close $fh;
     chmod 0755, $fake_perl;
 
-    my $cache = File::Spec->catdir( $repo, '.sw-tmp', "pickperl-$$" );
+    my $cache  = File::Spec->catdir( $repo, '.sw-tmp', "pickperl-$$" );
     my $picked = `RUNNER_TOOL_CACHE='$cache' bash '$picker' 2>/dev/null`;
     chomp $picked;
     isnt( $picked, $fake_perl,
@@ -161,7 +162,8 @@ like( $env_src, qr/_pick_perl\.sh/,
     # over PATH, since it is the install the workflow provisioned and set PERL5LIB
     # for. Without this assertion a wrong find(1) depth silently stops discovering
     # the toolcache entirely and every run quietly falls back to PATH perl.
-    my $good_dir = File::Spec->catdir( $repo, '.sw-tmp', "pickgood-$$", 'perl', '9.9.9', 'x64', 'bin' );
+    my $good_dir =
+        File::Spec->catdir( $repo, '.sw-tmp', "pickgood-$$", 'perl', '9.9.9', 'x64', 'bin' );
     File::Path::make_path($good_dir);
     my $good_perl = File::Spec->catfile( $good_dir, 'perl' );
     open my $gfh, '>', $good_perl or die $!;
@@ -169,7 +171,7 @@ like( $env_src, qr/_pick_perl\.sh/,
     close $gfh;
     chmod 0755, $good_perl;
 
-    my $good_cache = File::Spec->catdir( $repo, '.sw-tmp', "pickgood-$$" );
+    my $good_cache  = File::Spec->catdir( $repo, '.sw-tmp', "pickgood-$$" );
     my $picked_good = `RUNNER_TOOL_CACHE='$good_cache' bash '$picker' 2>/dev/null`;
     chomp $picked_good;
     is( $picked_good, $good_perl,
@@ -184,10 +186,16 @@ like( $env_src, qr/_pick_perl\.sh/,
 # VOID context, run() mapped to an exit code. Chaining ->process_args(...)->run
 # dies ("Can't call method run on an undefined value"), and ignoring run()'s
 # boolean would exit 0 on a FAILING suite.
-like( $rt_src, qr/\$a->process_args\(\@ARGV\);/,
-    'process_args is called in void context (it is not chainable)' );
-like( $rt_src, qr/exit\(\s*\$a->run\s*\?\s*0\s*:\s*1\s*\)/,
-    'run() boolean is mapped to an exit code so a red suite fails the gate' );
+like(
+    $rt_src,
+    qr/\$a->process_args\(\@ARGV\);/,
+    'process_args is called in void context (it is not chainable)'
+);
+like(
+    $rt_src,
+    qr/exit\(\s*\$a->run\s*\?\s*0\s*:\s*1\s*\)/,
+    'run() boolean is mapped to an exit code so a red suite fails the gate'
+);
 
 # Prove the entry point really works with THIS perl, end to end, including that a
 # failing test yields a non-zero exit (a gate must not pass on red).
@@ -275,15 +283,13 @@ SKIP: {
     };
 
     my $posix = $probe->('');
-    isnt( $posix, '-j1',
-        'POSIX keeps parallel prove (clamp does NOT fire off-Win32)' );
+    isnt( $posix, '-j1', 'POSIX keeps parallel prove (clamp does NOT fire off-Win32)' );
 
     my $win = $probe->('OSTYPE=msys');
     is( $win, '-j1', 'a Win32-shaped OSTYPE clamps prove to -j1' );
 
     my $override = $probe->('OSTYPE=msys PROVE_JOBS=3');
-    is( $override, '-j3',
-        'explicit PROVE_JOBS overrides the Win32 clamp' );
+    is( $override, '-j3', 'explicit PROVE_JOBS overrides the Win32 clamp' );
 
     File::Path::remove_tree($probe_dir);
 }

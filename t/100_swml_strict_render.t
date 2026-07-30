@@ -39,8 +39,8 @@ subtest 'unknown verb raises' => sub {
 subtest 'misspelled / unknown keys on closed verbs raise' => sub {
     ok( raises_verb( 'answer', { maxduration => 5 } ), 'answer maxduration (misspelled) raises' );
     ok( raises_verb( 'answer', { wibble      => 1 } ), 'answer wibble (unknown) raises' );
-    ok( raises_verb( 'play',   { urlz => ['say:hi'] } ), 'play urlz (misspelled) raises' );
-    ok( raises_verb( 'play',   { url => 'say:hi', foo => 1 } ), 'play valid+unknown raises' );
+    ok( raises_verb( 'play',   { urlz => ['say:hi'] } ),         'play urlz (misspelled) raises' );
+    ok( raises_verb( 'play',   { url  => 'say:hi', foo => 1 } ), 'play valid+unknown raises' );
     ok( raises_verb( 'record', { formatt => 'wav' } ), 'record formatt (misspelled) raises' );
 };
 
@@ -62,14 +62,16 @@ subtest 'ai verb: unknown/misspelled top-level keys raise (GAP1)' => sub {
 # Verb-level: valid configs MUST render (regression guard).
 # ------------------------------------------------------------------
 subtest 'valid verbs render' => sub {
-    ok( !raises_verb( 'answer', { max_duration => 5 } ), 'valid answer renders' );
-    ok( !raises_verb( 'play',   { url => 'say:hi' } ),   'valid play renders' );
-    ok( !raises_verb( 'ai',     { prompt => { text => 'hi' } } ), 'valid ai renders' );
+    ok( !raises_verb( 'answer', { max_duration => 5 } ),                'valid answer renders' );
+    ok( !raises_verb( 'play',   { url          => 'say:hi' } ),         'valid play renders' );
+    ok( !raises_verb( 'ai',     { prompt       => { text => 'hi' } } ), 'valid ai renders' );
 
     # ai.params is the DELIBERATE open door for LLM tuning; a key inside it is
     # not a misspelling and MUST render.
-    ok( !raises_verb( 'ai', { prompt => { text => 'hi' }, params => { some_future_param => 1 } } ),
-        'ai.params open door renders' );
+    ok(
+        !raises_verb( 'ai', { prompt => { text => 'hi' }, params => { some_future_param => 1 } } ),
+        'ai.params open door renders'
+    );
 };
 
 # ------------------------------------------------------------------
@@ -100,60 +102,72 @@ sub raises_ctx {
 }
 
 subtest 'dangling step set_functions reference raises (GAP2/F3)' => sub {
-    my $raised = raises_ctx( sub {
-        my ($agent) = @_;
-        $agent->define_tool(
-            name => 'order_status', description => 'look up an order',
-            parameters => {}, handler => sub { return; },
-        );
-        my $cb   = $agent->define_contexts;
-        my $ctx  = $cb->add_context('default');
-        my $step = $ctx->add_step('help');
-        $step->set_text('help');
-        $step->set_functions( [ 'order_status', 'get_datetime' ] );  # get_datetime dangling
-        $cb->to_hash;
-    } );
+    my $raised = raises_ctx(
+        sub {
+            my ($agent) = @_;
+            $agent->define_tool(
+                name        => 'order_status',
+                description => 'look up an order',
+                parameters  => {},
+                handler     => sub { return; },
+            );
+            my $cb   = $agent->define_contexts;
+            my $ctx  = $cb->add_context('default');
+            my $step = $ctx->add_step('help');
+            $step->set_text('help');
+            $step->set_functions( [ 'order_status', 'get_datetime' ] );    # get_datetime dangling
+            $cb->to_hash;
+        }
+    );
     ok( $raised, "step whitelisting an unregistered function raises" );
 };
 
 subtest 'registered / reserved-native step functions render' => sub {
-    my $registered = raises_ctx( sub {
-        my ($agent) = @_;
-        $agent->define_tool(
-            name => 'order_status', description => 'look up an order',
-            parameters => {}, handler => sub { return; },
-        );
-        my $cb   = $agent->define_contexts;
-        my $ctx  = $cb->add_context('default');
-        my $step = $ctx->add_step('help');
-        $step->set_text('help');
-        $step->set_functions( ['order_status'] );
-        $cb->to_hash;
-    } );
+    my $registered = raises_ctx(
+        sub {
+            my ($agent) = @_;
+            $agent->define_tool(
+                name        => 'order_status',
+                description => 'look up an order',
+                parameters  => {},
+                handler     => sub { return; },
+            );
+            my $cb   = $agent->define_contexts;
+            my $ctx  = $cb->add_context('default');
+            my $step = $ctx->add_step('help');
+            $step->set_text('help');
+            $step->set_functions( ['order_status'] );
+            $cb->to_hash;
+        }
+    );
     ok( !$registered, "step referencing a registered tool renders" );
 
-    my $native = raises_ctx( sub {
-        my ($agent) = @_;
-        my $cb   = $agent->define_contexts;
-        my $ctx  = $cb->add_context('default');
-        my $step = $ctx->add_step('help');
-        $step->set_text('help');
-        $step->set_functions( [ 'next_step', 'change_context' ] );
-        $cb->to_hash;
-    } );
+    my $native = raises_ctx(
+        sub {
+            my ($agent) = @_;
+            my $cb      = $agent->define_contexts;
+            my $ctx     = $cb->add_context('default');
+            my $step    = $ctx->add_step('help');
+            $step->set_text('help');
+            $step->set_functions( [ 'next_step', 'change_context' ] );
+            $cb->to_hash;
+        }
+    );
     ok( !$native, "reserved native tools (next_step/change_context) are not dangling" );
 };
 
 subtest 'dangling valid_contexts reference raises' => sub {
-    my $raised = raises_ctx( sub {
-        my ($agent) = @_;
-        my $cb   = $agent->define_contexts;
-        my $ctx  = $cb->add_context('default');
-        my $step = $ctx->add_step('help');
-        $step->set_text('help');
-        $step->set_valid_contexts( ['nowhere'] );
-        $cb->to_hash;
-    } );
+    my $raised = raises_ctx(
+        sub {
+            my ($agent) = @_;
+            my $cb      = $agent->define_contexts;
+            my $ctx     = $cb->add_context('default');
+            my $step    = $ctx->add_step('help');
+            $step->set_text('help');
+            $step->set_valid_contexts( ['nowhere'] );
+            $cb->to_hash;
+        }
+    );
     ok( $raised, "valid_contexts referencing an undefined context raises" );
 };
 

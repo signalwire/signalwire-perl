@@ -26,8 +26,10 @@ my $agent = SignalWire::Agent::AgentBase->new(
 );
 
 # Configure the voice AI agent
-$agent->prompt_add_section('Role', 'You are a helpful voice assistant.');
-$agent->prompt_add_section('Instructions', '',
+$agent->prompt_add_section( 'Role', 'You are a helpful voice assistant.' );
+$agent->prompt_add_section(
+    'Instructions',
+    '',
     bullets => [
         'Greet callers warmly',
         'Be concise in your responses',
@@ -35,8 +37,8 @@ $agent->prompt_add_section('Instructions', '',
     ],
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 # Tool: get_time
 $agent->define_tool(
@@ -44,8 +46,8 @@ $agent->define_tool(
     description => 'Get the current time',
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
-        my ($args, $raw) = @_;
-        my $now = strftime('%I:%M %p', localtime);
+        my ( $args, $raw ) = @_;
+        my $now = strftime( '%I:%M %p', localtime );
         return SignalWire::SWAIG::FunctionResult->new("The current time is $now");
     },
 );

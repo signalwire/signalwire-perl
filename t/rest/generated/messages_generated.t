@@ -23,38 +23,42 @@ subtest 'messages_create_success' => sub {
     my $client = MockTest::client();
     $client->messages->create();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'messages.create_message', 'matched_route messages.create_message');
+    is( $last->{method}, 'POST', 'method POST' );
+    is( $last->{matched_route}, 'messages.create_message',
+        'matched_route messages.create_message' );
 };
 
 subtest 'messages_create_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('messages.create_message', 500, { error => 'x' });
+    MockTest::scenario_set( 'messages.create_message', 500, { error => 'x' } );
     my $ok = eval { $client->messages->create(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'messages.create_message', 'matched_route messages.create_message');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'messages.create_message', 'matched_route messages.create_message' );
 };
 
 subtest 'messages_update_success' => sub {
     my $client = MockTest::client();
     $client->messages->update('x');
     my $last = MockTest::journal_last();
-    is($last->{method}, 'PATCH', 'method PATCH');
-    is($last->{matched_route}, 'messages.update_message', 'matched_route messages.update_message');
+    is( $last->{method}, 'PATCH', 'method PATCH' );
+    is( $last->{matched_route}, 'messages.update_message',
+        'matched_route messages.update_message' );
 };
 
 subtest 'messages_update_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('messages.update_message', 500, { error => 'x' });
+    MockTest::scenario_set( 'messages.update_message', 500, { error => 'x' } );
     my $ok = eval { $client->messages->update('x'); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'messages.update_message', 'matched_route messages.update_message');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'messages.update_message', 'matched_route messages.update_message' );
 };
 
 done_testing();

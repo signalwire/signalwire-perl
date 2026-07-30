@@ -43,7 +43,7 @@
 use strict;
 use warnings;
 use Test::More;
-use JSON ();
+use JSON         ();
 use MIME::Base64 ();
 
 use SignalWire::Agent::AgentBase;
@@ -120,17 +120,17 @@ sub http_swaig {
 
     open my $input, '<', \$body or die "cannot open body handle: $!";
     my $env = {
-        PATH_INFO      => '/tok/swaig',
-        REQUEST_METHOD => 'POST',
-        QUERY_STRING   => $query,
-        CONTENT_TYPE   => 'application/json',
+        PATH_INFO          => '/tok/swaig',
+        REQUEST_METHOD     => 'POST',
+        QUERY_STRING       => $query,
+        CONTENT_TYPE       => 'application/json',
         HTTP_AUTHORIZATION => basic_auth_header(),
-        'psgi.input'   => $input,
-        'psgi.errors'  => \*STDERR,
+        'psgi.input'       => $input,
+        'psgi.errors'      => \*STDERR,
     };
 
     my ( $status, $headers, $res_body ) = @{ $agent->psgi_app->($env) };
-    my $joined = ref $res_body eq 'ARRAY' ? join( '', @$res_body ) : "$res_body";
+    my $joined  = ref $res_body eq 'ARRAY' ? join( '', @$res_body ) : "$res_body";
     my $decoded = eval { JSON::decode_json($joined) };
     return ( $status, $decoded, $joined );
 }
@@ -157,7 +157,7 @@ subtest 'HTTP: secure tool REQUIRES a valid __token' => sub {
             token    => forged_token( $agent, 'secure_tool' ),
             call_id  => $CALL_ID,
         );
-        is( $status, 200, 'refusal is a 200, NOT an HTTP error status' );
+        is( $status,           200,      'refusal is a 200, NOT an HTTP error status' );
         is( $body->{response}, $REFUSAL, 'refusal FunctionResult body' );
         isnt( $body->{response}, 'SECURE RAN', 'the secure handler did NOT run' );
     };
@@ -177,6 +177,7 @@ subtest 'HTTP: secure tool REQUIRES a valid __token' => sub {
 
     subtest 'call_id absent -> REFUSED (unvalidated, never a bypass)' => sub {
         my $agent = build_agent();
+
         # A REAL token for the real call, but the body carries no call_id — so
         # there is nothing to bind it to. Dropping the call_id must not be a
         # way to turn a secure tool into an open one.
@@ -194,10 +195,10 @@ subtest 'HTTP: secure tool REQUIRES a valid __token' => sub {
 
 subtest 'HTTP: insecure tool runs UNGATED in every case' => sub {
     my @cases = (
-        [ 'valid token',    sub { valid_token( $_[0], 'insecure_tool' ) },  $CALL_ID ],
-        [ 'forged token',   sub { forged_token( $_[0], 'insecure_tool' ) }, $CALL_ID ],
-        [ 'absent token',   sub { undef },                                  $CALL_ID ],
-        [ 'no call_id',     sub { undef },                                  undef ],
+        [ 'valid token',  sub { valid_token( $_[0], 'insecure_tool' ) },  $CALL_ID ],
+        [ 'forged token', sub { forged_token( $_[0], 'insecure_tool' ) }, $CALL_ID ],
+        [ 'absent token', sub { undef },                                  $CALL_ID ],
+        [ 'no call_id',   sub { undef },                                  undef ],
     );
     for my $case (@cases) {
         my ( $label, $tokgen, $call_id ) = @$case;
@@ -208,9 +209,8 @@ subtest 'HTTP: insecure tool runs UNGATED in every case' => sub {
             token    => $tokgen->($agent),
             call_id  => $call_id,
         );
-        is( $status, 200, "insecure/$label -> 200" );
-        is( $body->{response}, 'INSECURE RAN',
-            "insecure/$label -> handler RAN ungated" );
+        is( $status,           200,            "insecure/$label -> 200" );
+        is( $body->{response}, 'INSECURE RAN', "insecure/$label -> handler RAN ungated" );
     }
 };
 
@@ -237,7 +237,7 @@ sub lambda_swaig {
     );
     $event{queryStringParameters} = { __token => $token } if defined $token;
 
-    my $res = $agent->handle_serverless_request( mode => 'lambda', event => \%event );
+    my $res     = $agent->handle_serverless_request( mode => 'lambda', event => \%event );
     my $decoded = eval { JSON::decode_json( $res->{body} ) };
     return ( $res->{statusCode}, $decoded, $res->{body} );
 }
@@ -251,7 +251,7 @@ subtest 'LAMBDA: secure tool REQUIRES a valid __token' => sub {
             token    => valid_token( $agent, 'secure_tool' ),
             call_id  => $CALL_ID,
         );
-        is( $status, 200, 'valid token -> 200' );
+        is( $status,           200,          'valid token -> 200' );
         is( $body->{response}, 'SECURE RAN', 'the secure handler RAN on lambda' );
     };
 
@@ -263,7 +263,7 @@ subtest 'LAMBDA: secure tool REQUIRES a valid __token' => sub {
             token    => forged_token( $agent, 'secure_tool' ),
             call_id  => $CALL_ID,
         );
-        is( $status, 200, 'refusal is a 200, NOT an HTTP error status' );
+        is( $status,           200,      'refusal is a 200, NOT an HTTP error status' );
         is( $body->{response}, $REFUSAL, 'refusal FunctionResult body' );
         isnt( $body->{response}, 'SECURE RAN', 'the secure handler did NOT run' );
     };
@@ -276,9 +276,8 @@ subtest 'LAMBDA: secure tool REQUIRES a valid __token' => sub {
             token    => undef,
             call_id  => $CALL_ID,
         );
-        is( $status, 200, 'refusal is a 200' );
-        is( $body->{response}, $REFUSAL,
-            'the lambda path is NOT a weaker transport than HTTP' );
+        is( $status,           200,      'refusal is a 200' );
+        is( $body->{response}, $REFUSAL, 'the lambda path is NOT a weaker transport than HTTP' );
     };
 
     subtest 'call_id absent -> REFUSED (unvalidated, never a bypass)' => sub {
@@ -311,9 +310,8 @@ subtest 'LAMBDA: insecure tool runs UNGATED in every case' => sub {
             token    => $tokgen->($agent),
             call_id  => $call_id,
         );
-        is( $status, 200, "insecure/$label -> 200" );
-        is( $body->{response}, 'INSECURE RAN',
-            "insecure/$label -> handler RAN ungated" );
+        is( $status,           200,            "insecure/$label -> 200" );
+        is( $body->{response}, 'INSECURE RAN', "insecure/$label -> handler RAN ungated" );
     }
 };
 
@@ -331,14 +329,17 @@ subtest 'LAMBDA path-routed function is gated too' => sub {
             rawPath => '/secure_tool',
             headers => { authorization => basic_auth_header() },
             body    => JSON::encode_json(
-                { function => 'secure_tool', argument => { parsed => [ {} ] }, call_id => $CALL_ID }
+                {
+                    function => 'secure_tool',
+                    argument => { parsed => [ {} ] },
+                    call_id  => $CALL_ID
+                }
             ),
         },
     );
     is( $res->{statusCode}, 200, 'refusal is a 200' );
     my $body = JSON::decode_json( $res->{body} );
-    is( $body->{response}, $REFUSAL,
-        'path-based routing is not a bypass of the token check' );
+    is( $body->{response}, $REFUSAL, 'path-based routing is not a bypass of the token check' );
 };
 
 # ---------------------------------------------------------------------------
@@ -349,24 +350,32 @@ subtest 'LAMBDA path-routed function is gated too' => sub {
 subtest '_swaig_validate_token: the shared decision core' => sub {
     my $agent = build_agent();
 
-    is( $agent->_swaig_validate_token( 'secure_tool', valid_token( $agent, 'secure_tool' ), $CALL_ID ),
-        undef, 'valid -> undef (proceed)' );
+    is(
+        $agent->_swaig_validate_token(
+            'secure_tool', valid_token( $agent, 'secure_tool' ), $CALL_ID
+        ),
+        undef,
+        'valid -> undef (proceed)'
+    );
 
     my $refusal = $agent->_swaig_validate_token( 'secure_tool',
         forged_token( $agent, 'secure_tool' ), $CALL_ID );
-    is( ref $refusal, 'HASH', 'forged -> a refusal hashref' );
+    is( ref $refusal,         'HASH',   'forged -> a refusal hashref' );
     is( $refusal->{response}, $REFUSAL, 'refusal carries the FunctionResult response' );
 
-    isnt( $agent->_swaig_validate_token( 'secure_tool', undef, $CALL_ID ), undef,
-        'absent token -> refusal' );
-    isnt( $agent->_swaig_validate_token( 'secure_tool', valid_token( $agent, 'secure_tool' ), undef ),
-        undef, 'absent call_id -> refusal' );
+    isnt( $agent->_swaig_validate_token( 'secure_tool', undef, $CALL_ID ),
+        undef, 'absent token -> refusal' );
+    isnt(
+        $agent->_swaig_validate_token( 'secure_tool', valid_token( $agent, 'secure_tool' ), undef ),
+        undef,
+        'absent call_id -> refusal'
+    );
 
-    is( $agent->_swaig_validate_token( 'insecure_tool', undef, undef ), undef,
-        'insecure tool -> undef (proceed) even with nothing at all' );
+    is( $agent->_swaig_validate_token( 'insecure_tool', undef, undef ),
+        undef, 'insecure tool -> undef (proceed) even with nothing at all' );
 
-    is( $agent->_swaig_validate_token( 'no_such_tool', undef, undef ), undef,
-        'unregistered function -> undef; dispatch decides, not the token check' );
+    is( $agent->_swaig_validate_token( 'no_such_tool', undef, undef ),
+        undef, 'unregistered function -> undef; dispatch decides, not the token check' );
 };
 
 done_testing();

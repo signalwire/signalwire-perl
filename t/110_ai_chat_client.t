@@ -13,6 +13,7 @@ use JSON qw(encode_json decode_json);
 # A minimal stub transport answering ->request like HTTP::Tiny. Declared up top
 # (before any use) so its Moo accessor exists when the test body runs.
 BEGIN {
+
     package StubUA;    ## no critic (ProhibitMultiplePackages)
     use Moo;
     has 'on_request' => ( is => 'ro', required => 1 );
@@ -32,11 +33,12 @@ my @FORBIDDEN_IN_PARAMS = qw(project_id project token api_token space_id space);
 # The canned success results the mock emits per method (mirrors mock_ai_chat).
 my %CANNED = (
     create_conversation => { status => 'created', id => 'conv-1', initial_message => 'hello' },
-    chat                => { response => 'hi there', user_event => { event_type => 'demo', n => 1 } },
-    end_conversation    => { status => 'ended', id => 'conv-1' },
-    delete              => { status => 'deleted', id => 'conv-1' },
-    chat_log            => { chat_log => [ { role => 'user', content => 'm' } ], call_timeline => [ { t => 1 } ] },
-    summarize           => { summary => 'a concise summary' },
+    chat             => { response => 'hi there', user_event => { event_type => 'demo', n => 1 } },
+    end_conversation => { status   => 'ended',    id         => 'conv-1' },
+    delete           => { status   => 'deleted',  id         => 'conv-1' },
+    chat_log         =>
+        { chat_log => [ { role => 'user', content => 'm' } ], call_timeline => [ { t => 1 } ] },
+    summarize => { summary => 'a concise summary' },
 );
 
 # Build a stub UA that behaves like mock_ai_chat: it records every request and
@@ -57,7 +59,7 @@ sub stub_ua {
                 authorization => $opts->{headers}{Authorization},
                 };
             my $envelope = $responder->( $payload->{method}, $payload->{params} );
-            my $body = { jsonrpc => '2.0', %$envelope, id => $payload->{id} };
+            my $body     = { jsonrpc => '2.0', %$envelope, id => $payload->{id} };
             return {
                 success => 1,
                 status  => 200,
@@ -95,19 +97,29 @@ sub new_client {
 {
     local $ENV{SIGNALWIRE_PROJECT_ID};
     delete local $ENV{SIGNALWIRE_PROJECT_ID};
-    my $err = do { local $@; eval { SignalWire::AIChat::Client->new( url => 'http://x' ) }; $@ };
+    my $err = do {
+        local $@;
+        eval { SignalWire::AIChat::Client->new( url => 'http://x' ) };
+        $@;
+    };
     like( $err, qr/project is required/, 'requires a project (arg or env)' );
 }
 
 {
     my $c = SignalWire::AIChat::Client->new( project => 'p', token => 't', space => 'myspace' );
-    is( $c->url, 'https://myspace.signalwire.com/api/ai/chat',
-        'builds the space URL when no explicit url is given' );
+    is(
+        $c->url,
+        'https://myspace.signalwire.com/api/ai/chat',
+        'builds the space URL when no explicit url is given'
+    );
 }
 
 {
     my $c = SignalWire::AIChat::Client->new(
-        project => 'p', token => 't', url => 'http://local/api/ai/chat' );
+        project => 'p',
+        token   => 't',
+        url     => 'http://local/api/ai/chat'
+    );
     is( $c->url, 'http://local/api/ai/chat', 'uses an explicit url verbatim' );
 }
 
@@ -124,7 +136,12 @@ sub new_client {
 {
     my ( $ua, $requests ) = stub_ua( \&mock_responder );
     my $client = new_client($ua);
-    $client->create_conversation( 'conv-1', config_url => 'http://cfg', timeout => 30, reinit => 1 );
+    $client->create_conversation(
+        'conv-1',
+        config_url => 'http://cfg',
+        timeout    => 30,
+        reinit     => 1
+    );
 
     my $req = $requests->[0];
     like( $req->{authorization}, qr/^Basic /, 'sends HTTP Basic auth' );
@@ -140,8 +157,8 @@ sub new_client {
     my ( $ua, $requests ) = stub_ua( \&mock_responder );
     my $info = new_client($ua)
         ->create_conversation( 'conv-1', config_url => 'http://cfg', timeout => 30, reinit => 1 );
-    is( $requests->[0]{method}, 'create_conversation', 'create hits create_conversation' );
-    is( $requests->[0]{params}{id},                   'conv-1',    'id on the wire' );
+    is( $requests->[0]{method},     'create_conversation', 'create hits create_conversation' );
+    is( $requests->[0]{params}{id}, 'conv-1',              'id on the wire' );
     is( $requests->[0]{params}{config_url},           'http://cfg', 'config_url on the wire' );
     is( $requests->[0]{params}{conversation_timeout}, 30, 'timeout -> conversation_timeout' );
     ok( $requests->[0]{params}{reinit}, 'reinit on the wire' );
@@ -153,12 +170,12 @@ sub new_client {
 {
     my ( $ua, $requests ) = stub_ua( \&mock_responder );
     my $reply = new_client($ua)->chat( 'conv-1', 'hello', timeout => 30, reinit => 1 );
-    is( $requests->[0]{method},         'chat',    'chat hits chat' );
-    is( $requests->[0]{params}{message}, 'hello',  'message on the wire' );
-    is( $requests->[0]{params}{role},    'user',   'role defaults to user' );
-    is( $requests->[0]{params}{conversation_timeout}, 30, 'timeout -> conversation_timeout' );
-    is( $reply->text,            'hi there', 'decoded response text' );
-    is( $reply->conversation_id, 'conv-1',   'conversation_id echoed' );
+    is( $requests->[0]{method},                       'chat',  'chat hits chat' );
+    is( $requests->[0]{params}{message},              'hello', 'message on the wire' );
+    is( $requests->[0]{params}{role},                 'user',  'role defaults to user' );
+    is( $requests->[0]{params}{conversation_timeout}, 30,      'timeout -> conversation_timeout' );
+    is( $reply->text,                                 'hi there', 'decoded response text' );
+    is( $reply->conversation_id,                      'conv-1',   'conversation_id echoed' );
     is_deeply( $reply->user_event, { event_type => 'demo', n => 1 }, 'decoded user_event' );
 }
 
@@ -179,19 +196,26 @@ sub new_client {
     my $log = new_client($ua)->log('conv-1');
     is( $requests->[0]{method}, 'chat_log', 'log hits chat_log' );
     is_deeply( $log->messages,      [ { role => 'user', content => 'm' } ], 'decoded messages' );
-    is_deeply( $log->call_timeline, [ { t => 1 } ],                         'decoded call_timeline' );
+    is_deeply( $log->call_timeline, [ { t    => 1 } ], 'decoded call_timeline' );
 }
 
 {
     my ( $ua, $requests ) = stub_ua( \&mock_responder );
-    is( new_client($ua)->summarize('conv-1'),
-        'a concise summary', 'summarize returns the summary on the {summary} branch' );
+    is(
+        new_client($ua)->summarize('conv-1'),
+        'a concise summary',
+        'summarize returns the summary on the {summary} branch'
+    );
 }
 
 {
     my ( $ua, $requests ) = stub_ua( \&mock_responder );
-    new_client($ua)->summarize( 'conv-1',
-        summary_prompt => 'be brief', temperature => 0.2, max_tokens => 64 );
+    new_client($ua)->summarize(
+        'conv-1',
+        summary_prompt => 'be brief',
+        temperature    => 0.2,
+        max_tokens     => 64
+    );
     is( $requests->[0]{params}{summary_prompt}, 'be brief', 'summary_prompt on the wire' );
     is( $requests->[0]{params}{temperature},    0.2,        'temperature on the wire' );
     is( $requests->[0]{params}{max_tokens},     64,         'max_tokens on the wire' );
@@ -204,8 +228,10 @@ sub new_client {
     my $summary = eval { $client->summarize('__summarize_error') };
     my $err     = $@;
     ok( !defined $summary, 'summarize({error}) does NOT return a value' );
-    ok( ref $err && $err->isa('SignalWire::AIChat::SummaryError'),
-        'summarize({error}) raises SummaryError (never a silent empty string)' );
+    ok(
+        ref $err && $err->isa('SignalWire::AIChat::SummaryError'),
+        'summarize({error}) raises SummaryError (never a silent empty string)'
+    );
     ok( $err->isa('SignalWire::AIChat::Error'), 'SummaryError is-a base AIChat error' );
     ok( !defined $err->code, 'SummaryError carries a null/undef code (success-envelope failure)' );
     is( $err->message, 'Failed to generate summary', 'SummaryError carries the server message' );
@@ -213,9 +239,10 @@ sub new_client {
 
 # summary wins when both summary and error are present.
 {
-    my ( $ua, $requests ) = stub_ua( sub { return { result => { summary => 's', error => 'ignored' } } } );
-    is( new_client($ua)->summarize('conv-1'), 's',
-        'does NOT raise when both summary and error present (summary wins)' );
+    my ( $ua, $requests ) =
+        stub_ua( sub { return { result => { summary => 's', error => 'ignored' } } } );
+    is( new_client($ua)->summarize('conv-1'),
+        's', 'does NOT raise when both summary and error present (summary wins)' );
 }
 
 # ── JSON-RPC error mapping ───────────────────────────────────────────
@@ -227,12 +254,12 @@ my @CASES = (
     [ -32009, 'SignalWire::AIChat::AuthenticationError' ],
 );
 for my $case (@CASES) {
-    my ( $code, $class ) = @$case;
+    my ( $code, $class )  = @$case;
     my ( $ua, $requests ) = stub_ua( \&mock_responder );
     my $ok  = eval { new_client($ua)->chat( "__err_$code", 'x' ); 1 };
     my $err = $@;
-    ok( !$ok, "chat forcing $code raises" );
-    ok( ref $err && $err->isa($class), "code $code maps to $class" );
+    ok( !$ok,                                   "chat forcing $code raises" );
+    ok( ref $err && $err->isa($class),          "code $code maps to $class" );
     ok( $err->isa('SignalWire::AIChat::Error'), "code $code error is-a base" );
     is( $err->code, $code, "raised error carries code $code" );
 }
@@ -242,7 +269,7 @@ for my $case (@CASES) {
     my ( $ua, $requests ) = stub_ua( \&mock_responder );
     my $ok  = eval { new_client($ua)->chat( '__err_-32602', 'x' ); 1 };
     my $err = $@;
-    ok( !$ok, 'unmapped code raises' );
+    ok( !$ok,                                               'unmapped code raises' );
     ok( ref $err && $err->isa('SignalWire::AIChat::Error'), 'unmapped code -> base AIChatError' );
     ok( !$err->isa('SignalWire::AIChat::ConversationNotFoundError'),
         'unmapped code is NOT a typed subclass' );
@@ -255,7 +282,7 @@ for my $case (@CASES) {
         on_request => sub { return { success => 0, status => 502, content => '<html>not json' } } );
     my $ok  = eval { new_client($ua)->chat( 'conv-1', 'x' ); 1 };
     my $err = $@;
-    ok( !$ok, 'non-JSON body raises' );
+    ok( !$ok,                                               'non-JSON body raises' );
     ok( ref $err && $err->isa('SignalWire::AIChat::Error'), 'non-JSON body -> AIChatError' );
 }
 

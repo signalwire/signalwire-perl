@@ -19,7 +19,7 @@ my $factory = SignalWire::Skills::SkillRegistry->get_factory('claude_skills');
 ok( defined $factory, 'factory found' );
 
 # --- Build a temp skills dir with a sample skill (SKILL.md + a section) ---
-my $root = tempdir( CLEANUP => 1 );
+my $root      = tempdir( CLEANUP => 1 );
 my $skill_dir = File::Spec->catdir( $root, 'code-review' );
 make_path($skill_dir);
 
@@ -68,7 +68,8 @@ subtest 'discovers SKILL.md and registers a declared tool' => sub {
 
     ok( exists $agent->tools->{claude_code_review}, 'claude_code_review tool registered' );
     my $tool = $agent->tools->{claude_code_review};
-    is( $tool->{description}, 'Review a diff for correctness bugs', 'description from frontmatter' );
+    is( $tool->{description}, 'Review a diff for correctness bugs',
+        'description from frontmatter' );
 
     # The supporting checklist.md surfaces as a section enum value.
     my $section = $tool->{parameters}{properties}{section};
@@ -78,7 +79,8 @@ subtest 'discovers SKILL.md and registers a declared tool' => sub {
 
 subtest 'custom prefix' => sub {
     my $agent = SignalWire::Agent::AgentBase->new( name => 'cs_prefix' );
-    my $skill = $factory->new( agent => $agent, params => { skills_path => $root, tool_prefix => 'sk_' } );
+    my $skill =
+        $factory->new( agent => $agent, params => { skills_path => $root, tool_prefix => 'sk_' } );
     ok( $skill->setup, 'setup' );
     $skill->register_tools;
     ok( exists $agent->tools->{sk_code_review}, 'custom prefix applied to tool name' );
@@ -93,7 +95,7 @@ subtest 'handler substitutes $ARGUMENTS and ${CLAUDE_SKILL_DIR}' => sub {
     my $tool   = $agent->tools->{claude_code_review};
     my $result = $tool->{_handler}->( { arguments => 'file.pm' }, {} );
     my $text   = ref($result) && $result->can('response') ? $result->response : "$result";
-    like( $text, qr/Focus: file\.pm/, '$ARGUMENTS substituted into body' );
+    like( $text, qr/Focus: file\.pm/,               '$ARGUMENTS substituted into body' );
     like( $text, qr/\QSkill dir: \E\Q$skill_dir\E/, '${CLAUDE_SKILL_DIR} substituted' );
     unlike( $text, qr/\$ARGUMENTS/, 'no bare $ARGUMENTS left' );
 };

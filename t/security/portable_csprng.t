@@ -46,7 +46,7 @@ subtest '_random_bytes: two successive calls differ' => sub {
 subtest '_random_bytes rejects a bad count rather than guessing' => sub {
     for my $bad ( 0, -1, undef, '', 'abc', '4.5' ) {
         my $label = defined $bad ? "'$bad'" : 'undef';
-        my $ok = eval { SignalWire::Core::Random::_random_bytes($bad); 1 };
+        my $ok    = eval { SignalWire::Core::Random::_random_bytes($bad); 1 };
         ok( !$ok, "_random_bytes($label) dies" );
     }
 };
@@ -67,8 +67,7 @@ subtest '_random_hex: 2*n lowercase hex chars, distinct across calls' => sub {
 subtest '_random_urlsafe: URL-safe, unpadded, distinct across calls' => sub {
     for my $n ( 1, 16, 32 ) {
         my $tok = SignalWire::Core::Random::_random_urlsafe($n);
-        like( $tok, qr{\A[A-Za-z0-9_-]+\z},
-            "_random_urlsafe($n) uses only the URL-safe alphabet" );
+        like( $tok, qr{\A[A-Za-z0-9_-]+\z}, "_random_urlsafe($n) uses only the URL-safe alphabet" );
         unlike( $tok, qr/=/, "_random_urlsafe($n) is unpadded" );
     }
     isnt(
@@ -107,8 +106,8 @@ subtest 'every consumer draws through the shared helper' => sub {
         qr{\A[A-Za-z0-9_-]+\z}, 'SessionManager::_random_urlsafe(16)' );
     like( SignalWire::Core::SecurityConfig::_token_urlsafe(32),
         qr{\A[A-Za-z0-9_-]+\z}, 'SecurityConfig::_token_urlsafe(32)' );
-    is( length( SignalWire::SWML::Service::_random_hex(32) ),
-        64, 'SWML::Service::_random_hex(32)' );
+    is( length( SignalWire::SWML::Service::_random_hex(32) ), 64,
+        'SWML::Service::_random_hex(32)' );
     is( length( SignalWire::Agent::AgentBase::_generate_random_password() ),
         64, 'AgentBase::_generate_random_password' );
 
@@ -132,6 +131,7 @@ subtest 'no consumer reads a POSIX device path or calls rand()' => sub {
         lib/SignalWire/Relay/Call.pm
         lib/SignalWire/Relay/Client.pm
     );
+
     for my $f (@files) {
         open my $fh, '<', $f or do { fail("open $f: $!"); next };
         my @bad;

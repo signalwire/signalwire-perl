@@ -23,19 +23,20 @@ subtest 'pubsub_create_token_success' => sub {
     my $client = MockTest::client();
     $client->pubsub->create_token();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'pubsub.create_token', 'matched_route pubsub.create_token');
+    is( $last->{method},        'POST',                'method POST' );
+    is( $last->{matched_route}, 'pubsub.create_token', 'matched_route pubsub.create_token' );
 };
 
 subtest 'pubsub_create_token_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('pubsub.create_token', 500, { error => 'x' });
+    MockTest::scenario_set( 'pubsub.create_token', 500, { error => 'x' } );
     my $ok = eval { $client->pubsub->create_token(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'pubsub.create_token', 'matched_route pubsub.create_token');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'pubsub.create_token', 'matched_route pubsub.create_token' );
 };
 
 done_testing();

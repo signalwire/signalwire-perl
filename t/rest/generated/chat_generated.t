@@ -23,19 +23,20 @@ subtest 'chat_create_token_success' => sub {
     my $client = MockTest::client();
     $client->chat->create_token();
     my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'chat.create_chat_token', 'matched_route chat.create_chat_token');
+    is( $last->{method},        'POST',                   'method POST' );
+    is( $last->{matched_route}, 'chat.create_chat_token', 'matched_route chat.create_chat_token' );
 };
 
 subtest 'chat_create_token_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set('chat.create_chat_token', 500, { error => 'x' });
+    MockTest::scenario_set( 'chat.create_chat_token', 500, { error => 'x' } );
     my $ok = eval { $client->chat->create_token(); 1 };
-    ok(!$ok, 'call raised');
+    ok( !$ok, 'call raised' );
     my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'chat.create_chat_token', 'matched_route chat.create_chat_token');
+    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
+    is( $e->status_code, 500, 'status 500' );
+    is( MockTest::journal_last()->{matched_route},
+        'chat.create_chat_token', 'matched_route chat.create_chat_token' );
 };
 
 done_testing();

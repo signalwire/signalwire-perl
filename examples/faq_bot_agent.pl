@@ -19,15 +19,18 @@ my $agent = SignalWire::Prefabs::FAQBot->new(
     faqs    => [
         {
             question => 'What is SignalWire?',
-            answer   => 'SignalWire is a communications platform that provides APIs for voice, video, and messaging.',
+            answer   =>
+'SignalWire is a communications platform that provides APIs for voice, video, and messaging.',
         },
         {
             question => 'How do I create an AI Agent?',
-            answer   => 'You can create an AI Agent using the SignalWire AI Agent SDK, which provides a simple way to build and deploy conversational AI agents.',
+            answer   =>
+'You can create an AI Agent using the SignalWire AI Agent SDK, which provides a simple way to build and deploy conversational AI agents.',
         },
         {
             question => 'What is SWML?',
-            answer   => 'SWML (SignalWire Markup Language) is a markup language for defining communications workflows, including AI interactions.',
+            answer   =>
+'SWML (SignalWire Markup Language) is a markup language for defining communications workflows, including AI interactions.',
         },
         {
             question => 'What are your hours?',
@@ -41,8 +44,8 @@ my $agent = SignalWire::Prefabs::FAQBot->new(
     suggest_related => 1,
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 # Post-prompt for structured summary
 $agent->set_post_prompt(<<'POST');
@@ -54,12 +57,14 @@ Provide a JSON summary of the interaction:
 }
 POST
 
-$agent->on_summary(sub {
-    my ($summary, $raw) = @_;
-    if ($summary) {
-        print "FAQ Bot conversation summary: " . encode_json($summary) . "\n";
+$agent->on_summary(
+    sub {
+        my ( $summary, $raw ) = @_;
+        if ($summary) {
+            print "FAQ Bot conversation summary: " . encode_json($summary) . "\n";
+        }
     }
-});
+);
 
 print "Starting FAQ Bot Agent\n";
 print "Available at: http://localhost:3000/faq\n";

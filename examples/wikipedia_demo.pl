@@ -19,8 +19,8 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/wiki-demo',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 print "Creating Wikipedia search assistant...\n";
 
@@ -33,11 +33,14 @@ print "Failed to add datetime skill: $@\n" if $@;
 
 # Add Wikipedia search skill
 eval {
-    $agent->add_skill('wikipedia_search', {
-        num_results        => 2,
-        no_results_message => "I couldn't find any Wikipedia articles about '{query}'. "
-            . 'You might want to try different keywords or ask about a related topic.',
-    });
+    $agent->add_skill(
+        'wikipedia_search',
+        {
+            num_results        => 2,
+            no_results_message => "I couldn't find any Wikipedia articles about '{query}'. "
+                . 'You might want to try different keywords or ask about a related topic.',
+        }
+    );
     print "Added Wikipedia search (tool: search_wiki)\n";
 };
 if ($@) {
@@ -46,7 +49,7 @@ if ($@) {
 }
 
 my $loaded = $agent->list_skills;
-print "Loaded skills: " . join(', ', @$loaded) . "\n" if $loaded && @$loaded;
+print "Loaded skills: " . join( ', ', @$loaded ) . "\n" if $loaded && @$loaded;
 
 print "\nWikipedia Assistant available at: http://localhost:3000/wiki-demo\n";
 print "Example queries:\n";

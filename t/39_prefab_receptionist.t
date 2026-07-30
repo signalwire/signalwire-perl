@@ -12,23 +12,21 @@ subtest 'construction defaults' => sub {
             { name => 'support', description => 'Support dept', number => '+15551236666' },
         ],
     );
-    is($a->name, 'receptionist', 'default name');
-    is($a->route, '/receptionist', 'default route');
-    ok($a->isa('SignalWire::Agent::AgentBase'), 'isa AgentBase');
+    is( $a->name,  'receptionist',  'default name' );
+    is( $a->route, '/receptionist', 'default route' );
+    ok( $a->isa('SignalWire::Agent::AgentBase'), 'isa AgentBase' );
 };
 
 subtest 'tools registered' => sub {
     my $a = SignalWire::Prefabs::Receptionist->new(
-        departments => [{ name => 'sales', description => 'S', number => '+1' }],
-    );
-    ok(exists $a->tools->{transfer_to_department}, 'transfer tool');
+        departments => [ { name => 'sales', description => 'S', number => '+1' } ], );
+    ok( exists $a->tools->{transfer_to_department}, 'transfer tool' );
 };
 
 subtest 'prompt section' => sub {
     my $a = SignalWire::Prefabs::Receptionist->new(
-        departments => [{ name => 'sales', description => 'S', number => '+1' }],
-    );
-    ok($a->prompt_has_section('Receptionist Role'), 'has role section');
+        departments => [ { name => 'sales', description => 'S', number => '+1' } ], );
+    ok( $a->prompt_has_section('Receptionist Role'), 'has role section' );
 };
 
 subtest 'global data' => sub {
@@ -38,55 +36,51 @@ subtest 'global data' => sub {
             { name => 'tech',  description => 'T', number => '+2' },
         ],
     );
-    is(scalar @{$a->global_data->{departments}}, 2, 'two departments');
+    is( scalar @{ $a->global_data->{departments} }, 2, 'two departments' );
 };
 
 subtest 'transfer tool execution - found (actually connects)' => sub {
     my $a = SignalWire::Prefabs::Receptionist->new(
-        departments => [{ name => 'sales', description => 'Sales', number => '+15551235555' }],
-    );
-    my $result = $a->on_function_call('transfer_to_department', { department => 'sales' }, {});
-    ok(defined $result, 'returns result');
-    like($result->response, qr/sales/i, 'mentions department');
+        departments => [ { name => 'sales', description => 'Sales', number => '+15551235555' } ], );
+    my $result = $a->on_function_call( 'transfer_to_department', { department => 'sales' }, {} );
+    ok( defined $result, 'returns result' );
+    like( $result->response, qr/sales/i, 'mentions department' );
 
     # The call must actually be transferred: a connect (SWML/transfer) action
     # carrying the department's number, not just an acknowledgement string.
     my ($connect) = grep { exists $_->{transfer} && exists $_->{SWML} } @{ $result->action };
-    ok(defined $connect, 'transfer emits a connect (SWML/transfer) action');
-    is($connect->{transfer}, 'true', 'permanent transfer (final)');
+    ok( defined $connect, 'transfer emits a connect (SWML/transfer) action' );
+    is( $connect->{transfer}, 'true', 'permanent transfer (final)' );
     is(
         $connect->{SWML}{sections}{main}[0]{connect}{to},
-        '+15551235555',
-        'connects to the department number',
+        '+15551235555', 'connects to the department number',
     );
 };
 
 subtest 'transfer tool execution - not found' => sub {
     my $a = SignalWire::Prefabs::Receptionist->new(
-        departments => [{ name => 'sales', description => 'Sales', number => '+1' }],
-    );
-    my $result = $a->on_function_call('transfer_to_department', { department => 'unknown' }, {});
-    ok(defined $result, 'returns result');
-    like($result->response, qr/couldn't find/i, 'mentions department not found');
-    is_deeply($result->action, [], 'no connect action when department not found');
+        departments => [ { name => 'sales', description => 'Sales', number => '+1' } ], );
+    my $result = $a->on_function_call( 'transfer_to_department', { department => 'unknown' }, {} );
+    ok( defined $result, 'returns result' );
+    like( $result->response, qr/couldn't find/i, 'mentions department not found' );
+    is_deeply( $result->action, [], 'no connect action when department not found' );
 };
 
 subtest 'custom greeting' => sub {
     my $a = SignalWire::Prefabs::Receptionist->new(
-        departments => [{ name => 's', description => 'S', number => '+1' }],
+        departments => [ { name => 's', description => 'S', number => '+1' } ],
         greeting    => 'Welcome to Acme!',
     );
     my $pom = $a->pom_sections;
     my ($role) = grep { $_->{title} eq 'Receptionist Role' } @$pom;
-    like($role->{body}, qr/Acme/, 'custom greeting in prompt');
+    like( $role->{body}, qr/Acme/, 'custom greeting in prompt' );
 };
 
 subtest 'render_swml' => sub {
     my $a = SignalWire::Prefabs::Receptionist->new(
-        departments => [{ name => 's', description => 'S', number => '+1' }],
-    );
+        departments => [ { name => 's', description => 'S', number => '+1' } ], );
     my $swml = $a->render_swml;
-    is($swml->{version}, '1.0.0', 'version');
+    is( $swml->{version}, '1.0.0', 'version' );
 };
 
 done_testing;

@@ -102,7 +102,8 @@ subtest 'to_swaig wire shape' => sub {
 };
 
 subtest 'to_swaig with token and call_id' => sub {
-    my $swaig = build_function()->to_swaig( base_url => 'https://ex.com', token => 'T', call_id => 'C' );
+    my $swaig =
+        build_function()->to_swaig( base_url => 'https://ex.com', token => 'T', call_id => 'C' );
     is( $swaig->{web_hook_url}, 'https://ex.com/swaig?token=T&call_id=C', 'auth query string' );
 };
 
@@ -132,7 +133,7 @@ subtest 'validate_args accepts valid' => sub {
 
 subtest 'validate_args rejects missing required' => sub {
     my ( $valid, $errors ) = build_function()->validate_args( {} );
-    ok( !$valid, 'invalid' );
+    ok( !$valid,                      'invalid' );
     ok( ( grep { /city/ } @$errors ), 'error mentions city' );
 };
 
@@ -141,7 +142,7 @@ subtest 'validate_args rejects wrong type' => sub {
     # In Perl a bare number is indistinguishable from a string, so use a
     # ref value (arrayref) which is unambiguously not a JSON string.
     my ( $valid, $errors ) = build_function()->validate_args( { city => [] } );
-    ok( !$valid, 'invalid' );
+    ok( !$valid,                        'invalid' );
     ok( ( grep { /string/ } @$errors ), 'error mentions string type' );
 };
 

@@ -36,7 +36,7 @@ my $client = SignalWire::REST::RestClient->new(
 # The typed helper — one line. The URL is a positional argument
 # (set_swml_webhook($sid, $url)), matching the generated method signature.
 print "Binding $pn_sid to $webhook_url ...\n";
-$client->phone_numbers->set_swml_webhook($pn_sid, $webhook_url);
+$client->phone_numbers->set_swml_webhook( $pn_sid, $webhook_url );
 
 # The equivalent wire-level form (use this if you need unusual fields):
 #
@@ -48,8 +48,7 @@ $client->phone_numbers->set_swml_webhook($pn_sid, $webhook_url);
 
 # Verify: the server auto-created a swml_webhook Fabric resource.
 my $pn = $client->phone_numbers->get($pn_sid);
-printf "  call_handler = %s\n",
-    defined $pn->{call_handler} ? "'$pn->{call_handler}'" : 'undef';
+printf "  call_handler = %s\n", defined $pn->{call_handler} ? "'$pn->{call_handler}'" : 'undef';
 printf "  call_relay_script_url = %s\n",
     defined $pn->{call_relay_script_url} ? "'$pn->{call_relay_script_url}'" : 'undef';
 printf "  calling_handler_resource_id (server-derived) = %s\n",
