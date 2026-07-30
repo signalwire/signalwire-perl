@@ -2192,34 +2192,9 @@ $data_map->webhook(
 );
 ```
 
-##### `body($data)`
-Set the JSON body for POST/PUT requests. Returns `$self` for chaining.
-
-**Parameters:**
-- `$data` (HashRef): JSON body data (supports `${variable}` substitution)
-
-**Usage:**
-```perl
-# Static body with parameter substitution
-$data_map->body({
-    query   => '${args.search_term}',
-    limit   => 5,
-    filters => {
-        category => '${args.category}',
-        active   => JSON::true,
-    },
-});
-
-# Body with call-related data (NOT sensitive info)
-$data_map->body({
-    customer_id => '${global_data.customer_id}',
-    request_id  => '${meta_data.call_id}',
-    search      => '${args.query}',
-});
-```
-
 ##### `params($data)`
-Set URL query parameters. Returns `$self` for chaining.
+Set the request params for the most recent webhook -- this is the method for
+POST/PUT request data as well as query parameters. Returns `$self` for chaining.
 
 **Parameters:**
 - `$data` (HashRef): Query parameters (supports `${variable}` substitution)
@@ -2489,7 +2464,7 @@ my $search_tool = SignalWire::DataMap->new('search_knowledge')
         'https://api.company.com/search',
         headers => { Authorization => 'Bearer TOKEN' },
     )
-    ->body({
+    ->params({
         query    => '${args.query}',
         category => '${args.category}',
         limit    => 5,
@@ -2574,7 +2549,6 @@ Create a simple API-integration tool. Arguments are named.
 - `parameters` (HashRef): Parameter definitions
 - `method` (Str): HTTP method (default: "GET")
 - `headers` (HashRef): HTTP headers
-- `body` (HashRef): Request body
 - `error_keys` (ArrayRef[Str]): Error field names
 
 **Usage:**

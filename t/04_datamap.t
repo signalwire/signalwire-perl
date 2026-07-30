@@ -102,26 +102,6 @@ subtest 'Expression-based tool' => sub {
 };
 
 # =============================================
-# Test: Webhook with body and headers
-# =============================================
-subtest 'Webhook with body and headers' => sub {
-    my $dm = SignalWire::DataMap->new('search')
-        ->purpose('Search docs')
-        ->parameter('query', 'string', 'Search query', required => 1)
-        ->webhook('POST', 'https://api.docs.com/search',
-                  headers => { 'Authorization' => 'Bearer TOKEN' })
-        ->body({ query => '${query}', limit => 3 })
-        ->output(SignalWire::SWAIG::FunctionResult->new('Found: ${response.title}'));
-
-    my $func = $dm->to_swaig_function;
-    my $wh = $func->{data_map}{webhooks}[0];
-    is($wh->{method}, 'POST', 'POST method');
-    is($wh->{headers}{Authorization}, 'Bearer TOKEN', 'has headers');
-    is($wh->{body}{query}, '${query}', 'body template');
-    is($wh->{body}{limit}, 3, 'body static value');
-};
-
-# =============================================
 # Test: Multiple webhooks with fallback
 # =============================================
 subtest 'Multiple webhooks and fallback' => sub {
@@ -172,7 +152,7 @@ subtest 'Foreach' => sub {
         ->purpose('Search docs')
         ->parameter('query', 'string', 'Search query', required => 1)
         ->webhook('POST', 'https://api.docs.com/search')
-        ->body({ query => '${query}' })
+        ->params({ query => '${query}' })
         ->output(SignalWire::SWAIG::FunctionResult->new('Results: ${formatted}'))
         ->foreach({
             input_key  => 'results',
@@ -209,9 +189,9 @@ subtest 'Parameter with enum' => sub {
 subtest 'Error handling' => sub {
     my $dm = SignalWire::DataMap->new('test');
 
-    # body without webhook
-    eval { $dm->body({ key => 'value' }) };
-    ok($@, 'body without webhook dies');
+    # params without webhook
+    eval { $dm->params({ key => 'value' }) };
+    ok($@, 'params without webhook dies');
 
     # output without webhook
     eval { $dm->output(SignalWire::SWAIG::FunctionResult->new('x')) };
@@ -245,6 +225,65 @@ subtest 'No parameters' => sub {
     my $func = $dm->to_swaig_function;
     is($func->{parameters}{type}, 'object', 'empty params has type object');
     is_deeply($func->{parameters}{properties}, {}, 'empty params has empty properties');
+};
+
+# =============================================
+# Test: the body() builder is GONE
+#
+# Owner-ruled 2026-07-29 (signalwire-python 71eed0c), extending the f171ce3
+# ruling ("if the server doesn't read them, remove them") from the
+# create_simple_api_tool PARAMETER to the public BUILDER METHOD. Three
+# independent sources condemn it:
+#
+#   * porting-sdk/schema.json $defs/Webhook declares exactly ten properties
+#     under unevaluatedProperties: {"not": {}} -- body is not among them, so
+#     emitting it is a SCHEMA VIOLATION.
+#   * mod_openai/actions.c:735-739 and bedrock.c:4920-4926 read url, method,
+#     form_param, params and headers and nothing else; grep -n '"body"'
+#     across both returns ZERO matches.
+#   * So its only possible effect was producing an invalid document while
+#     silently discarding the caller's payload.
+#
+# params() is the correct method: it writes the `params` key, which IS in the
+# contract and IS read.
+# =============================================
+subtest 'body() builder is removed' => sub {
+    ok( !SignalWire::DataMap->can('body'),
+        'DataMap->can("body") is false -- the builder writes a schema-forbidden '
+      . 'key that no engine reader consumes; use params() instead' );
+
+    # create_simple_api_tool must no longer forward a body option to the wire.
+    my $dm = SignalWire::DataMap::create_simple_api_tool(
+        name              => 'search',
+        url               => 'https://api.example.com/search',
+        response_template => 'Found: ${response.title}',
+        method            => 'POST',
+        body              => { query => 'Q' },
+    );
+    my $wh = $dm->to_swaig_function->{data_map}{webhooks}[0];
+    ok( !exists $wh->{body}, 'create_simple_api_tool emits no body key' );
+    is_deeply( [ sort keys %$wh ], [ qw(method output url) ],
+        'webhook keys are exactly method/output/url' );
+};
+
+# =============================================
+# Test: params() still writes the contract key (positive control)
+# =============================================
+subtest 'params writes the contract key' => sub {
+    my $dm = SignalWire::DataMap->new('search')
+        ->purpose('Search docs')
+        ->parameter('query', 'string', 'Search query', required => 1)
+        ->webhook('POST', 'https://api.docs.com/search',
+                  headers => { 'Authorization' => 'Bearer TOKEN' })
+        ->params({ query => '${query}', limit => 3 })
+        ->output(SignalWire::SWAIG::FunctionResult->new('Found: ${response.title}'));
+
+    my $wh = $dm->to_swaig_function->{data_map}{webhooks}[0];
+    is($wh->{method}, 'POST', 'POST method');
+    is($wh->{headers}{Authorization}, 'Bearer TOKEN', 'has headers');
+    is_deeply($wh->{params}, { query => '${query}', limit => 3 },
+              'params written verbatim to the contract key');
+    ok(!exists $wh->{body}, 'no body key emitted');
 };
 
 done_testing;

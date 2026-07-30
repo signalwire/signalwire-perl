@@ -185,14 +185,13 @@ sub webhook_expressions {
     return $self;
 }
 
-sub body {
-    my ( $self, $data ) = @_;
-    die "Must add webhook before setting body"
-        unless @{ $self->_webhooks };
-    $self->_webhooks->[-1]{body} = $data;
-    return $self;
-}
-
+# params — set request params on the most recent webhook.
+#
+# This is NOT an alias for a "body" setter: `params` is one of the ten
+# properties schema.json $defs/Webhook permits (under
+# unevaluatedProperties: {"not": {}}), and it is the key the engine's webhook
+# readers actually look up (mod_openai/actions.c, bedrock.c). Use this method
+# for POST/PUT request data.
 sub params {
     my ( $self, $data ) = @_;
     die "Must add webhook before setting params"
@@ -295,7 +294,7 @@ sub to_swaig_function {
 # Build a simple API-calling DataMap tool with minimal configuration.
 #
 # Options: name, url, response_template (required); parameters, method
-# (default GET), headers, body, error_keys (optional).
+# (default GET), headers, error_keys (optional).
 sub create_simple_api_tool {
     my (%opts) = @_;
     require SignalWire::SWAIG::FunctionResult;
@@ -303,7 +302,6 @@ sub create_simple_api_tool {
     my $dm = SignalWire::DataMap->new( $opts{name} );
     _apply_parameters( $dm, $opts{parameters} );
     $dm->webhook( $opts{method} // 'GET', $opts{url}, headers => $opts{headers} );
-    $dm->body( $opts{body} )             if $opts{body};
     $dm->error_keys( $opts{error_keys} ) if $opts{error_keys};
     $dm->output( SignalWire::SWAIG::FunctionResult->new( $opts{response_template} ) );
     return $dm;
@@ -428,13 +426,11 @@ C<input_args_as_params>, and C<require_args>.
 Attach an expressions list to the most recently added webhook (dies if none
 added).
 
-=item body($data)
-
-Set the request body on the most recent webhook (dies if none added).
-
 =item params($data)
 
-Set request params on the most recent webhook (dies if none added).
+Set request params on the most recent webhook (dies if none added). This is
+the method for POST/PUT request data: C<params> is one of the ten properties
+the webhook contract permits, and it is the key the engine actually reads.
 
 =item foreach($config)
 
@@ -491,7 +487,7 @@ C<create_expression_tool>) that build a configured C<DataMap> in one call:
 
 Build a simple API-calling tool. Required: C<name>, C<url>,
 C<response_template>. Optional: C<parameters>, C<method> (default C<GET>),
-C<headers>, C<body>, C<error_keys>.
+C<headers>, C<error_keys>.
 
 =item SignalWire::DataMap::create_expression_tool(%opts)
 

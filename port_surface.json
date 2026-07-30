@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ f0d5ffa162e5bad043a694c4f224c218df5f0c3f",
+   "generated_from" : "signalwire-perl @ f8c8963e72f9be4b96fc1b436df21c8d94a63967",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -314,7 +314,6 @@
          "classes" : {
             "DataMap" : [
                "__init__",
-               "body",
                "description",
                "error_keys",
                "expression",

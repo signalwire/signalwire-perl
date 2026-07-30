@@ -4010,20 +4010,6 @@
               ],
               "returns": "void"
             },
-            "body": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "data",
-                  "type": "dict<string,any>",
-                  "required": true
-                }
-              ],
-              "returns": "any"
-            },
             "description": {
               "params": [
                 {
@@ -32179,6 +32165,44 @@
       "classes": {
         "ApiNinjasTriviaSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "agent",
+                  "type": "class:signalwire.core.agent_base.AgentBase",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "default": null
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false,
+                  "default": "api_ninjas_trivia"
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false,
+                  "default": "Get trivia questions from API Ninjas"
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false,
+                  "default": 1
+                }
+              ],
+              "returns": "void"
+            },
             "get_tools": {
               "params": [
                 {
@@ -32686,6 +32710,44 @@
       "classes": {
         "PlayBackgroundFileSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "agent",
+                  "type": "class:signalwire.core.agent_base.AgentBase",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "default": null
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false,
+                  "default": "play_background_file"
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false,
+                  "default": "Control background file playback"
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": false,
+                  "default": 1
+                }
+              ],
+              "returns": "void"
+            },
             "get_tools": {
               "params": [
                 {
@@ -33037,6 +33099,44 @@
       "classes": {
         "WeatherApiSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "agent",
+                  "type": "class:signalwire.core.agent_base.AgentBase",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "default": null
+                },
+                {
+                  "name": "skill_name",
+                  "type": "any",
+                  "required": false,
+                  "default": "weather_api"
+                },
+                {
+                  "name": "skill_description",
+                  "type": "any",
+                  "required": false,
+                  "default": "Get current weather information from WeatherAPI.com"
+                },
+                {
+                  "name": "supports_multiple_instances",
+                  "type": "any",
+                  "required": 0,
+                  "default": 0
+                }
+              ],
+              "returns": "void"
+            },
             "get_tools": {
               "params": [
                 {
@@ -36187,6 +36287,54 @@
         }
       }
     },
+    "signalwire.skills.api_ninjas_trivia.skill.ApiNinjasTriviaSkill": {
+      "params": {
+        "agent": {
+          "type": "class:signalwire.core.agent_base.AgentBase",
+          "required": true
+        },
+        "params": {
+          "type": "optional<dict<string,any>>",
+          "required": false
+        },
+        "skill_description": {
+          "type": "any",
+          "required": false
+        },
+        "skill_name": {
+          "type": "any",
+          "required": false
+        },
+        "supports_multiple_instances": {
+          "type": "any",
+          "required": false
+        }
+      }
+    },
+    "signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill": {
+      "params": {
+        "agent": {
+          "type": "class:signalwire.core.agent_base.AgentBase",
+          "required": true
+        },
+        "params": {
+          "type": "optional<dict<string,any>>",
+          "required": false
+        },
+        "skill_description": {
+          "type": "any",
+          "required": false
+        },
+        "skill_name": {
+          "type": "any",
+          "required": false
+        },
+        "supports_multiple_instances": {
+          "type": "any",
+          "required": false
+        }
+      }
+    },
     "signalwire.skills.spider.skill.SpiderSkill": {
       "params": {
         "agent": {
@@ -36195,6 +36343,30 @@
         },
         "params": {
           "type": "dict<string,any>",
+          "required": false
+        }
+      }
+    },
+    "signalwire.skills.weather_api.skill.WeatherApiSkill": {
+      "params": {
+        "agent": {
+          "type": "class:signalwire.core.agent_base.AgentBase",
+          "required": true
+        },
+        "params": {
+          "type": "optional<dict<string,any>>",
+          "required": false
+        },
+        "skill_description": {
+          "type": "any",
+          "required": false
+        },
+        "skill_name": {
+          "type": "any",
+          "required": false
+        },
+        "supports_multiple_instances": {
+          "type": "any",
           "required": false
         }
       }
