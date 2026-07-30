@@ -2350,31 +2350,21 @@ def collect(raw: dict) -> dict:
             if not out_modules["signalwire.core.agent_base"]["classes"]:
                 out_modules.pop("signalwire.core.agent_base")
 
-    # -----------------------------------------------------------------
-    # Reconcile: MCPGatewaySkill.get_prompt_sections. Unlike most builtin
-    # skills (which inherit the SkillBase stub — the oracle records
-    # get_prompt_sections ONLY on SkillBase for them), Python's mcp_gateway
-    # skill OVERRIDES get_prompt_sections, so the oracle records it on
-    # MCPGatewaySkill too. The Perl McpGateway provides the same capability
-    # (the inherited SkillBase::get_prompt_sections, which honours skip_prompt,
-    # dispatching to this class's own `_get_prompt_sections` content) — but the
-    # PARENT_OVERRIDE_FILTER strips the inherited-stub name from subclasses and
-    # the regex parser only sees `_get_prompt_sections`. Project the real
-    # inherited-and-overridden capability (mirror enumerate_surface.pl's
-    # SKILL_INHERITED_PROJECTION for MCPGatewaySkill). Real capability, not
-    # invented surface.
-    mcp_cls = (
-        out_modules.get("signalwire.skills.mcp_gateway.skill", {})
-        .get("classes", {})
-        .get("MCPGatewaySkill")
-    )
-    if mcp_cls is not None:
-        mcp_methods = mcp_cls.setdefault("methods", {})
-        if "get_prompt_sections" not in mcp_methods:
-            mcp_methods["get_prompt_sections"] = {
-                "params": [{"name": "self", "kind": "self"}],
-                "returns": "list<dict<string,any>>",
-            }
+    # NOTE — a hardcoded MCPGatewaySkill.get_prompt_sections projection lived here
+    # and was DELETED. Its premise was "Python's mcp_gateway skill OVERRIDES
+    # get_prompt_sections, so the oracle records it on MCPGatewaySkill too". That
+    # is now FALSE at the source: signalwire-python
+    # signalwire/skills/mcp_gateway/skill.py:451 overrides the PROTECTED
+    # `_get_prompt_sections`, and the public name lives on SkillBase alone (the
+    # skip_prompt template-method refactor, e9aa402). The oracle records neither
+    # the signature nor the surface member on MCPGatewaySkill.
+    #
+    # It was also the only UNGATED skill projection in either enumerator: a size-1
+    # hardcoded injection with no oracle intersection, so unlike
+    # PROTECTED_TEMPLATE_PROJECTIONS (keyed off the reference) it could not
+    # self-correct when the reference moved — it kept emitting a symbol the oracle
+    # had dropped. Do not reintroduce a projection that is not intersected with
+    # what the oracle LIVE records; the data-driven tables already cover this class.
 
     # Typed-surface strictness: rename Perl-idiom hand-written params to the
     # reference identifier, THEN re-attach reference-documented concrete param

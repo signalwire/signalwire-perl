@@ -26,13 +26,22 @@ properties (or a non-object / scalar / union) is NOT surfaced — the reference
 records those as a module-level ``TypeAlias = dict[str, Any]`` its enumerator
 drops, so emitting nothing matches the reference surface.
 
-That drop accounts for the 128 source files -> 123 surfaced classes exactly:
+That drop accounts for the 130 source files -> 123 surfaced classes exactly:
   * 2 files are the ``.event.json`` phase (messaging.receive / messaging.state)
     — NOT params/result, so not part of this params/result module at all.
-  * 126 params/result files -> 126 candidate names, of which 3 are empty-object
-    placeholder schemas (calling.call params + result, signalwire.disconnect
-    result) with no properties -> aliases, NOT surfaced.
-  126 - 3 = 123 == the oracle's 123 method-less classes exactly (0/0).
+  * 128 params/result files -> 128 candidate names, of which 5 are empty-object
+    placeholder schemas with no properties -> aliases, NOT surfaced:
+      - calling.call params + result, signalwire.disconnect result (original 3)
+      - calling.conference params + result — NET-NEW (porting-sdk be7a34f).
+        mod_infrastructure 9755ef7 registered a second protocol method
+        ("conference") at relay.c:18915 via
+        ``swclt_sess_register_protocol_method``; it has no switchblade
+        Params/Result class, so the extractor vendored ``x-permissive: true``
+        placeholders (``type: object``, ``additionalProperties: true``, no
+        properties). New SERVER surface, not drift — and because they carry no
+        properties the existing drop rule excludes them with NO generator change
+        and NO emitted diff.
+  128 - 5 = 123 == the oracle's 123 method-less classes exactly (0/0).
 
 The relay JSON schemas carry no ``$ref`` (every nested object is inline).
 
