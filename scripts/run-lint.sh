@@ -60,7 +60,7 @@ _jobs() { local n; n="$( (command -v nproc >/dev/null && nproc) || sysctl -n hw.
 # PLUS the generated tree; --hand = hand-written only (fast dev subset).
 _files() {
     _sw_perl_hand_source_files
-    [ "$SCOPE" = all ] && find lib -type f -name '*.pm' -path '*/Generated/*'
+    [ "$SCOPE" = all ] && _sw_perl_generated_source_files
     return 0
 }
 

@@ -180,7 +180,16 @@ _sw_perl_has_module() {
 # in-generator backstop, so LINT must keep covering the generated tree.
 _sw_perl_source_files() {
     _sw_perl_hand_source_files
+    _sw_perl_generated_source_files
+}
+
+# The GENERATED Perl trees: the ~1107 .pm under lib/**/Generated/ and the 14
+# generated REST wire-test files under t/rest/generated/. LINT adds these back
+# (perlcritic has no in-generator backstop, so it must keep covering them); FMT
+# does NOT — see the FMT rationale below.
+_sw_perl_generated_source_files() {
     find lib -type f -name '*.pm' -path '*/Generated/*'
+    find t/rest/generated -type f -name '*.t' 2>/dev/null
 }
 
 # The HAND-WRITTEN subset only — the generated .pm under lib/**/Generated/ are
@@ -227,6 +236,16 @@ _sw_perl_hand_source_files() {
     find scripts -type f \( -name '*.pl' -o -name '*.pm' \)
     # The test tree (.t test files + t/lib harness modules) and the runnable
     # example trees. Tests and examples ARE shipping code per the owner ruling.
-    find t -type f \( -name '*.t' -o -name '*.pm' -o -name '*.pl' \)
+    #
+    # t/rest/generated/ is EXCLUDED here for exactly the reason lib/**/Generated/
+    # is (see the _sw_perl_hand_source_files rationale above): these 14 .t files
+    # are emitted by scripts/generate_rest_tests.py and the GEN-FRESH-TESTS gate
+    # byte-compares them against a fresh regen. Unlike the four .pm generators,
+    # generate_rest_tests.py does NOT run the perltidy backstop, so its raw emit
+    # is not tidy — running perltidy -b over it makes the tree either GEN-FRESH
+    # or format-clean but never both, and GEN-FRESH-TESTS goes red. (Caught live:
+    # the first cut of this widening swept them in and reded that gate.)
+    # LINT still covers them via _sw_perl_source_files; only FMT skips them.
+    find t -type f \( -name '*.t' -o -name '*.pm' -o -name '*.pl' \) -not -path 't/rest/generated/*'
     find examples rest relay -type f \( -name '*.pl' -o -name '*.pm' \) 2>/dev/null
 }

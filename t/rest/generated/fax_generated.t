@@ -23,40 +23,38 @@ subtest 'fax_get_success' => sub {
     my $client = MockTest::client();
     $client->logs->fax->get('x');
     my $last = MockTest::journal_last();
-    is( $last->{method},        'GET',             'method GET' );
-    is( $last->{matched_route}, 'fax.get_fax_log', 'matched_route fax.get_fax_log' );
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fax.get_fax_log', 'matched_route fax.get_fax_log');
 };
 
 subtest 'fax_get_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set( 'fax.get_fax_log', 500, { error => 'x' } );
+    MockTest::scenario_set('fax.get_fax_log', 500, { error => 'x' });
     my $ok = eval { $client->logs->fax->get('x'); 1 };
-    ok( !$ok, 'call raised' );
+    ok(!$ok, 'call raised');
     my $e = $@;
-    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
-    is( $e->status_code, 500, 'status 500' );
-    is( MockTest::journal_last()->{matched_route},
-        'fax.get_fax_log', 'matched_route fax.get_fax_log' );
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fax.get_fax_log', 'matched_route fax.get_fax_log');
 };
 
 subtest 'fax_list_success' => sub {
     my $client = MockTest::client();
     $client->logs->fax->list();
     my $last = MockTest::journal_last();
-    is( $last->{method},        'GET',               'method GET' );
-    is( $last->{matched_route}, 'fax.list_fax_logs', 'matched_route fax.list_fax_logs' );
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fax.list_fax_logs', 'matched_route fax.list_fax_logs');
 };
 
 subtest 'fax_list_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set( 'fax.list_fax_logs', 500, { error => 'x' } );
+    MockTest::scenario_set('fax.list_fax_logs', 500, { error => 'x' });
     my $ok = eval { $client->logs->fax->list(); 1 };
-    ok( !$ok, 'call raised' );
+    ok(!$ok, 'call raised');
     my $e = $@;
-    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
-    is( $e->status_code, 500, 'status 500' );
-    is( MockTest::journal_last()->{matched_route},
-        'fax.list_fax_logs', 'matched_route fax.list_fax_logs' );
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fax.list_fax_logs', 'matched_route fax.list_fax_logs');
 };
 
 done_testing();

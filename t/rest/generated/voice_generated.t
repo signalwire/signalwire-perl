@@ -23,61 +23,57 @@ subtest 'voice_get_success' => sub {
     my $client = MockTest::client();
     $client->logs->voice->get('x');
     my $last = MockTest::journal_last();
-    is( $last->{method},        'GET',                 'method GET' );
-    is( $last->{matched_route}, 'voice.get_voice_log', 'matched_route voice.get_voice_log' );
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'voice.get_voice_log', 'matched_route voice.get_voice_log');
 };
 
 subtest 'voice_get_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set( 'voice.get_voice_log', 500, { error => 'x' } );
+    MockTest::scenario_set('voice.get_voice_log', 500, { error => 'x' });
     my $ok = eval { $client->logs->voice->get('x'); 1 };
-    ok( !$ok, 'call raised' );
+    ok(!$ok, 'call raised');
     my $e = $@;
-    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
-    is( $e->status_code, 500, 'status 500' );
-    is( MockTest::journal_last()->{matched_route},
-        'voice.get_voice_log', 'matched_route voice.get_voice_log' );
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'voice.get_voice_log', 'matched_route voice.get_voice_log');
 };
 
 subtest 'voice_list_success' => sub {
     my $client = MockTest::client();
     $client->logs->voice->list();
     my $last = MockTest::journal_last();
-    is( $last->{method},        'GET',                   'method GET' );
-    is( $last->{matched_route}, 'voice.list_voice_logs', 'matched_route voice.list_voice_logs' );
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'voice.list_voice_logs', 'matched_route voice.list_voice_logs');
 };
 
 subtest 'voice_list_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set( 'voice.list_voice_logs', 500, { error => 'x' } );
+    MockTest::scenario_set('voice.list_voice_logs', 500, { error => 'x' });
     my $ok = eval { $client->logs->voice->list(); 1 };
-    ok( !$ok, 'call raised' );
+    ok(!$ok, 'call raised');
     my $e = $@;
-    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
-    is( $e->status_code, 500, 'status 500' );
-    is( MockTest::journal_last()->{matched_route},
-        'voice.list_voice_logs', 'matched_route voice.list_voice_logs' );
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'voice.list_voice_logs', 'matched_route voice.list_voice_logs');
 };
 
 subtest 'voice_list_events_success' => sub {
     my $client = MockTest::client();
     $client->logs->voice->list_events('x');
     my $last = MockTest::journal_last();
-    is( $last->{method}, 'GET', 'method GET' );
-    is( $last->{matched_route},
-        'voice.list_voice_log_events', 'matched_route voice.list_voice_log_events' );
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'voice.list_voice_log_events', 'matched_route voice.list_voice_log_events');
 };
 
 subtest 'voice_list_events_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set( 'voice.list_voice_log_events', 500, { error => 'x' } );
+    MockTest::scenario_set('voice.list_voice_log_events', 500, { error => 'x' });
     my $ok = eval { $client->logs->voice->list_events('x'); 1 };
-    ok( !$ok, 'call raised' );
+    ok(!$ok, 'call raised');
     my $e = $@;
-    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
-    is( $e->status_code, 500, 'status 500' );
-    is( MockTest::journal_last()->{matched_route},
-        'voice.list_voice_log_events', 'matched_route voice.list_voice_log_events' );
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'voice.list_voice_log_events', 'matched_route voice.list_voice_log_events');
 };
 
 done_testing();

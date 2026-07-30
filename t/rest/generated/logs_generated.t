@@ -23,20 +23,19 @@ subtest 'conferences_list_success' => sub {
     my $client = MockTest::client();
     $client->logs->conferences->list();
     my $last = MockTest::journal_last();
-    is( $last->{method},        'GET',                   'method GET' );
-    is( $last->{matched_route}, 'logs.list_conferences', 'matched_route logs.list_conferences' );
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'logs.list_conferences', 'matched_route logs.list_conferences');
 };
 
 subtest 'conferences_list_error' => sub {
     my $client = MockTest::client();
-    MockTest::scenario_set( 'logs.list_conferences', 500, { error => 'x' } );
+    MockTest::scenario_set('logs.list_conferences', 500, { error => 'x' });
     my $ok = eval { $client->logs->conferences->list(); 1 };
-    ok( !$ok, 'call raised' );
+    ok(!$ok, 'call raised');
     my $e = $@;
-    isa_ok( $e, 'SignalWire::REST::HttpClient::Error' );
-    is( $e->status_code, 500, 'status 500' );
-    is( MockTest::journal_last()->{matched_route},
-        'logs.list_conferences', 'matched_route logs.list_conferences' );
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'logs.list_conferences', 'matched_route logs.list_conferences');
 };
 
 done_testing();
