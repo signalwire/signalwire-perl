@@ -45,12 +45,13 @@ sub build_service {
     $args{port} = $opts{port} if defined $opts{port};
     my $svc = SignalWire::SWML::Service->new(%args);
 
-    # 1. Emit any SWML - including ai_sidecar. The Document API's
-    #    add_verb() accepts arbitrary verb dicts, so new platform verbs
-    #    work without an SDK release. NOTE the SWAIG hash key MUST be
-    #    UPPERCASE - that is how mod_openai recognizes it.
-    $svc->document->add_verb('main', 'answer', {});
-    $svc->document->add_verb('main', 'ai_sidecar', {
+    # 1. Emit any SWML - including ai_sidecar - through the Service-level
+    #    add_verb(), which validates the verb and its config against the SWML
+    #    schema. The schema knows ai_sidecar, so no SDK release is needed for
+    #    it. NOTE the SWAIG hash key MUST be UPPERCASE - that is how
+    #    mod_openai recognizes it.
+    $svc->add_verb('answer', {});
+    $svc->add_verb('ai_sidecar', {
         prompt => 'You are a real-time sales copilot. Listen to the call '
                 . 'and surface competitor pricing comparisons when relevant.',
         lang      => 'en-US',
@@ -64,7 +65,7 @@ sub build_service {
             defaults => { web_hook_url => "$public_url/swaig" },
         },
     });
-    $svc->document->add_verb('main', 'hangup', {});
+    $svc->add_verb('hangup', {});
 
     # 2. Register tools the sidecar's LLM can call. Same define_tool()
     #    you'd use on AgentBase - it lives on SWML::Service.

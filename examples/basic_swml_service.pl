@@ -31,11 +31,10 @@ unless (caller) {
     # Build the simplest useful SWML doc: answer the call, say a
     # message, hang up. No AI verb at all — the whole point of this
     # example is that SWMLService doesn't need one.
-    my $doc = $svc->document;
-    $doc->add_verb('main', 'answer', {});
-    $doc->add_verb('main', 'play',   { url => 'say:Welcome to the basic SWML service.' });
-    $doc->add_verb('main', 'sleep',  500);
-    $doc->add_verb('main', 'hangup', {});
+    $svc->add_verb('answer', {});
+    $svc->add_verb('play',   { url => 'say:Welcome to the basic SWML service.' });
+    $svc->add_verb('sleep',  500);
+    $svc->add_verb('hangup', {});
 
     print "Basic SWMLService\n";
     print "Route:      " . $svc->route . "\n";

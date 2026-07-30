@@ -57,8 +57,8 @@ sub build_service {
 
     # 1. Build a minimal SWML document. Any verbs are fine - the SWAIG
     #    HTTP surface is independent of what the document contains.
-    $svc->document->add_verb('main', 'answer', {});
-    $svc->document->add_verb('main', 'hangup', {});
+    $svc->add_verb('answer', {});
+    $svc->add_verb('hangup', {});
 
     # 2. Register a SWAIG function. define_tool() lives on SWML::Service,
     #    not just AgentBase. The handler receives parsed arguments plus

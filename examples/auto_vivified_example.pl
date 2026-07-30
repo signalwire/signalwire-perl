@@ -10,6 +10,7 @@
 use strict;
 use warnings;
 use lib 'lib';
+use JSON ();
 use SignalWire;
 use SignalWire::SWML::Service;
 
@@ -23,10 +24,12 @@ $voicemail->answer;
 $voicemail->play('main', { url => 'say:Hello, you have reached the voicemail service. Please leave a message after the beep.' });
 $voicemail->sleep('main', 1000);
 $voicemail->play('main', { url => 'https://example.com/beep.wav' });
+# stereo/beep are anyOf<boolean, SWMLVar>: a bare Perl 0 JSON-encodes as the
+# number 0, which the schema rejects. Use real JSON booleans.
 $voicemail->record('main', {
     format     => 'mp3',
-    stereo     => 0,
-    beep       => 0,
+    stereo     => JSON::false,
+    beep       => JSON::false,
     max_length => 120,
     terminators => '#',
     status_url => 'https://example.com/voicemail-status',
@@ -73,7 +76,9 @@ $transfer->add_verb('connect', {
         { to => '+15554445555' },
     ],
 });
-$transfer->add_verb('record', { format => 'mp3', beep => 1, max_length => 120 });
+# $defs/Record.beep is anyOf<boolean, SWMLVar> — a bare Perl 1 JSON-encodes as
+# the number 1 and the schema rejects it. Use a real JSON boolean.
+$transfer->add_verb( 'record', { format => 'mp3', beep => JSON::true, max_length => 120 } );
 $transfer->hangup;
 
 # Run the voicemail service
