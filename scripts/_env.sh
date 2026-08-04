@@ -139,6 +139,52 @@ _sw_ensure_perl_tools() {
 }
 
 # ---------------------------------------------------------------------------
+# PINNED dev-tool versions — the gates' verdicts must not change with the calendar
+# ---------------------------------------------------------------------------
+# The cpanfile pins Perl::Tidy and Perl::Critic EXACT (`== VERSION`), because both
+# tools change their findings between releases: Perl::Tidy shifts vertical-
+# alignment heuristics, Perl::Critic adds and tightens policies. CI runs
+# `cpanm --with-develop --installdeps .` on a fresh box, so it resolves whatever
+# the cpanfile allows; a contributor runs whatever their ~/perl5 got months ago.
+#
+# The cpanfile alone is NOT enough to make local == CI: a local::lib populated
+# BEFORE a pin was tightened keeps the old version indefinitely (cpanm does not
+# downgrade or re-resolve an already-satisfied dep), so the pin can be correct in
+# the manifest and violated on disk. These assertions close that gap by checking
+# what is actually LOADED, mirroring how signalwire-cpp asserts clang-format 18.
+#
+# Keep in lockstep with the cpanfile's `on 'develop'` block.
+SW_PERLTIDY_VERSION="20260705"
+SW_PERLCRITIC_VERSION="1.156"
+export SW_PERLTIDY_VERSION SW_PERLCRITIC_VERSION
+
+# _sw_assert_module_version <Module::Name> <wanted> — compare the INSTALLED
+# module's $VERSION (via the resolved interpreter, so it is the same @INC the
+# gates use) against the cpanfile pin. Fails loud on a mismatch;
+# SW_ALLOW_TOOL_VERSION_DRIFT=1 downgrades to a warning for a deliberate bump run.
+_sw_assert_module_version() {
+    local module="$1" wanted="$2" have
+    have="$("$SW_PERL" -M"$module" -e "print \$${module}::VERSION" 2>/dev/null)"
+    if [ "$have" = "$wanted" ]; then
+        return 0
+    fi
+    if [ "${SW_ALLOW_TOOL_VERSION_DRIFT:-0}" = "1" ]; then
+        echo "WARNING: $module is '${have:-unknown}', not the pinned $wanted (drift allowed)." >&2
+        return 0
+    fi
+    echo "ERROR: $module is version '${have:-unknown}', not the pinned $wanted." >&2
+    echo "       The cpanfile pins it EXACT so this gate's verdict depends on the" >&2
+    echo "       SOURCE, not on when the tool was installed. A different version" >&2
+    echo "       here means local and CI disagree about what passes." >&2
+    echo "       Install the pin:" >&2
+    echo "         cpanm --local-lib=\"$PERL_LL_ROOT\" $module@$wanted" >&2
+    echo "       Or set SW_ALLOW_TOOL_VERSION_DRIFT=1 for a deliberate bump run" >&2
+    echo "       (then update the cpanfile + scripts/_env.sh together and land the" >&2
+    echo "       resulting reformat/fixes in the same commit)." >&2
+    return 1
+}
+
+# ---------------------------------------------------------------------------
 # Running a Perl-shipped CLI tool through the RESOLVED interpreter
 # ---------------------------------------------------------------------------
 # `prove`, `perltidy` and `perlcritic` are all Perl SCRIPTS with a shebang. Two

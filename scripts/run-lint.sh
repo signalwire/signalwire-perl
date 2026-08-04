@@ -39,9 +39,16 @@ cd "$REPO_ROOT"
 
 if ! command -v perlcritic >/dev/null 2>&1; then
     echo "ERROR: perlcritic not found on PATH after bootstrap. Install it with:" >&2
-    echo "         cpanm --local-lib=\"\${PERL_LOCAL_LIB_ROOT:-\$HOME/perl5}\" Perl::Critic" >&2
+    echo "         cpanm --local-lib=\"\${PERL_LOCAL_LIB_ROOT:-\$HOME/perl5}\" Perl::Critic@$SW_PERLCRITIC_VERSION" >&2
     exit 1
 fi
+
+# Perl::Critic is pinned EXACT in the cpanfile because new releases add policies
+# and tighten existing ones, and every policy at severity >= 4 is blocking here —
+# so an unpinned analyser can red this gate on code nobody touched. Assert the
+# LOADED version, not just the manifest: a local::lib populated before the pin was
+# tightened keeps its old copy indefinitely.
+_sw_assert_module_version Perl::Critic "$SW_PERLCRITIC_VERSION" || exit 1
 
 SCOPE=all
 case "${1:-}" in
