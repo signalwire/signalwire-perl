@@ -16,15 +16,17 @@ the authoritative SWAIG wire spec):
         one class per components/schemas OBJECT schema; the ``PostPromptCallLogEntry``
         oneOf alias is NOT surfaced (the reference records it as a module-level
         TypeAlias its enumerator drops), so 15 schemas - 1 alias = 14.
-  * ``swaig-response.yaml`` -> signalwire.core.swaig_actions_generated  (4 classes)
+  * ``swaig-response.yaml`` -> signalwire.core.swaig_actions_generated  (6 classes)
         one ``<Action>`` class per action key whose value is an object-with-properties
         (a bare object OR an object variant of a oneOf): context_switch ->
         ContextSwitchAction, hold -> HoldAction, playback_bg -> PlaybackBgAction,
-        transfer -> TransferAction. The ``SwaigResponse``/``SwaigAction`` envelope
-        schemas + the ergonomic ``_SwaigActions`` method surface are NOT part of the
-        cross-port surface oracle, so only the 4 object-shaped action value classes.
+        transfer -> TransferAction — PLUS the two response ENVELOPE schemas the module
+        owns, ``SwaigAction`` (the action object: one property per dispatched action
+        key) and ``SwaigResponse`` (the ``{response, action, post_process}`` body a
+        handler returns). The ergonomic ``_SwaigActions`` builder surface stays out
+        (the reference marks it private and its enumerator drops it).
 
-  2 + 14 + 4 = 20 classes == the surface oracle EXACTLY (0 missing / 0 extra).
+  2 + 14 + 6 = 22 classes == the surface oracle EXACTLY (0 missing / 0 extra).
 
 Every emitted class is a method-less Moo data DTO: one read-only ``has`` accessor per
 property carrying the snake wire key, no methods. The emit/drop rule reuses the SHARED
@@ -205,11 +207,24 @@ def _build_post_prompt(psdk: Path) -> dict:
 
 def _build_swaig_actions(psdk: Path) -> dict:
     """swaig-response.yaml -> one <Action> class per action key whose value is an
-    object-with-properties (a bare object OR the object variant(s) of a oneOf)."""
+    object-with-properties (a bare object OR the object variant(s) of a oneOf), PLUS
+    the two response ENVELOPE classes this module owns.
+
+    THE ENVELOPE IS NOT OPTIONAL SURFACE. porting-sdk 4ddda70 taught the reference
+    generator to resolve cross-file ``$ref``s, so post-prompt.yaml's ``post_response``
+    / ``delayed_post_response`` now resolve
+    ``swaig-response.yaml#/components/schemas/SwaigResponse`` instead of degrading to a
+    dict — and the reference has declared ``SwaigAction``/``SwaigResponse`` in this
+    module all along. Reaching THROUGH ``SwaigAction`` into its ``properties`` to lift
+    the per-verb value objects, while never emitting the envelope itself, left the port
+    2 symbols short of the oracle (SURFACE-DIFF) and 5 class-typed fields short
+    (DRIFT: SwaigAction.{context_switch,hold,playback_bg,transfer}, SwaigResponse.action).
+    Same generator-side defect go fixed in 41a012c and rust/php/ruby each carried."""
     spec_file = "swaig-response.yaml"
     sub = "SwaigActions"
     spec = _load_yaml(psdk / "swaig-specs" / spec_file)
-    actions = spec["components"]["schemas"]["SwaigAction"]["properties"]
+    schemas = spec["components"]["schemas"]
+    actions = schemas["SwaigAction"]["properties"]
 
     def _is_obj(s) -> bool:
         return (
@@ -244,6 +259,31 @@ def _build_swaig_actions(psdk: Path) -> dict:
                 sub,
                 f"swaig-response action {verb!r} value object",
             )
+
+    # The two ENVELOPE classes, emitted from swaig-response.yaml's own schemas (see
+    # the docstring). Their property sets come straight from the spec, so the emitted
+    # accessors carry the same wire keys the reference's TypedDict fields do — which
+    # is what makes SwaigAction.{context_switch,hold,playback_bg,transfer} and
+    # SwaigResponse.action present for the DRIFT gen-payload fold.
+    for env_name, env_desc in (
+        ("SwaigAction", "swaig-response `SwaigAction` response-action envelope"),
+        ("SwaigResponse", "swaig-response `SwaigResponse` handler-response envelope"),
+    ):
+        node = schemas.get(env_name)
+        if not isinstance(node, dict) or not node.get("properties"):
+            raise SystemExit(
+                f"generate_swaig_payloads.py: {spec_file} is missing "
+                f"components/schemas/{env_name}.properties — the response envelope the "
+                f"reference declares in signalwire.core.swaig_actions_generated. Refusing "
+                f"to emit a surface that is 2 classes short of the oracle."
+            )
+        pl_name = GR.type_name(env_name)
+        if pl_name in emitted:
+            continue
+        emitted.add(pl_name)
+        outs[f"{sub}/{pl_name}.pm"] = _emit_class(
+            pl_name, node["properties"], spec_file, sub, env_desc
+        )
     return outs
 
 

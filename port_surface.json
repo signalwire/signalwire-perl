@@ -1,5 +1,5 @@
 {
-   "generated_from" : "signalwire-perl @ a21eea6fe500c97dbaf31b05408d11fba42f65bc",
+   "generated_from" : "signalwire-perl @ 85ce127c9b6323d74162a698d830b3bfcd6644d7",
    "modules" : {
       "signalwire" : {
          "classes" : {},
@@ -584,7 +584,9 @@
             "PostPromptEot" : [],
             "PostPromptStampsUs" : [],
             "PostPromptSwaigLogEntry" : [
-               "post_data"
+               "delayed_post_response",
+               "post_data",
+               "post_response"
             ],
             "PostPromptSystemEntry" : [],
             "PostPromptSystemLogEntry" : [],
@@ -703,6 +705,8 @@
             "ContextSwitchAction" : [],
             "HoldAction" : [],
             "PlaybackBgAction" : [],
+            "SwaigAction" : [],
+            "SwaigResponse" : [],
             "TransferAction" : []
          },
          "functions" : []
