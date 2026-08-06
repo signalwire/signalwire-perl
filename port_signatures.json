@@ -12014,6 +12014,15 @@
               ],
               "returns": "any"
             },
+            "global_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "hints": {
               "params": [
                 {
@@ -12042,6 +12051,15 @@
               "returns": "any"
             },
             "post_prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "post_prompt_url": {
               "params": [
                 {
                   "name": "self",
@@ -12081,7 +12099,34 @@
               ],
               "returns": "any"
             },
+            "ai_model": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "ai_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "ai_volume": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "app_name": {
               "params": [
                 {
                   "name": "self",
@@ -12126,6 +12171,24 @@
               ],
               "returns": "any"
             },
+            "attention_timeout_prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "background_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "background_file_loops": {
               "params": [
                 {
@@ -12153,7 +12216,34 @@
               ],
               "returns": "any"
             },
+            "barge_match_string": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "barge_min_words": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "conscience": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "conversation_id": {
               "params": [
                 {
                   "name": "self",
@@ -12190,6 +12280,24 @@
               "returns": "any"
             },
             "debug_webhook_level": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "debug_webhook_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "digit_terminators": {
               "params": [
                 {
                   "name": "self",
@@ -12333,7 +12441,25 @@
               ],
               "returns": "any"
             },
+            "hard_stop_prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "hard_stop_time": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "hold_music": {
               "params": [
                 {
                   "name": "self",
@@ -12369,6 +12495,24 @@
               ],
               "returns": "any"
             },
+            "inner_dialog_model": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "inner_dialog_prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "inner_dialog_synced": {
               "params": [
                 {
@@ -12396,6 +12540,15 @@
               ],
               "returns": "any"
             },
+            "interrupt_prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "languages_enabled": {
               "params": [
                 {
@@ -12406,6 +12559,15 @@
               "returns": "any"
             },
             "llm_diarize_aware": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "local_tz": {
               "params": [
                 {
                   "name": "self",
@@ -12432,6 +12594,15 @@
               ],
               "returns": "any"
             },
+            "openai_asr_engine": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "outbound_attention_timeout": {
               "params": [
                 {
@@ -12442,6 +12613,15 @@
               "returns": "any"
             },
             "persist_global_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "pom_format": {
               "params": [
                 {
                   "name": "self",
@@ -12496,6 +12676,15 @@
               "returns": "any"
             },
             "start_paused": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "static_greeting": {
               "params": [
                 {
                   "name": "self",
@@ -12567,6 +12756,15 @@
               ],
               "returns": "any"
             },
+            "thinking_model": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "transfer_summary": {
               "params": [
                 {
@@ -12594,6 +12792,15 @@
               ],
               "returns": "any"
             },
+            "tts_number_format": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "turn_detection_timeout": {
               "params": [
                 {
@@ -12603,7 +12810,61 @@
               ],
               "returns": "any"
             },
+            "vad_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "video_idle_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "video_listening_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "video_talking_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "vision_model": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "wait_for_user": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "wake_prefix": {
               "params": [
                 {
                   "name": "self",
@@ -12626,6 +12887,15 @@
               "returns": "any"
             },
             "frequency_penalty": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "max_tokens": {
               "params": [
                 {
                   "name": "self",
@@ -12692,6 +12962,15 @@
               ],
               "returns": "any"
             },
+            "max_tokens": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "presence_penalty": {
               "params": [
                 {
@@ -12702,6 +12981,15 @@
               "returns": "any"
             },
             "temperature": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "text": {
               "params": [
                 {
                   "name": "self",
@@ -12742,6 +13030,15 @@
               "returns": "any"
             },
             "frequency_penalty": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "max_tokens": {
               "params": [
                 {
                   "name": "self",
@@ -12817,6 +13114,15 @@
               ],
               "returns": "any"
             },
+            "max_tokens": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "presence_penalty": {
               "params": [
                 {
@@ -12827,6 +13133,15 @@
               "returns": "any"
             },
             "temperature": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "text": {
               "params": [
                 {
                   "name": "self",
@@ -12847,11 +13162,120 @@
           }
         },
         "AiSidecar": {
-          "methods": {}
+          "methods": {
+            "ai_sidecar": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "AiSidecarConfig": {
           "methods": {
             "SWAIG": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "action": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "customer_role": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "direction": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "global_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "lang": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "model": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "permissions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "url": {
               "params": [
                 {
                   "name": "self",
@@ -12899,6 +13323,15 @@
               ],
               "returns": "any"
             },
+            "global_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "params": {
               "params": [
                 {
@@ -12909,6 +13342,15 @@
               "returns": "any"
             },
             "post_prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "post_prompt_url": {
               "params": [
                 {
                   "name": "self",
@@ -12929,7 +13371,17 @@
           }
         },
         "Answer": {
-          "methods": {}
+          "methods": {
+            "answer": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "AnyOfProperty": {
           "methods": {
@@ -12946,6 +13398,24 @@
         },
         "ArrayProperty": {
           "methods": {
+            "default": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "items": {
               "params": [
                 {
@@ -12956,6 +13426,15 @@
               "returns": "any"
             },
             "nullable": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
               "params": [
                 {
                   "name": "self",
@@ -12977,6 +13456,15 @@
               ],
               "returns": "any"
             },
+            "hard_stop_prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "hard_stop_time": {
               "params": [
                 {
@@ -12987,6 +13475,33 @@
               "returns": "any"
             },
             "inactivity_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "video_idle_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "video_listening_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "video_talking_file": {
               "params": [
                 {
                   "name": "self",
@@ -13048,7 +13563,25 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "nullable": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
               "params": [
                 {
                   "name": "self",
@@ -13060,10 +13593,30 @@
           }
         },
         "ChangeContextAction": {
-          "methods": {}
+          "methods": {
+            "change_context": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "ChangeStepAction": {
-          "methods": {}
+          "methods": {
+            "change_step": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "Cond": {
           "methods": {
@@ -13110,6 +13663,15 @@
                 }
               ],
               "returns": "any"
+            },
+            "when": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
@@ -13146,6 +13708,24 @@
               ],
               "returns": "any"
             },
+            "call_state_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "codecs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "confirm": {
               "params": [
                 {
@@ -13156,6 +13736,24 @@
               "returns": "any"
             },
             "confirm_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "encryption": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "from": {
               "params": [
                 {
                   "name": "self",
@@ -13183,6 +13781,15 @@
               "returns": "any"
             },
             "parallel": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "password": {
               "params": [
                 {
                   "name": "self",
@@ -13245,7 +13852,25 @@
               ],
               "returns": "any"
             },
+            "to": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "transfer_after_bridge": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "username": {
               "params": [
                 {
                   "name": "self",
@@ -13285,6 +13910,24 @@
               ],
               "returns": "any"
             },
+            "call_state_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "codecs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "confirm": {
               "params": [
                 {
@@ -13295,6 +13938,24 @@
               "returns": "any"
             },
             "confirm_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "encryption": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "from": {
               "params": [
                 {
                   "name": "self",
@@ -13322,6 +13983,15 @@
               "returns": "any"
             },
             "parallel": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "password": {
               "params": [
                 {
                   "name": "self",
@@ -13375,6 +14045,15 @@
               ],
               "returns": "any"
             },
+            "username": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "webrtc_media": {
               "params": [
                 {
@@ -13406,6 +14085,24 @@
               ],
               "returns": "any"
             },
+            "call_state_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "codecs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "confirm": {
               "params": [
                 {
@@ -13424,6 +14121,24 @@
               ],
               "returns": "any"
             },
+            "encryption": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "from": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "headers": {
               "params": [
                 {
@@ -13434,6 +14149,15 @@
               "returns": "any"
             },
             "max_duration": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "password": {
               "params": [
                 {
                   "name": "self",
@@ -13496,6 +14220,15 @@
               ],
               "returns": "any"
             },
+            "username": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "webrtc_media": {
               "params": [
                 {
@@ -13527,6 +14260,24 @@
               ],
               "returns": "any"
             },
+            "call_state_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "codecs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "confirm": {
               "params": [
                 {
@@ -13545,6 +14296,24 @@
               ],
               "returns": "any"
             },
+            "encryption": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "from": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "headers": {
               "params": [
                 {
@@ -13555,6 +14324,15 @@
               "returns": "any"
             },
             "max_duration": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "password": {
               "params": [
                 {
                   "name": "self",
@@ -13617,6 +14395,15 @@
               ],
               "returns": "any"
             },
+            "username": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "webrtc_media": {
               "params": [
                 {
@@ -13648,6 +14435,24 @@
               ],
               "returns": "any"
             },
+            "call_state_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "codecs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "confirm": {
               "params": [
                 {
@@ -13666,6 +14471,24 @@
               ],
               "returns": "any"
             },
+            "encryption": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "from": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "headers": {
               "params": [
                 {
@@ -13676,6 +14499,15 @@
               "returns": "any"
             },
             "max_duration": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "password": {
               "params": [
                 {
                   "name": "self",
@@ -13720,7 +14552,25 @@
               ],
               "returns": "any"
             },
+            "to": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "transfer_after_bridge": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "username": {
               "params": [
                 {
                   "name": "self",
@@ -13741,11 +14591,48 @@
           }
         },
         "ConnectHeaders": {
-          "methods": {}
+          "methods": {
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "ConnectSwitch": {
           "methods": {
+            "case": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "default": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "variable": {
               "params": [
                 {
                   "name": "self",
@@ -13757,10 +14644,47 @@
           }
         },
         "ConstProperty": {
-          "methods": {}
+          "methods": {
+            "const": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "ContextPOMSteps": {
           "methods": {
+            "end": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "functions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "pom": {
               "params": [
                 {
@@ -13778,15 +14702,115 @@
                 }
               ],
               "returns": "any"
+            },
+            "step_criteria": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "valid_contexts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "valid_steps": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "ContextSwitchAction": {
-          "methods": {}
+          "methods": {
+            "context_switch": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "ContextTextSteps": {
           "methods": {
+            "end": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "functions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "skip_user_turn": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "step_criteria": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "text": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "valid_contexts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "valid_steps": {
               "params": [
                 {
                   "name": "self",
@@ -13822,6 +14846,15 @@
               "returns": "any"
             },
             "exit_fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "isolated": {
               "params": [
                 {
                   "name": "self",
@@ -13870,7 +14903,25 @@
               ],
               "returns": "any"
             },
+            "isolated": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "steps": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "text": {
               "params": [
                 {
                   "name": "self",
@@ -13883,6 +14934,24 @@
         },
         "ConversationMessage": {
           "methods": {
+            "content": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "lang": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "role": {
               "params": [
                 {
@@ -13926,14 +14995,43 @@
           }
         },
         "Denoise": {
-          "methods": {}
+          "methods": {
+            "denoise": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "DetectMachine": {
-          "methods": {}
+          "methods": {
+            "detect_machine": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "DetectMachineConfig": {
           "methods": {
             "detect_message_end": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "detectors": {
               "params": [
                 {
                   "name": "self",
@@ -13987,7 +15085,25 @@
               ],
               "returns": "any"
             },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "tone": {
               "params": [
                 {
                   "name": "self",
@@ -14022,6 +15138,24 @@
         },
         "EnterQueueObject": {
           "methods": {
+            "queue_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "transfer_after_bridge": {
               "params": [
                 {
@@ -14052,11 +15186,48 @@
           }
         },
         "Execute": {
-          "methods": {}
+          "methods": {
+            "execute": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "ExecuteConfig": {
           "methods": {
+            "dest": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "on_return": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "params": {
               "params": [
                 {
                   "name": "self",
@@ -14078,7 +15249,25 @@
         },
         "ExecuteSwitch": {
           "methods": {
+            "case": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "default": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "variable": {
               "params": [
                 {
                   "name": "self",
@@ -14099,18 +15288,92 @@
                 }
               ],
               "returns": "any"
+            },
+            "pattern": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "string": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "FunctionParameters": {
-          "methods": {}
+          "methods": {
+            "properties": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "required": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "Goto": {
-          "methods": {}
+          "methods": {
+            "goto": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "GotoConfig": {
           "methods": {
+            "label": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "max": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "when": {
               "params": [
                 {
                   "name": "self",
@@ -14150,7 +15413,43 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data_token": {
               "params": [
                 {
                   "name": "self",
@@ -14168,7 +15467,34 @@
               ],
               "returns": "any"
             },
+            "purpose": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "skip_fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "wait_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "wait_file_loops": {
               "params": [
                 {
                   "name": "self",
@@ -14185,11 +15511,30 @@
                 }
               ],
               "returns": "any"
+            },
+            "web_hook_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "Hangup": {
-          "methods": {}
+          "methods": {
+            "hangup": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "HangupAction": {
           "methods": {
@@ -14206,7 +15551,34 @@
         },
         "Hint": {
           "methods": {
+            "hint": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "ignore_case": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "pattern": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "replace": {
               "params": [
                 {
                   "name": "self",
@@ -14231,7 +15603,17 @@
           }
         },
         "InjectAction": {
-          "methods": {}
+          "methods": {
+            "inject": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "IntegerProperty": {
           "methods": {
@@ -14244,7 +15626,34 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "enum": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "nullable": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
               "params": [
                 {
                   "name": "self",
@@ -14270,6 +15679,24 @@
         },
         "JoinConferenceObject": {
           "methods": {
+            "beep": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "coach": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "end_on_exit": {
               "params": [
                 {
@@ -14297,6 +15724,60 @@
               ],
               "returns": "any"
             },
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "record": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "recording_status_callback": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "recording_status_callback_event": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "recording_status_callback_method": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "region": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "result": {
               "params": [
                 {
@@ -14307,6 +15788,42 @@
               "returns": "any"
             },
             "start_on_enter": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_callback": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_callback_event": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_callback_method": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "trim": {
               "params": [
                 {
                   "name": "self",
@@ -14327,13 +15844,43 @@
           }
         },
         "JoinRoom": {
-          "methods": {}
+          "methods": {
+            "join_room": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "JoinRoomConfig": {
-          "methods": {}
+          "methods": {
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "Label": {
-          "methods": {}
+          "methods": {
+            "label": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "LanguageParams": {
           "methods": {
@@ -14359,7 +15906,88 @@
         },
         "LanguagesWithFillers": {
           "methods": {
+            "code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "emotion": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "engine": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function_fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "model": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "speech_fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "speed": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "voice": {
               "params": [
                 {
                   "name": "self",
@@ -14372,7 +16000,79 @@
         },
         "LanguagesWithSoloFillers": {
           "methods": {
+            "code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "emotion": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "engine": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "model": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "speed": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "voice": {
               "params": [
                 {
                   "name": "self",
@@ -14384,7 +16084,17 @@
           }
         },
         "LiveTranscribe": {
-          "methods": {}
+          "methods": {
+            "live_transcribe": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "LiveTranscribeConfig": {
           "methods": {
@@ -14400,7 +16110,17 @@
           }
         },
         "LiveTranslate": {
-          "methods": {}
+          "methods": {
+            "live_translate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "LiveTranslateConfig": {
           "methods": {
@@ -14416,11 +16136,39 @@
           }
         },
         "NullProperty": {
-          "methods": {}
+          "methods": {
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "NumberProperty": {
           "methods": {
             "default": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "description": {
               "params": [
                 {
                   "name": "self",
@@ -14446,12 +16194,66 @@
                 }
               ],
               "returns": "any"
+            },
+            "type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "ObjectProperty": {
           "methods": {
+            "default": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "nullable": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "properties": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "required": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
               "params": [
                 {
                   "name": "self",
@@ -14482,6 +16284,15 @@
               ],
               "returns": "any"
             },
+            "max_tokens": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "presence_penalty": {
               "params": [
                 {
@@ -14492,6 +16303,15 @@
               "returns": "any"
             },
             "temperature": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "text": {
               "params": [
                 {
                   "name": "self",
@@ -14523,6 +16343,15 @@
               "returns": "any"
             },
             "frequency_penalty": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "max_tokens": {
               "params": [
                 {
                   "name": "self",
@@ -14589,6 +16418,15 @@
               ],
               "returns": "any"
             },
+            "max_tokens": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "pom": {
               "params": [
                 {
@@ -14624,6 +16462,15 @@
                 }
               ],
               "returns": "any"
+            },
+            "voice_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
@@ -14639,6 +16486,15 @@
               "returns": "any"
             },
             "frequency_penalty": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "max_tokens": {
               "params": [
                 {
                   "name": "self",
@@ -14665,7 +16521,25 @@
               ],
               "returns": "any"
             },
+            "text": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "top_p": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "voice_id": {
               "params": [
                 {
                   "name": "self",
@@ -14699,14 +16573,78 @@
                 }
               ],
               "returns": "any"
+            },
+            "response": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "Pay": {
-          "methods": {}
+          "methods": {
+            "pay": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "PayConfig": {
           "methods": {
+            "charge_amount": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "currency": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "input": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "language": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "max_attempts": {
               "params": [
                 {
@@ -14734,6 +16672,33 @@
               ],
               "returns": "any"
             },
+            "payment_connector_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "payment_method": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "postal_code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "prompts": {
               "params": [
                 {
@@ -14752,7 +16717,43 @@
               ],
               "returns": "any"
             },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "token_type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "valid_card_types": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "voice": {
               "params": [
                 {
                   "name": "self",
@@ -14764,17 +16765,110 @@
           }
         },
         "PayParameters": {
-          "methods": {}
+          "methods": {
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "PayPromptPlayAction": {
-          "methods": {}
+          "methods": {
+            "phrase": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "PayPromptSayAction": {
-          "methods": {}
+          "methods": {
+            "phrase": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "PayPrompts": {
           "methods": {
             "actions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "attempts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "card_type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "error_type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "for": {
               "params": [
                 {
                   "name": "self",
@@ -14805,7 +16899,52 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "parameters": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "web_hook_url": {
               "params": [
                 {
                   "name": "self",
@@ -14836,7 +16975,52 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "parameters": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "web_hook_url": {
               "params": [
                 {
                   "name": "self",
@@ -14867,7 +17051,52 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "parameters": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "web_hook_url": {
               "params": [
                 {
                   "name": "self",
@@ -14898,7 +17127,52 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "parameters": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "web_hook_url": {
               "params": [
                 {
                   "name": "self",
@@ -14925,6 +17199,42 @@
         "PlayWithURL": {
           "methods": {
             "auto_answer": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_gender": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_language": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_voice": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_url": {
               "params": [
                 {
                   "name": "self",
@@ -14964,6 +17274,42 @@
               ],
               "returns": "any"
             },
+            "say_gender": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_language": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_voice": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "urls": {
               "params": [
                 {
@@ -14985,10 +17331,38 @@
           }
         },
         "PlaybackBGAction": {
-          "methods": {}
+          "methods": {
+            "playback_bg": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "PomSectionBodyContent": {
           "methods": {
+            "body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "bullets": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "numbered": {
               "params": [
                 {
@@ -15008,6 +17382,15 @@
               "returns": "any"
             },
             "subsections": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "title": {
               "params": [
                 {
                   "name": "self",
@@ -15020,6 +17403,24 @@
         },
         "PomSectionBulletsContent": {
           "methods": {
+            "body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "bullets": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "numbered": {
               "params": [
                 {
@@ -15046,11 +17447,30 @@
                 }
               ],
               "returns": "any"
+            },
+            "title": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "Prompt": {
-          "methods": {}
+          "methods": {
+            "prompt": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "PromptConfig": {
           "methods": {
@@ -15090,7 +17510,43 @@
               ],
               "returns": "any"
             },
+            "say_gender": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_language": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_voice": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "speech_end_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "speech_engine": {
               "params": [
                 {
                   "name": "self",
@@ -15108,7 +17564,43 @@
               ],
               "returns": "any"
             },
+            "speech_language": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "speech_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "terminators": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "volume": {
               "params": [
                 {
                   "name": "self",
@@ -15129,20 +17621,78 @@
                 }
               ],
               "returns": "any"
+            },
+            "replace": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "with": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "ReceiveFax": {
-          "methods": {}
+          "methods": {
+            "receive_fax": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "ReceiveFaxConfig": {
-          "methods": {}
+          "methods": {
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "Record": {
-          "methods": {}
+          "methods": {
+            "record": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "RecordCall": {
-          "methods": {}
+          "methods": {
+            "record_call": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "RecordCallConfig": {
           "methods": {
@@ -15155,7 +17705,34 @@
               ],
               "returns": "any"
             },
+            "control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "direction": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "end_silence_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "format": {
               "params": [
                 {
                   "name": "self",
@@ -15191,7 +17768,25 @@
               ],
               "returns": "any"
             },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "stereo": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "terminators": {
               "params": [
                 {
                   "name": "self",
@@ -15213,7 +17808,25 @@
               ],
               "returns": "any"
             },
+            "direction": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "end_silence_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "format": {
               "params": [
                 {
                   "name": "self",
@@ -15249,7 +17862,25 @@
               ],
               "returns": "any"
             },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "stereo": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "terminators": {
               "params": [
                 {
                   "name": "self",
@@ -15261,11 +17892,48 @@
           }
         },
         "Request": {
-          "methods": {}
+          "methods": {
+            "request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "RequestConfig": {
           "methods": {
+            "body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "connect_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "headers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "method": {
               "params": [
                 {
                   "name": "self",
@@ -15291,23 +17959,235 @@
                 }
               ],
               "returns": "any"
+            },
+            "url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "Return": {
-          "methods": {}
+          "methods": {
+            "return": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "RingbackConfig": {
-          "methods": {}
+          "methods": {
+            "auto_answer": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "loop": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_gender": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_language": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "say_voice": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "urls": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "volume": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SIPRefer": {
-          "methods": {}
+          "methods": {
+            "sip_refer": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SMSWithBody": {
-          "methods": {}
+          "methods": {
+            "body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "from_number": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "region": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "tags": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_number": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SMSWithMedia": {
-          "methods": {}
+          "methods": {
+            "body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "from_number": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "media": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "region": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "tags": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_number": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SWAIG": {
           "methods": {
@@ -15359,10 +18239,48 @@
           }
         },
         "SWAIGDefaults": {
-          "methods": {}
+          "methods": {
+            "web_hook_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SWAIGIncludes": {
-          "methods": {}
+          "methods": {
+            "functions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SWAIGInternalFiller": {
           "methods": {
@@ -15463,7 +18381,17 @@
           }
         },
         "SayAction": {
-          "methods": {}
+          "methods": {
+            "say": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "Section": {
           "methods": {
@@ -15479,16 +18407,83 @@
           }
         },
         "SendDigits": {
-          "methods": {}
+          "methods": {
+            "send_digits": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SendDigitsConfig": {
-          "methods": {}
+          "methods": {
+            "digits": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SendFax": {
-          "methods": {}
+          "methods": {
+            "send_fax": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SendFaxConfig": {
-          "methods": {}
+          "methods": {
+            "document": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "header_info": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "identity": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SendSMS": {
           "methods": {
@@ -15504,16 +18499,83 @@
           }
         },
         "Set": {
-          "methods": {}
+          "methods": {
+            "set": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SetGlobalDataAction": {
-          "methods": {}
+          "methods": {
+            "set_global_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SetMetaDataAction": {
-          "methods": {}
+          "methods": {
+            "set_meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SipReferConfig": {
-          "methods": {}
+          "methods": {
+            "password": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "to_uri": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "username": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "Sleep": {
           "methods": {
@@ -15529,7 +18591,17 @@
           }
         },
         "StartAction": {
-          "methods": {}
+          "methods": {
+            "start": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "StartUpHookSWAIGFunction": {
           "methods": {
@@ -15560,7 +18632,43 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data_token": {
               "params": [
                 {
                   "name": "self",
@@ -15578,6 +18686,15 @@
               ],
               "returns": "any"
             },
+            "purpose": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "skip_fillers": {
               "params": [
                 {
@@ -15587,7 +18704,34 @@
               ],
               "returns": "any"
             },
+            "wait_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "wait_file_loops": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "wait_for_fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "web_hook_url": {
               "params": [
                 {
                   "name": "self",
@@ -15612,7 +18756,17 @@
           }
         },
         "StopDenoise": {
-          "methods": {}
+          "methods": {
+            "stop_denoise": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "StopPlaybackBGAction": {
           "methods": {
@@ -15628,19 +18782,86 @@
           }
         },
         "StopRecordCall": {
-          "methods": {}
+          "methods": {
+            "stop_record_call": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "StopRecordCallConfig": {
-          "methods": {}
+          "methods": {
+            "control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "StopTap": {
-          "methods": {}
+          "methods": {
+            "stop_tap": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "StopTapConfig": {
-          "methods": {}
+          "methods": {
+            "control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "StringProperty": {
           "methods": {
+            "default": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "enum": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "format": {
               "params": [
                 {
@@ -15658,11 +18879,39 @@
                 }
               ],
               "returns": "any"
+            },
+            "pattern": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "SummarizeAction": {
-          "methods": {}
+          "methods": {
+            "summarize": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SummarizeConversationSWAIGFunction": {
           "methods": {
@@ -15693,7 +18942,43 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data_token": {
               "params": [
                 {
                   "name": "self",
@@ -15711,7 +18996,34 @@
               ],
               "returns": "any"
             },
+            "purpose": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "skip_fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "wait_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "wait_file_loops": {
               "params": [
                 {
                   "name": "self",
@@ -15728,15 +19040,52 @@
                 }
               ],
               "returns": "any"
+            },
+            "web_hook_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "Switch": {
-          "methods": {}
+          "methods": {
+            "switch": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "SwitchConfig": {
           "methods": {
+            "case": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "default": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "variable": {
               "params": [
                 {
                   "name": "self",
@@ -15748,11 +19097,66 @@
           }
         },
         "Tap": {
-          "methods": {}
+          "methods": {
+            "tap": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "TapConfig": {
           "methods": {
+            "codec": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "direction": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "rtp_ptime": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "status_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "uri": {
               "params": [
                 {
                   "name": "self",
@@ -15764,37 +19168,165 @@
           }
         },
         "ToggleFunctionsAction": {
-          "methods": {}
+          "methods": {
+            "toggle_functions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "TranscribeStartAction": {
-          "methods": {}
+          "methods": {
+            "start": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "TranscribeSummarizeAction": {
-          "methods": {}
+          "methods": {
+            "summarize": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "Transfer": {
-          "methods": {}
+          "methods": {
+            "transfer": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "TransferConfig": {
-          "methods": {}
+          "methods": {
+            "dest": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "Unset": {
-          "methods": {}
+          "methods": {
+            "unset": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "UnsetGlobalDataAction": {
-          "methods": {}
+          "methods": {
+            "unset_global_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "UnsetMetaDataAction": {
-          "methods": {}
+          "methods": {
+            "unset_meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "UserEvent": {
-          "methods": {}
+          "methods": {
+            "user_event": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "UserEventConfig": {
-          "methods": {}
+          "methods": {
+            "event": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "UserInputAction": {
-          "methods": {}
+          "methods": {
+            "user_input": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
         },
         "UserSWAIGFunction": {
           "methods": {
@@ -15825,7 +19357,43 @@
               ],
               "returns": "any"
             },
+            "description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "meta_data_token": {
               "params": [
                 {
                   "name": "self",
@@ -15843,7 +19411,34 @@
               ],
               "returns": "any"
             },
+            "purpose": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "skip_fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "wait_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "wait_file_loops": {
               "params": [
                 {
                   "name": "self",
@@ -15860,12 +19455,48 @@
                 }
               ],
               "returns": "any"
+            },
+            "web_hook_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             }
           }
         },
         "Webhook": {
           "methods": {
+            "error_keys": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "expressions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "foreach": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "headers": {
               "params": [
                 {
                   "name": "self",
@@ -15883,7 +19514,43 @@
               ],
               "returns": "any"
             },
+            "method": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
             "output": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "require_args": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "url": {
               "params": [
                 {
                   "name": "self",

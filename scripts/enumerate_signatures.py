@@ -994,29 +994,44 @@ def _schema_defs() -> dict:
 
 
 def _field_is_surface(field_schema: dict, defs: dict) -> bool:
-    """A generated-payload field is cross-port SURFACE iff its schema references
-    ANY named ``$def`` (a ``$ref``) at any depth — direct, or via array.items /
-    anyOf / oneOf / allOf. This is the schema analog of the reference oracle's
-    ``"class:" in canonical`` test: the oracle keeps a field whose canonical type
-    mentions a named SDK type (an object class OR a scalar TypeAlias like
-    ``SWMLVar``), and drops a field whose type is a BARE builtin (``str``, ``int``,
-    ``bool``, a plain ``type:object`` dict) with no named-type reference. So e.g.
-    ``acknowledge_interruptions: anyOf[boolean, $ref SWMLVar]`` IS surface (has a
-    $ref), while ``global_data: type object`` and ``post_prompt_url: type string``
-    are NOT (no $ref anywhere). A scalar-alias-typed field IS kept (matches the reference) —
-    the reference keeps scalar-alias-typed fields too."""
-    if not isinstance(field_schema, dict):
-        return False
-    if field_schema.get("$ref"):
-        return True
-    items = field_schema.get("items")
-    if isinstance(items, dict) and _field_is_surface(items, defs):
-        return True
-    for key in ("anyOf", "oneOf", "allOf"):
-        for sub in field_schema.get(key) or []:
-            if isinstance(sub, dict) and _field_is_surface(sub, defs):
-                return True
-    return False
+    """EVERY generated-payload field the schema declares is cross-port SURFACE.
+
+    A generated payload class is a wire envelope: each property IS a wire key the
+    caller sets, so each accessor the generator emits for it is real API. The only
+    fields that are NOT surface are the ones ``x-sdk-overlay`` HIDES — those are
+    never emitted at all — and that hide is applied by the CALLER
+    (``_surface_fields_by_class``), which is where it belongs: this predicate
+    answers "is this declared field API?", and for a payload schema the answer is
+    unconditionally yes.
+
+    WHY THIS USED TO RETURN FALSE FOR PRIMITIVES, AND WHY THAT WAS WRONG
+    -------------------------------------------------------------------
+    This predicate previously required the field's schema to reference a named
+    ``$def`` (a ``$ref``) at some depth, dropping bare-builtin fields
+    (``post_prompt_url: type string``, ``global_data: type object``). That mirrored
+    a REAL property of the reference oracle at the time: ``"class:" in canonical``,
+    i.e. the oracle recorded only class-typed TypedDict fields. The rule was
+    derived from ``schema.json`` rather than read off the oracle's field list
+    precisely so it would not be a permanent blind spot — but it still encoded the
+    oracle's DEFECT as its criterion, and so tracked the defect instead of the wire.
+
+    porting-sdk ``e432177`` ("record EVERY TypedDict field, not only class-typed
+    ones") corrected the oracle. Measured against that oracle, the port's
+    ``AIParams`` declares exactly the reference's 87 fields, name for name, with
+    zero on either side alone — the port was never missing anything, only the
+    measurement was short (60 of 87). Keeping the ``$ref`` test would report those
+    27 as ``missing-port`` forever.
+
+    The schema-derived DESIGN is retained and is why this is safe: the field set
+    still comes from replaying the generator's own schema build (so it cannot drift
+    from what was emitted), NOT from mirroring the oracle's field list. Widening
+    what that replay ADMITS does not reintroduce the blind spot the narrow rule was
+    guarding against; the blind spot was reading the oracle, and this still does
+    not read the oracle.
+
+    ``defs`` is retained in the signature for call-site compatibility.
+    """
+    return isinstance(field_schema, dict)
 
 
 _SURFACE_FIELDS_CACHE: dict | None = None
@@ -2827,12 +2842,21 @@ def augment_with_bareword_has(raw: dict) -> None:
 # _surface_fields_by_class). These lock the predicate against silent drift: a change that
 # makes it over- or under-count generated-payload surface fields (the "trims real API" or
 # "mirrors the oracle" failure modes the predicate exists to avoid) shifts these counts and
-# fails the selftest. AIParams is the richest generated payload (92 raw fields → 60 with a
-# $ref-carrying schema); AIObject is a small cross-check (9 → 7). Values verified live and
-# recorded in r5/perl_R5.md.
+# fails the selftest. AIParams is the richest generated payload; AIObject is a small
+# cross-check.
+#
+# WIDENED with the predicate (porting-sdk e432177 re-drift): every declared payload field
+# is surface, so the only gap between total and surface is the x-sdk-overlay HIDE.
+# AIParams 92 raw → 87 surface, the 5 dropped being exactly the overlay-hidden
+# audible_debug / audible_latency / cache_mode / enable_accounting / verbose_logs — which
+# the generator never emits, and which are correspondingly absent from the 87 `has`
+# attributes in lib/SignalWire/SWML/Generated/AIParams.pm. 87 is also the reference's
+# AIParams member count at the pinned oracle, name for name. AIObject has no hidden field,
+# so 9 → 9. A nonzero AIParams gap is what keeps this anchor from being vacuous: it proves
+# the overlay hide still runs, which is now the predicate's ONLY discriminating step.
 _PREDICATE_ANCHORS = {
-    "AIParams": (92, 60),  # (total fields, surface fields)
-    "AIObject": (9, 7),
+    "AIParams": (92, 87),  # (total fields, surface fields) — 5 overlay-hidden
+    "AIObject": (9, 9),  # no overlay-hidden field
 }
 _PREDICATE_MIN_CLASSES = (
     100  # 155 today; a big drop = the replay broke → vacuous predicate
@@ -2874,37 +2898,62 @@ def run_predicate_selftest() -> int:
                 file=sys.stderr,
             )
             ok = False
-    # Fail-CLOSED check: a schema-less field must default to KEEP (surface toward
-    # visibility), never silently drop. _field_is_surface returns False only for a
-    # concrete no-$ref schema; the CALLER defaults unknown/schema-less fields to keep.
-    # Verify the primitive-vs-$ref discrimination directly.
-    # These three were `assert`s. In a GATE self-test that is a live hazard:
-    # `python3 -O` strips assert statements entirely, so the discrimination check
-    # would silently vanish and the gate would print PASS having verified nothing.
-    # Explicit checks that set ok=False cannot be optimized away.
-    defs: dict = {}
-    for schema, want, label in (
-        ({"$ref": "#/$defs/Foo"}, True, "$ref -> surface"),
-        ({"type": "string"}, False, "concrete primitive -> not surface"),
+    # Fail-CLOSED toward VISIBILITY. The predicate now admits every declared field,
+    # so a field can only be dropped by the x-sdk-overlay HIDE the caller applies —
+    # which makes that hide the one and only discriminating step, and therefore the
+    # one thing this self-test must prove still runs. Two directions, both required:
+    #
+    #   (a) it still DROPS — the 5 overlay-hidden AIParams fields must be classified
+    #       non-surface. If the overlay lookup silently started returning False for
+    #       everything, this predicate would degenerate into "keep literally
+    #       everything" and would INVENT 5 members the generator never emits.
+    #   (b) it still KEEPS a primitive — the widening's whole point. A bare-`string`
+    #       field (post_prompt_url) and a bare-`object` field (global_data) must both
+    #       be surface. A regression to the old $ref rule reds here immediately.
+    #
+    # These are explicit checks, not `assert`s: `python3 -O` strips assert statements
+    # entirely, so an assert-based check would silently vanish and the gate would
+    # print PASS having verified nothing.
+    for cls, key, want, label in (
         (
-            {"anyOf": [{"type": "boolean"}, {"$ref": "#/$defs/SWMLVar"}]},
+            "AIParams",
+            "verbose_logs",
+            False,
+            "x-sdk-overlay hidden field -> NOT surface",
+        ),
+        ("AIParams", "cache_mode", False, "x-sdk-overlay hidden field -> NOT surface"),
+        ("AIParams", "ai_name", True, "bare-string payload field -> surface"),
+        ("AIObject", "post_prompt_url", True, "bare-string payload field -> surface"),
+        ("AIObject", "global_data", True, "bare-object payload field -> surface"),
+        (
+            "AIParams",
+            "acknowledge_interruptions",
             True,
-            "anyOf containing a $ref -> surface",
+            "$ref-carrying payload field -> surface",
         ),
     ):
-        got = _field_is_surface(schema, defs)
-        if got is not want:
+        fields = sf.get(cls) or {}
+        if key not in fields:
             print(
-                f"[predicate-selftest] FAIL: {label}: _field_is_surface returned "
-                f"{got!r}, expected {want!r} — the primitive-vs-$ref discrimination "
-                f"is broken.",
+                f"[predicate-selftest] FAIL: {cls}.{key} absent from the predicate "
+                f"output — the schema replay changed shape; the anchor cannot be checked.",
+                file=sys.stderr,
+            )
+            ok = False
+            continue
+        if fields[key] is not want:
+            print(
+                f"[predicate-selftest] FAIL: {label}: {cls}.{key} classified "
+                f"{fields[key]!r}, expected {want!r} — the field-surface predicate or the "
+                f"x-sdk-overlay hide is broken.",
                 file=sys.stderr,
             )
             ok = False
     if ok:
         print(
             "[predicate-selftest] PASS: field-surface predicate at locked anchors "
-            f"(AIParams 92/60, AIObject 9/7, {len(sf)} classes) + $ref discrimination intact."
+            f"(AIParams 92/87, AIObject 9/9, {len(sf)} classes) + overlay-hide "
+            "discrimination intact."
         )
         return 0
     return 1

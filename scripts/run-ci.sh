@@ -214,10 +214,10 @@ sched_gate TYPE-EROSION res=surface desc="port did not erase a reference-declare
 
 # PREDICATE-SELFTEST (Wave-2 C1-V8, GATE-SELFTEST doctrine): the field-surface predicate
 # that decides which generated-payload fields are cross-port surface (enumerate_signatures.py
-# _field_is_surface) must hold its locked anchor counts (AIParams 92/60, AIObject 9/7, 155
+# _field_is_surface) must hold its locked anchor counts (AIParams 92/87, AIObject 9/9, 158
 # classes). A predicate change that silently trims or inflates payload surface — the exact
 # vacuity this locks — shifts these counts and reds here. Cheap; per-PR.
-sched_gate PREDICATE-SELFTEST desc="field-surface predicate at locked anchors (AIParams 92/60) — GATE-SELFTEST" \
+sched_gate PREDICATE-SELFTEST desc="field-surface predicate at locked anchors (AIParams 92/87) — GATE-SELFTEST" \
     -- python3 scripts/enumerate_signatures.py --selftest
 
 # ROUTE-COLLISION (spec-aware): build perl's route_registry.pl → feed the SPEC-AWARE
