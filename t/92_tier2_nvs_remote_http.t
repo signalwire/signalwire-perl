@@ -4,6 +4,8 @@ use warnings;
 use Test::More;
 use JSON ();
 use IO::Socket::INET;
+use POSIX       ();
+use Time::HiRes ();
 
 # =============================================================================
 # Behavioral contract #4 — native_vector_search REMOTE HTTP (real POST, not a
@@ -22,6 +24,16 @@ use IO::Socket::INET;
 
 use SignalWire::Agent::AgentBase;
 use SignalWire::Skills::SkillRegistry;
+
+# WIN32: this test stands up its mock server in a BARE-FORK child and then signals
+# it to shut down. On Win32 `fork` is emulated with interpreter threads, so the
+# child is a PSEUDO-process in the SAME OS process and `kill 'TERM', $pid` lands on
+# the PARENT — it kills the test instead of the server. (Measured in
+# t/26_skill_spider.t on run 30266308509: SIGTERM 0.3ms after the reap, then a
+# 24-minute hang.) The wire behaviour here is covered on POSIX, where fork and
+# signals work; forcing it on Windows only produces a self-killed test.
+plan skip_all => 'needs a real fork + signallable child; Win32 emulates fork with threads'
+    if $^O =~ /^(MS)?Win32$/;
 
 # Loopback URLs must pass the SSRF guard for this test.
 local $ENV{SWML_ALLOW_PRIVATE_URLS} = '1';
@@ -47,7 +59,7 @@ my $RESPONSE_BODY = JSON::encode_json(
     {
         results => [
             { content => 'The sky is blue.', score => 0.91, metadata => { filename => 'sky.md' } },
-            { content => 'Grass is green.',  score => 0.72, metadata => { filename => 'grass.md' } },
+            { content => 'Grass is green.', score => 0.72, metadata => { filename => 'grass.md' } },
         ],
     }
 );
@@ -56,6 +68,7 @@ my $pid = fork();
 defined $pid or plan skip_all => "cannot fork mock server: $!";
 
 if ( $pid == 0 ) {
+
     # ---- child: accept ONE request, capture it, reply with the canned body ----
     my $client = $listener->accept;
     if ($client) {
@@ -68,13 +81,13 @@ if ( $pid == 0 ) {
         my ( $headers_done, $need ) = ( 0, 0 );
         while (1) {
             my $chunk = '';
-            my $n = sysread( $client, $chunk, 4096 );
+            my $n     = sysread( $client, $chunk, 4096 );
             last unless $n;    # EOF or error
             $data .= $chunk;
 
             if ( !$headers_done && $data =~ /\r?\n\r?\n/ ) {
                 $headers_done = 1;
-                $need = ( $data =~ /^Content-Length:\s*(\d+)/mi ) ? $1 : 0;
+                $need         = ( $data =~ /^Content-Length:\s*(\d+)/mi ) ? $1 : 0;
             }
             if ($headers_done) {
                 my ($hdr_len) = $data =~ /\A(.*?\r?\n\r?\n)/s;
@@ -96,7 +109,8 @@ if ( $pid == 0 ) {
         my $resp =
               "HTTP/1.1 200 OK\r\n"
             . "Content-Type: application/json\r\n"
-            . "Content-Length: " . length($RESPONSE_BODY) . "\r\n"
+            . "Content-Length: "
+            . length($RESPONSE_BODY) . "\r\n"
             . "Connection: close\r\n\r\n"
             . $RESPONSE_BODY;
         print {$client} $resp;
@@ -126,8 +140,28 @@ my $ok = eval {
 };
 my $err = $@;
 
-# Reap the child so run-ci completes (bounded, no zombie).
-waitpid( $pid, 0 );
+# BOUNDED reap. This said "bounded" while using an UNBOUNDED waitpid($pid, 0):
+# if the child is still blocked in accept() (the skill never connected, or it
+# wedged mid-request), the parent sits in wait4 forever and takes the whole suite
+# with it. On Win32 that is the normal case, since a bare-fork child is a
+# pseudo-process that does not die on TERM. Same pattern as
+# t/relay/outbound_call_mock.t: TERM, poll with WNOHANG to a hard deadline, then
+# SIGKILL a stuck child and reap the corpse.
+kill 'TERM', $pid;
+my $nvs_deadline = time + 30;
+my $nvs_reaped   = 0;
+while ( time < $nvs_deadline ) {
+    my $w = waitpid( $pid, POSIX::WNOHANG() );
+    if ( $w == $pid || $w == -1 ) { $nvs_reaped = 1; last }
+    Time::HiRes::sleep(0.05);
+}
+unless ($nvs_reaped) {
+    kill 'KILL', $pid;
+    waitpid( $pid, 0 );
+    diag(
+"92_tier2_nvs_remote_http: server child $pid exceeded 30s reap deadline — killed to avoid suite hang"
+    );
+}
 
 ok( $ok, 'search invocation completed against the real server' ) or diag($err);
 

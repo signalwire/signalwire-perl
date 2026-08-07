@@ -23,15 +23,15 @@ subtest 'SignalWire::RestClient builds client from kwargs' => sub {
         token   => 't-456',
         host    => 'demo.signalwire.com',
     );
-    isa_ok($client, 'SignalWire::REST::RestClient');
-    ok(defined $client->fabric, 'fabric namespace wired');
-    ok(defined $client->calling, 'calling namespace wired');
-    ok(defined $client->project, 'project namespace wired');
+    isa_ok( $client, 'SignalWire::REST::RestClient' );
+    ok( defined $client->fabric,  'fabric namespace wired' );
+    ok( defined $client->calling, 'calling namespace wired' );
+    ok( defined $client->project, 'project namespace wired' );
 };
 
 subtest 'SignalWire::RestClient builds client from positional args' => sub {
-    my $client = SignalWire::RestClient('proj', 'tok', 'pos.signalwire.com');
-    isa_ok($client, 'SignalWire::REST::RestClient');
+    my $client = SignalWire::RestClient( 'proj', 'tok', 'pos.signalwire.com' );
+    isa_ok( $client, 'SignalWire::REST::RestClient' );
 };
 
 subtest 'SignalWire::RestClient dies on missing credentials' => sub {
@@ -40,7 +40,7 @@ subtest 'SignalWire::RestClient dies on missing credentials' => sub {
     delete $ENV{SIGNALWIRE_API_TOKEN};
     delete $ENV{SIGNALWIRE_SPACE};
     eval { SignalWire::RestClient() };
-    ok($@, 'died as expected');
+    ok( $@, 'died as expected' );
 };
 
 # ============================================================
@@ -48,16 +48,16 @@ subtest 'SignalWire::RestClient dies on missing credentials' => sub {
 # ============================================================
 
 subtest 'SignalWire::add_skill_directory records the path' => sub {
-    my $tmp = tempdir(CLEANUP => 1);
+    my $tmp = tempdir( CLEANUP => 1 );
     SignalWire::add_skill_directory($tmp);
-    my $reg = SignalWire::_singleton_registry();
+    my $reg   = SignalWire::_singleton_registry();
     my $paths = $reg->_external_paths;
-    ok(grep({ $_ eq $tmp } @$paths), 'tmp dir recorded on singleton registry');
+    ok( grep( { $_ eq $tmp } @$paths ), 'tmp dir recorded on singleton registry' );
 };
 
 subtest 'SignalWire::add_skill_directory dies on missing directory' => sub {
     eval { SignalWire::add_skill_directory('/no/such/path/zzz_perl_top_level') };
-    like($@, qr/does not exist/, 'died with descriptive message');
+    like( $@, qr/does not exist/, 'died with descriptive message' );
 };
 
 # ============================================================
@@ -65,16 +65,16 @@ subtest 'SignalWire::add_skill_directory dies on missing directory' => sub {
 # ============================================================
 
 {
+
     package TopLevelDummySkill;
-    sub skill_name { 'top_level_dummy_skill_perl' }
-    sub new { bless {}, shift }
+    sub skill_name { return 'top_level_dummy_skill_perl' }
+    sub new        { return bless {}, shift }
 }
 
 subtest 'SignalWire::register_skill registers a class' => sub {
     SignalWire::register_skill('TopLevelDummySkill');
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    ok(grep({ $_ eq 'top_level_dummy_skill_perl' } @$skills),
-       'skill is in the registry list');
+    ok( grep( { $_ eq 'top_level_dummy_skill_perl' } @$skills ), 'skill is in the registry list' );
 };
 
 # ============================================================
@@ -83,11 +83,11 @@ subtest 'SignalWire::register_skill registers a class' => sub {
 
 subtest 'SignalWire::list_skills_with_params returns schema hash' => sub {
     my $schema = SignalWire::list_skills_with_params();
-    is(ref($schema), 'HASH', 'returns a hashref');
-    ok(scalar(keys %$schema) > 0, 'schema is non-empty');
-    for my $name (sort keys %$schema) {
-        is(ref($schema->{$name}), 'HASH', "$name entry is a hash");
-        is($schema->{$name}{name}, $name, "$name entry has correct name");
+    is( ref($schema), 'HASH', 'returns a hashref' );
+    ok( scalar( keys %$schema ) > 0, 'schema is non-empty' );
+    for my $name ( sort keys %$schema ) {
+        is( ref( $schema->{$name} ), 'HASH', "$name entry is a hash" );
+        is( $schema->{$name}{name},  $name,  "$name entry has correct name" );
     }
 };
 

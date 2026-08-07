@@ -166,10 +166,14 @@ sub AUTOLOAD ( $self, @args ) {
 
 # Add a verb to the underlying document's main section.
 #
-# Bridges to the Perl Document::add_verb($section, $verb, $data) signature
-# (the Python/Ruby references implicitly target the "main" section).
+# Routes through the VALIDATING Service::add_verb (verb handler + schema pass)
+# rather than the raw Document::add_verb. Going straight to the document was
+# the bypass that let schema-forbidden configs — a `play` with a `text` key, a
+# `hangup` with a reason outside the closed enum — ship silently: the schema
+# rejects them, but nothing consulted the schema. Service::add_verb targets the
+# "main" section, matching the Python/Ruby references.
 sub _add_verb ( $self, $name, $config ) {
-    $self->service->document->add_verb( 'main', $name, $config );
+    $self->service->add_verb( $name, $config );
     return;
 }
 
@@ -233,15 +237,14 @@ SignalWire::SWML::SWMLBuilder - fluent builder for SWML documents
 
 =head1 DESCRIPTION
 
-Perl port of the Python reference C<signalwire.core.swml_builder.SWMLBuilder>
-(and the Ruby C<SignalWire::SWML::SWMLBuilder>). Provides a fluent interface
+L<SignalWire::SWML::SWMLBuilder> provides a fluent interface
 for building SWML documents by chaining method calls, delegating to an
 underlying L<SignalWire::SWML::Service> for the actual document.
 
 The explicit helpers C<answer>, C<hangup>, C<play>, C<ai>, and C<say> cover the
-common verbs. Every other schema verb is auto-vivified through C<AUTOLOAD>,
-which delegates to C<__getattr__> — the Perl analog of the Python reference's
-runtime C<__getattr__> verb dispatch. All mutators return C<$self> for chaining.
+common verbs. Every other schema verb is auto-vivified at call time through
+C<AUTOLOAD>, so any verb the schema defines is callable without a hand-written
+method. All mutators return C<$self> for chaining.
 
 =head1 CONSTRUCTOR
 

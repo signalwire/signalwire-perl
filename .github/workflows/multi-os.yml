@@ -134,9 +134,18 @@ jobs:
       #     and socket/mock-spawn behavior vary by OS.
       #   * PACKAGE-SMOKE — `perl Makefile.PL && make manifest && make dist` then
       #     install+import of the tarball; MANIFEST/dist behavior varies by OS.
+      # timeout-minutes is LOAD-BEARING, not belt-and-braces. A wedged job with no
+      # timeout must be cancelled by hand, and GitHub's API returns BlobNotFound
+      # (404) for an in_progress job's log — so the hang produces NO retrievable
+      # evidence while it burns runner hours. Four Windows jobs were cancelled
+      # manually this way (30240112956 at 4h57m, 30261956136 at 44m on one test).
+      # With a timeout, a future wedge times out on its own AND leaves a readable
+      # log naming the test it stopped at. Generous but finite: macOS runs this
+      # suite in ~160s, and the unwedged Windows sequence did t/01→t/25 in 63s.
       - name: TEST suite (prove -Ilib -It/lib -r t/)
         working-directory: signalwire-perl
         shell: bash
+        timeout-minutes: 25
         env:
           PORTING_SDK: ${{ github.workspace }}/porting-sdk
         run: bash scripts/run-tests.sh

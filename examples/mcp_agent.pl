@@ -22,16 +22,14 @@ $agent->set_prompt_text("You are a helpful assistant with access to external too
 
 # MCP Client: connect to external MCP servers
 # Tools are discovered at call time via the MCP protocol
-$agent->add_mcp_server(
-    'https://mcp.example.com/tools',
-    headers => { 'Authorization' => 'Bearer sk-xxx' },
-);
+$agent->add_mcp_server( 'https://mcp.example.com/tools',
+    headers => { 'Authorization' => 'Bearer sk-xxx' }, );
 
 # MCP Client with resources: fetch data into global_data
 $agent->add_mcp_server(
     'https://mcp.example.com/crm',
-    headers  => { 'Authorization' => 'Bearer crm-key' },
-    resources => 1,
+    headers       => { 'Authorization' => 'Bearer crm-key' },
+    resources     => 1,
     resource_vars => { caller_id => '${caller_id_number}' },
 );
 
@@ -44,11 +42,9 @@ $agent->define_tool(
     description => 'Get weather for a location',
     parameters  => { location => { type => 'string', description => 'City name' } },
     handler     => sub {
-        my ($args, $raw_data) = @_;
+        my ( $args, $raw_data ) = @_;
         my $location = $args->{location} || 'unknown';
-        return SignalWire::SWAIG::FunctionResult->new(
-            response => "72F and sunny in $location"
-        );
+        return SignalWire::SWAIG::FunctionResult->new( response => "72F and sunny in $location" );
     },
 );
 

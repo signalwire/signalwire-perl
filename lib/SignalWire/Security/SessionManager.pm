@@ -2,10 +2,11 @@ package SignalWire::Security::SessionManager;
 use strict;
 use warnings;
 use Moo;
-use JSON         ();
-use Digest::SHA  qw(hmac_sha256_hex);
-use MIME::Base64 ();
-use Time::HiRes  ();
+use JSON                     ();
+use Digest::SHA              qw(hmac_sha256_hex);
+use MIME::Base64             ();
+use Time::HiRes              ();
+use SignalWire::Core::Random ();
 
 has 'token_expiry_secs' => (
     is      => 'ro',
@@ -25,28 +26,12 @@ has '_debug_mode' => (
 
 sub _random_hex {
     my ($len) = @_;
-
-    # Use /dev/urandom for cryptographically secure random bytes.
-    # Die on failure rather than falling back to weak randomness.
-    if ( open my $fh, '<:raw', '/dev/urandom' ) {
-        my $bytes;
-        my $read = read( $fh, $bytes, $len );
-        close $fh;
-        if ( defined $read && $read == $len ) {
-            return unpack( 'H*', $bytes );
-        }
-    }
-    die "FATAL: Cannot generate secure random bytes - /dev/urandom unavailable. "
-        . "This is required for session security.\n";
+    return SignalWire::Core::Random::_random_hex($len);
 }
 
 sub _random_urlsafe {
     my ($len) = @_;
-    my $bytes = '';
-    for ( 1 .. $len ) {
-        $bytes .= chr( int( rand(256) ) );
-    }
-    return MIME::Base64::encode_base64url( $bytes, '' );
+    return SignalWire::Core::Random::_random_urlsafe($len);
 }
 
 sub create_session {
@@ -227,8 +212,7 @@ SignalWire::Security::SessionManager - stateless HMAC token issuer/validator for
 
 =head1 DESCRIPTION
 
-L<SignalWire::Security::SessionManager> is the Perl port of the Python
-SDK's stateless C<SessionManager>. It issues and validates per-function,
+L<SignalWire::Security::SessionManager> issues and validates per-function,
 per-call HMAC-SHA256 tokens used to authorise SWAIG tool invocations.
 Tokens embed the call id, function name, an expiry timestamp, and a
 nonce, all signed with a per-instance secret key; validation is
@@ -245,8 +229,8 @@ Token lifetime in seconds (read-only; default 900 = 15 minutes).
 
 =item C<secret_key>
 
-The HMAC signing key (read-only; defaults to 32 random bytes from
-C</dev/urandom>).
+The HMAC signing key (read-only; defaults to 32 bytes from the platform CSPRNG
+via L<SignalWire::Core::Random>).
 
 =back
 
@@ -261,13 +245,24 @@ Return C<$call_id>, generating a random URL-safe id when none is given.
 =item C<generate_token($function_name, $call_id)>
 
 Issue a signed, base64url-encoded token scoped to C<$function_name> and
-C<$call_id>. C<create_tool_token> is an alias with the same signature.
+C<$call_id>.
+
+=item C<create_tool_token($function_name, $call_id)>
+
+Alias for C<generate_token>, with the same argument order.
 
 =item C<validate_token($call_id, $function_name, $token)>
 
 Return C<1> when C<$token> is well-formed, unexpired, and its signature,
-function, and call id all match; C<0> otherwise. C<validate_tool_token>
-is an alias taking C<($function_name, $token, $call_id)>.
+function, and call id all match; C<0> otherwise. Returns 0 rather than
+dying on a malformed or undecodable token.
+
+=item C<validate_tool_token($function_name, $token, $call_id)>
+
+Alias for C<validate_token> — but note the B<argument order differs>:
+C<$function_name, $token, $call_id> here versus
+C<$call_id, $function_name, $token> there. The two are not interchangeable
+positionally, so pick one spelling and keep to it.
 
 =item C<activate_session>, C<end_session>, C<get_session_metadata>, C<set_session_metadata>
 

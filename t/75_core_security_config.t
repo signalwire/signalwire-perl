@@ -6,9 +6,7 @@ use Test::More;
 use SignalWire::Core::SecurityConfig;
 
 # Ensure a clean environment for the default-value tests.
-delete local @ENV{
-    grep { /^SWML_/ } keys %ENV
-};
+delete local @ENV{ grep { /^SWML_/ } keys %ENV };
 
 subtest 'defaults' => sub {
     my $c = SignalWire::Core::SecurityConfig->new;
@@ -17,27 +15,27 @@ subtest 'defaults' => sub {
     is_deeply( $c->allowed_hosts, ['*'], 'allowed hosts default *' );
     is_deeply( $c->cors_origins,  ['*'], 'cors origins default *' );
     is( $c->max_request_size, 10 * 1024 * 1024, 'default max request size' );
-    is( $c->rate_limit,       60,              'default rate limit' );
-    is( $c->request_timeout,  30,              'default request timeout' );
+    is( $c->rate_limit,       60,               'default rate limit' );
+    is( $c->request_timeout,  30,               'default request timeout' );
     ok( $c->use_hsts, 'hsts on by default' );
     is( $c->hsts_max_age, 31_536_000, 'default hsts max age' );
 };
 
 subtest 'load_from_env' => sub {
-    local $ENV{SWML_SSL_ENABLED}    = 'true';
-    local $ENV{SWML_ALLOWED_HOSTS}  = 'a.com, b.com';
-    local $ENV{SWML_CORS_ORIGINS}   = 'https://x.com, https://y.com';
-    local $ENV{SWML_DOMAIN}         = 'agent.example.test';
-    local $ENV{SWML_RATE_LIMIT}     = '120';
-    local $ENV{SWML_REQUEST_TIMEOUT} = '45';
+    local $ENV{SWML_SSL_ENABLED}      = 'true';
+    local $ENV{SWML_ALLOWED_HOSTS}    = 'a.com, b.com';
+    local $ENV{SWML_CORS_ORIGINS}     = 'https://x.com, https://y.com';
+    local $ENV{SWML_DOMAIN}           = 'agent.example.test';
+    local $ENV{SWML_RATE_LIMIT}       = '120';
+    local $ENV{SWML_REQUEST_TIMEOUT}  = '45';
     local $ENV{SWML_MAX_REQUEST_SIZE} = '2048';
     local $ENV{SWML_SSL_VERIFY_MODE}  = 'CERT_OPTIONAL';
     local $ENV{SWML_HSTS_MAX_AGE}     = '600';
-    local $ENV{SWML_USE_HSTS}       = 'false';
+    local $ENV{SWML_USE_HSTS}         = 'false';
     my $c = SignalWire::Core::SecurityConfig->new;
     ok( $c->ssl_enabled, 'ssl enabled from env' );
-    is_deeply( $c->allowed_hosts, [ 'a.com', 'b.com' ], 'hosts parsed + trimmed' );
-    is_deeply( $c->cors_origins, [ 'https://x.com', 'https://y.com' ], 'cors origins from env' );
+    is_deeply( $c->allowed_hosts, [ 'a.com',         'b.com' ],         'hosts parsed + trimmed' );
+    is_deeply( $c->cors_origins,  [ 'https://x.com', 'https://y.com' ], 'cors origins from env' );
     is( $c->domain,           'agent.example.test', 'domain from env' );
     is( $c->rate_limit,       120,                  'rate limit from env' );
     is( $c->request_timeout,  45,                   'request timeout from env' );
@@ -98,7 +96,7 @@ subtest 'should_allow_host / get_cors_config / get_url_scheme' => sub {
     my $c = SignalWire::Core::SecurityConfig->new;
     ok( $c->should_allow_host('anything.com'), 'wildcard allows any host' );
 
-    $c->allowed_hosts( [ 'only.com' ] );
+    $c->allowed_hosts( ['only.com'] );
     ok( $c->should_allow_host('only.com'),   'listed host allowed' );
     ok( !$c->should_allow_host('other.com'), 'unlisted host denied' );
 

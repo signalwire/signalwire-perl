@@ -213,18 +213,17 @@ SignalWire::Core::Agent::Tools::TypeInference - schema inference for SWAIG tool 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Core::Agent::Tools::TypeInference> ports the two
-module-level functions of
-C<signalwire.core.agent.tools.type_inference> — C<infer_schema> and
-C<create_typed_handler_wrapper>. It is a plain function namespace with no
+L<SignalWire::Core::Agent::Tools::TypeInference> derives a SWAIG parameter
+schema from a Perl callable, and wraps a callable so it can be invoked with
+that schema's arguments. It exposes two functions — C<infer_schema> and
+C<create_typed_handler_wrapper> — and is a plain function namespace with no
 constructor and no instances.
 
 Perl coderefs carry no runtime parameter-name reflection, so a caller
 describes the callable's parameters explicitly through a C<params>
-arrayref of C<{ name =E<gt> ..., kind =E<gt> ... }> descriptors — the
-direct analog of Ruby's C<[kind, name]> pairs. C<kind> is one of C<req>,
-C<opt>, C<keyreq>, C<key> (required iff C<req>/C<keyreq>), or C<rest> /
-C<keyrest> (a splat, which forces the old-style fallback).
+arrayref of C<{ name =E<gt> ..., kind =E<gt> ... }> descriptors. C<kind> is
+one of C<req>, C<opt>, C<keyreq>, C<key> (required iff C<req>/C<keyreq>), or
+C<rest> / C<keyrest> (a splat, which forces the old-style fallback).
 
 =head2 Functions
 

@@ -342,6 +342,8 @@ sub add_pom_as_subsection {
 
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
 SignalWire::POM::PromptObjectModel - structured prompt document for LLMs
@@ -374,8 +376,114 @@ It owns an ordered list of L<SignalWire::POM::Section> objects and
 provides JSON / YAML serialisation, Markdown / XML rendering, recursive
 title-based search, and POM-merging via C<add_pom_as_subsection>.
 
-The serialised form is byte-for-byte identical to the Python reference;
-prompts authored in either language can be loaded by the other.
+The serialised form is the SDK-wide POM interchange format, so a prompt
+authored with any SignalWire SDK loads here unchanged, and one authored here
+loads there.
+
+=head1 CONSTRUCTORS
+
+Both are static helpers, callable as C<< Class->from_json($data) >> or on
+an instance. Each accepts either an encoded string or an
+already-decoded arrayref, and each returns a new POM.
+
+=over 4
+
+=item C<from_json($json_data)>
+
+Build a POM from a JSON string or a decoded arrayref.
+
+=item C<from_yaml($yaml_data)>
+
+Build a POM from a YAML string or a decoded arrayref. C<YAML::PP> is
+loaded B<lazily>, so JSON-only callers never pay for the dependency —
+but a YAML caller will die at this point if it is not installed.
+
+=back
+
+Both validate the incoming data and C<croak> on a malformed document: the
+top level must be an arrayref of hashrefs; C<title> must be a string if
+present; C<subsections> and C<bullets> must be arrayrefs; C<numbered> and
+C<numberedBullets> must be booleans. Only the B<first> top-level section
+may omit its title — any later one that does is silently given the title
+C<'Untitled Section'> rather than rejected.
+
+=head1 METHODS
+
+=head2 Building
+
+=over 4
+
+=item C<add_section(%opts)>
+
+Append a top-level section and B<return the new
+L<SignalWire::POM::Section>> — not C<$self>, so this does not chain like
+most of the SDK's setters; keep the returned object to add subsections to
+it. Accepts C<title>, C<body>, C<bullets>, C<numbered> and
+C<numberedBullets>. C<bullets> may be a single string, which is normalized
+to a one-element list. C<croak>s if C<title> is undef and this is not the
+first section.
+
+=item C<find_section($title)>
+
+Recursive depth-first search for the first section with exactly that
+title, at any depth. Returns the Section, or C<undef> if none matches.
+
+=item C<add_pom_as_subsection($target, $pom_to_add)>
+
+Append every top-level section of C<$pom_to_add> as a subsection of
+C<$target>, which may be a section title (looked up with C<find_section>)
+or a Section object. Returns C<$self>. C<croak>s if the title is not
+found, if C<$target> is neither a string nor a Section, or if
+C<$pom_to_add> is not a POM.
+
+Note the sections are appended B<by reference>, not copied — the two POMs
+then share the same Section objects, so mutating a section through one is
+visible through the other.
+
+=back
+
+=head2 Serialization
+
+=over 4
+
+=item C<to_hash()>
+
+An arrayref of section hashrefs, one per top-level section, in the
+reference's key order so JSON and YAML output stay stable.
+
+=item C<to_json()>
+
+JSON with a 2-space indent and B<no trailing newline> — the chomp is
+deliberate, because C<JSON::PP> adds one in indent mode and the
+reference's C<json.dumps> does not.
+
+=item C<to_yaml()>
+
+YAML with no document header and preserved key order, matching the
+reference's C<yaml.dump(..., default_flow_style=False, sort_keys=False)>.
+Requires C<YAML::PP> at runtime.
+
+=back
+
+=head2 Rendering
+
+Both renderers auto-number top-level sections when B<any> sibling sets
+C<numbered>, and a section may opt out individually by setting C<numbered>
+to a defined false value. A section with no title is never numbered and
+does not consume a number.
+
+=over 4
+
+=item C<render_markdown()>
+
+The whole POM as Markdown, sections joined by a newline.
+
+=item C<render_xml()>
+
+The whole POM as XML: an XML declaration, then C<< <section> >> elements
+wrapped in a C<< <prompt> >> root.
+
+=back
 
 =head1 SEE ALSO
 

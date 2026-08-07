@@ -95,8 +95,9 @@ jobs:
             --omissions PORT_OMISSIONS.md \
             --additions PORT_ADDITIONS.md
 
+      # Canonical entry point — see the matching note in doc-audit.yml.
       - name: Run Perl test suite (surface audit smoke tests)
-        run: PERL5LIB="lib:t/lib" prove -r t/53_surface_audit.t
+        run: bash scripts/run-tests.sh t/53_surface_audit.t
 
       - name: Upload surface snapshot on failure
         if: failure()

@@ -46,17 +46,17 @@ subtest 'set_function_includes keeps valid entries' => sub {
     my $a     = SignalWire::Agent::AgentBase->new( name => 'fi_valid' );
     my $valid = { url => 'https://example.com/swaig', functions => ['f1'] };
     $a->set_function_includes( [$valid] );
-    is( scalar @{ $a->function_includes }, 1, 'valid include kept' );
-    is( $a->function_includes->[0]{url}, 'https://example.com/swaig', 'url preserved' );
+    is( scalar @{ $a->function_includes }, 1,                           'valid include kept' );
+    is( $a->function_includes->[0]{url},   'https://example.com/swaig', 'url preserved' );
 };
 
 subtest 'set_function_includes drops invalid entries and warns per drop' => sub {
     my $a = SignalWire::Agent::AgentBase->new( name => 'fi_drop' );
 
-    my $valid     = { url => 'https://example.com/swaig', functions => ['f1'] };
-    my $no_url     = { functions => ['f2'] };                  # missing url
-    my $no_funcs   = { url       => 'https://x.example' };     # missing functions
-    my $bad_funcs  = { url       => 'https://y.example', functions => 'not-an-array' };
+    my $valid     = { url       => 'https://example.com/swaig', functions => ['f1'] };
+    my $no_url    = { functions => ['f2'] };                                           # missing url
+    my $no_funcs  = { url => 'https://x.example' };                              # missing functions
+    my $bad_funcs = { url => 'https://y.example', functions => 'not-an-array' };
 
     my @warnings;
     local $SIG{__WARN__} = sub { push @warnings, $_[0] };
@@ -64,7 +64,8 @@ subtest 'set_function_includes drops invalid entries and warns per drop' => sub 
     $a->set_function_includes( [ $valid, $no_url, $no_funcs, $bad_funcs ] );
 
     is( scalar @{ $a->function_includes }, 1, 'only the one valid include kept' );
-    is( $a->function_includes->[0]{url}, 'https://example.com/swaig', 'valid include is the survivor' );
+    is( $a->function_includes->[0]{url},
+        'https://example.com/swaig', 'valid include is the survivor' );
 
     is( scalar @warnings, 3, 'one warning per dropped entry (3 drops)' );
     like( join( "\n", @warnings ), qr/function_include/i, 'warning mentions function include' );
@@ -84,7 +85,7 @@ subtest 'empty prompt falls back to default text' => sub {
 
     # No prompt text and no POM sections.
     my $swml = $a->render_swml;
-    my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
+    my @ai   = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
     ok( exists $ai[0]{ai}{prompt}, 'prompt key emitted even when empty' );
     is(
         $ai[0]{ai}{prompt}{text},
@@ -97,7 +98,7 @@ subtest 'non-empty prompt is unchanged by the fallback' => sub {
     my $a = SignalWire::Agent::AgentBase->new( name => 'real_bot', use_pom => 0 );
     $a->set_prompt_text('Custom prompt');
     my $swml = $a->render_swml;
-    my @ai = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
+    my @ai   = grep { exists $_->{ai} } @{ $swml->{sections}{main} };
     is( $ai[0]{ai}{prompt}{text}, 'Custom prompt', 'explicit prompt preserved (no fallback)' );
 };
 
@@ -126,7 +127,7 @@ subtest 'prompt_add_subsection auto-creates missing parent' => sub {
     my $sec = $a->pom_sections->[0];
     is( $sec->{title}, 'Missing Parent', 'auto-created parent has the requested title' );
     ok( exists $sec->{subsections}, 'subsection list created under parent' );
-    is( $sec->{subsections}[0]{title}, 'Child', 'subsection added under auto-created parent' );
+    is( $sec->{subsections}[0]{title}, 'Child',      'subsection added under auto-created parent' );
     is( $sec->{subsections}[0]{body},  'child body', 'subsection body applied' );
 };
 

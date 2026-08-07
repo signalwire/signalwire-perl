@@ -193,21 +193,31 @@ sched_gate TEST defer=1 res=surface desc="run-tests.sh (prove -Ilib -It/lib -r t
 sched_gate SURFACE res=surface desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port perl --repo "$PORT_ROOT"
 
+# SIGNATURES-FRESH: nothing previously guarded port_signatures.json's freshness —
+# SURFACE-FRESH covers only port_surface.json. That artifact is DRIFT's INPUT, so a
+# stale one means the parity gate compares against a fiction and reports clean while
+# the real surface has moved. Standalone sched_gate ON PURPOSE, not a
+# _surface_commands.py table entry: only 8 of 10 run-ci scripts read that table, so a
+# table entry is silently skipped in the two that don't.
+sched_gate SIGNATURES-FRESH res=surface desc="committed port_signatures.json matches a fresh regen" \
+    -- python3 "$PORTING_SDK_DIR/scripts/suites/_signatures_fresh.py" \
+        --port perl --repo "$PORT_ROOT" --porting-sdk "$PORTING_SDK_DIR"
+
 # TYPE-EROSION: a port may not erase a type the reference DECLARES. compare_param treats
 # `any` on EITHER side as matching anything, so a port emitting `any` silently satisfies
 # every reference declaration — an unlimited opt-out. ConciergeAgent.hours_of_operation is
 # declared optional<dict<string,string>> and go still shipped a bare string, with no gate
 # red. RATCHET, not a hard gate: dynamic languages cannot always express a type, so this
 # banks the current count and fails only on REGRESSION. Drive the number DOWN; never up.
-sched_gate TYPE-EROSION res=surface desc="port did not erase a reference-declared param type (ratchet 13)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_type_erosion.py" --port perl --repo "$PORT_ROOT" --max 13
+sched_gate TYPE-EROSION res=surface desc="port did not erase a reference-declared param type (ratchet 8)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_type_erosion.py" --port perl --repo "$PORT_ROOT" --max 8
 
 # PREDICATE-SELFTEST (Wave-2 C1-V8, GATE-SELFTEST doctrine): the field-surface predicate
 # that decides which generated-payload fields are cross-port surface (enumerate_signatures.py
-# _field_is_surface) must hold its locked anchor counts (AIParams 92/60, AIObject 9/7, 155
+# _field_is_surface) must hold its locked anchor counts (AIParams 92/87, AIObject 9/9, 158
 # classes). A predicate change that silently trims or inflates payload surface — the exact
 # vacuity this locks — shifts these counts and reds here. Cheap; per-PR.
-sched_gate PREDICATE-SELFTEST desc="field-surface predicate at locked anchors (AIParams 92/60) — GATE-SELFTEST" \
+sched_gate PREDICATE-SELFTEST desc="field-surface predicate at locked anchors (AIParams 92/87) — GATE-SELFTEST" \
     -- python3 scripts/enumerate_signatures.py --selftest
 
 # ROUTE-COLLISION (spec-aware): build perl's route_registry.pl → feed the SPEC-AWARE
@@ -230,9 +240,9 @@ sched_gate GEN defer=1 desc="generated-code freshness suite (GEN-FRESH/-TESTS/-R
 # webhook carries its per-tool __token while a secure=>0 tool's does not — i.e.
 # that perl cannot silently ship a tool as UNAUTHENTICATED. Driven by
 # bin/secure-default-dump.pl.
-sched_gate BEHAVIORAL defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERROR-ENVELOPE/PAGINATION-WIRED/PAGINATION-CORPUS/SECURE-DEFAULT/DOC-WIRE/REST-COVERAGE/SPEC-PARITY/SKILL-CONTRACT/SWAIG-COVERAGE/SWAIG-CLI)" \
+sched_gate BEHAVIORAL defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERROR-ENVELOPE/PAGINATION-WIRED/PAGINATION-CORPUS/SECURE-DEFAULT/CA-VAR/TLS-VERIFY/SECRET-SCRUB/DOC-WIRE/REST-COVERAGE/SPEC-PARITY/SKILL-CONTRACT/SWAIG-COVERAGE/SWAIG-CLI)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port perl --repo "$PORT_ROOT" \
-        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,SECURE-DEFAULT,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI
+        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,SECURE-DEFAULT,CA-VAR,TLS-VERIFY,SECRET-SCRUB,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI
 
 # SECRET-SCRUB-LIVE (PSDK-5) is nightly: it drives the RELAY client through a
 # connect + a re-auth frame AT DEBUG LEVEL with fixture sentinels and asserts none
@@ -241,6 +251,21 @@ sched_gate BEHAVIORAL defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERRO
 sched_gate BEHAVIORAL-NIGHTLY tier=nightly defer=1 desc="behavioral suite, nightly rules (WAIT-LIVENESS/RELAY-LIVENESS/SECRET-SCRUB-LIVE)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port perl --repo "$PORT_ROOT" \
         --rules WAIT-LIVENESS,RELAY-LIVENESS,SECRET-SCRUB-LIVE
+
+# TOKEN-INTEROP — property 3 of the SWAIG tool-token contract: a token this port MINTS
+# must validate under the REFERENCE's own decoder. SECURE-DEFAULT proves a token is
+# minted and the fleet keying check proves the HMAC key; NEITHER sees the base64
+# ENVELOPE, so a port can ship correct-key correct-HMAC tokens that no other
+# implementation accepts — in production every secure tool call then fails auth. Six of
+# the ten ports shipped exactly that (an unpadded envelope), invisible to their own tests
+# because each port's DECODER tolerates missing padding while the reference's
+# urlsafe_b64decode RAISES on it — so round-tripping against ourselves could never catch
+# it. One mint + a pure-python validation → cheap, per-PR (a security property must not
+# wait for nightly). Its OWN line rather than a member of the BEHAVIORAL suite line,
+# which is defer=1 (heavy wave).
+sched_gate TOKEN-INTEROP desc="a token this port mints validates under the reference's decoder (padded urlsafe base64, ':'-signed / '.'-enveloped, hex HMAC keyed by the secret_key string)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_token_interop.py" --port perl \
+        --mint-cmd "perl -Ilib $PORT_ROOT/bin/token-interop-mint.pl 2>/dev/null"
 
 # DOC-TRUTH (one markdown+POD walk): DOC-AUDIT/DOC-LINKS/DOC-LANG-PURITY/DOC-ENV/
 # COUNT-CLAIM/ACCESSOR-TRUTH/STATUS-CLAIM/README-INCLUDE. POD-aware (perl's docs are
@@ -268,6 +293,16 @@ sched_gate PACKAGE-NIGHTLY tier=nightly defer=1 res=dayone desc="package suite, 
 sched_gate NO-CHEAT desc="audit_no_cheat_tests" \
     -- python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
 
+# BOUNDED-REAP: no test may reap a child with an unbounded waitpid($pid, 0). Such a
+# reap hangs the WHOLE suite when the child doesn't die — on Win32 that is the
+# normal case (emulated fork ⇒ a pseudo-process can ignore even SIGKILL). This is a
+# HANG, which is strictly worse than a failure: no assertions, and GitHub's API
+# 404s an in_progress job's log, so it burns runner hours with no evidence until
+# someone cancels by hand. t/26_skill_spider.t did exactly that for 44 min (run
+# 30261956136). Static, sub-second, catches the next one at commit time.
+sched_gate BOUNDED-REAP desc="no unbounded waitpid(\$pid, 0) in t/ (a stuck child hangs the suite)" \
+    -- perl "$PORT_ROOT/scripts/lint_bounded_reap.pl"
+
 # COORDINATED-PASS: if porting-sdk was checked out at a NON-main ref (a coordinated
 # pass via the PORTING_SDK_REF repo variable), the PR must declare it (a
 # `Coordinated-With: porting-sdk@<branch>` line in the PR body, or the
@@ -279,22 +314,53 @@ sched_gate COORDINATED-PASS desc="a non-main porting-sdk pin must be declared on
 sched_gate COORDINATED-REFS desc="every coordinated-set checkout (porting-sdk + python oracle + matrix ports) uses PORTING_SDK_REF, not a literal ref" \
     -- python3 "$PORTING_SDK_DIR/scripts/check_coordinated_refs.py" --repo "$PORT_ROOT"
 
-# FMT joins res=surface: run locally (no CI) it rewrites lib/**/*.pm in place via
-# `perltidy -b`, which a concurrent TEST (`perl -c` / module load) or the surface
-# enumerator (loads lib/) would otherwise read mid-write. Under CI (--check) it's
-# read-only, but the label is harmless there and keeps local and CI scheduling
-# identical.
+# FMT joins res=surface: run locally (no CI) it rewrites its whole scope in place
+# via `perltidy -b`, which a concurrent TEST (`perl -c` / module load) or the
+# surface enumerator (loads lib/) would otherwise read mid-write. Under CI
+# (--check) it's read-only, but the label is harmless there and keeps local and CI
+# scheduling identical.
+#
+# The hazard WIDENED on 2026-07-30: FMT's scope went from 79 hand files (lib/ +
+# 7 named programs) to all 346 — it now also rewrites t/, all of bin/ and
+# scripts/, and the three example trees. TEST reads t/ directly, so the
+# read-mid-rewrite window covers the test tree now too. res=surface is what
+# prevents it; do NOT "optimise" this serialization away. A mid-run perlcritic or
+# perl-parse failure here is that mechanism, not a flake.
 sched_gate FMT defer=1 res=surface desc="run-format.sh (local: apply; CI: --check)" \
     -- bash scripts/run-format.sh ${CI:+--check}
 
-# LINT joins res=surface too: run locally, FMT's `perltidy -b` rewrites lib/**/*.pm
-# in place, and perlcritic (run-lint.sh) reads those same files — a concurrent
-# perlcritic reading a file mid-rewrite parse-fails and reds LINT spuriously. Sharing
-# the surface resource serializes LINT against the FMT/SURFACE/TEST mutators while it
-# still overlaps every read-only gate. (Under CI --check FMT is read-only, but the
-# label keeps local and CI scheduling identical.)
+# LINT joins res=surface too: run locally, FMT's `perltidy -b` rewrites the same
+# files perlcritic (run-lint.sh) reads — a concurrent perlcritic reading a file
+# mid-rewrite parse-fails and reds LINT spuriously. Sharing the surface resource
+# serializes LINT against the FMT/SURFACE/TEST mutators while it still overlaps
+# every read-only gate. (Under CI --check FMT is read-only, but the label keeps
+# local and CI scheduling identical.)
+#
+# Scope as of 2026-07-30 (owner ruling — "tests and examples are shipping code
+# too"): the WHOLE hand-written Perl tree plus the generated lib/**/Generated/
+# tree — 1476 files, up from 1186. The 165 findings the widening exposed in t/,
+# examples/ and the 12 previously-unpoliced bin/ programs were burned to zero
+# BEFORE this scope landed, so the gate has never been red.
 sched_gate LINT defer=1 res=surface desc="run-lint.sh (perlcritic severity 4, zero findings)" \
     -- bash scripts/run-lint.sh
+
+# REPO-LINT(py): the 7 hand-written Python programs under scripts/ — the four code
+# generators, the signature enumerator, the REST test generator, and
+# _perltidy_gen.py (which is itself the perltidy backstop every generator runs).
+# They are load-bearing gate infrastructure that, until 2026-07-30, NO gate linted
+# or formatted: the only hand-written code in this repo held to no bar at all,
+# while the Perl they emit was policed on every run. Same LOCAL-applies /
+# CI---check contract as FMT. Rule selection in ruff.toml is copied from the
+# Python reference SDK so the fleet holds one identical Python bar.
+#
+# res=surface too: in APPLY mode `ruff format` rewrites scripts/*.py in place, and
+# the GEN-FRESH* gates EXECUTE those same files — a generator read mid-rewrite
+# fails to parse. Same mechanism that already serializes FMT and LINT.
+#
+# Wired only once the count reached ZERO (57 -> 0): burn before wire, so the gate
+# never lands red.
+sched_gate REPO-LINT defer=1 res=surface desc="run-python-lint.sh (ruff check + format over scripts/*.py; local: apply, CI: --check)" \
+    -- bash scripts/run-python-lint.sh ${CI:+--check}
 
 # ---- §C1 doc/example/CLI execution gates ------------------------------------
 # SNIPPET-COMPILE (documented code fences compile with lib/ on @INC) is HEAVY →
@@ -341,6 +407,18 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 
 sched_gate PUBLIC-JARGON res=dayone desc="no porting/internal jargon leaked into the public surface" \
     -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port perl --repo .
+
+# DOC-SURFACE (§6.3): public doc-comment (POD) coverage floor.
+# BLOCKING, and deliberately with NO skip-with-pass guard: a missing gate script must
+# FAIL, not quietly pass — a fail-open guard is how a gate ships green-and-vacuous.
+# perl is measured by NAME, not adjacency: POD documents subs in a trailing block
+# (`=head2 foo`, `=item C<foo($bar)>`) hundreds of lines below the code, so
+# doc_surface.py gives perl its own _measure_perl rather than the generic
+# preceding-comment branch. perl is at 100.0% (715/715) as of the 2026-07-29 burn and
+# .doc_surface_floor is pinned there, so the next undocumented public sub is a real
+# regression with a pinned number to prove it.
+sched_gate DOC-SURFACE desc="public POD doc coverage holds the .doc_surface_floor ratchet (100% — blocking)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_surface.py" --port perl --repo "$PORT_ROOT"
 
 # WIRED-MODES (Part 1.6 / D7): the merge-coherence guard — greps this run-ci.sh for
 # every load-bearing env/mode line declared in WIRED_MODES.md (strict-mocks exports)

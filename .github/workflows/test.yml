@@ -81,6 +81,15 @@ jobs:
         # run those gates, so they keep plain --installdeps.)
         run: cpanm --notest --quiet --with-develop --installdeps .
 
+      - name: Install Python dev deps (ruff — the REPO-LINT gate)
+        working-directory: signalwire-perl
+        # REPO-LINT in run-ci.sh runs scripts/run-python-lint.sh, which shells out
+        # to the `ruff` binary to check+format this repo's 7 hand-written Python
+        # programs under scripts/. Without this the gate fails with
+        # `ruff: command not found`. Pinned in requirements-dev.txt so
+        # `ruff format --check` is reproducible between local and CI.
+        run: python3 -m pip install --quiet -r requirements-dev.txt
+
       - name: Install Python test harnesses (mock_relay + mock_signalwire)
         run: |
           pip install -e porting-sdk/test_harness/mock_relay

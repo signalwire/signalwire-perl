@@ -31,18 +31,20 @@ unless (caller) {
     # Build the simplest useful SWML doc: answer the call, say a
     # message, hang up. No AI verb at all — the whole point of this
     # example is that SWMLService doesn't need one.
-    my $doc = $svc->document;
-    $doc->add_verb('main', 'answer', {});
-    $doc->add_verb('main', 'play',   { url => 'say:Welcome to the basic SWML service.' });
-    $doc->add_verb('main', 'sleep',  500);
-    $doc->add_verb('main', 'hangup', {});
+    $svc->add_verb( 'answer', {} );
+    $svc->add_verb( 'play',   { url => 'say:Welcome to the basic SWML service.' } );
+    $svc->add_verb( 'sleep',  500 );
+    $svc->add_verb( 'hangup', {} );
 
     print "Basic SWMLService\n";
     print "Route:      " . $svc->route . "\n";
     print "Basic auth: " . $svc->basic_auth_user . ":" . $svc->basic_auth_password . "\n";
     print "URL:        http://"
-        . $svc->basic_auth_user . ":" . $svc->basic_auth_password
-        . "\@" . $svc->host . ":" . $svc->port . $svc->route . "\n\n";
+        . $svc->basic_auth_user . ":"
+        . $svc->basic_auth_password . "\@"
+        . $svc->host . ":"
+        . $svc->port
+        . $svc->route . "\n\n";
 
     require Plack::Runner;
     my $runner = Plack::Runner->new;
@@ -51,7 +53,7 @@ unless (caller) {
         '--port'   => $svc->port,
         '--server' => 'HTTP::Server::PSGI',
     );
-    $runner->run($svc->to_psgi_app);
+    $runner->run( $svc->to_psgi_app );
 }
 
 1;

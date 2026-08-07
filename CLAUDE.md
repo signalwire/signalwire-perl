@@ -15,10 +15,40 @@ The Perl SDK uses Moo for object orientation, Plack/PSGI for HTTP serving, and J
 Three scripts under `scripts/` are the SINGLE, canonical entry point for testing,
 linting, and formatting. Do NOT call `prove` / `perlcritic` / `perltidy`
 directly. Each script **self-bootstraps its tool environment** (via
-`scripts/_env.sh`: prepends the `~/perl5` local::lib to `PERL5LIB` so perltidy can
-locate `Perl::Tidy` and the test suite finds Plack/Protocol::WebSocket; prepends
-`~/perl5/bin` to `PATH`; pins `PERLTIDY`) and therefore **runs from ANY directory
-with ANY shell setup** -- no `PERL5LIB=...` prefix needed.
+`scripts/_env.sh`: resolves `$SW_PERL` -- the one interpreter every gate uses --
+prepends the `~/perl5` local::lib to `PERL5LIB` **using the platform path
+separator** so perltidy can locate `Perl::Tidy` and the test suite finds
+Plack/Protocol::WebSocket; prepends `~/perl5/bin` to `PATH`; pins `PERLTIDY`) and
+therefore **runs from ANY directory with ANY shell setup, on POSIX AND Windows**
+-- no `PERL5LIB=...` prefix needed.
+
+Three Windows-specific traps `_env.sh` and `run-tests.sh` now handle (all were
+live defects on the nightly Multi-OS lane; see the notes in `_env.sh` and
+`run-tests.sh`):
+
+* **`PERL5LIB` is `;`-separated on Win32, `:` on POSIX.** Its entries carry drive
+  letters, so `:` is a path *character* there. `_env.sh` joins with
+  `$Config{path_sep}` (exported as `$SW_PATH_SEP`); anything that SPLITS the value
+  must do the same. `scripts/_perltidy_gen.py` uses `os.pathsep` for this reason.
+* **A bare `prove` may belong to a DIFFERENT Perl install than `$SW_PERL`.** On a
+  Windows runner PATH can offer Strawberry's or MSYS's `prove`, which then resolves
+  `App::Prove` out of yet another `@INC`. `run-tests.sh` therefore runs the harness
+  module *through* `$SW_PERL` (`_sw_perl_tool App::Prove ...`), making the
+  interpreter and its `@INC` the same install by construction.
+
+* **`prove -j>1` WEDGES on Win32 — the harness cannot multiplex there.**
+  `TAP/Parser/Multiplexer.pm:12` sets `SELECT_OK => !( IS_VMS || IS_WIN32 )`, so on
+  Win32 no parser joins the `IO::Select` set; all land on the `avid` list and
+  `_iter` blocks draining `avid->[0]` while the unread siblings fill their pipe
+  buffers. Observed as an indefinite hang with *zero* captured output (runs
+  30240112956, 30258476574) where macOS finished in 2m37s. `run-tests.sh`
+  therefore clamps to `-j1` on Win32 only. **This is not "serialise the tests to
+  make them pass"** — the tests are concurrency-safe (own free port via
+  PortPicker) and stay parallel on POSIX, where the ~3.5x was measured. It is a
+  harness platform limitation. `PROVE_JOBS` still overrides.
+
+`t/111_env_platform_paths.t` is the regression guard for all three (it simulates
+the Windows shapes, since none of these defects is observable on POSIX).
 
 ```bash
 # Run all tests (prove -Ilib -It/lib -r t/)
@@ -157,7 +187,13 @@ $agent->register_swaig_function($tool->to_swaig_function);
 #### Contexts
 ```perl
 my $ctx = $self->define_contexts;
-$ctx->add_context('sales', prompt => 'You are a sales agent.');
+
+# add_context() takes a NAME ONLY -- the prompt is set on the returned
+# Context object. A single context must be named 'default', and every
+# context needs at least one step, or validate() dies.
+my $sales = $ctx->add_context('default');
+$sales->set_prompt('You are a sales agent.');
+$sales->add_step( 'greet', task => 'Greet the caller and ask what they need.' );
 ```
 
 #### Skills

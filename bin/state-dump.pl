@@ -40,8 +40,8 @@ use SignalWire::Prefabs::InfoGatherer;
 {
 
     package GreetVerbHandler;
-    sub new { return bless { name => $_[1] }, $_[0]; }
-    sub get_verb_name { return $_[0]->{name}; }
+    sub new { my ( $class, $name ) = @_; return bless { name => $name }, $class; }
+    sub get_verb_name { my ($self) = @_; return $self->{name}; }
 }
 
 sub demo_agent {
@@ -102,7 +102,7 @@ sub main {
     {
         # MERGE semantics: overlapping key wins, sibling survives.
         my $a = demo_agent();
-        $a->set_global_data( { a => 1, b => 2 } );
+        $a->set_global_data( { a => 1,  b => 2 } );
         $a->set_global_data( { b => 99, c => 3 } );
         $out{state_global_data_merge} = $a->global_data;
     }
@@ -139,18 +139,20 @@ sub main {
     {
         # unregister removes the agent route from the registry.
         my $s = SignalWire::Server::AgentServer->new;
-        $s->register( SignalWire::Agent::AgentBase->new( name => 'agent', route => '/agent' ), '/agent' );
-        $s->register( SignalWire::Agent::AgentBase->new( name => 'other', route => '/other' ), '/other' );
+        $s->register( SignalWire::Agent::AgentBase->new( name => 'agent', route => '/agent' ),
+            '/agent' );
+        $s->register( SignalWire::Agent::AgentBase->new( name => 'other', route => '/other' ),
+            '/other' );
         $s->unregister('/agent');
         $out{server_unregister} = [ sort keys %{ $s->get_agents } ];
     }
 
     # ---- routing-callback registration on SWMLService (path-normalized) ----
     {
-        my $svc = SignalWire::SWML::Service->new( name => 'svc', route => '/svc' );
+        my $svc  = SignalWire::SWML::Service->new( name => 'svc', route => '/svc' );
         my $noop = sub { return; };
-        $svc->register_routing_callback( '/sip/', $noop );
-        $svc->register_routing_callback( 'voice', $noop );
+        $svc->register_routing_callback( $noop, '/sip/' );
+        $svc->register_routing_callback( $noop, 'voice' );
         $out{state_register_routing_callback} = [ sort keys %{ $svc->routing_callbacks } ];
     }
 
@@ -158,6 +160,7 @@ sub main {
     {
         my $svc = SignalWire::SWML::Service->new( name => 'svc', route => '/svc' );
         $svc->register_verb_handler( GreetVerbHandler->new('greet') );
+
         # Observe the introspectable verb registry directly (ships "ai" preloaded,
         # accrues registered handlers) — the STATE observable, no new public API.
         my $handlers = $svc->verb_registry->{handlers};
@@ -173,10 +176,11 @@ sub main {
     {
         SignalWire::Skills::SkillRegistry->register_skill( 'custom_alpha', 'Some::Class' );
         SignalWire::Skills::SkillRegistry->register_skill( 'custom_beta',  'Some::Class' );
-        SignalWire::Skills::SkillRegistry->register_skill( 'custom_alpha', 'Some::Class' );    # idempotent
-        # Observe only the names this case registered (the class-global registry
-        # may also hold auto-loaded builtins; the corpus observes the custom set,
-        # which land in list_all_skill_sources's non-builtin "registered" bucket).
+        SignalWire::Skills::SkillRegistry->register_skill( 'custom_alpha', 'Some::Class' )
+            ;    # idempotent
+                 # Observe only the names this case registered (the class-global registry
+                 # may also hold auto-loaded builtins; the corpus observes the custom set,
+                 # which land in list_all_skill_sources's non-builtin "registered" bucket).
         my $sources = SignalWire::Skills::SkillRegistry->list_all_skill_sources;
         $out{state_register_skill} = [ sort grep { /^custom_/ } @{ $sources->{registered} } ];
     }
@@ -194,7 +198,8 @@ sub main {
         $out{infogatherer_submit_answer_first} = submit_answer_delta(
             $ig,
             { answer => 'Alice' },
-            {   global_data => {
+            {
+                global_data => {
                     questions => [
                         { key_name => 'name',  question_text => 'What is your name?' },
                         { key_name => 'email', question_text => 'What is your email?' },
@@ -217,7 +222,8 @@ sub main {
         $out{infogatherer_submit_answer_last} = submit_answer_delta(
             $ig,
             { answer => 'a@b.com' },
-            {   global_data => {
+            {
+                global_data => {
                     questions => [
                         { key_name => 'name',  question_text => 'What is your name?' },
                         { key_name => 'email', question_text => 'What is your email?' },
@@ -231,8 +237,8 @@ sub main {
 
     # ---- contexts/steps navigation (valid_steps rendered per step) ----
     {
-        my $a  = demo_agent();
-        my $cb = $a->define_contexts;
+        my $a   = demo_agent();
+        my $cb  = $a->define_contexts;
         my $ctx = $cb->add_context('default');
         $ctx->add_step('greet')->set_text('Greet the caller.')->set_valid_steps( ['collect'] );
         $ctx->add_step('collect')->set_text('Collect their info.')->set_valid_steps( ['greet'] );

@@ -13,6 +13,28 @@ requires 'Digest::SHA';
 requires 'MIME::Base64';
 requires 'IO::Socket::SSL';
 
+# Portable CSPRNG. SignalWire::Core::Random is the SDK's single entropy source
+# (session HMAC keys, SWAIG __token material, auto-generated basic-auth
+# credentials, RELAY control ids, UUIDs). Crypt::URandom dispatches to the
+# platform primitive — getrandom(2) / /dev/urandom on Unix-likes,
+# RtlGenRandom / CryptGenRandom on Win32 — so it is a RUNTIME requirement on
+# EVERY platform, not a Unix-only convenience. Reading /dev/urandom directly
+# (what this SDK previously did) has no Windows equivalent.
+requires 'Crypt::URandom', '0.52';
+
+# Win32 ONLY, and load-bearing there. Crypt::URandom reaches the Windows CSPRNG
+# through `require Win32::API` at RUNTIME (advapi32 RtlGenRandom /
+# CryptGenRandom) but does NOT declare Win32::API as a prereq — verified against
+# its CPAN metadata, whose runtime requires are only Carp/English/Exporter/
+# FileHandle/constant. So `cpanm --installdeps .` would not pull it in, and the
+# SDK's entropy source would die at first use on any Windows Perl that does not
+# happen to bundle it. Declaring it here is what makes the dependency actually
+# resolve on the Windows CI leg instead of trading /dev/urandom's failure for a
+# missing-module failure. Guarded by $^O so the other nine legs never see it.
+if ( $^O eq 'MSWin32' ) {
+    requires 'Win32::API', '0.84';
+}
+
 # WebSocket for RELAY
 requires 'Protocol::WebSocket', '0.26';
 
@@ -25,17 +47,31 @@ on 'test' => sub {
 };
 
 # Developer tooling for the CI quality gates (scripts/run-ci.sh):
-#   * Perl::Tidy  — the FMT gate's formatter (.perltidyrc).
+#   * Perl::Tidy    — the FMT gate's formatter (.perltidyrc).
+#   * Perl::Critic  — the LINT gate's analyser (.perlcriticrc, severity 4).
 # These are author/develop-phase deps, not needed to RUN the SDK. Install with
 #   cpanm --installdeps --with-develop .
-# (CI installs them so the FMT gate's `perltidy` resolves).
+# (CI installs them so the FMT/LINT gates' `perltidy`/`perlcritic` resolve).
+#
+# BOTH are PINNED EXACT, for the same reason. CI runs `cpanm --with-develop
+# --installdeps .` on a fresh box and therefore resolves whatever is newest at
+# that moment, while a contributor runs whatever their ~/perl5 got months ago. An
+# unpinned analyser/formatter makes the gate's verdict a function of the CALENDAR
+# rather than of the source: local says clean, CI says 3 offenses, and no code
+# changed. Bump either one deliberately, and land the resulting reformat/fixes in
+# the same commit.
 on 'develop' => sub {
-    # Perl::Tidy is PINNED: its default vertical-alignment heuristics change
-    # between releases (20260705 aligns interior `cmp`/`//` where 20260204 did
-    # not), so an unpinned formatter makes the FMT gate non-deterministic —
-    # local and CI on different releases disagree on --assert-tidy for the SAME
-    # source. Pin so run-format.sh --check is reproducible everywhere. Bump
-    # deliberately, then reformat the tree in the same commit.
+    # Perl::Tidy: its default vertical-alignment heuristics change between
+    # releases (20260705 aligns interior `cmp`/`//` where 20260204 did not), so
+    # an unpinned formatter makes the FMT gate non-deterministic — local and CI on
+    # different releases disagree on --assert-tidy for the SAME source.
     requires 'Perl::Tidy', '== 20260705';
-    requires 'Perl::Critic';
+    # Perl::Critic: same hazard, one gate over. New releases add policies and
+    # tighten existing ones, and every policy at severity >= 4 is blocking here,
+    # so a new release can red the LINT gate on untouched code. (This is exactly
+    # what bit signalwire-ruby: an open-floor `rubocop >= 1.80` let CI resolve
+    # 1.89.0 against a local 1.88.0, and 1.89's tightened
+    # Layout/MultilineMethodCallIndentation failed CI on a commit whose local run
+    # reported "1464 files inspected, no offenses detected".)
+    requires 'Perl::Critic', '== 1.156';
 };

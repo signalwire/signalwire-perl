@@ -2,7 +2,7 @@ package SignalWire;
 use strict;
 use warnings;
 
-our $VERSION = '4.0.0';
+our $VERSION = '3.0.0';
 
 use SignalWire::Logging;
 use SignalWire::SWML::Document;
@@ -283,6 +283,48 @@ Pre-built capabilities added with a single call:
         api_key          => $ENV{GOOGLE_SEARCH_API_KEY},
         search_engine_id => $ENV{GOOGLE_SEARCH_ENGINE_ID},
     });
+
+=head1 FUNCTIONS
+
+Top-level convenience functions, mirroring the reference SDK's
+module-level helpers. Call them fully qualified —
+C<< SignalWire::list_skills() >> — as this module exports nothing.
+
+=over 4
+
+=item C<RestClient(...)>
+
+Construct a L<SignalWire::REST::RestClient>, lazy-loading it on first use.
+Accepts either exactly B<three bare positional strings>
+(project, token, host) or a keyword list; the three-string form is
+detected by shape, so a keyword list that happens to be three elements
+long is still treated as keywords.
+
+=item C<register_skill($skill_class)>
+
+Register a custom skill class with the global skill registry. The
+registration key is taken from the class's C<skill_name> accessor, falling
+back to a C<SKILL_NAME> constant; a class offering neither B<dies>.
+
+=item C<add_skill_directory($path)>
+
+Add a directory to the search path for third-party skill collections.
+Calls accumulate and are de-duplicated into a shared external-paths list,
+so registering the same directory twice is harmless.
+
+=item C<list_skills()>
+
+An arrayref of every registered skill — the lightweight summary.
+
+=item C<list_skills_with_params()>
+
+The full schema for every registered skill, as a hashref keyed by skill
+name with parameter metadata for each. Intended for GUI configuration
+tools, generated API documentation, and programmatic discovery. If the
+registry cannot supply full schemas it B<degrades> to pairing each skill
+name with an empty parameter map rather than failing.
+
+=back
 
 =head1 ENVIRONMENT VARIABLES
 

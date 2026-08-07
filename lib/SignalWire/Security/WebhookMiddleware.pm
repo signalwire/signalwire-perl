@@ -298,6 +298,8 @@ sub _join_base_path {
 
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
 SignalWire::Security::WebhookMiddleware - Plack middleware enforcing
@@ -324,6 +326,40 @@ produce a 403 without ever invoking the wrapped app.
 The raw body is captured before validation and stashed on the env as
 C<signalwire.raw_body>; C<psgi.input> is rewound (or replaced with a
 buffer) so downstream handlers can re-read.
+
+=head1 METHODS
+
+=over 4
+
+=item C<wrap(%opts)>
+
+Wrap a PSGI app, returning a new PSGI coderef that enforces the signature
+before delegating. Takes the options listed under L</OPTIONS> below;
+C<app> is required. With an empty or undefined C<signing_key> the wrapper
+is a B<passthrough> — it validates nothing (AgentBase logs a startup
+warning when this happens).
+
+Before validating it reads the whole body, caches it on the env as
+C<signalwire.raw_body>, and rewinds C<psgi.input> so downstream handlers
+can still read it. The public URL is reconstructed from
+C<public_url_base>, else C<SWML_PROXY_URL_BASE>, else the
+C<X-Forwarded-Proto> / C<X-Forwarded-Host> pair when C<trust_proxy> is on,
+else the request's own scheme, host and URI.
+
+=item C<validate($method, $url, \%headers, $body, signing_key =E<gt> $key)>
+
+The framework-free decision core, shared in shape with every other port.
+Returns B<undef> when the signature is valid (let the handler run), or the
+PSGI triple C<[403, {}, '']> when it is not. In PSGI that triple is
+literally a response, so it can be returned straight from a handler.
+
+C<%headers> is looked up case-insensitively for C<X-SignalWire-Signature>
+or its legacy C<X-Twilio-Signature> alias. C<$method> is accepted so the
+signature matches the other SDKs, but is B<not part of the HMAC>. Every
+failure mode — missing header, bad signature, validator error — yields the
+same bodiless 403, so a caller cannot tell which branch tripped.
+
+=back
 
 =head1 OPTIONS
 

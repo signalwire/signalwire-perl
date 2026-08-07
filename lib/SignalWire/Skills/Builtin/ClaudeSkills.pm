@@ -254,12 +254,67 @@ SignalWire::Skills::Builtin::ClaudeSkills - load Claude SKILL.md files as agent 
 
 =head1 DESCRIPTION
 
-Perl port of Python's C<claude_skills> skill. Walks the configured
+L<SignalWire::Skills::Builtin::ClaudeSkills> walks the configured
 C<skills_path> (via the shared L<SignalWire::Skills::SkillDiscovery> walker),
 parses each subdirectory's C<SKILL.md> (YAML frontmatter + markdown body) and
 supporting C<.md> section files, and registers one SWAIG tool per skill. Each
 tool returns the skill's instructions (or a requested section) with
 C<$ARGUMENTS> / C<${CLAUDE_SKILL_DIR}> / C<${CLAUDE_SESSION_ID}> substitution.
+
+=head1 METHODS
+
+These implement the L<SignalWire::Skills::SkillBase> contract; the skill
+manager calls them, so you rarely call them yourself.
+
+=over 4
+
+=item C<setup()>
+
+Discover and parse every C<SKILL.md> under C<skills_path>, returning 1 on
+success and B<0 to refuse loading> when C<skills_path> is missing, empty, or
+not an existing directory. A leading C<~> is expanded, and the expanded path
+is written back into the params. Discovery is filtered by the C<include>
+glob list (default C<['*']>) and the C<exclude> list (default empty).
+
+Finding B<no> skills is still a successful setup — an empty skill directory
+loads cleanly and simply registers no tools.
+
+=item C<register_tools()>
+
+Register one SWAIG tool per discovered skill, named
+C<"E<lt>tool_prefixE<gt>E<lt>sanitized-skill-nameE<gt>"> (prefix defaults to
+C<claude_>). Each tool takes a required C<arguments> string, and gains an
+optional C<section> parameter — enumerated to that skill's reference
+sections — only when the skill actually has any.
+
+The description comes from the C<skill_descriptions> override for that
+skill, else the skill's own description, else a generated fallback. At call
+time the handler returns the requested section's content, or the skill body
+when no valid section is named; an unreadable section yields an error
+string rather than dying. Variable and C<$ARGUMENTS> substitution is applied,
+then C<response_prefix> / C<response_postfix> are joined around the result
+with blank lines. Returns C<$self>.
+
+=item C<get_instance_key()>
+
+The key that lets one agent load this skill more than once —
+C<"claude_skills_E<lt>skills_pathE<gt>">, so each skill directory is a
+distinct instance.
+
+=item C<get_hints()>
+
+Speech-recognition hints built from the discovered skill names: hyphens and
+underscores become spaces, and the resulting words are deduplicated and
+sorted.
+
+=item C<get_parameter_schema()>
+
+The skill's parameter schema, merged over
+L<SignalWire::Skills::SkillBase>'s base schema. C<skills_path> is the only
+required entry; the rest are C<include>, C<exclude>, C<tool_prefix>,
+C<skill_descriptions>, C<response_prefix> and C<response_postfix>.
+
+=back
 
 =head1 LICENSE
 

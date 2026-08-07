@@ -345,6 +345,8 @@ sub validate_request {
 
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
 SignalWire::Security::WebhookValidator - Verify SignalWire webhook signatures
@@ -387,6 +389,37 @@ The combined entry point tries Scheme A first, then Scheme B in all
 URL / param-shape variants. All signature comparisons use a
 constant-time compare so the secret is not leaked across repeated
 requests.
+
+=head1 FUNCTIONS
+
+Both are exportable on request; neither is exported by default.
+
+=over 4
+
+=item C<validate_webhook_signature($signing_key, $signature, $url, $raw_body)>
+
+The combined entry point, for JSON / RELAY / SWML callbacks. Returns 1 if
+the signature matches under B<either> scheme and 0 otherwise.
+
+It tries Scheme A first over C<$url . $raw_body>. Failing that it tries
+Scheme B, attempting each candidate URL (with and without the default
+port) against B<two> param shapes — the body parsed as a form, and an
+empty param list, the latter covering JSON delivered to a compat endpoint.
+When a Scheme B candidate matches and the URL carries a C<bodySHA256>
+query parameter, the body hash must B<also> match or the search continues.
+
+C<$url> and C<$raw_body> both default to the empty string when undef.
+
+=item C<validate_request($signing_key, $signature, $url, $params_or_raw_body)>
+
+The legacy C<compatibility-api> drop-in. Its behaviour depends on the type
+of the last argument: a plain string is treated as a raw body and delegated
+to C<validate_webhook_signature> (so both schemes are tried), while a
+hashref or arrayref is treated as B<pre-parsed form params> and runs Scheme
+B only, across all candidate URLs. An undefined value is treated as an
+empty param list, and any other reference type C<croak>s.
+
+=back
 
 =head1 ERROR MODES
 

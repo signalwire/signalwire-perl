@@ -100,8 +100,7 @@ SignalWire::Skills::Builtin::PlayBackgroundFile - control background-file playba
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::PlayBackgroundFile> is the Perl port of the Python
-reference C<signalwire.skills.play_background_file.skill>. It registers a single
+L<SignalWire::Skills::Builtin::PlayBackgroundFile> registers a single
 DataMap-based SWAIG tool (default name C<play_background_file>) that lets the
 agent start or stop background audio playback.
 

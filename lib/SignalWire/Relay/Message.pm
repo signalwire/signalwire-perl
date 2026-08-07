@@ -161,7 +161,7 @@ SignalWire::Relay::Message - a RELAY outbound/inbound SMS message handle
 =head1 DESCRIPTION
 
 L<SignalWire::Relay::Message> tracks the lifecycle of a single RELAY
-message. It mirrors the Python reference's message handle: a message is
+message: it is
 created with a C<message_id>, accumulates state from C<messaging.state>
 events via L</dispatch_event>, and resolves when it reaches a terminal
 state (see L<SignalWire::Relay::Constants/MESSAGE_TERMINAL_STATES>).

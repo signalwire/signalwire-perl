@@ -788,9 +788,8 @@ SignalWire::SWAIG::FunctionResult - build SWAIG function responses and actions
 
 =head1 DESCRIPTION
 
-L<SignalWire::SWAIG::FunctionResult> is the Perl port of
-C<signalwire.core.function_result.FunctionResult>. A SWAIG function
-handler returns one of these to tell the agent what to say and which
+A SWAIG function handler returns an
+L<SignalWire::SWAIG::FunctionResult> to tell the agent what to say and which
 call-control actions to perform. The action list is serialised to the
 wire shape the SignalWire AI engine expects.
 
@@ -804,45 +803,334 @@ class or instance methods — they build plain hashrefs and hold no state.
 
 =head1 METHODS
 
-The surface mirrors the Python reference; see that documentation for the
-authoritative per-argument contract. Grouped by area:
+Every mutator below appends to the action list and returns C<$self>, so
+calls chain. The wire key an action lands under is frequently B<not> the
+method name — each entry states the key it actually emits.
 
 =head2 Core
 
-C<set_response>, C<set_post_process>, C<add_action>, C<add_actions>.
+=over 4
+
+=item C<set_response($text)>
+
+Set the spoken response text.
+
+=item C<set_post_process($bool)>
+
+Set the post-process flag, normalized to 1/0. It only reaches the wire when
+the result also carries at least one action (see C<to_hash>).
+
+=item C<add_action($name, $data)>
+
+Append the raw action C<< { $name => $data } >>. The escape hatch for an
+action this class has no named helper for.
+
+=item C<add_actions($arrayref)>
+
+Append several already-built action hashrefs at once.
+
+=back
 
 =head2 Call control
 
-C<connect>, C<swml_transfer>, C<hangup>, C<hold>, C<wait_for_user>,
-C<stop>, C<join_conference>, C<join_room>, C<sip_refer>, C<send_sms>,
-C<pay>.
+=over 4
+
+=item C<connect($destination, %opts)>
+
+Bridge the caller to C<$destination>. Emits a SWML action whose C<main>
+section holds a C<connect> verb. C<final> defaults to B<true> (the wire
+C<transfer> key becomes the string C<'true'>/C<'false'>, not a JSON
+boolean), and an optional C<from> is included only when defined.
+
+=item C<swml_transfer($dest, $ai_response, %opts)>
+
+Transfer to C<$dest>, first setting C<ai_response> so the agent has
+something to say if control returns. Like C<connect>, C<final> defaults to
+true and maps to the string-valued C<transfer> key.
+
+=item C<hangup()>
+
+End the call (action key C<hangup>, value JSON C<true>).
+
+=item C<hold($timeout)>
+
+Place the call on hold for C<$timeout> seconds. C<$timeout> defaults to 300
+and is B<clamped silently> into 0..900 — a negative value becomes 0 and
+anything above 900 becomes 900, with no warning.
+
+=item C<wait_for_user(%opts)>
+
+Control whether the agent waits for the user to speak. The emitted value is
+chosen by precedence, B<not> combined: C<answer_first> wins and emits the
+string C<'answer_first'>; else a defined C<timeout> emits that number; else
+C<enabled> emits a JSON boolean; with no arguments at all it emits JSON
+C<true>.
+
+=item C<stop()>
+
+Stop the current AI interaction (action key C<stop>, value JSON C<true>).
+
+=item C<join_conference($name, %opts)>
+
+Join an ad-hoc audio conference via a SWML C<join_conference> verb. Takes
+C<$name> plus 18 optional parameters, and B<validates seven of them,
+dying> with the reference's exact messages: C<beep> must be one of
+true/false/onEnter/onExit; C<max_participants> must be a positive integer
+E<lt>= 250; C<record> one of do-not-record/record-from-start; C<trim> one
+of trim-silence/do-not-trim; C<status_callback_method> and
+C<recording_status_callback_method> each GET or POST; and C<$name> must be
+non-empty after trimming whitespace.
+
+Emission has two forms. When B<every> parameter is at its default the verb
+carries the bare conference name as a string; otherwise it carries an
+object of C<name> plus only those parameters that differ from their
+default. The six optional string parameters are omitted when undef B<or
+empty string> (mirroring the reference's truthiness gate), so C<< coach =>
+'' >> does not reach the wire while C<< coach => '0' >> does.
+
+=item C<join_room($name)>
+
+Join the named video room (SWML C<join_room>).
+
+=item C<sip_refer($to_uri)>
+
+Send a SIP REFER to C<$to_uri> (SWML C<sip_refer>).
+
+=item C<send_sms(%opts)>
+
+Send an SMS (SWML C<send_sms>). C<to_number> and C<from_number> are
+required and die if absent, and at least one of C<body> or C<media> must be
+given. C<media> and C<tags> are omitted when B<empty>, not merely when
+absent — an empty arrayref must not reach the wire.
+
+=item C<pay(%opts)>
+
+Run a payment collection flow (SWML C<pay>, preceded by a C<set> of
+C<ai_response>). C<payment_connector_url> is required and dies if absent.
+Most parameters are always-on with defaults — C<input> dtmf, C<timeout> 5,
+C<max_attempts> 1, C<payment_method> credit-card, C<token_type> reusable,
+C<currency> usd, C<language> en-US, C<voice> woman, C<valid_card_types>
+"visa mastercard amex" — and the numeric ones are emitted as B<strings>.
+C<postal_code> is tri-state: a boolean-ish 0/1 becomes the string
+C<'true'>/C<'false'>, while any other value is passed through as a literal
+postal code. C<parameters> and C<prompts> are omitted when empty.
+
+=back
 
 =head2 State and data
 
-C<update_global_data>, C<remove_global_data>, C<set_metadata>,
-C<remove_metadata>, C<swml_user_event>, C<swml_change_step>,
-C<swml_change_context>, C<switch_context>, C<replace_in_history>.
+=over 4
+
+=item C<update_global_data($hashref)>
+
+Merge keys into the call's global data. B<Emits the wire key
+C<set_global_data>>, not C<update_global_data>.
+
+=item C<remove_global_data($keys)>
+
+Delete global-data keys (wire key C<unset_global_data>).
+
+=item C<set_metadata($hashref)> / C<remove_metadata($keys)>
+
+Set and delete call metadata (wire keys C<set_meta_data> and
+C<unset_meta_data> — note the underscore, which does not match the method
+name).
+
+=item C<swml_user_event($event_data)>
+
+Emit an application-defined event through a SWML C<user_event> verb.
+
+=item C<swml_change_step($step_name)> / C<swml_change_context($context_name)>
+
+Move the contexts state machine to another step or context (wire keys
+C<change_step> and C<change_context>). These are plain actions despite the
+C<swml_> prefix — no SWML document is built.
+
+=item C<switch_context(%opts)>
+
+Switch the AI's prompt context (wire key C<context_switch>). Has two
+emission forms: given B<only> C<system_prompt>, the value is that bare
+string; with any of C<user_prompt>, C<consolidate> or C<full_reset> also
+set, the value is an object carrying just the options supplied.
+
+=item C<replace_in_history($text)>
+
+Replace the function's entry in conversation history with C<$text>, or with
+JSON C<true> when called with no argument.
+
+=back
 
 =head2 Media
 
-C<say>, C<play_background_file>, C<stop_background_file>, C<record_call>,
-C<stop_record_call>, C<tap>, C<stop_tap>.
+=over 4
+
+=item C<say($text)>
+
+Speak C<$text> (action key C<say>).
+
+=item C<play_background_file($filename, %opts)>
+
+Play a background file (wire key C<playback_bg>). The emitted value's
+B<shape depends on C<wait>>: with C<wait> the value is
+C<< { file => $filename, wait => true } >>; without it, the value is the
+bare filename string.
+
+=item C<stop_background_file()>
+
+Stop background playback (wire key C<stop_playback_bg>).
+
+=item C<record_call(%opts)>
+
+Start recording via a SWML C<record_call> verb. Dies unless C<format> is
+wav/mp3/mp4 and C<direction> is speak/listen/both. C<stereo>, C<format>,
+C<direction>, C<beep> and C<input_sensitivity> are emitted
+B<unconditionally> — so C<beep> false and C<input_sensitivity> 44.0 ship
+even at their defaults. The three timeouts (C<initial_timeout>,
+C<end_silence_timeout>, C<max_length>) are gated on being B<defined>, so a
+literal 0 still emits, whereas C<control_id>, C<terminators> and
+C<status_url> are gated on truthiness and so drop when empty.
+
+=item C<stop_record_call(%opts)>
+
+Stop recording (SWML C<stop_record_call>); C<control_id> is included only
+when truthy.
+
+=item C<tap($uri, %opts)>
+
+Start tapping media to C<$uri> (SWML C<tap>). Dies unless C<direction> is
+speak/hear/both, C<codec> is PCMU or PCMA, and C<rtp_ptime> is positive.
+Note the direction set here is B<speak/hear/both> — not the
+speak/listen/both that C<record_call> accepts. Every optional key is
+emitted only when it differs from its default.
+
+=item C<stop_tap(%opts)>
+
+Stop tapping (SWML C<stop_tap>).
+
+=back
 
 =head2 Speech and AI
 
-C<add_dynamic_hints>, C<clear_dynamic_hints>, C<set_end_of_speech_timeout>,
-C<set_speech_event_timeout>, C<toggle_functions>,
-C<enable_functions_on_timeout>, C<enable_extensive_data>,
-C<update_settings>, C<simulate_user_input>.
+=over 4
+
+=item C<add_dynamic_hints($hints)> / C<clear_dynamic_hints()>
+
+Add speech-recognition hints for this turn, and clear them. C<clear> emits
+an empty hashref value rather than a boolean.
+
+=item C<set_end_of_speech_timeout($ms)> / C<set_speech_event_timeout($ms)>
+
+Set the end-of-speech and speech-event timeouts in milliseconds (wire keys
+C<end_of_speech_timeout> and C<speech_event_timeout> — the C<set_> prefix
+is method-only).
+
+=item C<toggle_functions($toggles)>
+
+Enable or disable named SWAIG functions for the rest of the call.
+
+=item C<enable_functions_on_timeout($enabled)>
+
+Allow functions to run when the speaker times out. Defaults to enabled;
+emits a JSON boolean under the wire key
+C<functions_on_speaker_timeout>.
+
+=item C<enable_extensive_data($enabled)>
+
+Request the extensive-data payload. Defaults to enabled; wire key
+C<extensive_data>.
+
+=item C<update_settings($settings)>
+
+Update AI settings mid-call (wire key C<settings>).
+
+=item C<simulate_user_input($text)>
+
+Inject C<$text> as if the user had said it (wire key C<user_input>).
+
+=back
 
 =head2 Advanced / RPC
 
-C<execute_swml>, C<execute_rpc>, C<rpc_dial>, C<rpc_ai_message>,
-C<rpc_ai_unhold>.
+=over 4
+
+=item C<execute_swml($swml_content, %opts)>
+
+Attach a raw SWML document as an action. Accepts a hashref, which is
+B<deep-copied> (via a JSON round-trip) so the caller's structure is never
+mutated, or a string, which is parsed as JSON and — if that fails —
+wrapped as C<< { raw_swml => $string } >> rather than raising. Anything
+else dies. With C<< transfer => 1 >> the document gains a string
+C<transfer> key. This is the primitive every SWML-emitting helper above
+funnels through.
+
+=item C<execute_rpc(%opts)>
+
+Emit a SWML C<execute_rpc> verb. C<method> is required and dies if absent;
+C<call_id> and C<node_id> are included when truthy. C<params> is omitted
+when B<empty> — this is load-bearing, and is why C<rpc_ai_unhold> can pass
+C<< params => {} >> without shipping an empty object.
+
+=item C<rpc_dial(%opts)>
+
+Dial out via RPC. C<to_number>, C<from_number> and C<dest_swml> are all
+required and die if absent; C<device_type> defaults to C<phone>.
+
+=item C<rpc_ai_message(%opts)>
+
+Inject a message into a running AI session over RPC. C<call_id> and
+C<message_text> are required and die if absent; C<role> defaults to
+C<system>.
+
+=item C<rpc_ai_unhold(%opts)>
+
+Take a held AI session off hold over RPC. C<call_id> is required and dies
+if absent.
+
+=back
+
+=head2 Payment helpers
+
+Class methods — invokable on the class or an instance. They build and
+return plain hashrefs and hold no state, so they do B<not> chain.
+
+=over 4
+
+=item C<create_payment_prompt(%opts)>
+
+Build a payment prompt hashref for C<pay>'s C<prompts> list.
+C<for_situation> and C<actions> are required and die if absent;
+C<card_type> and C<error_type> are included when truthy. Note the emitted
+key for C<for_situation> is C<for>.
+
+=item C<create_payment_action($action_type, $phrase)>
+
+Build C<< { type => $action_type, phrase => $phrase } >> for a prompt's
+C<actions> list.
+
+=item C<create_payment_parameter($name, $value)>
+
+Build C<< { name => $name, value => $value } >> for C<pay>'s C<parameters>
+list.
+
+=back
 
 =head2 Serialization
 
-C<to_hash> (the Python C<to_dict> equivalent) and C<to_json>.
+=over 4
+
+=item C<to_hash()>
+
+The wire payload (the reference's C<to_dict>). C<response> is included only
+when non-empty; C<action> only when at least one action was added; and
+C<post_process> only alongside actions. If that would leave the payload
+B<empty>, it falls back to C<< { response => 'Action completed.' } >> so a
+handler always returns something valid.
+
+=item C<to_json()>
+
+C<to_hash> encoded as a JSON string.
+
+=back
 
 =head1 SEE ALSO
 

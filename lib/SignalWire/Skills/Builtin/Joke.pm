@@ -50,6 +50,14 @@ sub register_tools {
     );
 }
 
+# Speech-recognition hints for this skill. Empty by design — the reference
+# ships the same explicit empty override as the documented extension point
+# (e.g. "joke", "funny", "make me laugh" would go here). Python parity:
+# ``JokeSkill.get_hints``.
+sub get_hints {
+    return [];
+}
+
 sub get_global_data {
     return { joke_skill_enabled => JSON::true };
 }
@@ -94,8 +102,7 @@ SignalWire::Skills::Builtin::Joke - joke-telling skill backed by the API Ninjas 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::Joke> is the Perl port of the Python reference
-C<signalwire.skills.joke.skill>. It registers a single DataMap-based SWAIG tool
+L<SignalWire::Skills::Builtin::Joke> registers a single DataMap-based SWAIG tool
 (default name C<get_joke>) that fetches a random joke from the API Ninjas joke
 API. The tool's C<type> parameter selects between C<jokes> and C<dadjokes>.
 
@@ -111,6 +118,11 @@ and renders the response template. The skill does not support multiple instances
 
 Registers the DataMap joke tool (name overridable via C<tool_name>) with the
 agent via C<register_swaig_function>.
+
+=item C<get_hints>
+
+Returns an empty hint list. Present as an explicit override so speech-recognition
+hints for this skill have a documented place to go.
 
 =item C<get_global_data>
 

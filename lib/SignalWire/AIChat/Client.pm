@@ -355,15 +355,13 @@ L<SignalWire::AIChat::Client> speaks the standard SignalWire front-door
 protocol: HTTP Basic C<project:api_token> with the space in the hostname --
 C<POST https://{space}.signalwire.com/api/ai/chat> -- carrying a JSON-RPC 2.0
 body whose params are pure payload (identity NEVER appears in the body; it
-rides the Basic-auth header only). It mirrors the python reference
-C<signalwire.ai_chat.AIChatClient>.
+rides the Basic-auth header only).
 
 A C<chat()> call awaits a full LLM round trip (seconds, not milliseconds). The
 service streams keepalive whitespace ahead of a slow response body, so liveness
 is byte-driven rather than wall-clock: there is no total-request timeout an idle
-turn could trip -- only a per-read idle bound (default 60s), mirroring the
-python reference's C<sock_read=60>. Leading whitespace is valid JSON, so the
-buffered parse is unaffected.
+turn could trip -- only a per-read idle bound (default 60s). Leading
+whitespace is valid JSON, so the buffered parse is unaffected.
 
 =head2 URL resolution
 
@@ -433,6 +431,16 @@ Return an AI summary string. Optional C<summary_prompt> plus sampling params
 C<max_tokens>). The service returns EXACTLY ONE of C<{summary}> or C<{error}>
 (both on the success envelope), so a failed generation is raised as a
 C<SignalWire::AIChat::SummaryError> -- never a silent empty string.
+
+=item close()
+
+Release the client's transport resources, completing the lifecycle
+contract. It is a B<well-defined no-op>: C<HTTP::Tiny> opens a
+fresh connection per request and keeps no persistent session, so there is
+nothing to tear down. It exists so callers can write the same
+acquire/release lifecycle they would against a client that does pool
+connections. Safe and idempotent — call it as often as you like, including
+never.
 
 =back
 

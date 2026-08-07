@@ -63,9 +63,12 @@ sub _resolve_ref ( $self, $ref ) {
 
 # _matches — a boolean "does $instance satisfy $schema" (no error collection),
 # used by anyOf/oneOf/not/if and by unevaluatedProperties bookkeeping.
-sub _matches ( $self, $instance, $schema ) {
+# $widen_inherited carries an enclosing `x-sdk-widen` down into the branch (see
+# _eval): the marker sits on the FIELD, the const/enum it widens sit one level
+# down inside anyOf, and this is how the two meet.
+sub _matches ( $self, $instance, $schema, $widen_inherited = 0 ) {
     my @errors;
-    $self->_eval( $instance, $schema, '', \@errors );
+    $self->_eval( $instance, $schema, '', \@errors, undef, $widen_inherited );
     return @errors ? 0 : 1;
 }
 
@@ -73,7 +76,7 @@ sub _matches ( $self, $instance, $schema ) {
 # $path) to $errors. $evaluated (optional) is a hashref used at object scope to
 # record which property names were evaluated by properties (so
 # unevaluatedProperties can reject the rest).
-sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef ) {
+sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef, $widen_inherited = 0 ) {
 
     # A boolean schema: true = always valid, false = always invalid.
     if ( !ref $schema ) {
@@ -83,12 +86,36 @@ sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef ) {
     }
     return unless ref $schema eq 'HASH';
 
+    # `x-sdk-widen` — the const-union / enum on THIS field is a HINT listing the
+    # known values, not a closed set: the platform accepts any value of the
+    # declared base type. Enforcing the value set on such a field makes the SDK
+    # STRICTER THAN THE PLATFORM, rejecting documents the server would have
+    # executed — the failure direction nobody looks for, because every test
+    # written against the enumerated values still passes.
+    #
+    # It relaxes the VALUE-SET constraints ONLY. `type` still applies, so a
+    # widened string field keeps rejecting 42 — widening must not become
+    # "anything goes", which would be the opposite failure.
+    #
+    # The flag INHERITS into composition branches ($ref / allOf / anyOf / oneOf
+    # / if-then-else) because the marker sits on the FIELD while the values it
+    # widens live one level down. $defs/Hangup.reason is exactly that shape:
+    #
+    #     reason: { anyOf: [ {const: hangup}, {const: busy}, {const: decline} ],
+    #               x-sdk-widen: true }
+    #
+    # Honouring only the node that literally carries the key would widen
+    # nothing there and leave `no_answer` — a real platform reason — rejected.
+    # It deliberately does NOT inherit into `properties` / `items`: widening a
+    # field must not silently widen everything nested inside it.
+    my $widened = ( $schema->{'x-sdk-widen'} || $widen_inherited ) ? 1 : 0;
+
     # $ref: resolve and evaluate the target in place (Draft 2020-12 lets $ref
     # sit beside other keywords; we evaluate both).
     if ( defined $schema->{'$ref'} ) {
         my $target = $self->_resolve_ref( $schema->{'$ref'} );
         if ( defined $target ) {
-            $self->_eval( $instance, $target, $path, $errors, $evaluated );
+            $self->_eval( $instance, $target, $path, $errors, $evaluated, $widened );
         }
     }
 
@@ -102,13 +129,13 @@ sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef ) {
     }
 
     # const
-    if ( exists $schema->{const} ) {
+    if ( exists $schema->{const} && !$widened ) {
         push @$errors, "$path: value does not equal const"
             unless _deep_eq( $instance, $schema->{const} );
     }
 
     # enum
-    if ( ref $schema->{enum} eq 'ARRAY' ) {
+    if ( ref $schema->{enum} eq 'ARRAY' && !$widened ) {
         my $ok = 0;
         for my $e ( @{ $schema->{enum} } ) { $ok = 1 if _deep_eq( $instance, $e ); }
         push @$errors, "$path: value not in enum" unless $ok;
@@ -136,17 +163,21 @@ sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef ) {
     # allOf
     if ( ref $schema->{allOf} eq 'ARRAY' ) {
         for my $sub ( @{ $schema->{allOf} } ) {
-            $self->_eval( $instance, $sub, $path, $errors, $evaluated );
+            $self->_eval( $instance, $sub, $path, $errors, $evaluated, $widened );
         }
     }
 
     # anyOf — at least one branch must match. On success, mark the matching
     # branch's evaluated properties (best-effort: mark ALL of the instance's
     # keys that the matching branch evaluates).
+    #
+    # $widened flows into every branch: a widened field's const-union lives
+    # HERE (see $defs/Hangup.reason), so without it the widening would have no
+    # effect on precisely the shape it exists to relax.
     if ( ref $schema->{anyOf} eq 'ARRAY' ) {
         my $matched;
         for my $sub ( @{ $schema->{anyOf} } ) {
-            if ( $self->_matches( $instance, $sub ) ) { $matched = $sub; last; }
+            if ( $self->_matches( $instance, $sub, $widened ) ) { $matched = $sub; last; }
         }
         if ( !defined $matched ) {
             push @$errors, "$path: does not match any anyOf branch";
@@ -157,7 +188,8 @@ sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef ) {
 
     # oneOf — exactly one branch must match.
     if ( ref $schema->{oneOf} eq 'ARRAY' ) {
-        my @matched = grep { $self->_matches( $instance, $_ ) } @{ $schema->{oneOf} };
+        my @matched =
+            grep { $self->_matches( $instance, $_, $widened ) } @{ $schema->{oneOf} };
         if ( @matched != 1 ) {
             push @$errors, "$path: matched " . scalar(@matched) . " oneOf branches (want 1)";
         } elsif ($evaluated) {
@@ -165,19 +197,22 @@ sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef ) {
         }
     }
 
-    # not
+    # not — deliberately does NOT inherit $widened. Relaxing a constraint
+    # inside a negation would INVERT its effect (making the validator stricter,
+    # not looser), which is the opposite of what the marker means.
     if ( exists $schema->{not} ) {
         push @$errors, "$path: matches 'not' schema (must not)"
             if $self->_matches( $instance, $schema->{not} );
     }
 
-    # if / then / else
+    # if / then / else — the `if` condition is a TEST, not a constraint on the
+    # instance, so it is evaluated unwidened; the applied branch inherits.
     if ( exists $schema->{if} ) {
         if ( $self->_matches( $instance, $schema->{if} ) ) {
-            $self->_eval( $instance, $schema->{then}, $path, $errors, $evaluated )
+            $self->_eval( $instance, $schema->{then}, $path, $errors, $evaluated, $widened )
                 if exists $schema->{then};
         } else {
-            $self->_eval( $instance, $schema->{else}, $path, $errors, $evaluated )
+            $self->_eval( $instance, $schema->{else}, $path, $errors, $evaluated, $widened )
                 if exists $schema->{else};
         }
     }
@@ -402,10 +437,9 @@ SignalWire::Utils::SchemaValidator - focused JSON Schema evaluator for SWML verb
 =head1 DESCRIPTION
 
 A small JSON Schema (Draft 2020-12 subset) evaluator over the bundled SWML
-schema, the Perl analogue of the python reference's jsonschema-rs full
-validator. It enforces the closed-object / typed-key semantics that make a
+schema. It enforces the closed-object / typed-key semantics that make a
 misspelled, unknown, or wrong-typed SWML verb config an ERROR rather than a
-silent accept (the Wave-2 P#5 STRICT-RENDER contract). It supports exactly the
+silent accept. It supports exactly the
 keywords the SWML C<schema.json> uses (C<$ref>, C<allOf>/C<anyOf>/C<oneOf>,
 C<not>, C<if>/C<then>/C<else>, C<type>, C<const>, C<enum>, C<properties>,
 C<required>, C<items>, numeric bounds, and

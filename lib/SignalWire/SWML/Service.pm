@@ -2,6 +2,12 @@ package SignalWire::SWML::Service;
 use strict;
 use warnings;
 use Moo;
+
+# Subroutine signatures (stable since Perl 5.36, this SDK's declared floor —
+# see cpanfile / Makefile.PL MIN_PERL_VERSION). Used on the subclass-override
+# hooks below, whose OPTIONAL parameters have no body to default them in.
+use feature 'signatures';
+no warnings 'experimental::signatures';
 use JSON         ();
 use Digest::SHA  qw(hmac_sha256_hex);
 use MIME::Base64 ();
@@ -9,6 +15,7 @@ use Scalar::Util ();
 use SignalWire::SWML::Document;
 use SignalWire::SWML::Schema;
 use SignalWire::Utils::SchemaUtils ();
+use SignalWire::Core::Random       ();
 use SignalWire::Logging;
 
 has 'name' => (
@@ -244,6 +251,46 @@ has 'security' => (
     },
 );
 
+# Python parity: swml_service.py:143-146 lifts four values off the
+# SecurityConfig collaborator onto the service itself --
+#   self.ssl_enabled   = self.security.ssl_enabled
+#   self.domain        = self.security.domain
+#   self.ssl_cert_path = self.security.ssl_cert_path
+#   self.ssl_key_path  = self.security.ssl_key_path
+# They are caller-observable VALUES, and the reference also REASSIGNS them
+# later (serve() overrides ssl_enabled/domain at swml_service.py:1235-1248,
+# and clears ssl_enabled at :1248 when the cert/key check fails), so these
+# are read/write, not read-only. ``lazy`` defers to ->security so the
+# config_file passed to ->new is honoured, matching the reference's
+# construction order.
+has 'ssl_enabled' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub { $_[0]->security->ssl_enabled },
+);
+
+has 'ssl_cert_path' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub { $_[0]->security->ssl_cert_path },
+);
+
+has 'ssl_key_path' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub { $_[0]->security->ssl_key_path },
+);
+
+has 'domain' => (
+    init_arg => undef,
+    is       => 'rw',
+    lazy     => 1,
+    default  => sub { $_[0]->security->domain },
+);
+
 # Function-name validation pattern matches the other ports.
 my $SWAIG_FN_NAME = qr/\A[a-zA-Z_][a-zA-Z0-9_]*\z/;
 
@@ -277,7 +324,13 @@ sub AUTOLOAD {
         } else {
             $data = shift // {};
         }
-        $self->document->add_verb( $section, $method, $data );
+
+        # Route through the VALIDATING add_verb_to_section, not the raw
+        # Document::add_verb. AUTOLOAD lives on the Service and reads like the
+        # validating surface, but it went straight to the document — so an
+        # auto-vivified verb (`$svc->play({text => ...})`) skipped the verb
+        # handler AND the schema pass that would have refused it.
+        $self->add_verb_to_section( $section, $method, $data );
         return $self;
     }
 
@@ -302,19 +355,7 @@ sub can {
 
 sub _random_hex {
     my ($len) = @_;
-
-    # Use /dev/urandom for cryptographically secure random bytes.
-    # Die on failure rather than falling back to weak randomness.
-    if ( open my $fh, '<:raw', '/dev/urandom' ) {
-        my $bytes;
-        my $read = read( $fh, $bytes, $len );
-        close $fh;
-        if ( defined $read && $read == $len ) {
-            return unpack( 'H*', $bytes );
-        }
-    }
-    die "FATAL: Cannot generate secure random bytes - /dev/urandom unavailable or read failed. "
-        . "Set SWML_BASIC_AUTH_USER and SWML_BASIC_AUTH_PASSWORD environment variables instead.\n";
+    return SignalWire::Core::Random::_random_hex($len);
 }
 
 sub _timing_safe_compare {
@@ -344,6 +385,8 @@ sub validate_basic_auth {
 # AuthMixin.get_basic_auth_credentials(include_source=False).)
 sub get_basic_auth_credentials {
     my ( $self, $include_source ) = @_;
+    $include_source //= 0;
+
     my $user = $self->basic_auth_user     // '';
     my $pass = $self->basic_auth_password // '';
     return ( $user, $pass ) unless $include_source;
@@ -542,10 +585,11 @@ sub to_psgi_app {
 # it is the SWML JSON document; for a routing redirect it is 307 with a
 # Location header and an empty body; for an auth failure it is 401 with a
 # WWW-Authenticate: Basic header and a JSON error body.
-sub handle_request {
-    my ( $self, $method, $url, $headers, $body ) = @_;
-    $headers //= {};
-    $body    //= {};
+# Python parity: handle_request(method, url, headers, body=None).
+# ``headers`` is REQUIRED — it used to default to ``{}``, which silently turned
+# a forgotten headers argument into an unauthenticated request rather than an
+# error. Only ``body`` carries a default.
+sub handle_request ( $self, $method, $url, $headers, $body = undef ) {
     my $callback_path = $self->_callback_path_for_url($url);
 
     # Auth (over the plain headers hashref).
@@ -948,8 +992,7 @@ sub stop {
 # Python parity: WebMixin.on_request(request_data, callback_path).
 # The Python third `request` argument is FastAPI-specific and
 # intentionally not mirrored.
-sub on_request {
-    my ( $self, $request_data, $callback_path ) = @_;
+sub on_request ( $self, $request_data = undef, $callback_path = undef ) {
     return $self->on_swml_request( $request_data, $callback_path );
 }
 
@@ -961,8 +1004,7 @@ sub on_request {
 # Request object; in Perl this is the PSGI ``$env`` hashref (or a
 # wrapper produced by the calling code). Subclasses that don't need
 # direct request access can ignore it.
-sub on_swml_request {
-    my ( $self, $request_data, $callback_path, $request ) = @_;
+sub on_swml_request ( $self, $request_data = undef, $callback_path = undef, $request = undef ) {
     return;
 }
 
@@ -1103,8 +1145,7 @@ sub define_tools {
 
 # Dispatch a function call to the registered handler. Default plain
 # implementation. AgentBase may override to add token validation.
-sub on_function_call {
-    my ( $self, $name, $args, $raw_data ) = @_;
+sub on_function_call ( $self, $name, $args, $raw_data = undef ) {
     my $tool = $self->tools->{$name};
     return unless $tool && $tool->{_handler};
     return $tool->{_handler}->( $args, $raw_data );
@@ -1116,13 +1157,98 @@ sub list_tool_names {
     return @{ $self->tool_order };
 }
 
+# Extension point: transport-agnostic `secure => 1` token enforcement.
+#
+# This is the SOLE security decision for a SWAIG call, deliberately kept free of
+# any request/transport type ($env, PSGI, Lambda event) so that EVERY transport
+# — the HTTP endpoint and all four serverless modes (lambda, cgi,
+# google_cloud_function, azure_function) — reaches the identical check with the
+# identical semantics. Each transport is responsible only for EXTRACTING the
+# credential from its own payload shape; none of them re-implements the decision.
+#
+# Python parity: swml_service.SWMLService._swaig_validate_token — three nullable
+# strings in, nullable out.
+#
+# Returns undef to proceed with dispatch, or a FunctionResult-shaped hashref to
+# return INSTEAD of dispatching (the refusal). The refusal is always delivered
+# as a 200 + FunctionResult body, never an HTTP error status — the engine
+# (mod_openai) has no handling for a SWAIG refusal status, so the tool reports
+# that it cannot execute and the model relays that.
+#
+# The base SWMLService has no SessionManager, so it enforces nothing;
+# AgentBase overrides this with the real check.
+sub _swaig_validate_token {
+    my ( $self, $function_name, $token, $call_id ) = @_;
+    return;
+}
+
 # Extension point: invoked between argument parsing and function dispatch
 # on POST /swaig. Returns ($target, $short_circuit). If $short_circuit is
 # defined, it's encoded as the SWAIG response without calling
-# on_function_call. AgentBase may override to add session-token validation.
+# on_function_call.
+#
+# The SECURITY half is NOT overridden per-transport: it is delegated here to
+# _swaig_validate_token, the request-agnostic core every transport shares. Only
+# the credential EXTRACTION is transport-specific — here, the `__token` query
+# parameter and the body's `call_id`, exactly the split _build_webhook_url
+# emits. AgentBase overrides this for the dynamic-config ephemeral clone, which
+# genuinely needs the request; it does NOT re-implement the token check.
 sub swaig_pre_dispatch {
     my ( $self, $request_data, $func_name, $env ) = @_;
+
+    # Bind each extractor's result to a SCALAR first. A bare `return` in list
+    # context yields an EMPTY LIST, not undef — inlining these as arguments
+    # would silently collapse a missing token into a shorter arg list and shift
+    # the call_id into the token position.
+    my $token   = _swaig_token_from_env($env);
+    my $call_id = _swaig_call_id_from_body($request_data);
+
+    my $refusal = $self->_swaig_validate_token( $func_name, $token, $call_id );
+    return ( $self, $refusal ) if defined $refusal;
+
     return ( $self, undef );
+}
+
+# Pull the `__token` credential out of a PSGI env's QUERY_STRING. `token` is
+# accepted as the legacy alias (Python parity: swml_service.py reads
+# `query_params.get("__token") or query_params.get("token")`). Returns undef
+# when absent — an absent credential is a REFUSAL, never a bypass, and that
+# decision belongs to _swaig_validate_token, not to this extractor.
+sub _swaig_token_from_env {
+    my ($env) = @_;
+    return unless ref $env eq 'HASH';
+    my $qs = $env->{QUERY_STRING};
+    return unless defined $qs && length $qs;
+
+    my %params;
+    for my $pair ( split /[&;]/, $qs ) {
+        my ( $k, $v ) = split /=/, $pair, 2;
+        next unless defined $k && length $k;
+        $params{ _urldecode($k) } = defined $v ? _urldecode($v) : '';
+    }
+    for my $key (qw(__token token)) {
+        my $v = $params{$key};
+        return $v if defined $v && length $v;
+    }
+    return;
+}
+
+# The call_id rides the POST BODY, not the query string — the same split the
+# reference uses (swml_service.py reads `body.get("call_id")` while the token
+# comes off the query params). A token is only checkable against a call_id, so
+# an absent one leaves the credential UNVALIDATED.
+sub _swaig_call_id_from_body {
+    my ($body) = @_;
+    return unless ref $body eq 'HASH';
+    my $cid = $body->{call_id};
+    return ( defined $cid && length $cid ) ? $cid : undef;
+}
+
+sub _urldecode {
+    my ($s) = @_;
+    $s =~ tr/+/ /;
+    $s =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/ge;
+    return $s;
 }
 
 # Extension point: subclasses may override to add /post_prompt, /mcp etc.
@@ -1134,18 +1260,22 @@ sub handle_additional_route {
 }
 
 # Register a routing callback at a given sub-path under the service route.
-sub register_routing_callback {
-    my ( $self, $path, $cb ) = @_;
+#
+# Python parity: SWMLService.register_routing_callback(callback_fn, path="/sip").
+# The callback comes FIRST and the path is optional — this port used to take
+# them in the opposite order (``($path, $cb)``) with the path mandatory, so a
+# caller porting reference code got its arguments silently transposed.
+sub register_routing_callback ( $self, $callback_fn, $path = '/sip' ) {
 
     # Normalize the path for consistent lookup (Python parity:
     # SWMLService.register_routing_callback -> path.rstrip("/") then ensure a
     # leading "/"). Without this, "/sip/" and "voice" register under
     # non-canonical keys and never match an incoming request path.
-    $path = '' unless defined $path;
+    $path = '/sip' unless defined $path;
     $path =~ s{/+$}{};
     $path = "/$path" unless $path =~ m{^/};
 
-    $self->routing_callbacks->{$path} = $cb;
+    $self->routing_callbacks->{$path} = $callback_fn;
     return $self;
 }
 
@@ -1247,8 +1377,7 @@ SignalWire::SWML::Service - foundation for SWML document management and serving
 
 =head1 DESCRIPTION
 
-L<SignalWire::SWML::Service> is the Perl port of
-C<signalwire.core.swml_service.SWMLService>. It is a Moo class that owns a
+L<SignalWire::SWML::Service> is a Moo class that owns a
 L<SignalWire::SWML::Document>, exposes the document-building API, dispatches
 inbound HTTP requests (SWML render, SWAIG function calls, post-prompt) as a
 PSGI app, and provides basic-auth, routing callbacks, and a SWAIG tool
@@ -1307,8 +1436,8 @@ The SWAIG tool registry, its registration order, and routing callbacks.
 
 =item C<schema_utils>, C<verb_registry>, C<security>
 
-Lazily built accessors mirroring the Python reference's schema/verb-registry
-/security surface.
+Lazily built accessors for the schema utils, the verb-handler registry, and
+the security config.
 
 =back
 
@@ -1321,8 +1450,24 @@ Lazily built accessors mirroring the Python reference's schema/verb-registry
 =item C<to_psgi_app>
 
 Return the PSGI app coderef that dispatches this service's routes (main
-SWML, C</swaig>, C</post_prompt>, health/ready). C<as_router> and C<get_app>
-are aliases.
+SWML, C</swaig>, C</post_prompt>, health/ready).
+
+=item C<as_router>
+
+The routable unit for mounting this service — an alias for C<to_psgi_app>.
+Named for the reference's C<as_router>, which returns a FastAPI
+C<APIRouter>; Perl's routable unit is the PSGI app.
+
+=item C<get_app>
+
+The deployable application — also an alias for C<to_psgi_app>, under the
+reference's C<get_app> name (which returns the FastAPI app). Deployment
+adapters mount this.
+
+=item C<stop>
+
+Signal a running C<serve> loop to stop by clearing its running flag.
+Returns nothing; it does not block until the server has actually exited.
 
 =item C<handle_request($method, $url, $headers, $body)>
 
@@ -1362,8 +1507,13 @@ Constant-time-compare the given credentials against the service's.
 
 Return C<($user, $password)>, or C<($user, $password, $source)> when
 C<$include_source> is truthy (source is C<provided>/C<environment>/
-C<generated>). C<get_basic_auth_credentials_with_source> is a convenience
-alias.
+C<generated>).
+
+=item C<get_basic_auth_credentials_with_source>
+
+Always return the three-element C<($user, $password, $source)> form — a
+named alias for C<< get_basic_auth_credentials(1) >>, kept for callers that
+prefer the explicit spelling to a boolean flag.
 
 =item C<extract_sip_username($request_body)>
 
@@ -1414,6 +1564,14 @@ Whether strict schema validation is on.
 
 Override the external base URL used for webhook URLs behind a proxy.
 
+=item C<can($method)>
+
+Overrides UNIVERSAL::can so it also knows about B<schema verbs>. Real
+methods resolve normally; failing that, any verb the SWML schema declares
+resolves to a coderef that dispatches it. Without this override, ordinary
+C<< $service->can('play') >> would report false for verbs the service does
+in fact accept via C<AUTOLOAD>.
+
 =back
 
 =head2 SWAIG tool registry
@@ -1433,10 +1591,21 @@ Register multiple tool definitions at once.
 
 Register a raw SWAIG function definition (e.g. from DataMap).
 
-=item C<has_function($name)>, C<get_function($name)>,
-C<get_all_functions>, C<remove_function($name)>
+=item C<has_function($name)> / C<get_function($name)>
 
-Query and manage the tool registry.
+Query the tool registry: whether a function is registered, and the
+registered definition itself.
+
+=item C<get_all_functions>
+
+A B<shallow copy> of the registry keyed by function name — mutating the
+returned hashref does not affect the service, though the definitions inside
+it are shared.
+
+=item C<remove_function($name)>
+
+Unregister a function, removing it from both the registry and the
+registration order. Returns 1 if it was there and 0 if it was not.
 
 =item C<list_tool_names>
 
@@ -1452,20 +1621,48 @@ Dispatch a function call to its registered handler.
 
 =over 4
 
-=item C<on_request($request_data, $callback_path)> /
-C<on_swml_request($request_data, $callback_path, $request)>
+=item C<on_request($request_data, $callback_path)>
 
-Customization hooks for modifying the SWML based on request data. The
-default returns undef (no modification).
+Called when SWML is requested. The default simply delegates to
+C<on_swml_request> and returns its result, so subclasses normally override
+that instead of this. Return undef to keep the default rendering, or a
+hashref of modifications to merge into the rendered document.
 
-=item C<register_routing_callback($path, $cb)>
+=item C<on_swml_request($request_data, $callback_path, $request)>
+
+The customization point subclasses are meant to override; the default
+implementation returns undef, i.e. no modification. C<$request> is the PSGI
+C<$env> hashref (the reference's optional FastAPI C<Request>), and may be
+ignored by subclasses that do not need direct request access.
+
+=item C<register_routing_callback($callback_fn, $path)>
 
 Register a routing callback at a sub-path under the service route.
 
 =item C<swaig_pre_dispatch($request_data, $func_name, $env)>
 
 Extension point between argument parsing and dispatch on POST C</swaig>;
-returns C<($target, $short_circuit)>.
+returns C<($target, $short_circuit)>. When C<$short_circuit> is defined it is
+returned as the SWAIG response and the handler is never called.
+
+It does B<not> make the security decision itself. That whole decision lives in
+one request-agnostic internal core, C<_swaig_validate_token($function_name,
+$token, $call_id)>, so that every transport -- this HTTP endpoint and each
+serverless mode alike -- reaches the identical check and none re-implements it.
+Only credential B<extraction> is transport-specific: here the C<__token> comes
+off the query string and the C<call_id> out of the request body, the same split
+the rendered C<web_hook_url> emits.
+
+A refusal is delivered as a 200 whose body is the
+L<SignalWire::SWAIG::FunctionResult>, never as an HTTP error status, because
+the engine has no handling for a SWAIG refusal status: the tool reports that it
+cannot execute and the model relays that to the caller.
+
+The base service has no session manager and so enforces nothing;
+L<SignalWire::Agent::AgentBase> supplies the real check, under which a tool
+registered C<< secure => 1 >> (the C<define_tool> default) is refused when the
+token is forged, absent, or carries no C<call_id> to be validated against,
+while a tool registered C<< secure => 0 >> runs ungated in every case.
 
 =item C<handle_additional_route($sub_path, $request_data, $env)>
 

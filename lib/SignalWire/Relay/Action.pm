@@ -425,8 +425,7 @@ L<SignalWire::Relay::Action> is the base class for every long-running
 RELAY operation (play, record, detect, collect, fax, tap, stream, pay,
 transcribe, AI). It tracks the C<control_id> correlation key, accumulates
 events, exposes the latest C<payload>, and resolves when the operation
-reaches a terminal state — mirroring the Python reference's action
-objects.
+reaches a terminal state.
 
 Construction fails fast: C<control_id> must be a non-empty string,
 C<events> must be an arrayref, and C<payload> must be a hashref (Moo
@@ -437,44 +436,154 @@ L<SignalWire::Relay::Call>, not by user code.
 
 =over 4
 
-=item * C<on_completed($cb)> — register a completion callback (fires
-immediately if already done); no-arg form returns the registered
-callback.
+=item C<on_completed($cb)>
 
-=item * C<is_done> — true once resolved.
+Register a completion callback, invoked as C<< $cb->($action) >>, and
+return C<$self>. If the action has B<already> resolved the callback fires
+immediately rather than never. A callback that dies is warned about, not
+fatal. Called with no argument it is a getter and returns the currently
+registered callback.
 
-=item * C<wait(timeout =E<gt> $secs)> — block (polling) until resolved or
-the timeout elapses (default 30s), then return the result.
+=item C<is_done()>
 
-=item * C<stop> — send the subclass's stop verb unless already done.
+True once the action has resolved.
+
+=item C<wait(timeout =E<gt> $secs)>
+
+Block until the action resolves or C<timeout> (default 30s) elapses, then
+return the action's result — which is C<undef> on timeout, and also
+C<undef> for an action resolved without one. This B<pumps the client's read
+loop> while waiting: completion only flips as frames are dispatched, so a
+bare sleep would hang the full timeout and return nothing. With no client
+attached (a detached or unit-constructed action) it falls back to sleeping
+so it never hot-spins.
+
+=item C<stop()>
+
+Send the subclass's stop verb, or do nothing if the action has already
+completed. Returns C<undef> when no client is attached.
 
 =back
 
 =head2 Subclasses
 
-Each subclass overrides the stop verb and adds result accessors:
+Each subclass overrides the stop verb, and several add control methods and
+result accessors. Every result accessor reads the B<latest event payload>,
+so it is only meaningful once the action has resolved; each returns an
+empty default rather than C<undef> when its key is absent.
 
 =over 4
 
-=item * B<::Play> — C<pause>, C<resume>, C<volume($vol)>.
+=item B<::Play> — stop verb C<calling.play.stop>
 
-=item * B<::Record> — C<pause(behavior =E<gt> ...)>, C<resume>, and the
-C<url> / C<duration> / C<size> result accessors.
+=over 4
 
-=item * B<::Detect> — C<detect_result>; resolves on the first
-C<params.detect> payload.
+=item C<pause($behavior)>
 
-=item * B<::Collect> — C<pause(behavior =E<gt> ...)>, C<resume>,
-C<volume($vol)> (act on the embedded play leg of play_and_collect),
-C<start_input_timers>, C<collect_result>; filters stray
-C<calling.call.play> events. B<::StandaloneCollect> inherits these.
+Pause playback. C<$behavior> is B<positional> here and is sent only when
+defined.
 
-=item * B<::Fax> — C<fax_result>; stop verb depends on C<method_prefix>.
+=item C<resume()>
 
-=item * B<::Tap>, B<::Stream>, B<::Transcribe>, B<::AI> — stop-verb-only
-specialisations.
+Resume playback.
 
-=item * B<::Pay> — C<pay_result>.
+=item C<volume($volume)>
+
+Set playback volume.
+
+=back
+
+=item B<::Record> — stop verb C<calling.record.stop>
+
+=over 4
+
+=item C<pause(%opts)>
+
+Pause recording. Note C<behavior> is a B<named> option here, unlike
+C<::Play::pause>'s positional argument, and it is gated on truthiness
+rather than definedness — so an empty-string behavior is dropped.
+
+=item C<resume()>
+
+Resume recording.
+
+=item C<url()>, C<duration()>, C<size()>
+
+The recording's URL, duration and size from the completion payload,
+defaulting to C<''>, 0 and 0.
+
+=back
+
+=item B<::Detect> — stop verb C<calling.detect.stop>
+
+=over 4
+
+=item C<detect_result()>
+
+The detection result hashref (empty hashref if absent). This action
+resolves on the B<first> non-empty C<params.detect> payload rather than
+waiting for a terminal state.
+
+=back
+
+=item B<::Collect> — stop verb C<calling.play_and_collect.stop>
+
+Returned by C<play_and_collect>. Because that verb wraps an embedded play,
+it exposes the play controls too — they act on the embedded play leg and
+use the C<play_and_collect> method family, not C<play>.
+
+=over 4
+
+=item C<pause($behavior)>, C<resume()>, C<volume($volume)>
+
+Control the embedded play leg
+(C<calling.play_and_collect.pause>/C<.resume>/C<.volume>).
+
+=item C<start_input_timers()>
+
+Start the collect input timers (C<calling.collect.start_input_timers>).
+
+=item C<collect_result()>
+
+The collect result hashref (empty hashref if absent).
+
+=back
+
+This action deliberately B<filters out> C<calling.call.play> events, so a
+finished prompt neither updates its state nor terminally resolves the
+collect. B<::StandaloneCollect> inherits all of the above but overrides the
+stop verb to C<calling.collect.stop>.
+
+=item B<::Fax> — stop verb depends on C<method_prefix>
+
+=over 4
+
+=item C<method_prefix>
+
+Constructor attribute, C<send_fax> or C<receive_fax>, which selects the
+stop verb C<calling.E<lt>prefixE<gt>.stop>.
+
+=item C<fax_result()>
+
+The fax result hashref (empty hashref if absent).
+
+=back
+
+=item B<::Pay> — stop verb C<calling.pay.stop>
+
+=over 4
+
+=item C<pay_result()>
+
+The payment result hashref (empty hashref if absent).
+
+=back
+
+=item B<::Tap>, B<::Stream>, B<::Transcribe>, B<::AI>
+
+Stop-verb-only specialisations (C<calling.tap.stop>,
+C<calling.stream.stop>, C<calling.transcribe.stop>, C<calling.ai.stop>).
+They add no methods of their own.
 
 =back
 

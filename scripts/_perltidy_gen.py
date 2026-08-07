@@ -101,5 +101,4 @@ def perltidy_outputs(outs: dict, repo_root: Path) -> None:
     # (GIL released during subprocess.run). Cap workers at cores (min headroom).
     workers = max(1, (os.cpu_count() or 4) - 1)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        for fn, tidied in pool.map(_tidy_one, targets):
-            outs[fn] = tidied
+        outs.update(dict(pool.map(_tidy_one, targets)))

@@ -125,8 +125,7 @@ SignalWire::Core::LoggingConfig - SDK logging configuration and serverless-mode 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Core::LoggingConfig> is the Perl port of
-C<signalwire.core.logging_config>. It provides the module-level factory
+L<SignalWire::Core::LoggingConfig> provides the module-level factory
 and configuration functions for the SDK's logging system, plus the
 cross-language serverless / deployment-mode detection contract. Nothing
 is exported by default; import the functions you need from

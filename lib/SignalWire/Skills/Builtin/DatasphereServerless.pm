@@ -2,7 +2,8 @@ package SignalWire::Skills::Builtin::DatasphereServerless;
 use strict;
 use warnings;
 use Moo;
-use JSON ();
+use JSON         ();
+use MIME::Base64 qw(encode_base64);
 extends 'SignalWire::Skills::SkillBase';
 
 use SignalWire::Skills::SkillRegistry;
@@ -13,13 +14,31 @@ has '+skill_description' => ( default =>
         sub { 'Search knowledge using SignalWire DataSphere with serverless DataMap execution' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
+# Registry key for this skill instance. Overrides SkillBase's default because
+# the tool is named `search_knowledge`, not `datasphere_serverless` — the tool
+# name must fold into the key ALWAYS, including when defaulted. Python parity:
+# ``DataSphereServerlessSkill.get_instance_key``.
+sub get_instance_key {
+    my ($self) = @_;
+    my $tool_name = $self->params->{tool_name} // 'search_knowledge';
+    return $self->skill_name . '_' . $tool_name;
+}
+
 sub setup { return 1 }
 
 sub register_tools {
     my ($self) = @_;
     my $tool_name = $self->params->{tool_name} // 'search_knowledge';
 
-    # DataMap-based tool: register as a SWAIG function definition
+    my $space = $self->params->{space_name} // '';
+    my $auth  = encode_base64(
+        ( $self->params->{project_id} // '' ) . ':' . ( $self->params->{token} // '' ), '' );
+    my $count    = $self->params->{count}    // 1;
+    my $distance = $self->params->{distance} // 3.0;
+
+    # DataMap-based tool: register as a SWAIG function definition.
+    # The engine reads ONLY "params" and "headers" off a webhook (mod_openai/actions.c:735-739),
+    # and expands ${formatted_results} from the "foreach" block -- see the commit message.
     return $self->agent->register_swaig_function(
         {
             function    => $tool_name,
@@ -35,10 +54,26 @@ sub register_tools {
             data_map => {
                 webhooks => [
                     {
-                        method => 'POST',
-                        url    => 'https://'
-                            . ( $self->params->{space_name} // '' )
-                            . '/api/datasphere/documents/search',
+                        method  => 'POST',
+                        url     => 'https://' . $space . '/api/datasphere/documents/search',
+                        headers => {
+                            'Content-Type'  => 'application/json',
+                            'Authorization' => "Basic $auth",
+                        },
+                        params => {
+                            document_id  => $self->params->{document_id} // '',
+                            query_string => '${args.query}',
+                            count        => $count,
+                            distance     => $distance,
+                        },
+                        foreach => {
+                            input_key  => 'chunks',
+                            output_key => 'formatted_results',
+                            max        => $count,
+                            append     => "=== RESULT ===\n"
+                                . '${this.text}' . "\n"
+                                . ( '=' x 50 ) . "\n\n",
+                        },
                         output => {
                             response =>
                                 'I found results for "${args.query}":\n\n${formatted_results}',
@@ -108,8 +143,7 @@ SignalWire::Skills::Builtin::DatasphereServerless - DataSphere knowledge search 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::DatasphereServerless> is the Perl port of the
-Python reference C<signalwire.skills.datasphere_serverless.skill>. It registers a
+L<SignalWire::Skills::Builtin::DatasphereServerless> registers a
 DataMap-based SWAIG tool (default name C<search_knowledge>) that searches the
 SignalWire DataSphere knowledge base.
 
@@ -132,6 +166,13 @@ with the agent via C<register_swaig_function>.
 
 Returns the skill's global-data contribution (C<datasphere_serverless_enabled>,
 C<document_id>, C<knowledge_provider>).
+
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance:
+C<"datasphere_serverless_<tool_name>">, where C<tool_name> defaults to
+C<search_knowledge>. The tool name is folded in ALWAYS, so two instances
+exposing different tool names occupy distinct registry slots.
 
 =item C<get_hints>
 

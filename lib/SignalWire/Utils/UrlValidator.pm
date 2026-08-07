@@ -221,8 +221,7 @@ SignalWire::Utils::UrlValidator - SSRF-prevention guard for user-supplied URLs
 
 =head1 DESCRIPTION
 
-L<SignalWire::Utils::UrlValidator> is the Perl port of
-C<signalwire.utils.url_validator>. It validates user-supplied URLs to
+L<SignalWire::Utils::UrlValidator> validates user-supplied URLs to
 prevent Server-Side Request Forgery (SSRF): it rejects non-C<http(s)>
 schemes, URLs with no hostname, and any URL whose hostname resolves to a
 private, loopback, link-local, or cloud-metadata IP address (IPv4 and

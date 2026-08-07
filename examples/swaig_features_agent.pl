@@ -22,9 +22,11 @@ my $agent = SignalWire::Agent::AgentBase->new(
 
 # --- Prompt sections ---
 
-$agent->prompt_add_section('Personality', 'You are a friendly and helpful assistant.');
-$agent->prompt_add_section('Goal', 'Demonstrate advanced SWAIG features.');
-$agent->prompt_add_section('Instructions', '',
+$agent->prompt_add_section( 'Personality', 'You are a friendly and helpful assistant.' );
+$agent->prompt_add_section( 'Goal',        'Demonstrate advanced SWAIG features.' );
+$agent->prompt_add_section(
+    'Instructions',
+    '',
     bullets => [
         'Be concise and direct in your responses.',
         'Use the get_weather function when asked about weather.',
@@ -48,14 +50,12 @@ $agent->define_tool(
     description => 'Get the current time',
     parameters  => { type => 'object', properties => {} },
     fillers     => {
-        'en-US' => [
-            'Let me check the time for you',
-            'One moment while I check the current time',
-        ],
+        'en-US' =>
+            [ 'Let me check the time for you', 'One moment while I check the current time', ],
     },
     handler => sub {
-        my ($args, $raw) = @_;
-        my $time = strftime('%H:%M:%S', localtime);
+        my ( $args, $raw ) = @_;
+        my $time = strftime( '%H:%M:%S', localtime );
         return SignalWire::SWAIG::FunctionResult->new("The current time is $time");
     },
 );
@@ -72,26 +72,20 @@ $agent->define_tool(
         },
     },
     fillers => {
-        'en-US' => [
-            'I am checking the weather for you',
-            'Let me look up the weather information',
-        ],
-        'es' => [
-            'Estoy consultando el clima para ti',
-        ],
+        'en-US' =>
+            [ 'I am checking the weather for you', 'Let me look up the weather information', ],
+        'es' => [ 'Estoy consultando el clima para ti', ],
     },
     handler => sub {
-        my ($args, $raw) = @_;
+        my ( $args, $raw ) = @_;
         my $location = $args->{location} // 'Unknown';
-        my %weather = (
+        my %weather  = (
             tatooine => 'Hot and dry, with occasional sandstorms. Twin suns at their peak.',
             hoth     => 'Extremely cold with blizzard conditions. High of -20C.',
             endor    => 'Mild forest weather. Partly cloudy with a high of 22C.',
         );
-        my $result = $weather{lc($location)} // "It's sunny and 72F";
-        return SignalWire::SWAIG::FunctionResult->new(
-            "The weather in $location: $result"
-        );
+        my $result = $weather{ lc($location) } // "It's sunny and 72F";
+        return SignalWire::SWAIG::FunctionResult->new("The weather in $location: $result");
     },
 );
 
@@ -107,12 +101,12 @@ $agent->define_tool(
             units    => {
                 type        => 'string',
                 description => 'Temperature units (celsius or fahrenheit)',
-                enum        => ['celsius', 'fahrenheit'],
+                enum        => [ 'celsius', 'fahrenheit' ],
             },
         },
     },
     handler => sub {
-        my ($args, $raw) = @_;
+        my ( $args, $raw ) = @_;
         my $location = $args->{location} // 'Unknown';
         my $units    = $args->{units}    // 'fahrenheit';
         my @forecast = (
@@ -121,21 +115,19 @@ $agent->define_tool(
             { day => 'Day After', temp => 75, condition => 'Clear' },
         );
         my $suffix = 'F';
-        if ($units eq 'celsius') {
+        if ( $units eq 'celsius' ) {
             $suffix = 'C';
             for my $d (@forecast) {
-                $d->{temp} = int(($d->{temp} - 32) * 5 / 9);
+                $d->{temp} = int( ( $d->{temp} - 32 ) * 5 / 9 );
             }
         }
-        my $text = join("\n", map { "$_->{day}: $_->{temp}$suffix, $_->{condition}" } @forecast);
-        return SignalWire::SWAIG::FunctionResult->new(
-            "3-day forecast for $location:\n$text"
-        );
+        my $text = join( "\n", map { "$_->{day}: $_->{temp}$suffix, $_->{condition}" } @forecast );
+        return SignalWire::SWAIG::FunctionResult->new("3-day forecast for $location:\n$text");
     },
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 print "Starting SWAIG Features Agent\n";
 print "Available at: http://localhost:3000/swaig_features\n";

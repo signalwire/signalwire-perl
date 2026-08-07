@@ -135,10 +135,9 @@ plain string. Any bare state string is still accepted, so
 forward-compatible server states keep working — an unknown string is
 simply not in this set.
 
-Grounded in the Python reference's C<relay/constants.py>
-(C<CALL_STATE_*> / C<CALL_STATES>) and the port's
-L<SignalWire::Relay::Constants> (C<CALL_STATES> / C<CALL_TERMINAL_STATES>),
-which are the single source the lists below are derived from.
+L<SignalWire::Relay::Constants> (C<CALL_STATES> / C<CALL_TERMINAL_STATES>) is
+the single source the lists below are derived from, so the two can never
+disagree.
 
 =head2 Three distinct state vocabularies
 

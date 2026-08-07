@@ -12,6 +12,17 @@ has '+skill_description' =>
     ( default => sub { 'Transfer calls between agents based on pattern matching' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
+# Registry key for this skill instance. Overrides SkillBase's default because
+# the tool is named `transfer_call`, not `swml_transfer` — the tool name must
+# fold into the key ALWAYS, including when defaulted, so two transfer skills
+# configured with different tool names occupy distinct registry slots. Python
+# parity: ``SWMLTransferSkill.get_instance_key``.
+sub get_instance_key {
+    my ($self) = @_;
+    my $tool_name = $self->params->{tool_name} // 'transfer_call';
+    return $self->skill_name . '_' . $tool_name;
+}
+
 sub setup { return 1 }
 
 sub register_tools {
@@ -116,8 +127,7 @@ SignalWire::Skills::Builtin::SwmlTransfer - transfer calls by pattern-matching a
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::SwmlTransfer> is the Perl port of the Python
-reference C<signalwire.skills.swml_transfer.skill>. It registers a single
+L<SignalWire::Skills::Builtin::SwmlTransfer> registers a single
 DataMap-based SWAIG tool (default name C<transfer_call>) that transfers the caller
 to one of a set of configured destinations.
 
@@ -134,6 +144,13 @@ a C<swml_transfer> action. The skill supports multiple instances.
 
 Registers the transfer tool with the agent, building one DataMap expression per
 configured transfer pattern.
+
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance:
+C<"swml_transfer_<tool_name>">, where C<tool_name> defaults to
+C<transfer_call>. The tool name is folded in ALWAYS, so two transfer skills
+exposing different tool names occupy distinct registry slots.
 
 =item C<get_hints>
 

@@ -32,8 +32,7 @@ use_ok('SignalWire::SWML::Service');
 # ------------------------------------------------------------------
 subtest 'token_expiry_secs forwards to SessionManager' => sub {
     my $default = SignalWire::Agent::AgentBase->new( name => 'tok_default' );
-    is( $default->session_manager->token_expiry_secs,
-        3600, 'default token_expiry_secs is 3600' );
+    is( $default->session_manager->token_expiry_secs, 3600, 'default token_expiry_secs is 3600' );
 
     my $agent = SignalWire::Agent::AgentBase->new(
         name              => 'tok_agent',
@@ -111,8 +110,8 @@ subtest 'schema_path forwards to the schema validator' => sub {
 
     # Behavioral: the validator really parsed OUR file.
     my @verb_names = $svc->schema_utils->get_all_verb_names;
-    is_deeply( [ sort @verb_names ], ['custom_only_verb'],
-        'custom schema file was actually loaded (only our verb is known)' );
+    is_deeply( [ sort @verb_names ],
+        ['custom_only_verb'], 'custom schema file was actually loaded (only our verb is known)' );
 
     my $agent = SignalWire::Agent::AgentBase->new(
         name        => 'sp_agent',
@@ -142,8 +141,8 @@ subtest 'config_file forwards to SecurityConfig and seeds service config' => sub
         config_file => $path,
     );
     is( $svc->config_file, $path, 'config_file readable on the service' );
-    is( $svc->security->domain, 'cfg.example.com',
-        'config_file was FORWARDED to SecurityConfig (domain from file)' );
+    is( $svc->security->domain,
+        'cfg.example.com', 'config_file was FORWARDED to SecurityConfig (domain from file)' );
     ok( $svc->security->ssl_enabled, 'ssl_enabled came from the config file' );
 
     # AgentBase applies the service section, with ctor params taking precedence
@@ -155,8 +154,8 @@ subtest 'config_file forwards to SecurityConfig and seeds service config' => sub
     is( $agent->route, '/from-config', 'route defaulted from the config service section' );
     is( $agent->host,  '127.0.0.1',    'host defaulted from the config service section' );
     is( $agent->port,  8123,           'port defaulted from the config service section' );
-    is( $agent->security->domain, 'cfg.example.com',
-        'AgentBase forwards config_file down to SecurityConfig' );
+    is( $agent->security->domain,
+        'cfg.example.com', 'AgentBase forwards config_file down to SecurityConfig' );
 
     my $override = SignalWire::Agent::AgentBase->new(
         name        => 'cfg_override',
@@ -190,7 +189,7 @@ subtest 'basic_auth pair forwards to the credential attributes' => sub {
     is( $agent->basic_auth_password, 'ap', 'AgentBase basic_auth[1] -> basic_auth_password' );
 
     # Behavioral: the credential actually authenticates.
-    ok( $agent->validate_basic_auth( 'au', 'ap' ), 'basic_auth pair really authenticates' );
+    ok( $agent->validate_basic_auth( 'au',  'ap' ),    'basic_auth pair really authenticates' );
     ok( !$agent->validate_basic_auth( 'au', 'wrong' ), 'wrong password rejected' );
 
     # Explicit split attributes still win when both are given.
@@ -200,10 +199,8 @@ subtest 'basic_auth pair forwards to the credential attributes' => sub {
         basic_auth_user     => 'explicit_u',
         basic_auth_password => 'explicit_p',
     );
-    is( $split->basic_auth_user, 'explicit_u',
-        'explicit basic_auth_user beats the pair' );
-    is( $split->basic_auth_password, 'explicit_p',
-        'explicit basic_auth_password beats the pair' );
+    is( $split->basic_auth_user,     'explicit_u', 'explicit basic_auth_user beats the pair' );
+    is( $split->basic_auth_password, 'explicit_p', 'explicit basic_auth_password beats the pair' );
 };
 
 # ------------------------------------------------------------------
@@ -271,23 +268,20 @@ subtest 'trust_proxy_for_signature defaults OFF and reaches the middleware' => s
 
     my $key = 'test-signing-key';
     my %env = (
-        REQUEST_METHOD  => 'POST',
-        PATH_INFO       => '/swaig',
-        'psgi.url_scheme' => 'http',
-        HTTP_HOST       => 'internal.local',
-        SERVER_NAME     => 'internal.local',
-        SERVER_PORT     => 80,
+        REQUEST_METHOD         => 'POST',
+        PATH_INFO              => '/swaig',
+        'psgi.url_scheme'      => 'http',
+        HTTP_HOST              => 'internal.local',
+        SERVER_NAME            => 'internal.local',
+        SERVER_PORT            => 80,
         HTTP_X_FORWARDED_PROTO => 'https',
         HTTP_X_FORWARDED_HOST  => 'public.example.com',
     );
 
-    my $trusting = SignalWire::Security::WebhookMiddleware::_reconstruct_url(
-        \%env, 1, undef );
-    my $untrusting = SignalWire::Security::WebhookMiddleware::_reconstruct_url(
-        \%env, 0, undef );
+    my $trusting   = SignalWire::Security::WebhookMiddleware::_reconstruct_url( \%env, 1, undef );
+    my $untrusting = SignalWire::Security::WebhookMiddleware::_reconstruct_url( \%env, 0, undef );
 
-    like( $trusting, qr{public\.example\.com},
-        'trust_proxy=1 honours X-Forwarded-Host' );
+    like( $trusting, qr{public\.example\.com}, 'trust_proxy=1 honours X-Forwarded-Host' );
     unlike( $untrusting, qr{public\.example\.com},
         'trust_proxy=0 ignores X-Forwarded-Host (spoofable)' );
 };

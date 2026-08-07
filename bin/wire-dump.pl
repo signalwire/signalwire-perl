@@ -31,14 +31,14 @@ no warnings 'experimental::signatures';
 
 use FindBin qw($RealBin);
 use File::Spec;
-use JSON ();
+use JSON         ();
 use MIME::Base64 ();
-use Digest::SHA qw(hmac_sha256_hex);
+use Digest::SHA  qw(hmac_sha256_hex);
 
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
 
 use SignalWire::Security::SessionManager;
-use SignalWire::Security::SecurityUtils qw(redact_url filter_sensitive_headers);
+use SignalWire::Security::SecurityUtils    qw(redact_url filter_sensitive_headers);
 use SignalWire::Security::WebhookValidator qw(validate_webhook_signature);
 
 # SECRET mirrors wire_crypto_corpus.SECRET ("a" * 64).
@@ -59,8 +59,8 @@ sub oracle_token ( $call_id, $fn ) {
 
 # tampered_token flips the first byte of the signature (mirror _tampered_token).
 sub tampered_token {
-    my $tok = oracle_token( 'c', 'f' );
-    my $raw = MIME::Base64::decode_base64url($tok);
+    my $tok  = oracle_token( 'c', 'f' );
+    my $raw  = MIME::Base64::decode_base64url($tok);
     my $last = rindex( $raw, '.' );
     my $idx  = $last + 1;
     my $ch   = substr( $raw, $idx, 1 );
@@ -76,9 +76,9 @@ sub oracle_sig ( $url, $body, $key ) {
 
 # observe_token_fields decodes a token and returns its wire-format shape.
 sub observe_token_fields ($token) {
-    my $raw   = MIME::Base64::decode_base64url($token);
-    my @parts = split /\./, $raw, -1;
-    my $nonce = @parts > 3 ? $parts[3] : '';
+    my $raw    = MIME::Base64::decode_base64url($token);
+    my @parts  = split /\./, $raw, -1;
+    my $nonce  = @parts > 3                                  ? $parts[3]  : '';
     my $is_hex = ( @parts > 3 && $nonce =~ /\A[0-9a-f]*\z/ ) ? JSON::true : JSON::false;
     return {
         n_fields      => scalar(@parts),
@@ -109,12 +109,15 @@ sub main {
     # token_interop: validate an oracle-format token built from SECRET.
     $out{token_interop} = {
         valid => jbool(
-            $sm->validate_token( 'oracle_call', 'oracle_fn', oracle_token( 'oracle_call', 'oracle_fn' ) )
+            $sm->validate_token(
+                'oracle_call', 'oracle_fn', oracle_token( 'oracle_call', 'oracle_fn' )
+            )
         ),
     };
 
     # token_tamper_rejected: a one-byte-flipped signature must fail.
-    $out{token_tamper_rejected} = { valid => jbool( $sm->validate_token( 'c', 'f', tampered_token() ) ) };
+    $out{token_tamper_rejected} =
+        { valid => jbool( $sm->validate_token( 'c', 'f', tampered_token() ) ) };
 
     # wire_validate_webhook_signature: correct HMAC-SHA1 -> valid.
     my $wh_url  = 'https://example.com/hook';
@@ -122,15 +125,16 @@ sub main {
     $out{wire_validate_webhook_signature} = {
         valid => jbool(
             validate_webhook_signature(
-                $SECRET, oracle_sig( $wh_url, $wh_body, $SECRET ), $wh_url, $wh_body
+                $SECRET, oracle_sig( $wh_url, $wh_body, $SECRET ),
+                $wh_url, $wh_body
             )
         ),
     };
+
     # wire_validate_webhook_signature_bad: wrong sig -> invalid.
     my $bad_sig = 'deadbeef' x 8;
-    $out{wire_validate_webhook_signature_bad} = {
-        valid => jbool( validate_webhook_signature( $SECRET, $bad_sig, $wh_url, $wh_body ) ),
-    };
+    $out{wire_validate_webhook_signature_bad} =
+        { valid => jbool( validate_webhook_signature( $SECRET, $bad_sig, $wh_url, $wh_body ) ), };
 
     # redact_url: credentials + token redacted, structure preserved.
     $out{wire_redact_url} =
@@ -139,7 +143,11 @@ sub main {
     # filter_sensitive_headers: authorization + x-api-key dropped, content-type kept.
     $out{wire_filter_sensitive_headers} = {
         filtered => filter_sensitive_headers(
-            { 'Authorization' => 'Bearer x', 'X-Api-Key' => 'y', 'Content-Type' => 'application/json' }
+            {
+                'Authorization' => 'Bearer x',
+                'X-Api-Key'     => 'y',
+                'Content-Type'  => 'application/json'
+            }
         ),
     };
 

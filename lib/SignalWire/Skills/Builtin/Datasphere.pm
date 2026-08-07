@@ -54,6 +54,29 @@ has '_http' => (
     },
 );
 
+# Release the HTTP client when the skill is unloaded. Python parity:
+# ``DataSphereSkill.cleanup`` closes its ``requests.Session``. HTTP::Tiny holds
+# no session object to close explicitly, so dropping the lazily-built handle is
+# the equivalent teardown: the next use rebuilds it and any keep-alive socket
+# the object owned is released with it. Must not raise during teardown, and is
+# idempotent (a second call finds the slot already cleared).
+sub cleanup {
+    my ($self) = @_;
+    $self->{_http} = undef;
+    return;
+}
+
+# Registry key for this skill instance. Overrides SkillBase's default
+# ("<skill_name>" / "<skill_name>:<tool_name>") because DataSphere's tool is
+# named `search_knowledge`, not `datasphere` — so the key must fold the tool
+# name in ALWAYS, including when it is defaulted. Python parity:
+# ``DataSphereSkill.get_instance_key`` (skills/datasphere/skill.py).
+sub get_instance_key {
+    my ($self) = @_;
+    my $tool_name = $self->params->{tool_name} // 'search_knowledge';
+    return $self->skill_name . '_' . $tool_name;
+}
+
 sub setup {
     my ($self) = @_;
 
@@ -255,8 +278,7 @@ SignalWire::Skills::Builtin::Datasphere - knowledge-base search skill using the 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::Datasphere> is the Perl port of the Python
-reference C<signalwire.skills.datasphere.skill>. It registers a handler-based
+L<SignalWire::Skills::Builtin::Datasphere> registers a handler-based
 SWAIG tool (default name C<search_knowledge>) that performs a
 retrieval-augmented search against the SignalWire DataSphere RAG stack.
 
@@ -287,6 +309,19 @@ C<document_id>, C<knowledge_provider>).
 =item C<get_hints>
 
 Returns an empty hint list.
+
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance:
+C<"datasphere_<tool_name>">, where C<tool_name> defaults to
+C<search_knowledge>. The tool name is folded in ALWAYS (not only when
+explicitly configured), so two DataSphere instances exposing different tool
+names occupy distinct registry slots.
+
+=item C<cleanup>
+
+Releases the outbound HTTP client when the skill is unloaded. Best-effort and
+idempotent; never dies during teardown.
 
 =item C<setup>
 

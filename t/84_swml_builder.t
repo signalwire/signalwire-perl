@@ -67,7 +67,7 @@ subtest 'ai pom, post_prompt, swaig and kwargs' => sub {
         temperature     => 0.4,
     );
     my $cfg = main_of($b)->[0]{ai};
-    is_deeply( $cfg->{prompt},      { pom  => $pom },       'pom prompt' );
+    is_deeply( $cfg->{prompt},      { pom  => $pom },        'pom prompt' );
     is_deeply( $cfg->{post_prompt}, { text => 'summarize' }, 'post_prompt wrapped' );
     is( $cfg->{post_prompt_url}, 'https://ex.com/pp', 'post_prompt_url' );
     is_deeply( $cfg->{SWAIG}, { functions => [] }, 'SWAIG passed through' );

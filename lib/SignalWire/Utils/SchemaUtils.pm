@@ -490,10 +490,9 @@ SignalWire::Utils::SchemaUtils - SWML schema loading, verb extraction, and valid
 
 =head1 DESCRIPTION
 
-Perl port of the Python reference C<signalwire.utils.schema_utils.SchemaUtils>
-(and the Ruby C<SignalWire::Utils::SchemaUtils>). Loads the SWML JSON Schema,
+L<SignalWire::Utils::SchemaUtils> loads the SWML JSON Schema,
 extracts verb metadata from the C<SWMLMethod> C<anyOf> union, validates a
-single verb config or a complete document, and generates Python-style method
+single verb config or a complete document, and generates Python-syntax method
 signatures and bodies for code-generation tooling.
 
 The port ships the lightweight validator (verb existence plus required-property
@@ -523,8 +522,16 @@ validation. The C<SWML_SKIP_SCHEMA_VALIDATION> environment variable
 
 =item * C<get_all_verb_names> - sorted list of known verb names.
 
-=item * C<get_verb_properties($verb)> / C<get_verb_parameters($verb)> /
-C<get_verb_required_properties($verb)> - verb metadata accessors.
+=item * C<get_verb_properties($verb)> - the verb's schema block as a
+hashref, or C<{}> when the verb is unknown.
+
+=item * C<get_verb_parameters($verb)> - the verb's C<properties> block used
+by the code generators, or C<{}> when absent.
+
+=item * C<get_verb_required_properties($verb)> - the verb's required
+property names as an arrayref, or C<[]> when the verb is unknown or
+declares none. Non-string entries are filtered out, so the result is always
+a flat list of names.
 
 =item * C<validate_verb($verb, $config)> - returns C<($valid, $errors_arrayref)>.
 

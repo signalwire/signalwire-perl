@@ -47,7 +47,22 @@ sub _log {
     my $name = $self->name;
     my $msg  = join( ' ', @msgs );
     my $ts   = _timestamp();
-    print STDERR "[$ts] [$tag] [$name] $msg\n";
+
+    # Scrub control characters BEFORE emitting — log-injection defence, and the
+    # reason the reference registers strip_control_chars in both of its structlog
+    # processor chains. A port that merely EXPOSES the scrub without putting it on
+    # the emission path offers no protection at all: a caller-supplied NUL or an
+    # ESC-[ escape reaches the terminal verbatim and can forge log lines.
+    # CYCLE NOTE: SignalWire::Core::LoggingConfig already `use`s this module, so a
+    # compile-time `use` here would close the loop. Require at call time instead —
+    # by the time anything logs, the module is loadable.
+    require SignalWire::Core::LoggingConfig;
+
+    # Route through the reference's event-map contract rather than a second
+    # sub: a port-only `strip_control_chars_value` is surface the reference does
+    # not have, and the surface gate reports it as an invented addition.
+    my $safe = SignalWire::Core::LoggingConfig::strip_control_chars( { event => $msg } )->{event};
+    print STDERR "[$ts] [$tag] [$name] $safe\n";
     return;
 }
 

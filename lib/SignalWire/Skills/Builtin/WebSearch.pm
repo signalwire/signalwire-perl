@@ -139,6 +139,20 @@ sub _snippets_only {
     return $self->params->{snippets_only} ? 1 : 0;
 }
 
+# Registry key for this skill instance. Overrides SkillBase's default (which
+# keys on tool_name alone) to key on the search-engine id AS WELL — two
+# web_search instances pointed at different Custom Search engines are
+# genuinely different skills, and under the base key they would collide on one
+# registry slot. Python parity: ``WebSearchSkill.get_instance_key``. Note the
+# reference reads `search_engine_id` only, not the `cx` alias this port also
+# accepts for the request itself; the key formula follows the reference.
+sub get_instance_key {
+    my ($self)    = @_;
+    my $engine_id = $self->params->{search_engine_id} // 'default';
+    my $tool_name = $self->params->{tool_name}        // 'web_search';
+    return $self->skill_name . '_' . $engine_id . '_' . $tool_name;
+}
+
 sub register_tools {
     my ($self) = @_;
     my $tool_name = $self->params->{tool_name} // 'web_search';
@@ -316,6 +330,13 @@ sub _wrap_response {
     return $text;
 }
 
+# Speech-recognition hints for this skill. Empty by design — the reference
+# ships the same explicit empty override as the documented extension point.
+# Python parity: ``WebSearchSkill.get_hints``.
+sub get_hints {
+    return [];
+}
+
 sub get_global_data {
     return {
         web_search_enabled => JSON::true,
@@ -414,10 +435,9 @@ SignalWire::Skills::Builtin::WebSearch - web-search skill using the Google Custo
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::WebSearch> is the Perl port of the Python reference
-C<signalwire.skills.web_search.skill> (the C<GoogleSearchScraper> path). It
-registers a handler-based SWAIG tool (default name C<web_search>) that searches
-the web via the Google Custom Search API.
+L<SignalWire::Skills::Builtin::WebSearch> registers a handler-based SWAIG tool
+(default name C<web_search>) that searches the web via the Google Custom Search
+API.
 
 The handler issues an outbound GET to C<customsearch/v1> with C<key>/C<cx>/C<q>,
 parses the JSON C<items[]>, and formats title + snippet + link for the LLM. It is
@@ -439,6 +459,19 @@ Registers the web-search tool (name overridable via C<tool_name>) with the agent
 
 Performs the Google CSE search for C<$query> and returns the formatted result
 string (or an error / no-results sentinel), enforcing the overall deadline.
+
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance:
+C<"web_search_<search_engine_id>_<tool_name>">, defaulting the engine id to
+C<default> and the tool name to C<web_search>. The engine id is part of the key
+because two instances pointed at different Google Custom Search engines are
+genuinely different skills; keying on the tool name alone would collapse them
+onto one registry slot.
+
+=item C<get_hints>
+
+Returns an empty hint list.
 
 =item C<get_global_data>
 

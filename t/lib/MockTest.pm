@@ -22,16 +22,16 @@ use strict;
 use warnings;
 
 use HTTP::Tiny;
-use JSON qw(encode_json decode_json);
+use JSON         qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
-use POSIX ();
-use Time::HiRes qw(sleep);
-use IPC::Open3 ();
-use Symbol ();
-use IO::Handle ();
-use File::Spec ();
-use Cwd ();
-use Config ();
+use POSIX        ();
+use Time::HiRes  qw(sleep);
+use IPC::Open3   ();
+use Symbol       ();
+use IO::Handle   ();
+use File::Spec   ();
+use Cwd          ();
+use Config       ();
 
 use SignalWire::REST::RestClient;
 
@@ -43,12 +43,13 @@ use PortPicker ();
 # wins; otherwise pick a FREE port rather than a hardcoded default that would
 # collide with a stale/concurrent mock and hang the suite.
 our $HOST = '127.0.0.1';
-our $PORT = ( $ENV{MOCK_SIGNALWIRE_PORT} && $ENV{MOCK_SIGNALWIRE_PORT} =~ /^[0-9]+$/ )
+our $PORT =
+    ( $ENV{MOCK_SIGNALWIRE_PORT} && $ENV{MOCK_SIGNALWIRE_PORT} =~ /^[0-9]+$/ )
     ? $ENV{MOCK_SIGNALWIRE_PORT}
     : PortPicker::pick_free_port($HOST);
 our $BASE_URL = "http://$HOST:$PORT";
 
-our $TOKEN   = 'test_tok';
+our $TOKEN = 'test_tok';
 
 # The per-PROCESS project + its Authorization header. REST is pure
 # request/response with no session handshake, so the isolation key is the
@@ -72,12 +73,13 @@ _mint_project();
 sub _mint_project {
     return if defined $ACTIVE_PROJECT;
     my $rand = '';
-    $rand .= sprintf('%x', int(rand(16))) for 1 .. 12;
+    $rand .= sprintf( '%x', int( rand(16) ) ) for 1 .. 12;
     $ACTIVE_PROJECT = "test_proj_$rand";
-    $PROJECT = $ACTIVE_PROJECT;
+    $PROJECT        = $ACTIVE_PROJECT;
+
     # Match SignalWire::REST::HttpClient->_build__auth_header exactly:
     # 'Basic ' . encode_base64("$project:$token", '').
-    $ACTIVE_AUTH = 'Basic ' . encode_base64("$ACTIVE_PROJECT:$TOKEN", '');
+    $ACTIVE_AUTH = 'Basic ' . encode_base64( "$ACTIVE_PROJECT:$TOKEN", '' );
     return;
 }
 
@@ -112,7 +114,7 @@ our $_SKIP_REASON;
 sub client {
     _ensure_server();
     if ($_SKIP_REASON) {
-        Test::More::plan(skip_all => "MockTest: $_SKIP_REASON");
+        Test::More::plan( skip_all => "MockTest: $_SKIP_REASON" );
         exit 0;
     }
     return SignalWire::REST::RestClient->new(
@@ -133,6 +135,7 @@ sub journal_reset {
     return if defined $ACTIVE_AUTH;
     my $resp = _ua()->post("$BASE_URL/__mock__/journal/reset");
     die "journal_reset failed: $resp->{status}" unless $resp->{success};
+    return;
 }
 
 # scenario_reset clears one-shot scenarios. Scoped to this client's auth header
@@ -141,9 +144,10 @@ sub journal_reset {
 sub scenario_reset {
     _ensure_server();
     return if $_SKIP_REASON;
-    my $q = _scope_query();
+    my $q    = _scope_query();
     my $resp = _ua()->post("$BASE_URL/__mock__/scenarios/reset$q");
     die "scenario_reset failed: $resp->{status}" unless $resp->{success};
+    return;
 }
 
 # scenario_set stages a one-shot response override for the named OperationId.
@@ -152,22 +156,23 @@ sub scenario_reset {
 # project is active, so a concurrent test can't consume it; unscoped =>
 # shared bucket. Matches the mock's REST session key == Authorization header.
 sub scenario_set {
-    my ($endpoint_id, $status, $response_body) = @_;
+    my ( $endpoint_id, $status, $response_body ) = @_;
     _ensure_server();
     return if $_SKIP_REASON;
-    my $payload = encode_json({ status => $status, response => $response_body });
-    my $resp = _ua()->post(
+    my $payload = encode_json( { status => $status, response => $response_body } );
+    my $resp    = _ua()->post(
         "$BASE_URL/__mock__/scenarios/$endpoint_id" . _scope_query(),
         { content => $payload, headers => { 'Content-Type' => 'application/json' } },
     );
     die "scenario_set failed: $resp->{status} - $resp->{content}" unless $resp->{success};
+    return;
 }
 
 # Build a `?session_id=<urlencoded auth header>` suffix scoping a control-plane
 # call to this client, or '' when no project is active (unscoped/shared).
 sub _scope_query {
     return '' unless defined $ACTIVE_AUTH;
-    (my $enc = $ACTIVE_AUTH) =~ s/([^A-Za-z0-9_.~-])/sprintf('%%%02X', ord($1))/ge;
+    ( my $enc = $ACTIVE_AUTH ) =~ s/([^A-Za-z0-9_.~-])/sprintf('%%%02X', ord($1))/ge;
     return "?session_id=$enc";
 }
 
@@ -180,9 +185,9 @@ sub journal_all {
     die "MockTest: $_SKIP_REASON" if $_SKIP_REASON;
     my $resp = _ua()->get("$BASE_URL/__mock__/journal");
     die "journal fetch failed: $resp->{status}" unless $resp->{success};
-    my $entries = decode_json($resp->{content} || '[]');
+    my $entries = decode_json( $resp->{content} || '[]' );
     return $entries unless defined $ACTIVE_AUTH;
-    return [ grep { ($_->{headers}{authorization} // '') eq $ACTIVE_AUTH } @$entries ];
+    return [ grep { ( $_->{headers}{authorization} // '' ) eq $ACTIVE_AUTH } @$entries ];
 }
 
 # journal_last returns the most recently recorded request for THIS client.
@@ -215,35 +220,45 @@ sub discover_porting_sdk_package {
 
     my $ok = sub {
         my ($psdk_root) = @_;
-        return undef unless defined $psdk_root && length $psdk_root;
-        my $candidate = File::Spec->catdir($psdk_root, 'test_harness', $name);
-        my $init = File::Spec->catfile($candidate, $name, '__init__.py');
+        return unless defined $psdk_root && length $psdk_root;
+        my $candidate = File::Spec->catdir( $psdk_root, 'test_harness', $name );
+        my $init      = File::Spec->catfile( $candidate, $name, '__init__.py' );
         return -f $init ? $candidate : undef;
     };
 
     # 1. Explicit PORTING_SDK env (what run-ci + the python gates use).
     if ( defined $ENV{PORTING_SDK} && length $ENV{PORTING_SDK} ) {
-        my $hit = $ok->($ENV{PORTING_SDK});
+        my $hit = $ok->( $ENV{PORTING_SDK} );
         return $hit if $hit;
     }
 
     my $here = Cwd::abs_path(__FILE__);
-    return undef unless defined $here;
-    my $dir = File::Spec->canonpath((File::Spec->splitpath($here))[1]);
+    return unless defined $here;
+    my $dir = File::Spec->canonpath( ( File::Spec->splitpath($here) )[1] );
+
     # File::Spec->splitpath returns trailing slash on the directory, strip.
     $dir =~ s{[/\\]$}{};
     while (1) {
+
         # 2. SIBLING ../porting-sdk (the ~/src adjacency layout).
-        my $parent = File::Spec->canonpath(File::Spec->catdir($dir, File::Spec->updir));
-        my $sib = $ok->(File::Spec->catdir($parent, 'porting-sdk'));
+        # Cwd::abs_path RESOLVES '..'; File::Spec->canonpath does NOT (it is purely
+        # lexical), so the old canonpath form appended another '/..' every pass, the
+        # path grew without bound, and `last if $parent eq $dir` could never fire —
+        # an infinite loop with a -f syscall per hop. It only LOOKED location-specific
+        # because an adjacent checkout finds porting-sdk within a few hops and exits
+        # early; the non-termination was always there. (root-caused 2026-07-27)
+        my $parent = Cwd::abs_path( File::Spec->catdir( $dir, File::Spec->updir ) );
+        last unless defined $parent;
+        my $sib = $ok->( File::Spec->catdir( $parent, 'porting-sdk' ) );
         return $sib if $sib;
+
         # 3. NESTED <dir>/porting-sdk (the CI checkout at path: porting-sdk).
-        my $nested = $ok->(File::Spec->catdir($dir, 'porting-sdk'));
+        my $nested = $ok->( File::Spec->catdir( $dir, 'porting-sdk' ) );
         return $nested if $nested;
-        last if $parent eq $dir;
+        last           if $parent eq $dir;
         $dir = $parent;
     }
-    return undef;
+    return;
 }
 
 sub _ensure_server {
@@ -251,7 +266,8 @@ sub _ensure_server {
     $_ENSURED = 1;
 
     # Probe first.
-    if (_probe_health()) {
+    if ( _probe_health() ) {
+
         # Reuse whatever's already listening (we did not spawn it).
         return;
     }
@@ -263,11 +279,12 @@ sub _ensure_server {
     # child falls back to whatever is on the system Python's sys.path,
     # and the readiness probe surfaces a clear timeout error if neither
     # mode is available.
-    my $pkg_dir = discover_porting_sdk_package('mock_signalwire');
-    my $sep = $Config::Config{path_sep} // ':';
+    my $pkg_dir  = discover_porting_sdk_package('mock_signalwire');
+    my $sep      = $Config::Config{path_sep} // ':';
     my $existing = defined $ENV{PYTHONPATH} ? $ENV{PYTHONPATH} : '';
-    local $ENV{PYTHONPATH} = defined $pkg_dir
-        ? ($existing ne '' ? "$pkg_dir$sep$existing" : $pkg_dir)
+    local $ENV{PYTHONPATH} =
+        defined $pkg_dir
+        ? ( $existing ne '' ? "$pkg_dir$sep$existing" : $pkg_dir )
         : $existing;
 
     # Try to spawn `python3 -m mock_signalwire`. On any failure, set the
@@ -292,14 +309,12 @@ sub _ensure_server {
     # binds. The captured STDERR log lets a genuine startup failure be reported
     # (fail-LOUD) instead of surfacing only as an opaque 30s timeout.
     my @cmd = (
-        'python3', '-m', 'mock_signalwire',
-        '--host', $HOST,
-        '--port', $PORT,
-        '--log-level', 'error',
+        'python3', '-m',     'mock_signalwire', '--host',
+        $HOST,     '--port', $PORT,             '--log-level',
+        'error',
     );
 
-    my $log = File::Spec->catfile(
-        File::Spec->tmpdir, "mock_signalwire.$$.$PORT.err" );
+    my $log = File::Spec->catfile( File::Spec->tmpdir, "mock_signalwire.$$.$PORT.err" );
 
     my $pid = fork();
     if ( !defined $pid ) {
@@ -307,6 +322,7 @@ sub _ensure_server {
         return;
     }
     if ( $pid == 0 ) {
+
         # CHILD: detach std handles (stderr → log), own session, then exec.
         open( STDIN,  '<', File::Spec->devnull );
         open( STDOUT, '>', File::Spec->devnull );
@@ -319,22 +335,28 @@ sub _ensure_server {
 
     # Reap on END to avoid zombies.
     eval {
-        $SIG{CHLD} = 'IGNORE';
+        # PROCESS-WIDE on purpose: this reaps the mock child for the REST of the
+        # test run, so `local` would restore the old handler at scope exit and
+        # re-create the zombie this line exists to prevent.
+        $SIG{CHLD} = 'IGNORE';    ## no critic (Variables::RequireLocalizedPunctuationVars)
     };
 
     # Wait up to 30s for /__mock__/health, but bail EARLY + LOUD if the mock
     # process has already exited (a sick mock: ModuleNotFound, bind error, …) —
     # never burn the full deadline on a corpse.
     my $deadline = time + 30;
-    while (time < $deadline) {
-        if (_probe_health()) {
+    while ( time < $deadline ) {
+        if ( _probe_health() ) {
             unlink $log;
             return;
         }
         if ( waitpid( $_MOCK_PID, POSIX::WNOHANG() ) == $_MOCK_PID ) {
             my $rc = $?;
-            $_SKIP_REASON = "mock_signalwire died during startup (rc="
-                . ( $rc >> 8 ) . ") — spawned `@cmd`" . _read_mock_log($log);
+            $_SKIP_REASON =
+                  "mock_signalwire died during startup (rc="
+                . ( $rc >> 8 )
+                . ") — spawned `@cmd`"
+                . _read_mock_log($log);
             unlink $log;
             $_MOCK_PID = undef;
             return;
@@ -342,12 +364,14 @@ sub _ensure_server {
         sleep 0.2;
     }
 
-    $_SKIP_REASON = "mock_signalwire did not become ready on $BASE_URL within 30s "
-                  . "(clone porting-sdk next to signalwire-perl so tests can find "
-                  . "porting-sdk/test_harness/mock_signalwire/, or pip install the mock_signalwire package)"
-                  . _read_mock_log($log);
+    $_SKIP_REASON =
+          "mock_signalwire did not become ready on $BASE_URL within 30s "
+        . "(clone porting-sdk next to signalwire-perl so tests can find "
+        . "porting-sdk/test_harness/mock_signalwire/, or pip install the mock_signalwire package)"
+        . _read_mock_log($log);
     unlink $log;
     eval { kill 'TERM', $_MOCK_PID } if $_MOCK_PID;
+    return;
 }
 
 # Read the captured mock STDERR log (last few lines) for a fail-LOUD skip reason,
@@ -361,6 +385,7 @@ sub _read_mock_log {
     close $fh;
     return '' unless defined $txt && length $txt;
     $txt =~ s/\s+\z//;
+
     # Keep the skip line bounded — the tail carries the actual error.
     my @lines = split /\n/, $txt;
     @lines = @lines[ -6 .. -1 ] if @lines > 6;
@@ -370,7 +395,7 @@ sub _read_mock_log {
 sub _probe_health {
     my $resp = _ua()->get("$BASE_URL/__mock__/health");
     return 0 unless $resp->{success};
-    my $payload = eval { decode_json($resp->{content} || '{}') };
+    my $payload = eval { decode_json( $resp->{content} || '{}' ) };
     return 0 if $@;
     return exists $payload->{specs_loaded};
 }

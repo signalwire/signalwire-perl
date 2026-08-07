@@ -6,7 +6,9 @@ use Test::More;
 use SignalWire::REST::RestClient;
 
 my $client = SignalWire::REST::RestClient->new(
-    project => 'p', token => 't', host => 'h',
+    project => 'p',
+    token   => 't',
+    host    => 'h',
 );
 
 # ============================================================
@@ -14,18 +16,18 @@ my $client = SignalWire::REST::RestClient->new(
 # ============================================================
 subtest 'calling namespace' => sub {
     my $c = $client->calling;
-    isa_ok($c, 'SignalWire::REST::Namespaces::Generated::Calling');
-    is($c->_base_path, '/api/calling/calls', 'base path');
+    isa_ok( $c, 'SignalWire::REST::Namespaces::Generated::Calling' );
+    is( $c->_base_path, '/api/calling/calls', 'base path' );
 };
 
 # ============================================================
 # 2. Call control methods
 # ============================================================
 subtest 'call control methods' => sub {
-    my $c = $client->calling;
+    my $c       = $client->calling;
     my @methods = qw(dial update end transfer disconnect);
     for my $m (@methods) {
-        ok($c->can($m), "has $m");
+        ok( $c->can($m), "has $m" );
     }
 };
 
@@ -35,7 +37,7 @@ subtest 'call control methods' => sub {
 subtest 'play methods' => sub {
     my $c = $client->calling;
     for my $m (qw(play play_pause play_resume play_stop play_volume)) {
-        ok($c->can($m), "has $m");
+        ok( $c->can($m), "has $m" );
     }
 };
 
@@ -45,7 +47,7 @@ subtest 'play methods' => sub {
 subtest 'record methods' => sub {
     my $c = $client->calling;
     for my $m (qw(record record_pause record_resume record_stop)) {
-        ok($c->can($m), "has $m");
+        ok( $c->can($m), "has $m" );
     }
 };
 
@@ -55,7 +57,7 @@ subtest 'record methods' => sub {
 subtest 'collect methods' => sub {
     my $c = $client->calling;
     for my $m (qw(collect collect_stop collect_start_input_timers)) {
-        ok($c->can($m), "has $m");
+        ok( $c->can($m), "has $m" );
     }
 };
 
@@ -65,7 +67,7 @@ subtest 'collect methods' => sub {
 subtest 'detect methods' => sub {
     my $c = $client->calling;
     for my $m (qw(detect detect_stop)) {
-        ok($c->can($m), "has $m");
+        ok( $c->can($m), "has $m" );
     }
 };
 
@@ -75,7 +77,7 @@ subtest 'detect methods' => sub {
 subtest 'tap and stream methods' => sub {
     my $c = $client->calling;
     for my $m (qw(tap tap_stop stream stream_stop)) {
-        ok($c->can($m), "has $m");
+        ok( $c->can($m), "has $m" );
     }
 };
 
@@ -85,7 +87,7 @@ subtest 'tap and stream methods' => sub {
 subtest 'AI methods' => sub {
     my $c = $client->calling;
     for my $m (qw(ai_message ai_hold ai_unhold ai_stop)) {
-        ok($c->can($m), "has $m");
+        ok( $c->can($m), "has $m" );
     }
 };
 
@@ -95,7 +97,7 @@ subtest 'AI methods' => sub {
 subtest 'denoise and transcribe' => sub {
     my $c = $client->calling;
     for my $m (qw(denoise denoise_stop transcribe transcribe_stop)) {
-        ok($c->can($m), "has $m");
+        ok( $c->can($m), "has $m" );
     }
 };
 
@@ -104,9 +106,12 @@ subtest 'denoise and transcribe' => sub {
 # ============================================================
 subtest 'other calling methods' => sub {
     my $c = $client->calling;
-    for my $m (qw(refer user_event live_transcribe live_translate
-                   send_fax_stop receive_fax_stop)) {
-        ok($c->can($m), "has $m");
+    for my $m (
+        qw(refer user_event live_transcribe live_translate
+        send_fax_stop receive_fax_stop)
+        )
+    {
+        ok( $c->can($m), "has $m" );
     }
 };
 

@@ -20,12 +20,14 @@ use_ok('SignalWire::Agent::AgentBase');
 my $a = SignalWire::Agent::AgentBase->new( name => 'c8' );
 
 # Structured pattern hint (Python: {hint, pattern, replace, ignore_case}).
-$a->add_pattern_hint({
-    hint        => 'AI',
-    pattern     => 'A\\.I\\.',
-    replace     => 'AI',
-    ignore_case => 1,
-});
+$a->add_pattern_hint(
+    {
+        hint        => 'AI',
+        pattern     => 'A\\.I\\.',
+        replace     => 'AI',
+        ignore_case => 1,
+    }
+);
 
 # Language carrying engine + model + fillers (speech + function).
 $a->add_language(
@@ -34,19 +36,19 @@ $a->add_language(
     voice            => 'josh',
     engine           => 'elevenlabs',
     model            => 'eleven_turbo_v2_5',
-    speech_fillers   => [ 'um', 'let me see' ],
+    speech_fillers   => [ 'um',         'let me see' ],
     function_fillers => [ 'one moment', 'checking' ],
 );
 
 # Guard parity (Python "if hint and pattern and replace"): an incomplete
 # pattern hint is DROPPED, not appended as a half-built / bare entry. A
 # degraded impl that just pushes whatever it's given would keep this.
-$a->add_pattern_hint({ hint => 'oops', pattern => 'p' });    # no replace => dropped
+$a->add_pattern_hint( { hint => 'oops', pattern => 'p' } );    # no replace => dropped
 
 # ignore_case defaults to a JSON boolean false when omitted (a degraded
 # impl that pushes the raw hashref through would have NO ignore_case key).
 my $b = SignalWire::Agent::AgentBase->new( name => 'c8b' );
-$b->add_pattern_hint({ hint => 'H', pattern => 'P', replace => 'R' });
+$b->add_pattern_hint( { hint => 'H', pattern => 'P', replace => 'R' } );
 my ($bh) = grep { ref($_) eq 'HASH' } @{ $b->pattern_hints };
 ok( exists $bh->{ignore_case}, 'ignore_case defaulted onto a hint that omitted it' );
 
@@ -75,7 +77,11 @@ ok( $lang, 'language rendered into ai.languages' );
 is( $lang->{code},   'en-US',             'language code survives' );
 is( $lang->{engine}, 'elevenlabs',        'engine survives into SWML' );
 is( $lang->{model},  'eleven_turbo_v2_5', 'model survives into SWML' );
-is_deeply( $lang->{speech_fillers},   [ 'um', 'let me see' ],      'speech_fillers list survives' );
-is_deeply( $lang->{function_fillers}, [ 'one moment', 'checking' ], 'function_fillers list survives' );
+is_deeply( $lang->{speech_fillers}, [ 'um', 'let me see' ], 'speech_fillers list survives' );
+is_deeply(
+    $lang->{function_fillers},
+    [ 'one moment', 'checking' ],
+    'function_fillers list survives'
+);
 
 done_testing;

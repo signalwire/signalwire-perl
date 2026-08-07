@@ -14,11 +14,10 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Exception;
-use Digest::SHA qw(hmac_sha1);
+use Digest::SHA  qw(hmac_sha1);
 use MIME::Base64 qw(encode_base64);
 
-use SignalWire::Security::WebhookValidator
-    qw(validate_webhook_signature validate_request);
+use SignalWire::Security::WebhookValidator qw(validate_webhook_signature validate_request);
 
 # ---------------------------------------------------------------------------
 # Canonical test vectors from porting-sdk/webhooks.md
@@ -49,8 +48,8 @@ my %VECTOR_C = (
     signing_key => 'PSKtest1234567890abcdef',
     raw_body    => '{"event":"call.state"}',
     url         => 'https://example.ngrok.io/webhook?bodySHA256='
-                 . '69f3cbfc18e386ef8236cb7008cd5a54b7fed637a8cb3373b5a1591d7f0fd5f4',
-    expected    => 'dfO9ek8mxyFtn2nMz24plPmPfIY=',
+        . '69f3cbfc18e386ef8236cb7008cd5a54b7fed637a8cb3373b5a1591d7f0fd5f4',
+    expected => 'dfO9ek8mxyFtn2nMz24plPmPfIY=',
 );
 
 # Build a percent-encoded form body that round-trips through the
@@ -64,18 +63,20 @@ sub form_encoded {
         $s =~ s/([^A-Za-z0-9._~-])/sprintf("%%%02X", ord($1))/ge;
         return $s;
     };
-    return join('&', map { $enc->($_) . '=' . $enc->($params{$_}) }
-        sort keys %params);
+    return join(
+        '&', map { $enc->($_) . '=' . $enc->( $params{$_} ) }
+            sort keys %params
+    );
 }
 
 # Helper: produce a Scheme B base64 sig for arbitrary url + params.
 sub b64_sig {
-    my ($key, $url, %params) = @_;
+    my ( $key, $url, %params ) = @_;
     my $concat = $url;
-    for my $k (sort keys %params) {
+    for my $k ( sort keys %params ) {
         $concat .= $k . $params{$k};
     }
-    return encode_base64(hmac_sha1($concat, $key), '');
+    return encode_base64( hmac_sha1( $concat, $key ), '' );
 }
 
 # ---------------------------------------------------------------------------
@@ -85,10 +86,7 @@ sub b64_sig {
 subtest 'Scheme A - canonical positive vector' => sub {
     ok(
         validate_webhook_signature(
-            $VECTOR_A{signing_key},
-            $VECTOR_A{expected},
-            $VECTOR_A{url},
-            $VECTOR_A{raw_body},
+            $VECTOR_A{signing_key}, $VECTOR_A{expected}, $VECTOR_A{url}, $VECTOR_A{raw_body},
         ),
         'Vector A: known JSON body + URL + key produces expected hex digest',
     );
@@ -99,10 +97,7 @@ subtest 'Scheme A - tampered body returns false' => sub {
     $tampered =~ s/answered/ringing/;
     ok(
         !validate_webhook_signature(
-            $VECTOR_A{signing_key},
-            $VECTOR_A{expected},
-            $VECTOR_A{url},
-            $tampered,
+            $VECTOR_A{signing_key}, $VECTOR_A{expected}, $VECTOR_A{url}, $tampered,
         ),
         'Vector A: tampered body fails validation',
     );
@@ -111,10 +106,7 @@ subtest 'Scheme A - tampered body returns false' => sub {
 subtest 'Scheme A - wrong key returns false' => sub {
     ok(
         !validate_webhook_signature(
-            'wrong-key',
-            $VECTOR_A{expected},
-            $VECTOR_A{url},
-            $VECTOR_A{raw_body},
+            'wrong-key', $VECTOR_A{expected}, $VECTOR_A{url}, $VECTOR_A{raw_body},
         ),
         'different signing key against the same vector -> false',
     );
@@ -123,10 +115,8 @@ subtest 'Scheme A - wrong key returns false' => sub {
 subtest 'Scheme A - wrong url returns false' => sub {
     ok(
         !validate_webhook_signature(
-            $VECTOR_A{signing_key},
-            $VECTOR_A{expected},
-            'https://example.ngrok.io/different',
-            $VECTOR_A{raw_body},
+            $VECTOR_A{signing_key},               $VECTOR_A{expected},
+            'https://example.ngrok.io/different', $VECTOR_A{raw_body},
         ),
         'same body/key but different URL path -> false',
     );
@@ -140,10 +130,7 @@ subtest 'Scheme B - canonical form-encoded vector' => sub {
     my $body = form_encoded(%VECTOR_B_PARAMS);
     ok(
         validate_webhook_signature(
-            $VECTOR_B{signing_key},
-            $VECTOR_B{expected},
-            $VECTOR_B{url},
-            $body,
+            $VECTOR_B{signing_key}, $VECTOR_B{expected}, $VECTOR_B{url}, $body,
         ),
         'Vector B: form params via raw body matches canonical Twilio digest',
     );
@@ -152,24 +139,16 @@ subtest 'Scheme B - canonical form-encoded vector' => sub {
 subtest 'Scheme B - validate_request with hashref delegates to Scheme B' => sub {
     ok(
         validate_request(
-            $VECTOR_B{signing_key},
-            $VECTOR_B{expected},
-            $VECTOR_B{url},
-            $VECTOR_B{params},
+            $VECTOR_B{signing_key}, $VECTOR_B{expected}, $VECTOR_B{url}, $VECTOR_B{params},
         ),
         'validate_request(..., \%params) goes straight to Scheme B',
     );
 };
 
 subtest 'Scheme B - validate_request with arrayref of pairs' => sub {
-    my @pairs = map { [$_, $VECTOR_B_PARAMS{$_}] } keys %VECTOR_B_PARAMS;
+    my @pairs = map { [ $_, $VECTOR_B_PARAMS{$_} ] } keys %VECTOR_B_PARAMS;
     ok(
-        validate_request(
-            $VECTOR_B{signing_key},
-            $VECTOR_B{expected},
-            $VECTOR_B{url},
-            \@pairs,
-        ),
+        validate_request( $VECTOR_B{signing_key}, $VECTOR_B{expected}, $VECTOR_B{url}, \@pairs, ),
         'validate_request also accepts pre-parsed (key, value) tuples',
     );
 };
@@ -177,26 +156,21 @@ subtest 'Scheme B - validate_request with arrayref of pairs' => sub {
 subtest 'Scheme B - bodySHA256 canonical vector' => sub {
     ok(
         validate_webhook_signature(
-            $VECTOR_C{signing_key},
-            $VECTOR_C{expected},
-            $VECTOR_C{url},
-            $VECTOR_C{raw_body},
+            $VECTOR_C{signing_key}, $VECTOR_C{expected}, $VECTOR_C{url}, $VECTOR_C{raw_body},
         ),
         'Vector C: JSON body on compat surface, signature over URL with bodySHA256',
     );
 };
 
 subtest 'Scheme B - bodySHA256 mismatch is rejected' => sub {
+
     # The HMAC over Vector C's URL and empty params still matches the
     # signature, but the bodySHA256 in the URL won't match a different
     # body — must reject.
     my $wrong_body = '{"event":"DIFFERENT"}';
     ok(
         !validate_webhook_signature(
-            $VECTOR_C{signing_key},
-            $VECTOR_C{expected},
-            $VECTOR_C{url},
-            $wrong_body,
+            $VECTOR_C{signing_key}, $VECTOR_C{expected}, $VECTOR_C{url}, $wrong_body,
         ),
         'bodySHA256 mismatch fails even when HMAC over URL would otherwise match',
     );
@@ -210,10 +184,11 @@ subtest 'URL port normalization - signed with :443, request without port' => sub
     my $key  = 'test-key';
     my $with = 'https://example.com:443/webhook';
     my $sans = 'https://example.com/webhook';
-    my $sig  = b64_sig($key, $with);
+    my $sig  = b64_sig( $key, $with );
+
     # raw_body is non-form so Scheme B falls back to empty params.
     ok(
-        validate_webhook_signature($key, $sig, $sans, '{}'),
+        validate_webhook_signature( $key, $sig, $sans, '{}' ),
         'sig signed with :443 accepted when request URL has no port',
     );
 };
@@ -222,9 +197,9 @@ subtest 'URL port normalization - signed without port, request with :443' => sub
     my $key  = 'test-key';
     my $with = 'https://example.com:443/webhook';
     my $sans = 'https://example.com/webhook';
-    my $sig  = b64_sig($key, $sans);
+    my $sig  = b64_sig( $key, $sans );
     ok(
-        validate_webhook_signature($key, $sig, $with, '{}'),
+        validate_webhook_signature( $key, $sig, $with, '{}' ),
         'sig signed without port accepted when request URL has :443',
     );
 };
@@ -233,11 +208,8 @@ subtest 'URL port normalization - http :80 mirrors https :443' => sub {
     my $key  = 'test-key';
     my $with = 'http://example.com:80/path';
     my $sans = 'http://example.com/path';
-    my $sig  = b64_sig($key, $with);
-    ok(
-        validate_webhook_signature($key, $sig, $sans, ''),
-        'http:80 normalization accepted',
-    );
+    my $sig  = b64_sig( $key, $with );
+    ok( validate_webhook_signature( $key, $sig, $sans, '' ), 'http:80 normalization accepted', );
 };
 
 # ---------------------------------------------------------------------------
@@ -245,28 +217,29 @@ subtest 'URL port normalization - http :80 mirrors https :443' => sub {
 # ---------------------------------------------------------------------------
 
 subtest 'Repeated form keys - submission order preserved' => sub {
-    my $key = 'test-key';
-    my $url = 'https://example.com/hook';
+    my $key  = 'test-key';
+    my $url  = 'https://example.com/hook';
     my $body = 'To=a&To=b';
+
     # Expected concat: "ToaTob" (sorted by key only; order within key preserved).
     my $expected_data = $url . 'ToaTob';
-    my $sig = encode_base64(hmac_sha1($expected_data, $key), '');
+    my $sig           = encode_base64( hmac_sha1( $expected_data, $key ), '' );
     ok(
-        validate_webhook_signature($key, $sig, $url, $body),
+        validate_webhook_signature( $key, $sig, $url, $body ),
         'To=a&To=b hashes deterministically as ToaTob',
     );
 };
 
 subtest 'Repeated form keys - swapped order is a different signature' => sub {
-    my $key = 'test-key';
-    my $url = 'https://example.com/hook';
-    my $sig_for_ab = encode_base64(hmac_sha1($url . 'ToaTob', $key), '');
+    my $key        = 'test-key';
+    my $url        = 'https://example.com/hook';
+    my $sig_for_ab = encode_base64( hmac_sha1( $url . 'ToaTob', $key ), '' );
     ok(
-        validate_webhook_signature($key, $sig_for_ab, $url, 'To=a&To=b'),
+        validate_webhook_signature( $key, $sig_for_ab, $url, 'To=a&To=b' ),
         'sig for ab matches body To=a&To=b',
     );
     ok(
-        !validate_webhook_signature($key, $sig_for_ab, $url, 'To=b&To=a'),
+        !validate_webhook_signature( $key, $sig_for_ab, $url, 'To=b&To=a' ),
         'sig for ab does NOT match body To=b&To=a (order matters within key)',
     );
 };
@@ -292,38 +265,35 @@ subtest 'Missing signature returns false (no exception)' => sub {
 
 subtest 'Missing signing_key croaks' => sub {
     dies_ok {
-        validate_webhook_signature('', 'sig',
-            $VECTOR_A{url}, $VECTOR_A{raw_body});
-    } 'empty signing_key croaks';
+        validate_webhook_signature( '', 'sig', $VECTOR_A{url}, $VECTOR_A{raw_body} );
+    }
+    'empty signing_key croaks';
 
     dies_ok {
-        validate_webhook_signature(undef, 'sig',
-            $VECTOR_A{url}, $VECTOR_A{raw_body});
-    } 'undef signing_key croaks';
+        validate_webhook_signature( undef, 'sig', $VECTOR_A{url}, $VECTOR_A{raw_body} );
+    }
+    'undef signing_key croaks';
 };
 
 subtest 'Non-string raw_body croaks (e.g. parsed dict)' => sub {
     dies_ok {
-        validate_webhook_signature(
-            $VECTOR_A{signing_key}, 'sig', $VECTOR_A{url},
+        validate_webhook_signature( $VECTOR_A{signing_key}, 'sig', $VECTOR_A{url},
             { event => 'call.state' },
         );
-    } 'hashref as raw_body croaks';
+    }
+    'hashref as raw_body croaks';
 
     dies_ok {
-        validate_webhook_signature(
-            $VECTOR_A{signing_key}, 'sig', $VECTOR_A{url},
-            [ 'a', 'b' ],
-        );
-    } 'arrayref as raw_body croaks';
+        validate_webhook_signature( $VECTOR_A{signing_key}, 'sig', $VECTOR_A{url}, [ 'a', 'b' ], );
+    }
+    'arrayref as raw_body croaks';
 };
 
 subtest 'Malformed signature returns false without throwing' => sub {
-    for my $garbage ('xyz', '!!!!', 'a' x 100, '%%notbase64%%') {
+    for my $garbage ( 'xyz', '!!!!', 'a' x 100, '%%notbase64%%' ) {
         ok(
             !validate_webhook_signature(
-                $VECTOR_A{signing_key}, $garbage,
-                $VECTOR_A{url}, $VECTOR_A{raw_body},
+                $VECTOR_A{signing_key}, $garbage, $VECTOR_A{url}, $VECTOR_A{raw_body},
             ),
             "garbage signature '$garbage' -> false (no throw)",
         );
@@ -337,10 +307,7 @@ subtest 'Malformed signature returns false without throwing' => sub {
 subtest 'validate_request - string arg delegates to combined validator' => sub {
     ok(
         validate_request(
-            $VECTOR_A{signing_key},
-            $VECTOR_A{expected},
-            $VECTOR_A{url},
-            $VECTOR_A{raw_body},
+            $VECTOR_A{signing_key}, $VECTOR_A{expected}, $VECTOR_A{url}, $VECTOR_A{raw_body},
         ),
         'string fourth arg behaves like validate_webhook_signature',
     );
@@ -349,10 +316,7 @@ subtest 'validate_request - string arg delegates to combined validator' => sub {
 subtest 'validate_request - hashref runs Scheme B directly' => sub {
     ok(
         validate_request(
-            $VECTOR_B{signing_key},
-            $VECTOR_B{expected},
-            $VECTOR_B{url},
-            $VECTOR_B{params},
+            $VECTOR_B{signing_key}, $VECTOR_B{expected}, $VECTOR_B{url}, $VECTOR_B{params},
         ),
         'hashref fourth arg runs Scheme B directly',
     );
@@ -360,19 +324,15 @@ subtest 'validate_request - hashref runs Scheme B directly' => sub {
 
 subtest 'validate_request - bad ref types croak' => sub {
     dies_ok {
-        validate_request(
-            $VECTOR_A{signing_key}, 'sig', $VECTOR_A{url},
-            \'scalar-ref',
-        );
-    } 'scalar ref as 4th arg croaks';
+        validate_request( $VECTOR_A{signing_key}, 'sig', $VECTOR_A{url}, \'scalar-ref', );
+    }
+    'scalar ref as 4th arg croaks';
 
     # Coderef should croak.
     dies_ok {
-        validate_request(
-            $VECTOR_A{signing_key}, 'sig', $VECTOR_A{url},
-            sub { 1 },
-        );
-    } 'coderef as 4th arg croaks';
+        validate_request( $VECTOR_A{signing_key}, 'sig', $VECTOR_A{url}, sub { 1 }, );
+    }
+    'coderef as 4th arg croaks';
 };
 
 # ---------------------------------------------------------------------------
@@ -385,23 +345,28 @@ subtest 'validate_request - bad ref types croak' => sub {
 subtest 'Constant-time compare in source' => sub {
     require SignalWire::Security::WebhookValidator;
     my $path = $INC{'SignalWire/Security/WebhookValidator.pm'};
-    ok($path && -f $path, "module file located: $path");
+    ok( $path && -f $path, "module file located: $path" );
     open my $fh, '<', $path or die "open $path: $!";
     my $src = do { local $/; <$fh> };
     close $fh;
 
-    like($src, qr/sub\s+_safe_eq/,
-         'validator defines a constant-time compare helper');
-    like($src, qr/_safe_eq\s*\(/,
-         '_safe_eq is invoked in the validator');
+    like( $src, qr/sub\s+_safe_eq/, 'validator defines a constant-time compare helper' );
+    like( $src, qr/_safe_eq\s*\(/,  '_safe_eq is invoked in the validator' );
+
     # And it must NOT use plain == / eq on the expected vs. signature
     # variables. Allow == elsewhere (loop indexing, length-mismatch
     # short-circuit) but the literal direct comparison patterns must
     # not appear.
-    unlike($src, qr/\$expected_a\s+eq\s+\$signature/,
-           'direct eq on expected_a vs signature is absent');
-    unlike($src, qr/\$expected\s+eq\s+\$signature/,
-           'direct eq on expected vs signature is absent');
+    unlike(
+        $src,
+        qr/\$expected_a\s+eq\s+\$signature/,
+        'direct eq on expected_a vs signature is absent'
+    );
+    unlike(
+        $src,
+        qr/\$expected\s+eq\s+\$signature/,
+        'direct eq on expected vs signature is absent'
+    );
 };
 
 # ---------------------------------------------------------------------------
@@ -412,12 +377,11 @@ subtest 'Constant-time compare in source' => sub {
 # ---------------------------------------------------------------------------
 
 subtest 'Different-length wrong signature still returns false' => sub {
-    for my $len (1, 2, 5, 39, 41, 80, 200) {
+    for my $len ( 1, 2, 5, 39, 41, 80, 200 ) {
         my $junk = 'a' x $len;
         ok(
             !validate_webhook_signature(
-                $VECTOR_A{signing_key}, $junk,
-                $VECTOR_A{url}, $VECTOR_A{raw_body},
+                $VECTOR_A{signing_key}, $junk, $VECTOR_A{url}, $VECTOR_A{raw_body},
             ),
             "wrong-length sig (len=$len) -> false, no throw",
         );

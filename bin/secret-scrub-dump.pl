@@ -42,7 +42,12 @@ use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
 
 # The logger reads SIGNALWIRE_LOG_LEVEL at logger-construction time, so force
 # debug BEFORE the client module (and its package-scoped logger) loads.
+# Process-wide on purpose: the logger reads SIGNALWIRE_LOG_LEVEL at
+# logger-construction time during the `use` below, so this must be set for the
+# whole process, before module load — `local` cannot reach that.
+## no critic (Variables::RequireLocalizedPunctuationVars)
 $ENV{SIGNALWIRE_LOG_LEVEL} = 'debug';
+## use critic
 
 use SignalWire::Relay::Client;
 use SignalWire::Relay::Event;

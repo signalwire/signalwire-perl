@@ -261,9 +261,7 @@ SignalWire::SWAIG::SWAIGFunction - a SWAIG function (a tool the AI model can cal
 
 =head1 DESCRIPTION
 
-Perl port of the Python reference
-C<signalwire.core.swaig_function.SWAIGFunction> (and the Ruby
-C<SignalWire::Swaig::SWAIGFunction>). A SWAIGFunction wraps a handler as an
+A SWAIGFunction wraps a handler as an
 OpenAI-style tool: it holds the C<name>, C<description>, JSON-Schema
 C<parameters>, and metadata, and renders into the SWAIG entry embedded in an
 SWML C<ai> verb.
@@ -281,8 +279,7 @@ collected into C<extra_swaig_fields> and merged into the C<to_swaig> output.
 
 =over 4
 
-=item * C<call(@args)> - invoke the underlying handler (Perl analog of Python's
-C<__call__>).
+=item * C<call(@args)> - invoke the underlying handler.
 
 =item * C<execute($args, $raw_data)> - run the handler and coerce the result to
 a FunctionResult hashref; returns a generic error hashref on failure.

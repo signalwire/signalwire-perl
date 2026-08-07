@@ -1,0 +1,54 @@
+# ruff.toml — canonical Python lint + format config for signalwire-perl.
+#
+# WHY A PERL PORT HAS A PYTHON LINT CONFIG
+# ========================================
+# This repo ships 7 hand-written Python programs under scripts/ — the four REST /
+# RELAY / SWML / SWAIG code generators, the signature enumerator, and
+# scripts/_perltidy_gen.py (the perltidy backstop every generator runs as its
+# final emit pass). They are load-bearing gate infrastructure: GEN-FRESH*,
+# SIGNATURES and the FMT contract all execute them. Until 2026-07-30 NO gate
+# linted or formatted a single line of them — they were the only hand-written
+# code in the repo held to no bar at all.
+#
+# ONE BAR (owner ruling, 2026-07-29): "all the full directories should be linted
+# and formatted including tests examples and all ... at the levels the shipping
+# code gets". These files now meet the same bar the shipped Perl tree meets, and
+# the REPO-LINT / REPO-FMT gates in scripts/run-ci.sh keep them there.
+#
+# The rule selection below is COPIED from the Python reference SDK
+# (signalwire-python/pyproject.toml [tool.ruff]) rather than invented here, so
+# the fleet applies one identical Python bar. Keep them in sync.
+
+target-version = "py310"
+line-length = 88
+
+[format]
+# Pin STABLE formatting explicitly (mirrors the reference). Without this, CI's
+# `ruff format --check` can resolve preview-mode formatting while a local stable
+# run leaves the file unchanged — a local≠CI split with no visible cause.
+preview = false
+
+[lint]
+# E4/E7/E9 + F are the ruff defaults (E501 line-length intentionally excluded —
+# formatting is owned by `ruff format`, not the linter). B = flake8-bugbear
+# (likely-bug patterns), S = flake8-bandit (security smells). Identical to the
+# reference SDK's selection.
+select = ["E4", "E7", "E9", "F", "B", "S", "C4", "PERF", "SIM", "PTH", "RET", "RUF", "UP"]
+
+[lint.per-file-ignores]
+# S603 (subprocess call) / S607 (partial executable path): these two generators
+# shell out to a DEVELOPER-SUPPLIED toolchain binary with a fixed list-form arg
+# vector and the default shell=False, so there is no shell to interpolate into.
+#   * _perltidy_gen.py runs `perltidy` — resolved via PATH on purpose, because
+#     scripts/_env.sh prepends the local::lib bin dir and the whole point is to
+#     use the interpreter-matched perltidy the gates bootstrapped, not a
+#     hardcoded absolute path that would break on every machine.
+#   * generate_rest_tests.py and enumerate_signatures.py run `perl` / `git` the
+#     same way, on this repo's own checkout.
+# The dynamic parts are this repo's own file paths, never untrusted or network
+# input. Same rationale (and same scoping style) as the reference SDK's
+# "signalwire/signalwire/cli/dokku.py" = ["S603", "S607"] entry — per-file, so a
+# NEW subprocess call anywhere else still reds the gate.
+"scripts/_perltidy_gen.py" = ["S603", "S607"]
+"scripts/generate_rest_tests.py" = ["S603", "S607"]
+"scripts/enumerate_signatures.py" = ["S603", "S607"]

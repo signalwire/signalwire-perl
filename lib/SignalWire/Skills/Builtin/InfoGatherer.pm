@@ -13,6 +13,19 @@ has '+skill_description' =>
     ( default => sub { 'Gather answers to a configurable list of questions' } );
 has '+supports_multiple_instances' => ( default => sub { 1 } );
 
+# Registry key for this skill instance. Overrides SkillBase's default, which
+# keys on `tool_name`; info_gatherer has no single tool_name — `prefix` is what
+# differentiates two instances, driving BOTH tool names
+# (`<prefix>_start_questions` / `<prefix>_submit_answer`) and the global_data
+# namespace. Keying on prefix is therefore what lets two prefixed instances
+# load onto one agent side by side. Python parity:
+# ``InfoGathererSkill.get_instance_key``.
+sub get_instance_key {
+    my ($self) = @_;
+    my $prefix = $self->params->{prefix};
+    return $prefix ? 'info_gatherer_' . $prefix : 'info_gatherer';
+}
+
 sub setup { return 1 }
 
 # Tool names, honoring an optional prefix (Python parity:
@@ -226,8 +239,7 @@ SignalWire::Skills::Builtin::InfoGatherer - collect answers to a configurable li
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::InfoGatherer> is the Perl port of the Python
-reference C<signalwire.skills.info_gatherer.skill>. It drives a small state
+L<SignalWire::Skills::Builtin::InfoGatherer> drives a small state
 machine that asks the user a configured sequence of questions and records the
 answers.
 
@@ -255,6 +267,15 @@ instances.
 =head1 METHODS
 
 =over
+
+=item C<get_instance_key>
+
+Returns the SkillManager registry key for this instance: C<"info_gatherer_<prefix>">
+when a C<prefix> is configured, otherwise C<"info_gatherer">. Keys on C<prefix>
+rather than a tool name because C<prefix> is what actually differentiates two
+instances — it drives both tool names (C<< <prefix>_start_questions >> /
+C<< <prefix>_submit_answer >>) and the global-data namespace. At most one
+un-prefixed instance is therefore possible.
 
 =item C<register_tools>
 

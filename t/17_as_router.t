@@ -25,14 +25,14 @@ use SignalWire::SWML::Service;
 sub make_env {
     my (%o) = @_;
     return {
-        REQUEST_METHOD     => $o{method}  // 'GET',
-        PATH_INFO          => $o{path}    // '/',
-        SCRIPT_NAME        => '',
-        SERVER_NAME        => 'localhost',
-        SERVER_PORT        => 3000,
-        QUERY_STRING       => $o{query}   // '',
+        REQUEST_METHOD => $o{method} // 'GET',
+        PATH_INFO      => $o{path}   // '/',
+        SCRIPT_NAME    => '',
+        SERVER_NAME    => 'localhost',
+        SERVER_PORT    => 3000,
+        QUERY_STRING   => $o{query} // '',
         ( $o{auth} ? ( HTTP_AUTHORIZATION => "Basic $o{auth}" ) : () ),
-        'psgi.input'       => do { open my $fh, '<', \( $o{body} // '' ); $fh },
+        'psgi.input' => do { open my $fh, '<', \( $o{body} // '' ); $fh },
     };
 }
 
@@ -50,7 +50,7 @@ subtest 'as_router returns a PSGI coderef (mountable app)' => sub {
     # routable PSGI app, not an empty stub.
     my $res = $app->( make_env( path => '/health' ) );
     is( ref($res), 'ARRAY', 'PSGI app returns a [status, headers, body] triple' );
-    is( $res->[0], 200, '/health served with 200 through as_router coderef' );
+    is( $res->[0], 200,     '/health served with 200 through as_router coderef' );
 };
 
 subtest 'as_router coderef carries the service routes (/ and /swaig)' => sub {
@@ -66,7 +66,7 @@ subtest 'as_router coderef carries the service routes (/ and /swaig)' => sub {
         handler     => sub { {} },
     );
 
-    my $app  = $agent->as_router;
+    my $app = $agent->as_router;
     is( ref($app), 'CODE', 'AgentBase inherits as_router (PSGI coderef)' );
 
     my $auth = encode_base64( 'u:p', '' );
@@ -76,8 +76,7 @@ subtest 'as_router coderef carries the service routes (/ and /swaig)' => sub {
     is( $swml->[0], 200, 'main route (/) served through as_router' );
 
     # SWAIG route (GET returns the SWML doc; proves the route is carried).
-    my $swaig = $app->(
-        make_env( method => 'GET', path => '/swaig', auth => $auth ) );
+    my $swaig = $app->( make_env( method => 'GET', path => '/swaig', auth => $auth ) );
     is( $swaig->[0], 200, '/swaig route served through as_router' );
 
     # Auth is enforced on protected routes (proves it is the real app).

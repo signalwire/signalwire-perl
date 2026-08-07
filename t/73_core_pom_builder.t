@@ -16,14 +16,14 @@ subtest 'add_section + has_section + get_section' => sub {
     my $b   = SignalWire::Core::PomBuilder->new;
     my $ret = $b->add_section( 'Role', body => 'You are helpful.' );
     is( $ret, $b, 'add_section returns self for chaining' );
-    ok( $b->has_section('Role'), 'section present' );
+    ok( $b->has_section('Role'),     'section present' );
     ok( !$b->has_section('Missing'), 'absent section reported absent' );
 
     my $sec = $b->get_section('Role');
     ok( $sec, 'get_section returns the section' );
-    is( $sec->title, 'Role',            'section title' );
-    is( $sec->body,  'You are helpful.', 'section body' );
-    is( $b->get_section('Missing'), undef, 'get_section undef when absent' );
+    is( $sec->title,                'Role',             'section title' );
+    is( $sec->body,                 'You are helpful.', 'section body' );
+    is( $b->get_section('Missing'), undef,              'get_section undef when absent' );
 };
 
 subtest 'add_section with bullets and subsections' => sub {
@@ -35,8 +35,8 @@ subtest 'add_section with bullets and subsections' => sub {
     );
     my $sec = $b->get_section('Guidelines');
     is_deeply( $sec->bullets, [ 'Be concise', 'Be kind' ], 'bullets set' );
-    is( scalar @{ $sec->subsections }, 1,      'one subsection' );
-    is( $sec->subsections->[0]->title, 'Tone', 'subsection title' );
+    is( scalar @{ $sec->subsections }, 1,       'one subsection' );
+    is( $sec->subsections->[0]->title, 'Tone',  'subsection title' );
     is( $sec->subsections->[0]->body,  'Warm.', 'subsection body' );
 };
 
@@ -53,14 +53,17 @@ subtest 'add_to_section appends body and bullets (auto-vivifies)' => sub {
     is( $b->get_section('Notes')->body, "First.\n\nSecond.", 'body appended with blank line' );
 
     # single bullet and list of bullets
-    $b->add_to_section( 'Notes', bullet => 'one' );
+    $b->add_to_section( 'Notes', bullet  => 'one' );
     $b->add_to_section( 'Notes', bullets => [ 'two', 'three' ] );
-    is_deeply( $b->get_section('Notes')->bullets, [ 'one', 'two', 'three' ],
-        'bullet + bullets appended' );
+    is_deeply(
+        $b->get_section('Notes')->bullets,
+        [ 'one', 'two', 'three' ],
+        'bullet + bullets appended'
+    );
 };
 
 subtest 'add_subsection auto-vivifies parent' => sub {
-    my $b = SignalWire::Core::PomBuilder->new;
+    my $b   = SignalWire::Core::PomBuilder->new;
     my $ret = $b->add_subsection( 'Parent', 'Child', body => 'kid' );
     is( $ret, $b, 'add_subsection returns self' );
     ok( $b->has_section('Parent'), 'parent auto-created' );
@@ -74,16 +77,16 @@ subtest 'render_markdown / render_xml / to_dict / to_json' => sub {
     $b->add_section( 'Role', body => 'Helpful.' );
 
     my $md = $b->render_markdown;
-    like( $md, qr/Role/,     'markdown contains title' );
+    like( $md, qr/Role/,      'markdown contains title' );
     like( $md, qr/Helpful\./, 'markdown contains body' );
 
     my $xml = $b->render_xml;
-    like( $xml, qr/<prompt>/,        'xml has prompt root' );
+    like( $xml, qr/<prompt>/,            'xml has prompt root' );
     like( $xml, qr{<title>Role</title>}, 'xml has title element' );
 
     my $dict = $b->to_dict;
-    is( ref $dict, 'ARRAY',   'to_dict is an arrayref' );
-    is( $dict->[0]{title}, 'Role', 'to_dict section title' );
+    is( ref $dict,         'ARRAY', 'to_dict is an arrayref' );
+    is( $dict->[0]{title}, 'Role',  'to_dict section title' );
 
     my $json = $b->to_json;
     ok( !ref $json, 'to_json returns a string' );
@@ -93,8 +96,8 @@ subtest 'render_markdown / render_xml / to_dict / to_json' => sub {
 
 subtest 'from_sections rebuilds the section index' => sub {
     my $sections = [
-        { title => 'Greeting', body => 'Hi there.' },
-        { title => 'Rules',    bullets => [ 'Be nice' ] },
+        { title => 'Greeting', body    => 'Hi there.' },
+        { title => 'Rules',    bullets => ['Be nice'] },
     ];
     my $b = SignalWire::Core::PomBuilder->from_sections($sections);
     isa_ok( $b, 'SignalWire::Core::PomBuilder', 'from_sections returns a builder' );
