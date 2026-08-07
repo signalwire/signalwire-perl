@@ -11,6 +11,7 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
+has 'SWML'                         => ( is => 'ro' );
 has 'add_dynamic_hints'            => ( is => 'ro' );
 has 'back_to_back_functions'       => ( is => 'ro' );
 has 'change_context'               => ( is => 'ro' );

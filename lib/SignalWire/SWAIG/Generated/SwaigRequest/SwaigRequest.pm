@@ -11,6 +11,8 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
+has 'SWMLCall'            => ( is => 'ro' );
+has 'SWMLVars'            => ( is => 'ro' );
 has 'ai_session_id'       => ( is => 'ro' );
 has 'app_name'            => ( is => 'ro' );
 has 'args'                => ( is => 'ro' );
