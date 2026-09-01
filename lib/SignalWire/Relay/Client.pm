@@ -937,9 +937,24 @@ sub _handle_inbound_call ( $self, $event, $params ) {
     my $call_id = $params->{call_id} // '';
     return unless $call_id;
 
+    # RELAY delivers at least once, so calling.call.receive can arrive again for
+    # a call already in flight. Receive is idempotent per call_id: keep the live
+    # instance and do NOT re-enter the on_call handler. Replacing the map entry
+    # would orphan the Call the application is holding — routing only ever reads
+    # _calls by call_id, so the original would silently stop receiving events
+    # and a blocking action on it would wait out its timeout instead of
+    # returning at hangup. The event is ACKed by the recv loop before this runs,
+    # so returning early still stops the server's retries.
+    if ( exists $self->_calls->{$call_id} ) {
+        $logger->debug("Ignoring redelivered calling.call.receive for in-flight call $call_id");
+        return;
+    }
+
     # Max-active-calls cap (Python parity): when N calls are already active, the
     # (N+1)th inbound call is DROPPED (never accepted / handed to on_call), so a
-    # runaway inbound rate can't exhaust the process.
+    # runaway inbound rate can't exhaust the process. Checked AFTER the dedup
+    # above: a redelivery for a call already in the map is not a new call, so it
+    # must never be counted against the cap or logged as a dropped call.
     if ( keys %{ $self->_calls } >= $self->_max_active_calls ) {
         $logger->error(
             "Max active calls (" . $self->_max_active_calls . ") reached, dropping inbound call" );

@@ -352,6 +352,76 @@ subtest 'inbound call journal_send records calling.call.receive' => sub {
 };
 
 # ---------------------------------------------------------------------------
+# Redelivered calling.call.receive (porting-sdk#141)
+#
+# RELAY delivers at least once: the same receive frame can arrive twice for one
+# call. Receive must therefore be idempotent per call_id — see the "Event
+# Redelivery" section of porting-sdk's RELAY_IMPLEMENTATION_GUIDE.md.
+# ---------------------------------------------------------------------------
+
+# Without the idempotency guard the second receive builds a second Call and
+# overwrites _calls->{$call_id}. Routing only ever reads that map, so the first
+# Call — the one handed to the application — silently stops receiving events
+# and never reaches a terminal state.
+subtest 'redelivered receive keeps the live call' => sub {
+    my $client = _connected_client();
+    my @handler_calls;
+    $client->on_call(sub { push @handler_calls, $_[0] });
+
+    RelayMockTest::inbound_call(
+        call_id           => 'c-redeliver',
+        auto_states       => ['ringing', 'answered'],
+        delay_ms          => 20,
+        redeliver_receive => 1,
+    );
+    _pump_until($client, 5, sub { scalar(@handler_calls) >= 1 });
+    # Let the redelivery and the trailing state frame drain.
+    _pump_until($client, 1, sub { 0 });
+
+    # 1. One call means one handler invocation.
+    is(scalar(@handler_calls), 1,
+        'on_call handler not re-entered for a redelivered receive');
+
+    # 2. The live instance survives — the map still points at what the
+    #    application was handed, not at a replacement.
+    my $first = $handler_calls[0];
+    is($client->_calls->{'c-redeliver'}, $first,
+        'client still tracks the Call the application was handed');
+
+    # 3. And it is still the object events route to.
+    is($first->state, 'answered',
+        'the Call handed to the application still receives events');
+
+    # The duplicate really was on the wire — otherwise this proves nothing.
+    my $sends = RelayMockTest::journal_send(event_type => 'calling.call.receive');
+    my @redelivered = grep {
+        ($_->{frame}{params}{params}{call_id} // '') eq 'c-redeliver'
+    } @$sends;
+    is(scalar(@redelivered), 2,
+        'mock redelivered the receive frame (the scenario really happened)');
+
+    $client->disconnect;
+};
+
+# The dedup is per call_id and must not swallow a genuinely new concurrent
+# inbound call.
+subtest 'distinct call_ids still create separate calls' => sub {
+    my $client = _connected_client();
+    my @handler_calls;
+    $client->on_call(sub { push @handler_calls, $_[0] });
+
+    RelayMockTest::inbound_call(call_id => 'c-first',  auto_states => ['ringing']);
+    RelayMockTest::inbound_call(call_id => 'c-second', auto_states => ['ringing']);
+    _pump_until($client, 5, sub { scalar(@handler_calls) >= 2 });
+
+    is(scalar(@handler_calls), 2, 'both distinct inbound calls reached the handler');
+    my @ids = sort map { $_->call_id } @handler_calls;
+    is_deeply(\@ids, ['c-first', 'c-second'], 'dedup did not swallow a distinct call');
+
+    $client->disconnect;
+};
+
+# ---------------------------------------------------------------------------
 # Inbound without registered handler — does not crash
 # ---------------------------------------------------------------------------
 

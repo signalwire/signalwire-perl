@@ -316,6 +316,10 @@ sub inbound_call {
         context     => $opts{context}     // 'default',
         auto_states => $opts{auto_states} // ['created'],
         delay_ms    => $opts{delay_ms}    // 50,
+        # Replay the calling.call.receive frame this many EXTRA times
+        # (byte-identical, before the state frames) to drive RELAY's
+        # at-least-once delivery. See porting-sdk RELAY_IMPLEMENTATION_GUIDE.md.
+        redeliver_receive => $opts{redeliver_receive} // 0,
     );
     $body{call_id} = $opts{call_id} if exists $opts{call_id};
     # Default to the active client's session so the inbound-call sequence is
