@@ -304,14 +304,14 @@ sched_gate BOUNDED-REAP desc="no unbounded waitpid(\$pid, 0) in t/ (a stuck chil
     -- perl "$PORT_ROOT/scripts/lint_bounded_reap.pl"
 
 # COORDINATED-PASS: if porting-sdk was checked out at a NON-main ref (a coordinated
-# pass via the PORTING_SDK_REF repo variable), the PR must declare it (a
+# pass via the .porting-sdk-ref pin file), the PR must declare it (a
 # `Coordinated-With: porting-sdk@<branch>` line in the PR body, or the
 # `coordinated-pass` label) — else this gate fails, so a pin is never silent.
 # Local/push (no PR) is a no-op PASS. See porting-sdk/COORDINATED_PASS.md.
 sched_gate COORDINATED-PASS desc="a non-main porting-sdk pin must be declared on the PR (Coordinated-With: line or coordinated-pass label)" \
     -- python3 "$PORTING_SDK_DIR/scripts/coordinated_pass.py" --porting-sdk "$PORTING_SDK_DIR"
 
-sched_gate COORDINATED-REFS desc="every coordinated-set checkout (porting-sdk + python oracle + matrix ports) uses PORTING_SDK_REF, not a literal ref" \
+sched_gate COORDINATED-REFS desc="every coordinated-set checkout (porting-sdk + python oracle + matrix ports) takes its ref from the branch-local .porting-sdk-ref pin resolver, never a repo variable or literal ref" \
     -- python3 "$PORTING_SDK_DIR/scripts/check_coordinated_refs.py" --repo "$PORT_ROOT"
 
 # FMT joins res=surface: run locally (no CI) it rewrites its whole scope in place
@@ -389,7 +389,7 @@ sched_gate DEAD-PUBLIC-ERROR desc="exported error types are raised/caught/user-s
 # in-process mock_ai_chat and asserts the client speaks the AI Chat JSON-RPC
 # protocol per the vendored spec (ai-chat-specs/ai-chat.yaml). The gate script
 # (diff_port_ai_chat.py) + mock live on the porting-sdk `ai-chat-client` branch,
-# so during the coordinated pass PORTING_SDK_REF pins that branch; until the gate
+# so during the coordinated pass the .porting-sdk-ref pin selects that branch; until the gate
 # lands on porting-sdk main this skip-passes (coordinated-branch dep).
 sched_gate AI-CHAT desc="SignalWire::AIChat::Client speaks the AI Chat protocol per the vendored spec (mock_ai_chat wire-behavioral)" \
     -- bash -c 'if [ -f "$1/scripts/diff_port_ai_chat.py" ]; then python3 "$1/scripts/diff_port_ai_chat.py" --port perl --dump-cmd "perl $2/scripts/ai-chat-dump.pl"; else echo "[ai-chat] diff_port_ai_chat.py not on porting-sdk main yet — skip-pass (coordinated-branch dep: porting-sdk ai-chat-client)"; fi' _ "$PORTING_SDK_DIR" "$PORT_ROOT"
