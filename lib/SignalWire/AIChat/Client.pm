@@ -186,6 +186,43 @@ sub _request {
     return ( ref $result eq 'HASH' ) ? $result : {};
 }
 
+# POST one JSON-RPC call and hand back the response WITHOUT decoding it -- for a
+# proxy that must stream the body through rather than buffer it. The service
+# pads a slow response with keepalive whitespace so intermediaries do not sever
+# the connection mid-turn; a proxy that awaits the whole body absorbs that
+# padding and reintroduces the very timeout it exists to prevent.
+#
+# Python parity: AIChatClient.raw_post(method, params), an async context manager
+# yielding the response with its body unread. The Perl idiom for "iterate the
+# body as it arrives" is HTTP::Tiny's data_callback: pass
+# data_callback => sub { my ($chunk, $response) = @_; ... } and each chunk is
+# delivered as it is read (the returned response then has no content). Without
+# it the body is buffered into ->{content}. Returns the HTTP::Tiny-style response
+# hashref (status, reason, headers, ...). The caller owns interpreting it --
+# including that a JSON-RPC error arrives under HTTP 200.
+sub raw_post {
+    my ( $self, $method, $params, %opts ) = @_;
+
+    $self->_request_counter( $self->_request_counter + 1 );
+    my $payload = {
+        jsonrpc => '2.0',
+        method  => $method,
+        params  => $params,
+        id      => 'req-' . $self->_request_counter,
+    };
+
+    my %request = (
+        content => encode_json($payload),
+        headers => {
+            'Content-Type'  => 'application/json',
+            'Accept'        => 'application/json',
+            'Authorization' => $self->_auth_header,
+        },
+    );
+    $request{data_callback} = $opts{data_callback} if ref $opts{data_callback} eq 'CODE';
+    return $self->ua->request( 'POST', $self->url, \%request );
+}
+
 # ── API methods ──────────────────────────────────────────────────────
 
 # Create a conversation (or, with reinit, reinitialize an existing one) and
@@ -431,6 +468,17 @@ Return an AI summary string. Optional C<summary_prompt> plus sampling params
 C<max_tokens>). The service returns EXACTLY ONE of C<{summary}> or C<{error}>
 (both on the success envelope), so a failed generation is raised as a
 C<SignalWire::AIChat::SummaryError> -- never a silent empty string.
+
+=item raw_post($method, \%params, data_callback =E<gt> $cb)
+
+POST one JSON-RPC call and return the response B<undecoded>, for a proxy that
+must stream the body through rather than buffer it (the service pads slow turns
+with keepalive whitespace; buffering it recreates the timeout the padding
+prevents). With C<data_callback> each chunk is passed to
+C<< $cb->($chunk, $response) >> as it is read; without it the body is buffered
+into C<< ->{content} >>. Returns the HTTP::Tiny-style response hashref. The
+caller interprets the result -- including a JSON-RPC error under HTTP 200.
+Prefer the typed methods unless you are genuinely relaying bytes.
 
 =item close()
 

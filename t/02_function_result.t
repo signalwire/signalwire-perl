@@ -340,7 +340,8 @@ subtest 'execute_swml' => sub {
     $r = SignalWire::SWAIG::FunctionResult->new('swml');
     $r->execute_swml( { version => '1.0.0', sections => { main => [] } }, transfer => 1 );
     $h = result_hash($r);
-    is( $h->{action}[0]{SWML}{transfer}, 'true', 'execute_swml with transfer' );
+    is( $h->{action}[0]{transfer}, 'true', 'execute_swml transfer rides beside the document' );
+    ok( !exists $h->{action}[0]{SWML}{transfer}, 'not inside the SWML document' );
 
     # String input
     $r = SignalWire::SWAIG::FunctionResult->new('swml');

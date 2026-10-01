@@ -95,7 +95,17 @@ has context_builder => (
 );
 
 # Callbacks
+#
+# Per-request configuration callbacks, run in registration order. Stored as a
+# list and read through dynamic_config_callback() (below), which composes them
+# on read, so every call site -- the truthiness checks and the four-argument
+# invocation -- works unchanged whether one callback is registered or five.
+# Python parity: WebMixin._per_call_configs + the _dynamic_config_callback
+# property. Populated at setup time on the master agent, never per request.
+has _per_call_configs       => ( init_arg => undef, is => 'rw', default => sub { [] } );
 has dynamic_config_callback => ( init_arg => undef, is => 'rw', default => sub { undef } );
+has _call_end_handlers      => ( init_arg => undef, is => 'rw', default => sub { [] } );
+has _mounts                 => ( init_arg => undef, is => 'rw', default => sub { [] } );
 has summary_callback        => ( init_arg => undef, is => 'rw', default => sub { undef } );
 has debug_event_handler     => ( init_arg => undef, is => 'rw', default => sub { undef } );
 
@@ -1249,10 +1259,110 @@ sub has_skill {
 
 # ---------- Web / callback setters ----------
 
+# The registered per-call configuration as ONE callable, or undef when none is
+# registered. Composed on read, so registration order is the run order and a
+# later registration is always picked up. Assigning (one argument) REPLACES the
+# whole chain; assigning undef clears it. Wraps the Moo accessor declared above
+# so the attribute keeps its public name; the list in _per_call_configs is the
+# only storage.
+around dynamic_config_callback => sub {
+    my ( $orig, $self, @set ) = @_;
+    if (@set) {
+        my $cb = $set[0];
+        $self->_per_call_configs( defined $cb ? [$cb] : [] );
+        return $cb;
+    }
+    my @callbacks = @{ $self->_per_call_configs };
+    return               if !@callbacks;
+    return $callbacks[0] if @callbacks == 1;
+    return sub {
+        my ( $query_params, $body_params, $headers, $agent ) = @_;
+        $_->( $query_params, $body_params, $headers, $agent ) for @callbacks;
+        return;
+    };
+};
+
+# Install THE per-request configuration callback, REPLACING any already
+# registered (including ones added with add_per_call_config).
 sub set_dynamic_config_callback {
     my ( $self, $cb ) = @_;
     $self->dynamic_config_callback($cb);
     return $self;
+}
+
+# Register a per-request configuration callback, KEEPING any already set.
+# Same ($query_params, $body_params, $headers, $agent) contract as
+# set_dynamic_config_callback; callbacks accumulate and run in registration
+# order against the same per-request clone, so a later one sees what an
+# earlier one configured. The composable form -- prefer it.
+sub add_per_call_config {
+    my ( $self, $callback ) = @_;
+
+    # Rebind rather than mutate in place, so a list another agent holds a
+    # reference to is never written through.
+    $self->_per_call_configs( [ @{ $self->_per_call_configs }, $callback ] );
+    return $self;
+}
+
+# Mount an extra PSGI app or router (e.g. a ChatGateway's router()) alongside
+# this agent's own routes, at `prefix` (no trailing slash; '' = the root).
+# Python parity: WebMixin.mount(app_or_router, *, prefix="", name=None).
+#
+# The agent's own routes (health/ready, the SWML route, swaig, post_prompt,
+# mcp, routing callbacks) keep precedence; a request they don't claim and whose
+# path falls under a mount's prefix is dispatched to that app with SCRIPT_NAME /
+# PATH_INFO adjusted (Plack::App::URLMap semantics). Mounts are consulted at
+# request time, so mounting before or after psgi_app()/serve() both work.
+# Several apps may share a prefix -- two routers mounted at the same prefix
+# merge, like FastAPI's include_router: a 404 from one falls through to the
+# next. Returns $self.
+sub mount {
+    my ( $self, $app_or_router, %opts ) = @_;
+    my $app = _psgi_app_of($app_or_router)
+        // croak 'mount() needs a PSGI app coderef or an object with to_app/psgi_app';
+    my $prefix = defined $opts{prefix} ? $opts{prefix} : '';
+    $prefix =~ s{/+\z}{};
+    $prefix = "/$prefix" if length $prefix && $prefix !~ m{\A/};
+
+    push @{ $self->_mounts }, { prefix => $prefix, app => $app, name => $opts{name} };
+    $self->_logger->info( 'agent_route_mounted prefix=' . ( length $prefix ? $prefix : '/' ) );
+    return $self;
+}
+
+sub _psgi_app_of {
+    my ($thing) = @_;
+    return $thing if ref $thing eq 'CODE';
+    if ( blessed $thing ) {
+        return $thing->to_app   if $thing->can('to_app');
+        return $thing->psgi_app if $thing->can('psgi_app');
+    }
+    return;
+}
+
+# Dispatch a request to the first mounted app whose prefix covers $path, longest
+# prefix first. A 404 from one mount falls through to the next; undef when no
+# mount claims the request.
+sub _dispatch_mounts {
+    my ( $self, $env ) = @_;
+    my $path = defined $env->{PATH_INFO} ? $env->{PATH_INFO} : '';
+    my @candidates =
+        sort { length $b->{prefix} <=> length $a->{prefix} }
+        grep {
+        my $p = $_->{prefix};
+        !length $p || $path eq $p || index( $path, "$p/" ) == 0
+        } @{ $self->_mounts };
+
+    for my $mount (@candidates) {
+        my $prefix  = $mount->{prefix};
+        my %sub_env = %$env;
+        $sub_env{SCRIPT_NAME} =
+            ( defined $env->{SCRIPT_NAME} ? $env->{SCRIPT_NAME} : '' ) . $prefix;
+        $sub_env{PATH_INFO} = substr( $path, length $prefix );
+        my $res = $mount->{app}->( \%sub_env );
+        next if ref $res eq 'ARRAY' && defined $res->[0] && $res->[0] == 404;
+        return $res;
+    }
+    return;
 }
 
 sub set_web_hook_url {
@@ -1307,6 +1417,76 @@ sub on_summary ( $self, $summary, $raw_data = undef ) {
     if ($cb) {
         return $cb->( $summary, $raw_data );
     }
+    return;
+}
+
+# Register a handler that runs when the call ends, with the transcript.
+# Called as $handler->($call_log, $raw_data): $call_log is the conversation as
+# the platform recorded it (call_log, else raw_call_log), $raw_data the complete
+# SWAIG request (global_data, call_id, ...). Handlers run in registration order;
+# the return value is ignored and a handler that dies is logged, never raised.
+#
+# Wraps the platform's reserved `hangup_hook` function (never offered to the
+# model). Registering also turns on `swaig_post_conversation`, without which
+# the hook fires with NO transcript; an explicit false is left alone with a
+# warning. Returns $handler (Python parity: usable as a decorator).
+sub on_call_end {
+    my ( $self, $handler ) = @_;
+    my @handlers = @{ $self->_call_end_handlers };
+    $self->_call_end_handlers( [ @handlers, $handler ] );
+    $self->_ensure_call_end_hook unless @handlers;
+    return $handler;
+}
+
+sub _ensure_call_end_hook {
+    my ($self) = @_;
+    my $params = $self->params;
+    if ( exists $params->{swaig_post_conversation} ) {
+        my $value = $params->{swaig_post_conversation};
+        if ( defined $value && !$value ) {
+            $self->_logger->warn( 'call_end_handler_without_conversation message="[signalwire] '
+                    . 'on_call_end handlers are registered but swaig_post_conversation is '
+                    . 'explicitly False -- they will receive an empty call_log"' );
+        }
+    } else {
+        $params->{swaig_post_conversation} = JSON::true;
+    }
+
+    # Weak back-reference: the hook lives in this agent's own tool table, so a
+    # strong capture would be a reference cycle.
+    my $agent = $self;
+    Scalar::Util::weaken($agent);
+    my $hangup_handler = sub {
+        my ( $args, $raw_data ) = @_;
+        require SignalWire::SWAIG::FunctionResult;
+        my $raw = ref $raw_data eq 'HASH' ? $raw_data : {};
+
+        # Both spellings are seen in the wild depending on engine.
+        my $call_log;
+        for my $key (qw(call_log raw_call_log)) {
+            my $v = $raw->{$key};
+            if ( ref $v eq 'ARRAY' ? @$v : $v ) { $call_log = $v; last }
+        }
+        $call_log //= [];
+
+        for my $callback ( @{ $agent ? $agent->_call_end_handlers : [] } ) {
+
+            # Isolated per handler, so one failure cannot stop the others.
+            eval { $callback->( $call_log, $raw ); 1 } or do {
+                my $err = $@ // 'unknown error';
+                chomp $err;
+                $agent->_logger->error("call_end_handler_failed error=$err");
+            };
+        }
+        return SignalWire::SWAIG::FunctionResult->new('');
+    };
+
+    $self->define_tool(
+        name        => 'hangup_hook',
+        description => 'Internal: fires when the call ends.',
+        parameters  => {},
+        handler     => $hangup_handler,
+    );
     return;
 }
 
@@ -1874,7 +2054,7 @@ sub handle_request ( $self, $method, $url, $headers, $body = undef ) {
             my $cb    = $self->routing_callbacks->{$callback_path};
             my $route = eval { $cb->( $body, $headers ) };
             if ($@) {
-                $self->log->error( "error_in_routing_callback", error => "$@" );
+                $self->_logger->error( "error_in_routing_callback", error => "$@" );
             } elsif ( defined $route ) {
                 return ( 307, { 'Location' => $route }, '' );
             }
@@ -1898,7 +2078,7 @@ sub handle_request ( $self, $method, $url, $headers, $body = undef ) {
             $self->dynamic_config_callback->( $query_params, $body_params, $lc_headers, $agent );
             1;
         } or do {
-            $self->log->error( "error_in_dynamic_config", error => "$@" );
+            $self->_logger->error( "error_in_dynamic_config", error => "$@" );
         };
     }
 
@@ -1906,7 +2086,7 @@ sub handle_request ( $self, $method, $url, $headers, $body = undef ) {
     # path passes undef for the FastAPI-Request third arg.
     my $modifications = eval { $agent->on_swml_request( $body, $callback_path, undef ) };
     if ($@) {
-        $self->log->error( "error_in_request_modifier", error => "$@" );
+        $self->_logger->error( "error_in_request_modifier", error => "$@" );
         $modifications = undef;
     }
 
@@ -2050,6 +2230,13 @@ sub _build_psgi_app {
             return $agent->_handle_post_prompt( $env, $req );
         } elsif ( $is_mcp && $req->method eq 'POST' ) {
             return $agent->_handle_mcp_endpoint( $env, $req );
+        }
+
+        # Extra apps/routers mounted with mount(): after the agent's own
+        # routes, before the 404 (python moves its catch-all behind them).
+        if ( @{ $agent->_mounts } ) {
+            my $mounted = $agent->_dispatch_mounts($env);
+            return $mounted if defined $mounted;
         }
 
         return [ 404, [ 'Content-Type' => 'text/plain' ], ['Not Found'] ];
@@ -2386,13 +2573,19 @@ sub _clone_for_request {
     # copy for the flat ones, so per-request mutation on the clone can never
     # write through to the shared original.
     for my $attr (
-        qw(pom_sections tools languages pronunciations global_data
+        qw(pom_sections languages pronunciations global_data
         function_includes pre_answer_verbs post_answer_verbs post_ai_verbs
         mcp_servers)
         )
     {
         $clone->$attr( dclone( $self->$attr ) );
     }
+
+    # The tool table holds handler CODE refs, which Storable cannot store
+    # ("Can't store CODE items") -- so every request against an agent with a
+    # handler-backed tool AND a per-call config died here. Deep-copy the plain
+    # containers and share the handlers (and any object) by reference.
+    $clone->tools( _copy_plain( $self->tools ) );
     for my $attr (qw(tool_order hints pattern_hints native_functions)) {
         $clone->$attr( [ @{ $self->$attr } ] );
     }
@@ -2444,6 +2637,16 @@ sub _clone_for_request {
     }
 
     return $clone;
+}
+
+# Deep-copy unblessed HASH/ARRAY containers; share everything else (CODE refs,
+# objects, scalars) by reference.
+sub _copy_plain {
+    my ($value) = @_;
+    return $value if !ref $value || blessed $value;
+    return { map { $_ => _copy_plain( $value->{$_} ) } keys %$value } if ref $value eq 'HASH';
+    return [ map { _copy_plain($_) } @$value ]                        if ref $value eq 'ARRAY';
+    return $value;
 }
 
 # ---------- run / serve ----------
@@ -3540,6 +3743,38 @@ C<error_in_dynamic_config>; the request proceeds with the unmodified clone.
 Installing this is not free: every request now deep-copies the agent
 (prompt, tools, contexts, languages, and the rest) before rendering.
 
+This B<replaces> any previously registered per-call configuration, including
+callbacks added with C<add_per_call_config> -- prefer that method when
+composing.
+
+=item C<add_per_call_config($cb)>
+
+Register a per-request configuration callback, B<keeping> any already set.
+Same C<< ($query_params, $body_params, $headers, $agent) >> contract as
+C<set_dynamic_config_callback>, except that callbacks accumulate: they run in
+registration order against the same per-request clone, so a later one sees
+what an earlier one configured. Configure the C<$agent> argument, never the
+shared agent. Returns C<$self>.
+
+=item C<dynamic_config_callback()>
+
+The registered per-call configuration as one callable (the callbacks composed
+in registration order), or undef when none is registered. Called with an
+argument it replaces the whole chain (undef clears it).
+
+=item C<mount($app_or_router, prefix =E<gt> $prefix, name =E<gt> $name)>
+
+Mount an extra PSGI app or router -- e.g.
+C<< $agent->mount( $gateway->router, prefix => '/chat' ) >> -- alongside the
+agent's own routes. C<$app_or_router> is a PSGI coderef or an object with
+C<to_app>/C<psgi_app>. The agent's own routes keep precedence; a request whose
+path falls under C<prefix> (no trailing slash; empty = the root) is dispatched
+to the app with C<SCRIPT_NAME>/C<PATH_INFO> adjusted. Mounts are read at
+request time, so mounting before or after C<psgi_app>/C<serve> both work.
+Apps sharing a prefix merge: a 404 from one falls through to the next, so a
+C<ChatGateway> router and a C<HandoffRouter> can both sit at C</chat>. Returns
+C<$self>.
+
 =item C<set_web_hook_url($url)>
 
 Pin the SWAIG callback URL, bypassing proxy detection and the
@@ -3587,6 +3822,19 @@ Passing anything else DISPATCHES: it forwards to the registered handler and
 returns that handler's value. With no handler registered it returns empty --
 the base implementation is a deliberate no-op, matching the reference's
 overridable hook.
+
+=item C<on_call_end($handler)>
+
+Register a handler that runs when the call ends, called as
+C<< $handler->($call_log, $raw_data) >>: C<$call_log> is the conversation as
+the platform recorded it (C<call_log>, else C<raw_call_log>), C<$raw_data> the
+complete SWAIG request (C<global_data>, C<call_id>, ...). Handlers run in
+registration order; the return value is ignored and a handler that dies is
+logged (C<call_end_handler_failed>), never raised. It wraps the reserved
+C<hangup_hook> SWAIG function, registered once, and turns on
+C<swaig_post_conversation> -- without it the hook fires with no transcript. An
+explicitly false C<swaig_post_conversation> is left alone and a warning is
+logged. Returns C<$handler>.
 
 =item C<on_debug_event($cb)>
 

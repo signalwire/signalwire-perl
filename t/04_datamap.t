@@ -240,42 +240,50 @@ subtest 'No parameters' => sub {
 };
 
 # =============================================
-# Test: the body() builder is GONE
+# Test: body() writes the `params` contract key
 #
-# Owner-ruled 2026-07-29 (signalwire-python 71eed0c), extending the f171ce3
-# ruling ("if the server doesn't read them, remove them") from the
-# create_simple_api_tool PARAMETER to the public BUILDER METHOD. Three
-# independent sources condemn it:
-#
-#   * porting-sdk/schema.json $defs/Webhook declares exactly ten properties
-#     under unevaluatedProperties: {"not": {}} -- body is not among them, so
-#     emitting it is a SCHEMA VIOLATION.
-#   * mod_openai/actions.c:735-739 and bedrock.c:4920-4926 read url, method,
-#     form_param, params and headers and nothing else; grep -n '"body"'
-#     across both returns ZERO matches.
-#   * So its only possible effect was producing an invalid document while
-#     silently discarding the caller's payload.
-#
-# params() is the correct method: it writes the `params` key, which IS in the
-# contract and IS read.
+# The reference (signalwire-python 3.5.1) re-added DataMap.body() as an alias
+# of params(): the platform reads a webhook's body from its `params` field and
+# has no `body` field (porting-sdk/schema.json $defs/Webhook; mod_openai reads
+# url/method/form_param/params/headers only), so body() sets `params` and the
+# schema-forbidden `body` key never reaches the wire. create_simple_api_tool's
+# `body` option is forwarded the same way.
 # =============================================
-subtest 'body() builder is removed' => sub {
-    ok( !SignalWire::DataMap->can('body'),
-              'DataMap->can("body") is false -- the builder writes a schema-forbidden '
-            . 'key that no engine reader consumes; use params() instead' );
+subtest 'body() writes params, never a body key' => sub {
+    my $dm =
+        SignalWire::DataMap->new('search')
+        ->webhook( 'POST', 'https://api.example.com/search' )
+        ->body( { query => 'Q' } );
+    my $wh = $dm->to_swaig_function->{data_map}{webhooks}[0];
+    is_deeply( $wh->{params}, { query => 'Q' }, 'body() sets params' );
+    ok( !exists $wh->{body}, 'body() emits no body key' );
 
-    # create_simple_api_tool must no longer forward a body option to the wire.
-    my $dm = SignalWire::DataMap::create_simple_api_tool(
+    my $tool = SignalWire::DataMap::create_simple_api_tool(
         name              => 'search',
         url               => 'https://api.example.com/search',
         response_template => 'Found: ${response.title}',
         method            => 'POST',
         body              => { query => 'Q' },
     );
-    my $wh = $dm->to_swaig_function->{data_map}{webhooks}[0];
-    ok( !exists $wh->{body}, 'create_simple_api_tool emits no body key' );
-    is_deeply( [ sort keys %$wh ],
-        [qw(method output url)], 'webhook keys are exactly method/output/url' );
+    my $twh = $tool->to_swaig_function->{data_map}{webhooks}[0];
+    ok( !exists $twh->{body}, 'create_simple_api_tool emits no body key' );
+    is_deeply( $twh->{params}, { query => 'Q' }, 'create_simple_api_tool body -> params' );
+    is_deeply(
+        [ sort keys %$twh ],
+        [qw(method output params url)],
+        'webhook keys are method/output/params/url'
+    );
+
+    my $empty = SignalWire::DataMap::create_simple_api_tool(
+        name              => 'e',
+        url               => 'https://api.example.com/e',
+        response_template => 'x',
+        body              => {},
+    );
+    ok(
+        !exists $empty->to_swaig_function->{data_map}{webhooks}[0]{params},
+        'an empty body is not forwarded (python `if body:`)'
+    );
 };
 
 # =============================================

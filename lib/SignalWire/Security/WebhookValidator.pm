@@ -25,13 +25,13 @@ use strict;
 use warnings;
 
 use Carp         qw(croak);
-use Digest::SHA  qw(hmac_sha1 hmac_sha1_hex sha256_hex);
+use Digest::SHA  qw(hmac_sha1 hmac_sha1_hex hmac_sha256_hex sha256_hex);
 use MIME::Base64 qw(encode_base64);
 use Scalar::Util qw(blessed reftype);
 use URI          ();
 
 use Exporter qw(import);
-our @EXPORT_OK = qw(validate_webhook_signature validate_request);
+our @EXPORT_OK = qw(validate_webhook_signature validate_webhook_signature_sha256 validate_request);
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -40,6 +40,11 @@ our @EXPORT_OK = qw(validate_webhook_signature validate_request);
 sub _hex_hmac_sha1 {
     my ( $key, $message ) = @_;
     return hmac_sha1_hex( $message, $key );
+}
+
+sub _hex_hmac_sha256 {
+    my ( $key, $message ) = @_;
+    return hmac_sha256_hex( $message, $key );
 }
 
 sub _b64_hmac_sha1 {
@@ -307,6 +312,24 @@ sub validate_webhook_signature {
 #   - If it's a hashref or arrayref: treats it as pre-parsed form params
 #     and runs Scheme B directly (with URL port normalization).
 #   - Anything else (other ref types): croaks with a clear message.
+# validate_webhook_signature_sha256 -- the X-SignalWire-Sha256-Signature header:
+# Scheme A with SHA-256, hex(HMAC-SHA256(signing_key, url . raw_body)). Only
+# Scheme A is defined for this header; the cXML/form Scheme B stays on SHA-1.
+sub validate_webhook_signature_sha256 {
+    my ( $signing_key, $signature, $url, $raw_body ) = @_;
+    croak "signing_key is required"
+        unless defined $signing_key && length $signing_key;
+    croak "raw_body must be a string -- did you pass a parsed reference by mistake?"
+        if ref($raw_body);
+    return 0 unless defined $signature && length $signature;
+
+    $url      = '' unless defined $url;
+    $raw_body = '' unless defined $raw_body;
+
+    my $expected = _hex_hmac_sha256( $signing_key, $url . $raw_body );
+    return _safe_eq( $expected, $signature );
+}
+
 sub validate_request {
     my ( $signing_key, $signature, $url, $params_or_raw_body ) = @_;
     croak "signing_key is required"
@@ -392,7 +415,7 @@ requests.
 
 =head1 FUNCTIONS
 
-Both are exportable on request; neither is exported by default.
+All three are exportable on request; neither is exported by default.
 
 =over 4
 
@@ -409,6 +432,14 @@ When a Scheme B candidate matches and the URL carries a C<bodySHA256>
 query parameter, the body hash must B<also> match or the search continues.
 
 C<$url> and C<$raw_body> both default to the empty string when undef.
+
+=item C<validate_webhook_signature_sha256($signing_key, $signature, $url, $raw_body)>
+
+Validate the SHA-256 signature SignalWire sends in
+C<X-SignalWire-Sha256-Signature> alongside the SHA-1 one. Same Scheme A
+message with a stronger hash: C<hex(HMAC-SHA256(signing_key, url . raw_body))>
+(64 lowercase hex chars). Only Scheme A is defined for this header. Returns 1
+on match, 0 otherwise; the same error modes as C<validate_webhook_signature>.
 
 =item C<validate_request($signing_key, $signature, $url, $params_or_raw_body)>
 

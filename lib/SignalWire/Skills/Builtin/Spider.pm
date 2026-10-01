@@ -26,6 +26,10 @@ has '+skill_description' =>
     ( init_arg => undef, default => sub { 'Fast web scraping and crawling capabilities' } );
 has '+supports_multiple_instances' => ( init_arg => undef, default => sub { 1 } );
 
+# Reference defaults (skills/spider/skill.py _DEFAULTS).
+my $DEFAULT_USER_AGENT = 'Spider/1.0 (SignalWire AI Agent)';
+my $DEFAULT_TIMEOUT    = 5;
+
 # Honor SPIDER_BASE_URL env var. When set, the skill rewrites the
 # user-supplied URL onto the base — useful for the audit fixture
 # (audit_skills_dispatch.py) which serves a 127.0.0.1 endpoint that
@@ -51,15 +55,34 @@ has 'remove_xpaths' => (
     },
 );
 
-has '_http' => (
+# Python parity: SpiderSkill.session -- the HTTP session every fetch goes
+# through, a SignalWire::Utils::UrlValidator::PublicSession (the reference's
+# _PublicSession): it refuses requests, and redirects, to private or internal
+# addresses and pins each direct connection to a checked address. Carries the
+# `user_agent` param (default "Spider/1.0 (SignalWire AI Agent)") plus any
+# `headers` param, with the `timeout` param (default 5s).
+#
+# SPIDER_BASE_URL is an OPERATOR-configured base every fetch is rewritten onto
+# (the cross-port audit fixture serves one on 127.0.0.1), so with it set the
+# target is the operator's choice, not the caller's, and private addresses are
+# allowed.
+has 'session' => (
     init_arg => undef,
     is       => 'ro',
     lazy     => 1,
     default  => sub {
-        HTTP::Tiny->new(
-            agent      => 'SignalWire-Perl-Spider/1.0',
-            timeout    => 15,
-            verify_SSL => 1,
+        my ($self) = @_;
+        require SignalWire::Utils::UrlValidator::PublicSession;
+        my $params  = $self->params || {};
+        my %headers = ref $params->{headers} eq 'HASH' ? %{ $params->{headers} } : ();
+        my $agent   = $params->{user_agent} // $DEFAULT_USER_AGENT;
+        $headers{'User-Agent'} = $agent;
+        return SignalWire::Utils::UrlValidator::PublicSession->new(
+            agent           => $agent,
+            default_headers => \%headers,
+            timeout         => $params->{timeout} // $DEFAULT_TIMEOUT,
+            verify_SSL      => 1,
+            allow_private   => length( $self->base_url ) ? 1 : 0,
         );
     },
 );
@@ -139,7 +162,7 @@ sub register_tools {
 sub scrape_url {
     my ( $self, $url ) = @_;
     my $target = $self->_resolve_url($url);
-    my $resp   = $self->_http->get($target);
+    my $resp   = $self->session->get($target);
     unless ( $resp->{success} ) {
         return "Spider error: $resp->{status} $resp->{reason} ($target)";
     }
@@ -223,6 +246,8 @@ sub get_parameter_schema {
         timeout             => { type => 'integer' },
         max_pages           => { type => 'integer' },
         max_depth           => { type => 'integer' },
+        user_agent          => { type => 'string' },
+        headers             => { type => 'object' },
     };
 }
 
@@ -293,13 +318,32 @@ Instance setup hook; returns true.
 =item C<get_parameter_schema>
 
 Returns the configuration schema, adding C<delay>, C<concurrent_requests>,
-C<timeout>, C<max_pages>, and C<max_depth> over the base skill schema.
+C<timeout>, C<max_pages>, C<max_depth>, C<user_agent> and C<headers> over the
+base skill schema.
 
 =back
 
 =head1 ATTRIBUTES
 
-C<base_url> (from the C<SPIDER_BASE_URL> env var when set, else empty).
+=over
+
+=item C<session>
+
+The HTTP session every fetch goes through: a
+L<SignalWire::Utils::UrlValidator::PublicSession> (an L<HTTP::Tiny>) that
+refuses requests -- and redirects -- to private or internal addresses and pins
+each direct connection to a checked address. It sends the C<user_agent> param
+(default C<Spider/1.0 (SignalWire AI Agent)>) plus any C<headers> param, with
+the C<timeout> param (default 5 seconds). A refused fetch is reported as a
+C<599> response, so C<scrape_url> returns its error string.
+
+=item C<base_url>
+
+From the C<SPIDER_BASE_URL> env var when set, else empty. An operator-set base
+every fetch is rewritten onto; with it set the session allows private
+addresses, since the target is the operator's choice.
+
+=back
 
 =head1 SEE ALSO
 

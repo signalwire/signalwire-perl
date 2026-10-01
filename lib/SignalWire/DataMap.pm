@@ -200,6 +200,17 @@ sub params {
     return $self;
 }
 
+# Python parity: DataMap.body(data) -- the same as params(). The platform reads
+# a webhook's JSON body from its `params` field and has no `body` field, so this
+# sets `params`.
+sub body {
+    my ( $self, $data ) = @_;
+    die "Must add webhook before setting body"
+        unless @{ $self->_webhooks };
+    $self->_webhooks->[-1]{params} = $data;
+    return $self;
+}
+
 sub foreach {
     my ( $self, $config ) = @_;
     die "Must add webhook before setting foreach"
@@ -302,6 +313,11 @@ sub create_simple_api_tool {
     my $dm = SignalWire::DataMap->new( $opts{name} );
     _apply_parameters( $dm, $opts{parameters} );
     $dm->webhook( $opts{method} // 'GET', $opts{url}, headers => $opts{headers} );
+
+    # Python parity: `if body: data_map.params(body)` -- the platform sends
+    # `params` as the request body. Only a NON-EMPTY hash is forwarded.
+    $dm->params( $opts{body} )
+        if ref $opts{body} eq 'HASH' ? %{ $opts{body} } : $opts{body};
     $dm->error_keys( $opts{error_keys} ) if $opts{error_keys};
     $dm->output( SignalWire::SWAIG::FunctionResult->new( $opts{response_template} ) );
     return $dm;
@@ -424,6 +440,13 @@ C<input_args_as_params>, and C<require_args>.
 
 Attach an expressions list to the most recently added webhook (dies if none
 added).
+
+=item body($data)
+
+Set the JSON request body for the last added webhook -- the same as
+C<params($data)>. The platform reads a webhook's body from its C<params>
+field and has no C<body> field, so this sets C<params>. Dies when no webhook
+has been added yet.
 
 =item params($data)
 

@@ -214,6 +214,14 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Core::LoggingConfig' =>
         { module => 'signalwire.core.logging_config', class => undef },
 
+    # Post-prompt normalization + client capability reading: module-level free
+    # functions (FREE_FN) plus the NormalizedPostPrompt carrier class.
+    'SignalWire::Core::PostPrompt' => { module => 'signalwire.core.post_prompt', class => undef },
+    'SignalWire::Core::PostPrompt::NormalizedPostPrompt' =>
+        { module => 'signalwire.core.post_prompt', class => 'NormalizedPostPrompt' },
+    'SignalWire::Core::Capabilities' =>
+        { module => 'signalwire.core.capabilities', class => undef },
+
     # Standalone core helpers (cluster A)
     'SignalWire::Core::PomBuilder' =>
         { module => 'signalwire.core.pom_builder', class => 'PomBuilder' },
@@ -232,6 +240,12 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Core::Random'        => { module => 'signalwire.core.random', class => undef },
     'SignalWire::Utils'               => { module => 'signalwire.utils',       class => undef },
     'SignalWire::Utils::UrlValidator' =>
+        { module => 'signalwire.utils.url_validator', class => undef },
+
+    # The reference's PRIVATE url_validator._PublicSession (the session
+    # SpiderSkill.session holds). class => undef and NOT a free-function
+    # package, so -- like the private python class -- it emits zero surface.
+    'SignalWire::Utils::UrlValidator::PublicSession' =>
         { module => 'signalwire.utils.url_validator', class => undef },
 
     # Contexts (multiple classes in one .pm)
@@ -375,6 +389,19 @@ my %PACKAGE_TO_PY = (
     'SignalWire::AIChat::ChatResponse' =>
         { module => 'signalwire.ai_chat.client', class => 'ChatResponse' },
     'SignalWire::AIChat::ChatLog' => { module => 'signalwire.ai_chat.client', class => 'ChatLog' },
+
+    # AI Chat browser gateway + voice/text handoff (signalwire.ai_chat.gateway /
+    # .handoff). Perl file names mirror the python module names (Client.pm <->
+    # client.py), so ChatGateway lives in Gateway.pm and HandoffRouter in
+    # Handoff.pm; the carrier/exception classes get their own packages.
+    'SignalWire::AIChat::Gateway' =>
+        { module => 'signalwire.ai_chat.gateway', class => 'ChatGateway' },
+    'SignalWire::AIChat::GatewayRejection' =>
+        { module => 'signalwire.ai_chat.gateway', class => 'GatewayRejection' },
+    'SignalWire::AIChat::Handoff' =>
+        { module => 'signalwire.ai_chat.handoff', class => 'HandoffRouter' },
+    'SignalWire::AIChat::NonceEntry' =>
+        { module => 'signalwire.ai_chat.handoff', class => 'NonceEntry' },
 
     # RELAY client
     'SignalWire::Relay::Client'  => { module => 'signalwire.relay.client', class => 'RelayClient' },
@@ -859,6 +886,8 @@ my %AGENTBASE_METHOD_TO_PY = (
     },
     'on_summary' =>
         { module => 'signalwire.core.agent_base', class => 'AgentBase', method => 'on_summary' },
+    'on_call_end' =>
+        { module => 'signalwire.core.agent_base', class => 'AgentBase', method => 'on_call_end' },
     'on_debug_event' => {
         module => 'signalwire.core.agent_base',
         class  => 'AgentBase',
@@ -1166,6 +1195,13 @@ my %AGENTBASE_METHOD_TO_PY = (
         class  => 'WebMixin',
         method => 'manual_set_proxy_url'
     },
+    'add_per_call_config' => {
+        module => 'signalwire.core.mixins.web_mixin',
+        class  => 'WebMixin',
+        method => 'add_per_call_config'
+    },
+    'mount' =>
+        { module => 'signalwire.core.mixins.web_mixin', class => 'WebMixin', method => 'mount' },
     'set_dynamic_config_callback' => {
         module => 'signalwire.core.mixins.web_mixin',
         class  => 'WebMixin',
@@ -1612,6 +1648,7 @@ my %SKIP_SUB = map { $_ => 1 } qw(
 my %FREE_FN_PACKAGES = map { $_ => 1 } (
     'SignalWire',                                    'SignalWire::Contexts',
     'SignalWire::Core::Agent::Tools::TypeInference', 'SignalWire::Core::LoggingConfig',
+    'SignalWire::Core::PostPrompt',                  'SignalWire::Core::Capabilities',
     'SignalWire::REST::Namespaces::Resources',       'SignalWire::REST::Pagination',
     'SignalWire::REST::RequestOptions::Resolver',    'SignalWire::Security::SecurityUtils',
     'SignalWire::Security::WebhookMiddleware',       'SignalWire::Security::WebhookValidator',

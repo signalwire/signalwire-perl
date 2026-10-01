@@ -127,6 +127,29 @@ sub _resolve {
     return @ips ? \@ips : undef;
 }
 
+# True if $ip is an address a user-supplied URL must not reach: inside a
+# blocked network, the unspecified address (0.0.0.0 / ::, which connects to the
+# local host), or an IPv4-mapped IPv6 address carrying a blocked IPv4 address.
+# Python parity: url_validator._address_is_blocked.
+sub _address_is_blocked {
+    my ($ip) = @_;
+    return 0 unless defined $ip && length $ip;
+    my $bytes = _ip_to_bytes($ip);
+    return 0 unless defined $bytes;
+    if ( length($bytes) == 16 ) {
+        return 1 if $bytes eq ( "\0" x 16 );
+
+        # ::ffff:a.b.c.d reaches the IPv4 host, so check the address it carries.
+        if ( substr( $bytes, 0, 12 ) eq ( "\0" x 10 ) . "\xff\xff" ) {
+            $ip = _bytes_to_ipv4( substr( $bytes, 12, 4 ) );
+        }
+    }
+    for my $cidr (@BLOCKED_NETWORKS) {
+        return 1 if _cidr_contains( $cidr, $ip );
+    }
+    return 0;
+}
+
 sub _is_ip_literal {
     my ($s) = @_;
     return 1 if $s =~ /^\d{1,3}(\.\d{1,3}){3}$/;
