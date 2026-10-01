@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'DetectMachineConfig' (flattened SWMLMethod verb 'detect_machine' config).
+# Generated SWML verb config type 'DetectMachineConfig' ($defs schema 'DetectMachineConfig').
 package SignalWire::SWML::Generated::DetectMachineConfig;
 use strict;
 use warnings;

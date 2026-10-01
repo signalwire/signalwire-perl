@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'AiSidecarConfig' (flattened SWMLMethod verb 'ai_sidecar' config).
+# Generated SWML verb config type 'AiSidecarConfig' ($defs schema 'AiSidecarConfig').
 package SignalWire::SWML::Generated::AiSidecarConfig;
 use strict;
 use warnings;
@@ -11,17 +11,17 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'prompt'        => ( is => 'ro' );
-has 'lang'          => ( is => 'ro' );
-has 'model'         => ( is => 'ro' );
-has 'direction'     => ( is => 'ro' );
-has 'customer_role' => ( is => 'ro' );
-has 'url'           => ( is => 'ro' );
 has 'SWAIG'         => ( is => 'ro' );
-has 'permissions'   => ( is => 'ro' );
+has 'action'        => ( is => 'ro' );
+has 'customer_role' => ( is => 'ro' );
+has 'direction'     => ( is => 'ro' );
 has 'global_data'   => ( is => 'ro' );
 has 'hints'         => ( is => 'ro' );
+has 'lang'          => ( is => 'ro' );
+has 'model'         => ( is => 'ro' );
 has 'params'        => ( is => 'ro' );
-has 'action'        => ( is => 'ro' );
+has 'permissions'   => ( is => 'ro' );
+has 'prompt'        => ( is => 'ro' );
+has 'url'           => ( is => 'ro' );
 
 1;

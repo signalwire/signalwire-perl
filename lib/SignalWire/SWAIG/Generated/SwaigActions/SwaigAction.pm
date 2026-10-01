@@ -16,6 +16,7 @@ has 'add_dynamic_hints'            => ( is => 'ro' );
 has 'back_to_back_functions'       => ( is => 'ro' );
 has 'change_context'               => ( is => 'ro' );
 has 'change_step'                  => ( is => 'ro' );
+has 'change_voice'                 => ( is => 'ro' );
 has 'clear_dynamic_hints'          => ( is => 'ro' );
 has 'context_switch'               => ( is => 'ro' );
 has 'end_of_speech_timeout'        => ( is => 'ro' );

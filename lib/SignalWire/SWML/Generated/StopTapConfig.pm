@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'StopTapConfig' (flattened SWMLMethod verb 'stop_tap' config).
+# Generated SWML verb config type 'StopTapConfig' ($defs schema 'StopTapConfig').
 package SignalWire::SWML::Generated::StopTapConfig;
 use strict;
 use warnings;

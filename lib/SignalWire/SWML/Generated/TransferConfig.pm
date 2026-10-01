@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'TransferConfig' (flattened SWMLMethod verb 'transfer' config).
+# Generated SWML verb config type 'TransferConfig' ($defs schema 'TransferConfig').
 package SignalWire::SWML::Generated::TransferConfig;
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Moo;
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
 has 'dest'   => ( is => 'ro' );
-has 'params' => ( is => 'ro' );
 has 'meta'   => ( is => 'ro' );
+has 'params' => ( is => 'ro' );
 
 1;

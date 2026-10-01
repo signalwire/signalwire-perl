@@ -1035,6 +1035,9 @@ def _field_is_surface(field_schema: dict, defs: dict) -> bool:
 
 
 _SURFACE_FIELDS_CACHE: dict | None = None
+# The replay's field classifier (set by _surface_fields_by_class), exposed so the
+# selftest can drive the x-sdk-overlay hide with a synthetic field set.
+_SURFACE_FIELDS_CLASSIFIER: dict = {}
 
 
 def _surface_fields_by_class() -> dict:
@@ -1074,9 +1077,19 @@ def _surface_fields_by_class() -> dict:
                     out[k] = _field_is_surface(v, defs)
             return out
 
-        # 1. object $defs → data class
+        # The generator drops deprecated verbs and HOISTS every inline object
+        # into a named $def (AiConfig, AiParams, ...) before emitting; replay
+        # the exact same transform so the class/field map matches what was
+        # emitted.
+        defs = gen._prepare_defs(defs)
+        _SURFACE_FIELDS_CLASSIFIER["fn"] = _classify
+
+        # 1. object $defs → data class (the SWAIG envelope types are emitted by
+        #    the SWAIG generator, not here — same skip as the generator).
         for raw_name, node in defs.items():
             if not isinstance(node, dict) or not GR.is_object_schema(node):
+                continue
+            if gen._is_swaig_envelope(raw_name):
                 continue
             pl = GR.type_name(raw_name)
             result[pl] = _classify(node.get("properties") or {}, raw_name)
@@ -2842,24 +2855,32 @@ def augment_with_bareword_has(raw: dict) -> None:
 # _surface_fields_by_class). These lock the predicate against silent drift: a change that
 # makes it over- or under-count generated-payload surface fields (the "trims real API" or
 # "mirrors the oracle" failure modes the predicate exists to avoid) shifts these counts and
-# fails the selftest. AIParams is the richest generated payload; AIObject is a small
+# fails the selftest. AiParams is the richest generated payload; AiConfig is a small
 # cross-check.
 #
-# WIDENED with the predicate (porting-sdk e432177 re-drift): every declared payload field
-# is surface, so the only gap between total and surface is the x-sdk-overlay HIDE.
-# AIParams 92 raw → 87 surface, the 5 dropped being exactly the overlay-hidden
-# audible_debug / audible_latency / cache_mode / enable_accounting / verbose_logs — which
-# the generator never emits, and which are correspondingly absent from the 87 `has`
-# attributes in lib/SignalWire/SWML/Generated/AIParams.pm. 87 is also the reference's
-# AIParams member count at the pinned oracle, name for name. AIObject has no hidden field,
-# so 9 → 9. A nonzero AIParams gap is what keeps this anchor from being vacuous: it proves
-# the overlay hide still runs, which is now the predicate's ONLY discriminating step.
+# RE-ANCHORED for the engine-derived schema.json (porting-sdk bd22268): the ai verb's
+# config is carried INLINE and the generator hoists it into reference-named classes
+# (AiConfig / AiParams / ...), exactly as the python reference does. Every declared payload
+# field is surface, and the overlay-hidden ai params (audible_debug / audible_latency /
+# cache_mode / enable_accounting / verbose_logs) are now ABSENT from schema.json itself
+# (hidden = absent from every public spec), so total == surface for both anchors and both
+# equal the reference's member count at the pinned oracle (AiParams 183, AiConfig 15).
+# The overlay hide is still the predicate's only discriminating step; the selftest proves
+# it still runs by classifying a synthetic field set (see run_predicate_selftest), and
+# proves the hidden fields stay ABSENT from the replayed AiParams.
 _PREDICATE_ANCHORS = {
-    "AIParams": (92, 87),  # (total fields, surface fields) — 5 overlay-hidden
-    "AIObject": (9, 9),  # no overlay-hidden field
+    "AiParams": (183, 183),  # (total fields, surface fields)
+    "AiConfig": (15, 15),
 }
 _PREDICATE_MIN_CLASSES = (
-    100  # 155 today; a big drop = the replay broke → vacuous predicate
+    150  # 187 today; a big drop = the replay broke → vacuous predicate
+)
+_OVERLAY_HIDDEN_AI_PARAMS = (
+    "audible_debug",
+    "audible_latency",
+    "cache_mode",
+    "enable_accounting",
+    "verbose_logs",
 )
 
 
@@ -2898,38 +2919,61 @@ def run_predicate_selftest() -> int:
                 file=sys.stderr,
             )
             ok = False
-    # Fail-CLOSED toward VISIBILITY. The predicate now admits every declared field,
-    # so a field can only be dropped by the x-sdk-overlay HIDE the caller applies —
-    # which makes that hide the one and only discriminating step, and therefore the
-    # one thing this self-test must prove still runs. Two directions, both required:
+    # Fail-CLOSED toward VISIBILITY. The predicate admits every declared field, so a
+    # field can only be dropped by the x-sdk-overlay HIDE the caller applies — the one
+    # discriminating step, and therefore the one thing this self-test must prove still
+    # runs. Three checks, all required:
     #
-    #   (a) it still DROPS — the 5 overlay-hidden AIParams fields must be classified
-    #       non-surface. If the overlay lookup silently started returning False for
-    #       everything, this predicate would degenerate into "keep literally
-    #       everything" and would INVENT 5 members the generator never emits.
-    #   (b) it still KEEPS a primitive — the widening's whole point. A bare-`string`
-    #       field (post_prompt_url) and a bare-`object` field (global_data) must both
-    #       be surface. A regression to the old $ref rule reds here immediately.
+    #   (a) it still DROPS — a synthetic field set scoped to the overlay's AIParams
+    #       scope must classify the hidden key non-surface (if the overlay lookup
+    #       silently returned False for everything, the predicate would degenerate into
+    #       "keep everything" and invent members the generator never emits);
+    #   (b) the hidden ai params stay ABSENT from the replayed AiParams (hidden means
+    #       absent from every public spec — schema.json no longer carries them);
+    #   (c) it still KEEPS primitives — bare-string (ai_name, post_prompt_url) and
+    #       bare-object (global_data) payload fields must be surface.
     #
     # These are explicit checks, not `assert`s: `python3 -O` strips assert statements
     # entirely, so an assert-based check would silently vanish and the gate would
     # print PASS having verified nothing.
+    classify = _SURFACE_FIELDS_CLASSIFIER.get("fn")
+    if classify is None:
+        print(
+            "[predicate-selftest] FAIL: the replay exposed no field classifier — the "
+            "overlay hide cannot be checked.",
+            file=sys.stderr,
+        )
+        ok = False
+    else:
+        synth = classify(
+            {"cache_mode": {"type": "boolean"}, "ai_name": {"type": "string"}},
+            "AIParams",
+        )
+        if synth.get("cache_mode") is not False or synth.get("ai_name") is not True:
+            print(
+                f"[predicate-selftest] FAIL: x-sdk-overlay hide is broken: synthetic "
+                f"AIParams classification {synth!r}, expected cache_mode=False, "
+                f"ai_name=True.",
+                file=sys.stderr,
+            )
+            ok = False
+    leaked = [k for k in _OVERLAY_HIDDEN_AI_PARAMS if k in (sf.get("AiParams") or {})]
+    if leaked:
+        print(
+            f"[predicate-selftest] FAIL: overlay-hidden ai params {leaked} present in the "
+            f"replayed AiParams — hidden fields must be absent from the public schema.",
+            file=sys.stderr,
+        )
+        ok = False
     for cls, key, want, label in (
+        ("AiParams", "ai_name", True, "bare-string payload field -> surface"),
+        ("AiConfig", "post_prompt_url", True, "bare-string payload field -> surface"),
+        ("AiConfig", "global_data", True, "bare-object payload field -> surface"),
         (
-            "AIParams",
-            "verbose_logs",
-            False,
-            "x-sdk-overlay hidden field -> NOT surface",
-        ),
-        ("AIParams", "cache_mode", False, "x-sdk-overlay hidden field -> NOT surface"),
-        ("AIParams", "ai_name", True, "bare-string payload field -> surface"),
-        ("AIObject", "post_prompt_url", True, "bare-string payload field -> surface"),
-        ("AIObject", "global_data", True, "bare-object payload field -> surface"),
-        (
-            "AIParams",
+            "AiParams",
             "acknowledge_interruptions",
             True,
-            "$ref-carrying payload field -> surface",
+            "payload field -> surface",
         ),
     ):
         fields = sf.get(cls) or {}
@@ -2952,7 +2996,7 @@ def run_predicate_selftest() -> int:
     if ok:
         print(
             "[predicate-selftest] PASS: field-surface predicate at locked anchors "
-            f"(AIParams 92/87, AIObject 9/9, {len(sf)} classes) + overlay-hide "
+            f"(AiParams 183/183, AiConfig 15/15, {len(sf)} classes) + overlay-hide "
             "discrimination intact."
         )
         return 0
@@ -2967,7 +3011,7 @@ def main() -> int:
         "--selftest",
         action="store_true",
         help="GATE-SELFTEST: assert the field-surface predicate holds its "
-        "locked anchor counts (AIParams 92/60, AIObject 9/7). Exit 0 = intact.",
+        "locked anchor counts (AiParams 183/183, AiConfig 15/15). Exit 0 = intact.",
     )
     args = parser.parse_args()
 

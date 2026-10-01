@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'RequestConfig' (flattened SWMLMethod verb 'request' config).
+# Generated SWML verb config type 'RequestConfig' ($defs schema 'RequestConfig').
 package SignalWire::SWML::Generated::RequestConfig;
 use strict;
 use warnings;
@@ -11,12 +11,12 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'url'             => ( is => 'ro' );
-has 'method'          => ( is => 'ro' );
-has 'headers'         => ( is => 'ro' );
 has 'body'            => ( is => 'ro' );
-has 'timeout'         => ( is => 'ro' );
 has 'connect_timeout' => ( is => 'ro' );
+has 'headers'         => ( is => 'ro' );
+has 'method'          => ( is => 'ro' );
 has 'save_variables'  => ( is => 'ro' );
+has 'timeout'         => ( is => 'ro' );
+has 'url'             => ( is => 'ro' );
 
 1;

@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'TapConfig' (flattened SWMLMethod verb 'tap' config).
+# Generated SWML verb config type 'TapConfig' ($defs schema 'TapConfig').
 package SignalWire::SWML::Generated::TapConfig;
 use strict;
 use warnings;
@@ -11,11 +11,11 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'uri'        => ( is => 'ro' );
+has 'codec'      => ( is => 'ro' );
 has 'control_id' => ( is => 'ro' );
 has 'direction'  => ( is => 'ro' );
-has 'codec'      => ( is => 'ro' );
 has 'rtp_ptime'  => ( is => 'ro' );
 has 'status_url' => ( is => 'ro' );
+has 'uri'        => ( is => 'ro' );
 
 1;

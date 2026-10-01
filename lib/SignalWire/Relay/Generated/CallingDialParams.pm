@@ -15,6 +15,7 @@ has 'devices'              => ( is => 'ro' );
 has 'max_price_per_minute' => ( is => 'ro' );
 has 'node_id'              => ( is => 'ro' );
 has 'region'               => ( is => 'ro' );
+has 'send_digits'          => ( is => 'ro' );
 has 'tag'                  => ( is => 'ro' );
 
 1;
