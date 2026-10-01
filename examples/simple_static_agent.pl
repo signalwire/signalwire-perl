@@ -30,35 +30,39 @@ my $agent = SignalWire::Agent::AgentBase->new(
 # STATIC CONFIGURATION - Set once during initialization
 
 # Voice and language
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
 
 # AI parameters
-$agent->set_params({
-    ai_model               => 'gpt-4.1-nano',
-    end_of_speech_timeout   => 500,
-    attention_timeout       => 15000,
-    background_file_volume  => -20,
-});
+$agent->set_params(
+    {
+        ai_model               => 'gpt-4.1-nano',
+        end_of_speech_timeout  => 500,
+        attention_timeout      => 15000,
+        background_file_volume => -20,
+    }
+);
 
 # Hints for speech recognition
-$agent->add_hints('SignalWire', 'SWML', 'API', 'webhook', 'SIP');
+$agent->add_hints( 'SignalWire', 'SWML', 'API', 'webhook', 'SIP' );
 
 # Global data (same for every call)
-$agent->set_global_data({
-    agent_type       => 'customer_service',
-    service_level    => 'standard',
-    features_enabled => ['basic_conversation', 'help_desk'],
-    session_info     => {
-        environment => 'production',
-        version     => '1.0',
-    },
-});
+$agent->set_global_data(
+    {
+        agent_type       => 'customer_service',
+        service_level    => 'standard',
+        features_enabled => [ 'basic_conversation', 'help_desk' ],
+        session_info     => {
+            environment => 'production',
+            version     => '1.0',
+        },
+    }
+);
 
 # Prompt sections
 $agent->prompt_add_section(
     'Role and Purpose',
     'You are a professional customer service representative. Your goal is to help '
-    . 'customers with their questions and provide excellent service.',
+        . 'customers with their questions and provide excellent service.',
 );
 
 $agent->prompt_add_section(

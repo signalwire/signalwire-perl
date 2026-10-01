@@ -12,18 +12,21 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::RelayRest::Address: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'id'             => ( is => 'ro' );
-has 'label'          => ( is => 'ro' );
-has 'country'        => ( is => 'ro' );
-has 'first_name'     => ( is => 'ro' );
-has 'last_name'      => ( is => 'ro' );
-has 'street_number'  => ( is => 'ro' );
-has 'street_name'    => ( is => 'ro' );
-has 'address_type'   => ( is => 'ro' );
-has 'address_number' => ( is => 'ro' );
-has 'city'           => ( is => 'ro' );
-has 'state'          => ( is => 'ro' );
-has 'postal_code'    => ( is => 'ro' );
-has 'zip_code'       => ( is => 'ro' );
+has 'id'                => ( is => 'ro' );
+has 'label'             => ( is => 'ro' );
+has 'country'           => ( is => 'ro' );
+has 'first_name'        => ( is => 'ro' );
+has 'last_name'         => ( is => 'ro' );
+has 'street_number'     => ( is => 'ro' );
+has 'street_name'       => ( is => 'ro' );
+has 'address_type'      => ( is => 'ro' );
+has 'address_number'    => ( is => 'ro' );
+has 'city'              => ( is => 'ro' );
+has 'state'             => ( is => 'ro' );
+has 'postal_code'       => ( is => 'ro' );
+has 'zip_code'          => ( is => 'ro' );
+has 'emergency_enabled' => ( is => 'ro' );
+has 'validated'         => ( is => 'ro' );
+has 'validated_at'      => ( is => 'ro' );
 
 1;

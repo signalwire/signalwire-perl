@@ -30,10 +30,14 @@ use SignalWire::REST::Namespaces::Generated::FabricNamespace     ();
 use SignalWire::REST::Namespaces::Generated::VideoNamespace      ();
 use SignalWire::REST::Namespaces::Generated::DatasphereNamespace ();
 use SignalWire::REST::Namespaces::Generated::LogsNamespace       ();
+use SignalWire::REST::Namespaces::Generated::WhatsappNamespace   ();
 use SignalWire::REST::Namespaces::Generated::ProjectNamespace    ();
+use SignalWire::REST::Namespaces::Generated::SpaceNamespace      ();
 
-# The consumer (the hand RestClient) must provide `_http`.
+# The consumer (the hand RestClient) must provide `_http` (the project-token
+# client) and `_pat_http` (the Personal Access Token client).
 requires '_http';
+requires '_pat_http';
 
 has 'addresses'        => ( is => 'lazy', init_arg => undef );
 has 'imported_numbers' => ( is => 'lazy', init_arg => undef );
@@ -56,7 +60,9 @@ has 'fabric'           => ( is => 'lazy', init_arg => undef );
 has 'video'            => ( is => 'lazy', init_arg => undef );
 has 'datasphere'       => ( is => 'lazy', init_arg => undef );
 has 'logs'             => ( is => 'lazy', init_arg => undef );
+has 'whatsapp'         => ( is => 'lazy', init_arg => undef );
 has 'project'          => ( is => 'lazy', init_arg => undef );
+has 'space'            => ( is => 'lazy', init_arg => undef );
 
 sub _build_addresses {
     my ($self) = @_;
@@ -164,9 +170,20 @@ sub _build_logs {
     return SignalWire::REST::Namespaces::Generated::LogsNamespace->new( _http => $self->_http );
 }
 
+sub _build_whatsapp {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Generated::WhatsappNamespace->new( _http => $self->_http );
+}
+
 sub _build_project {
     my ($self) = @_;
     return SignalWire::REST::Namespaces::Generated::ProjectNamespace->new( _http => $self->_http );
+}
+
+sub _build_space {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Generated::SpaceNamespace->new(
+        _http => $self->_pat_http );
 }
 
 1;

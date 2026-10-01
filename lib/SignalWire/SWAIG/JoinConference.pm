@@ -197,7 +197,7 @@ C<recording_status_callback_method>).
 =back
 
 C<join_conference> validates each inline and dies on anything outside the
-set, reproducing the Python reference's exact C<ValueError> messages
+set, naming the offending parameter and the values it accepts
 (e.g. C<beep must be one of ['true', 'false', 'onEnter', 'onExit']>). This
 module hoists those literal sets into a single source of truth so the
 accepted values are discoverable and autocompletable. The constants B<are>

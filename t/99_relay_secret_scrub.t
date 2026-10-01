@@ -13,11 +13,12 @@ use SignalWire::Relay::Client;
 
 # ---- _scrub_frame masks the credential values, preserves structure ----
 subtest '_scrub_frame masks credential + authorization_state values' => sub {
-    my $frame = join '', (
+    my $frame = join '',
+        (
         '{"jsonrpc":"2.0","method":"signalwire.connect","params":',
         '{"authentication":{"project":"PJ-TESTLEAK","token":"PT-TESTLEAK"},',
         '"authorization_state":"AENC-TESTLEAK","jwt_token":"JWT-TESTLEAK"},"id":"1"}'
-    );
+        );
     my $out = SignalWire::Relay::Client::_scrub_frame($frame);
 
     unlike( $out, qr/PJ-TESTLEAK/,   'project value masked' );
@@ -26,6 +27,7 @@ subtest '_scrub_frame masks credential + authorization_state values' => sub {
     unlike( $out, qr/JWT-TESTLEAK/,  'jwt_token value masked' );
 
     like( $out, qr/"\*\*\*"/, 'masked values become "***"' );
+
     # Structure / non-credential content survives so the frame stays diagnostic.
     like( $out, qr/signalwire\.connect/, 'method preserved' );
     like( $out, qr/"id":"1"/,            'id preserved' );

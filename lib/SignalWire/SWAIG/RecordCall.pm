@@ -124,7 +124,7 @@ SignalWire::SWAIG::RecordCall - typed closed sets for FunctionResult->record_cal
 
     # Membership / iteration helpers:
     SignalWire::SWAIG::RecordCall->is_format('mp3');     # 1
-    SignalWire::SWAIG::RecordCall->is_direction('hear'); # 0 (that's tap's word)
+    SignalWire::SWAIG::RecordCall->is_direction('hear'); # 0 (not a direction)
     @{ SignalWire::SWAIG::RecordCall->formats };         # ('wav','mp3','mp4')
 
 =head1 DESCRIPTION
@@ -152,9 +152,7 @@ C<< format => ... >> / C<< direction => ... >> strings.
 
 The record C<direction> here is the write-side record-channel selector.
 It is unrelated to the read-only inbound/outbound C<direction> field on
-Relay message events, and it uses C<listen> where
-L<SignalWire::SWAIG::Tap> uses C<hear> — the two vocabularies must never
-be unified.
+Relay message events.
 
 =head1 CONSTANTS
 

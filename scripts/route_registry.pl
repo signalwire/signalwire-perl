@@ -75,10 +75,13 @@ our %SUGAR = map { $_ => 1 } qw(
 # ProjectNamespace container (the raw project-id credential lives on the private
 # `_project_id` slot); `projects` (plural) is the flat /api/projects full-CRUD
 # resource — distinct from the singular `project` token namespace.
+# `space` (the Space Administration API) is wired to the Personal Access Token
+# client; the recorder is injected into that slot too.
 our @NAMESPACES = qw(
     fabric calling phone_numbers addresses queues recordings number_groups
     verified_callers sip_profile lookup short_codes imported_numbers mfa
     registry datasphere video logs messages project projects pubsub chat
+    whatsapp space
 );
 
 # ---- recording HTTP client -------------------------------------------------
@@ -107,6 +110,17 @@ our @NAMESPACES = qw(
 
     # Verb wrappers the Base resource calls (mirror the real HttpClient API).
     sub get {
+        my ( $self, $path ) = @_;
+        return $self->_record( 'GET', $path );
+    }
+
+    # A non-JSON success (text/csv) and a success that IS a redirect are both GETs.
+    sub get_text {
+        my ( $self, $path ) = @_;
+        return $self->_record( 'GET', $path );
+    }
+
+    sub get_redirect_location {
         my ( $self, $path ) = @_;
         return $self->_record( 'GET', $path );
     }
@@ -247,7 +261,8 @@ sub walk {
     # Seeding the lazy slot directly is the same seam the reference and ruby
     # use — python monkeypatches `client_mod.HttpClient`, ruby sets `@http`
     # post-hoc — and it keeps the narrow construction surface intact.
-    $client->{_http} = $http;
+    $client->{_http}     = $http;
+    $client->{_pat_http} = $http;
 
     my @skipped;
     my @errors;

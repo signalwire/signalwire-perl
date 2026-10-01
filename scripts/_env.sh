@@ -36,14 +36,61 @@ _ENV_SH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$_ENV_SH_DIR")"
 export REPO_ROOT
 
+# ---------------------------------------------------------------------------
+# SW_PERL — the ONE interpreter every gate must use, and PERL5LIB's separator
+# ---------------------------------------------------------------------------
+# On a Windows runner, three Perls are typically in play at once and mixing them
+# is fatal (nightly Multi-OS run 30238072907):
+#   1. the one `actions-setup-perl` installed and set PERL5LIB for
+#      (C:\hostedtoolcache\windows\perl\5.38.5-thr\x64) — the one we WANT;
+#   2. Strawberry's (C:\Strawberry\perl\bin) — ships with the runner image;
+#   3. an MSYS/Git-for-Windows core_perl (/usr/share/perl5/core_perl) — comes
+#      with the `shell: bash` (C:\Program Files\Git\bin\bash.EXE) the step runs in.
+# The step ran Strawberry's `prove`, which then resolved App::Prove out of the
+# MSYS core_perl and died: "Can't locate TAP/Harness/Env.pm in @INC". A `prove`
+# from one install loading modules from another CANNOT work. Resolving the
+# interpreter (not the script) and running the harness THROUGH it makes the
+# interpreter and its @INC the same install by construction.
+#
+# Picking the interpreter is itself PATH-order-sensitive, and "first perl on PATH"
+# is NOT good enough: under `shell: bash` (Git-for-Windows) the MSYS /usr/bin is
+# injected AHEAD of what actions-setup-perl prepended to the Windows PATH, so
+# `command -v perl` returns MSYS's /usr/bin/perl — install #3, the very one whose
+# @INC lacks TAP::Harness::Env. (Measured: run 30239532589 failed with
+# "ERROR: /usr/bin/perl cannot load App::Prove" after the first fix landed.)
+#
+# So SELECT ON EVIDENCE, not on PATH position: among the candidate interpreters,
+# take the first that can actually load App::Prove. An explicit SW_PERL override
+# always wins and is never second-guessed.
+#
+# Callers must invoke "$SW_PERL", never a bare `prove`/`perltidy`/`perlcritic`
+# whose own shebang picks a DIFFERENT perl than the one we resolved.
+if [ -z "${SW_PERL:-}" ]; then
+    SW_PERL="$(bash "$_ENV_SH_DIR/_pick_perl.sh" 2>/dev/null)"
+    [ -n "$SW_PERL" ] || SW_PERL=perl
+fi
+export SW_PERL
+
+# PERL5LIB's separator is PLATFORM-DEPENDENT: ':' on POSIX, ';' on Win32 (where
+# paths carry drive letters, so ':' cannot be a separator). Hardcoding ':' here
+# corrupted the Windows value — perl split `D:\a\...\perl5;D:\a\...` on ':' and
+# @INC came out as the entries `D`, `\a\...\perl5;D`, `\a\...`: every ':' eaten,
+# still ';'-joined, not one usable directory among them. Ask the interpreter we
+# actually resolved (never assume), and fall back to ':' only if that fails.
+SW_PATH_SEP="$("$SW_PERL" -MConfig -e 'print $Config{path_sep}' 2>/dev/null)"
+[ -n "$SW_PATH_SEP" ] || SW_PATH_SEP=':'
+export SW_PATH_SEP
+
 # The local::lib root — override with PERL_LOCAL_LIB_ROOT, else ~/perl5.
 PERL_LL_ROOT="${PERL_LOCAL_LIB_ROOT:-$HOME/perl5}"
 
 # --- PERL5LIB: so the perltidy/perlcritic wrappers (and the test suite, and the
 #     generators' perltidy backstop) can locate Perl::Tidy / Perl::Critic / the
-#     runtime deps. Prepend, preserving any existing PERL5LIB. -----------------
+#     runtime deps. Prepend with the PLATFORM separator, preserving any existing
+#     PERL5LIB (on Windows that is the ';'-joined value setup-perl exported —
+#     splitting or re-joining it on ':' destroys it). ---------------------------
 if [ -d "$PERL_LL_ROOT/lib/perl5" ]; then
-    export PERL5LIB="$PERL_LL_ROOT/lib/perl5${PERL5LIB:+:$PERL5LIB}"
+    export PERL5LIB="$PERL_LL_ROOT/lib/perl5${PERL5LIB:+$SW_PATH_SEP$PERL5LIB}"
 fi
 
 # --- PATH: so `perltidy` / `perlcritic` resolve by bare name. ----------------
@@ -84,11 +131,88 @@ _sw_ensure_perl_tools() {
         echo "         cpanm --local-lib=$PERL_LL_ROOT --with-develop --installdeps $REPO_ROOT" >&2
         return 1
     }
-    # Re-expose the now-populated local::lib.
-    [ -d "$PERL_LL_ROOT/lib/perl5" ] && export PERL5LIB="$PERL_LL_ROOT/lib/perl5${PERL5LIB:+:$PERL5LIB}"
+    # Re-expose the now-populated local::lib (platform separator, as above).
+    [ -d "$PERL_LL_ROOT/lib/perl5" ] && export PERL5LIB="$PERL_LL_ROOT/lib/perl5${PERL5LIB:+$SW_PATH_SEP$PERL5LIB}"
     [ -d "$PERL_LL_ROOT/bin" ] && export PATH="$PERL_LL_ROOT/bin:$PATH"
     [ -x "$PERL_LL_ROOT/bin/perltidy" ] && export PERLTIDY="$PERL_LL_ROOT/bin/perltidy"
     return 0
+}
+
+# ---------------------------------------------------------------------------
+# PINNED dev-tool versions — the gates' verdicts must not change with the calendar
+# ---------------------------------------------------------------------------
+# The cpanfile pins Perl::Tidy and Perl::Critic EXACT (`== VERSION`), because both
+# tools change their findings between releases: Perl::Tidy shifts vertical-
+# alignment heuristics, Perl::Critic adds and tightens policies. CI runs
+# `cpanm --with-develop --installdeps .` on a fresh box, so it resolves whatever
+# the cpanfile allows; a contributor runs whatever their ~/perl5 got months ago.
+#
+# The cpanfile alone is NOT enough to make local == CI: a local::lib populated
+# BEFORE a pin was tightened keeps the old version indefinitely (cpanm does not
+# downgrade or re-resolve an already-satisfied dep), so the pin can be correct in
+# the manifest and violated on disk. These assertions close that gap by checking
+# what is actually LOADED, mirroring how signalwire-cpp asserts clang-format 18.
+#
+# Keep in lockstep with the cpanfile's `on 'develop'` block.
+SW_PERLTIDY_VERSION="20260705"
+SW_PERLCRITIC_VERSION="1.156"
+export SW_PERLTIDY_VERSION SW_PERLCRITIC_VERSION
+
+# _sw_assert_module_version <Module::Name> <wanted> — compare the INSTALLED
+# module's $VERSION (via the resolved interpreter, so it is the same @INC the
+# gates use) against the cpanfile pin. Fails loud on a mismatch;
+# SW_ALLOW_TOOL_VERSION_DRIFT=1 downgrades to a warning for a deliberate bump run.
+_sw_assert_module_version() {
+    local module="$1" wanted="$2" have
+    have="$("$SW_PERL" -M"$module" -e "print \$${module}::VERSION" 2>/dev/null)"
+    if [ "$have" = "$wanted" ]; then
+        return 0
+    fi
+    if [ "${SW_ALLOW_TOOL_VERSION_DRIFT:-0}" = "1" ]; then
+        echo "WARNING: $module is '${have:-unknown}', not the pinned $wanted (drift allowed)." >&2
+        return 0
+    fi
+    echo "ERROR: $module is version '${have:-unknown}', not the pinned $wanted." >&2
+    echo "       The cpanfile pins it EXACT so this gate's verdict depends on the" >&2
+    echo "       SOURCE, not on when the tool was installed. A different version" >&2
+    echo "       here means local and CI disagree about what passes." >&2
+    echo "       Install the pin:" >&2
+    echo "         cpanm --local-lib=\"$PERL_LL_ROOT\" $module@$wanted" >&2
+    echo "       Or set SW_ALLOW_TOOL_VERSION_DRIFT=1 for a deliberate bump run" >&2
+    echo "       (then update the cpanfile + scripts/_env.sh together and land the" >&2
+    echo "       resulting reformat/fixes in the same commit)." >&2
+    return 1
+}
+
+# ---------------------------------------------------------------------------
+# Running a Perl-shipped CLI tool through the RESOLVED interpreter
+# ---------------------------------------------------------------------------
+# `prove`, `perltidy` and `perlcritic` are all Perl SCRIPTS with a shebang. Two
+# ways that betrays us:
+#   * PATH order picks a script belonging to a DIFFERENT perl install than
+#     $SW_PERL (the Windows failure above: Strawberry's prove, MSYS's App::Prove);
+#   * even with an absolute path, the shebang (`#!/usr/bin/perl`) re-launches
+#     SYSTEM perl, whose @INC lacks the local::lib — which is why a full path to
+#     ~/perl5/bin/perltidy still died with "Can't locate Perl/Tidy.pm" (see the
+#     BUG note at the top of this file).
+# Both vanish if we run the tool's MODULE through $SW_PERL: one interpreter, its
+# own @INC, no shebang and no PATH lookup in the loop.
+#
+#   _sw_perl_tool <Module::Name> <entry-perl-code> [args...]
+#
+# `App::Prove`'s documented programmatic entry point is
+# `App::Prove->new->process_args(@ARGV)->run`; perltidy/perlcritic keep using
+# their wrappers (they are found via PATH but now under the corrected PERL5LIB).
+_sw_perl_tool() {
+    local module="$1" entry="$2"
+    shift 2
+    "$SW_PERL" "-M$module" -e "$entry" -- "$@"
+}
+
+# True when $SW_PERL can load the named module — use to fail LOUD with a real
+# diagnostic instead of letting a tool die with a confusing @INC dump.
+_sw_perl_has_module() {
+    "$SW_PERL" "-M$1" -e1 >/dev/null 2>&1
 }
 
 # The set of Perl source files the FMT + LINT gates police: every module under
@@ -102,7 +226,16 @@ _sw_ensure_perl_tools() {
 # in-generator backstop, so LINT must keep covering the generated tree.
 _sw_perl_source_files() {
     _sw_perl_hand_source_files
+    _sw_perl_generated_source_files
+}
+
+# The GENERATED Perl trees: the ~1107 .pm under lib/**/Generated/ and the 14
+# generated REST wire-test files under t/rest/generated/. LINT adds these back
+# (perlcritic has no in-generator backstop, so it must keep covering them); FMT
+# does NOT — see the FMT rationale below.
+_sw_perl_generated_source_files() {
     find lib -type f -name '*.pm' -path '*/Generated/*'
+    find t/rest/generated -type f -name '*.t' 2>/dev/null
 }
 
 # The HAND-WRITTEN subset only — the generated .pm under lib/**/Generated/ are
@@ -119,13 +252,46 @@ _sw_perl_source_files() {
 # no longer match disk). The FMT gate therefore polices only the hand-written
 # tree, where perltidy is the only backstop. (LINT still covers everything via
 # _sw_perl_source_files above — perlcritic has no generator backstop.)
+# WHOLE-TREE SCOPE (widened 2026-07-30). Owner ruling: "all the full directories
+# should be linted and formatted including tests examples and all ... at the
+# levels the shipping code gets, examples and tests are shipping code too."
+#
+# Before that ruling this function named SEVEN files by hand (three of bin/, four
+# of scripts/), so t/ (165 files), examples/ + rest/examples/ + relay/examples/
+# (71 files), and 12 of the 15 bin/ programs were policed by NOTHING. Nowhere in
+# this file, .perlcriticrc, run-lint.sh or run-format.sh recorded WHY — it was an
+# unstated carve-out, which is worse than an explicit one because the decision
+# was never written down and so could never be reviewed.
+#
+# There is now ONE bar and it covers every hand-written Perl file in the repo:
+# lib/ (minus the generated tree, which _sw_perl_source_files adds back for
+# LINT), bin/, scripts/, t/, and the three example trees. Both gates read this
+# one list, so FMT and LINT can never drift apart. The 165 perlcritic findings
+# the widening exposed were burned to zero BEFORE the scope landed, so the gate
+# has never been red.
+#
+# Anything genuinely NOT ours (vendored/third-party) would be excluded here with
+# a stated reason; there is no such tree in this repo today.
 _sw_perl_hand_source_files() {
     find lib -type f -name '*.pm' -not -path '*/Generated/*'
-    echo bin/emit-corpus.pl
-    echo bin/emit-skills.pl
-    echo bin/swaig-test
-    echo scripts/enumerate_surface.pl
-    echo scripts/signature_dump.pl
-    echo scripts/route_registry.pl
-    echo scripts/rest_test_plan.pl
+    # Every hand-written Perl program under bin/ and scripts/. `find` rather than
+    # a hand list so a NEW program is covered the day it lands instead of
+    # silently escaping both gates (which is exactly how the seven-file list
+    # above went stale).
+    find bin -type f \( -name '*.pl' -o -name '*.pm' -o -name 'swaig-test' \)
+    find scripts -type f \( -name '*.pl' -o -name '*.pm' \)
+    # The test tree (.t test files + t/lib harness modules) and the runnable
+    # example trees. Tests and examples ARE shipping code per the owner ruling.
+    #
+    # t/rest/generated/ is EXCLUDED here for exactly the reason lib/**/Generated/
+    # is (see the _sw_perl_hand_source_files rationale above): these 14 .t files
+    # are emitted by scripts/generate_rest_tests.py and the GEN-FRESH-TESTS gate
+    # byte-compares them against a fresh regen. Unlike the four .pm generators,
+    # generate_rest_tests.py does NOT run the perltidy backstop, so its raw emit
+    # is not tidy — running perltidy -b over it makes the tree either GEN-FRESH
+    # or format-clean but never both, and GEN-FRESH-TESTS goes red. (Caught live:
+    # the first cut of this widening swept them in and reded that gate.)
+    # LINT still covers them via _sw_perl_source_files; only FMT skips them.
+    find t -type f \( -name '*.t' -o -name '*.pm' -o -name '*.pl' \) -not -path 't/rest/generated/*'
+    find examples rest relay -type f \( -name '*.pl' -o -name '*.pm' \) 2>/dev/null
 }

@@ -12,15 +12,16 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Fabric::Webhook: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'expressions'          => ( is => 'ro' );
 has 'error_keys'           => ( is => 'ro' );
-has 'url'                  => ( is => 'ro' );
+has 'expressions'          => ( is => 'ro' );
 has 'foreach'              => ( is => 'ro' );
+has 'form_param'           => ( is => 'ro' );
 has 'headers'              => ( is => 'ro' );
-has 'method'               => ( is => 'ro' );
 has 'input_args_as_params' => ( is => 'ro' );
+has 'method'               => ( is => 'ro' );
+has 'output'               => ( is => 'ro' );
 has 'params'               => ( is => 'ro' );
 has 'require_args'         => ( is => 'ro' );
-has 'output'               => ( is => 'ro' );
+has 'url'                  => ( is => 'ro' );
 
 1;

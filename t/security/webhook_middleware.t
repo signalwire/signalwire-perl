@@ -18,10 +18,10 @@ use Test::More;
 use Test::Exception;
 use Plack::Test;
 use HTTP::Request::Common qw(POST);
-use HTTP::Headers ();
-use HTTP::Request ();
-use Digest::SHA qw(hmac_sha1 hmac_sha1_hex);
-use MIME::Base64 qw(encode_base64);
+use HTTP::Headers         ();
+use HTTP::Request         ();
+use Digest::SHA           qw(hmac_sha1 hmac_sha1_hex);
+use MIME::Base64          qw(encode_base64);
 
 use SignalWire::Security::WebhookMiddleware;
 
@@ -33,28 +33,28 @@ sub make_recorder_app {
     return sub {
         my $env = shift;
         $state->{called}++;
+
         # Pull psgi.input and read whatever's there so we can confirm
         # the body was forwarded intact.
-        my $body = '';
+        my $body  = '';
         my $input = $env->{'psgi.input'};
         if ($input) {
             my $buf;
-            while (my $n = $input->read($buf, 8192)) {
+            while ( my $n = $input->read( $buf, 8192 ) ) {
                 $body .= $buf;
             }
         }
         $state->{body}      = $body;
         $state->{stash}     = $env->{'signalwire.raw_body'};
         $state->{path_info} = $env->{PATH_INFO};
-        return [200, ['Content-Type' => 'application/json'],
-            ['{"ok":true}']];
+        return [ 200, [ 'Content-Type' => 'application/json' ], ['{"ok":true}'] ];
     };
 }
 
 # Compute the Scheme A signature for a given URL + body.
 sub scheme_a_sig {
-    my ($key, $url, $body) = @_;
-    return hmac_sha1_hex($url . $body, $key);
+    my ( $key, $url, $body ) = @_;
+    return hmac_sha1_hex( $url . $body, $key );
 }
 
 # ---------------------------------------------------------------------------
@@ -63,29 +63,31 @@ sub scheme_a_sig {
 subtest 'Valid signature -> app called, 200, body forwarded' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app             => make_recorder_app(\%state),
+        app             => make_recorder_app( \%state ),
         signing_key     => $SIGNING_KEY,
         public_url_base => 'https://example.ngrok.io',
+
         # No path whitelist -> all POSTs gated.
     );
 
     my $body = '{"event":"call.state","params":{"call_id":"abc"}}';
+
     # Reconstructed URL = public_url_base + REQUEST_URI = base + path.
-    my $sig = scheme_a_sig($SIGNING_KEY, 'https://example.ngrok.io/swaig', $body);
+    my $sig = scheme_a_sig( $SIGNING_KEY, 'https://example.ngrok.io/swaig', $body );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/swaig');
-        $req->header('Content-Type'              => 'application/json');
-        $req->header('X-SignalWire-Signature'    => $sig);
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/swaig' );
+        $req->header( 'Content-Type'           => 'application/json' );
+        $req->header( 'X-SignalWire-Signature' => $sig );
         $req->content($body);
-        $req->header('Content-Length' => length($body));
+        $req->header( 'Content-Length' => length($body) );
         my $res = $cb->($req);
-        is($res->code, 200, '200 OK on valid signature');
-        is($state{called}, 1, 'downstream app was called once');
-        is($state{body}, $body, 'raw body forwarded to downstream app');
-        is($state{stash}, $body, 'signalwire.raw_body env stash populated');
-        is($state{path_info}, '/swaig', 'PATH_INFO preserved');
+        is( $res->code,        200,      '200 OK on valid signature' );
+        is( $state{called},    1,        'downstream app was called once' );
+        is( $state{body},      $body,    'raw body forwarded to downstream app' );
+        is( $state{stash},     $body,    'signalwire.raw_body env stash populated' );
+        is( $state{path_info}, '/swaig', 'PATH_INFO preserved' );
     };
 };
 
@@ -95,7 +97,7 @@ subtest 'Valid signature -> app called, 200, body forwarded' => sub {
 subtest 'Invalid signature -> 403, app NOT called' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app             => make_recorder_app(\%state),
+        app             => make_recorder_app( \%state ),
         signing_key     => $SIGNING_KEY,
         public_url_base => 'https://example.ngrok.io',
     );
@@ -103,15 +105,15 @@ subtest 'Invalid signature -> 403, app NOT called' => sub {
     my $body = '{"event":"call.state"}';
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/swaig');
-        $req->header('Content-Type'           => 'application/json');
-        $req->header('X-SignalWire-Signature' => 'totally-bogus-sig');
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/swaig' );
+        $req->header( 'Content-Type'           => 'application/json' );
+        $req->header( 'X-SignalWire-Signature' => 'totally-bogus-sig' );
         $req->content($body);
-        $req->header('Content-Length' => length($body));
+        $req->header( 'Content-Length' => length($body) );
         my $res = $cb->($req);
-        is($res->code, 403, '403 Forbidden on bad signature');
-        ok(!$state{called}, 'downstream app NOT called');
+        is( $res->code, 403, '403 Forbidden on bad signature' );
+        ok( !$state{called}, 'downstream app NOT called' );
     };
 };
 
@@ -121,19 +123,19 @@ subtest 'Invalid signature -> 403, app NOT called' => sub {
 subtest 'Missing X-SignalWire-Signature -> 403, app NOT called' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app             => make_recorder_app(\%state),
+        app             => make_recorder_app( \%state ),
         signing_key     => $SIGNING_KEY,
         public_url_base => 'https://example.ngrok.io',
     );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/swaig');
-        $req->header('Content-Type' => 'application/json');
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/swaig' );
+        $req->header( 'Content-Type' => 'application/json' );
         $req->content('{"event":"call.state"}');
         my $res = $cb->($req);
-        is($res->code, 403, '403 when signature header is missing');
-        ok(!$state{called}, 'app NOT called when sig missing');
+        is( $res->code, 403, '403 when signature header is missing' );
+        ok( !$state{called}, 'app NOT called when sig missing' );
     };
 };
 
@@ -143,24 +145,24 @@ subtest 'Missing X-SignalWire-Signature -> 403, app NOT called' => sub {
 subtest 'X-Twilio-Signature legacy alias accepted' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app             => make_recorder_app(\%state),
+        app             => make_recorder_app( \%state ),
         signing_key     => $SIGNING_KEY,
         public_url_base => 'https://example.ngrok.io',
     );
 
     my $body = '{"event":"call.state"}';
-    my $sig  = scheme_a_sig($SIGNING_KEY, 'https://example.ngrok.io/cxml', $body);
+    my $sig  = scheme_a_sig( $SIGNING_KEY, 'https://example.ngrok.io/cxml', $body );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/cxml');
-        $req->header('Content-Type'        => 'application/json');
-        $req->header('X-Twilio-Signature'  => $sig);
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/cxml' );
+        $req->header( 'Content-Type'       => 'application/json' );
+        $req->header( 'X-Twilio-Signature' => $sig );
         $req->content($body);
-        $req->header('Content-Length' => length($body));
+        $req->header( 'Content-Length' => length($body) );
         my $res = $cb->($req);
-        is($res->code, 200, 'legacy X-Twilio-Signature accepted');
-        is($state{called}, 1, 'downstream app called');
+        is( $res->code,     200, 'legacy X-Twilio-Signature accepted' );
+        is( $state{called}, 1,   'downstream app called' );
     };
 };
 
@@ -170,7 +172,7 @@ subtest 'X-Twilio-Signature legacy alias accepted' => sub {
 subtest 'Path whitelist - non-gated paths passthrough' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app             => make_recorder_app(\%state),
+        app             => make_recorder_app( \%state ),
         signing_key     => $SIGNING_KEY,
         public_url_base => 'https://example.ngrok.io',
         paths           => ['/swaig'],
@@ -178,13 +180,14 @@ subtest 'Path whitelist - non-gated paths passthrough' => sub {
 
     test_psgi $app, sub {
         my $cb = shift;
+
         # /healthz isn't gated -> no signature required, app reachable.
-        my $req = HTTP::Request->new('POST' => '/healthz');
+        my $req = HTTP::Request->new( 'POST' => '/healthz' );
         $req->content('');
-        $req->header('Content-Length' => 0);
+        $req->header( 'Content-Length' => 0 );
         my $res = $cb->($req);
-        is($res->code, 200, 'non-gated path returns 200 without signature');
-        is($state{called}, 1, 'downstream app reached');
+        is( $res->code,     200, 'non-gated path returns 200 without signature' );
+        is( $state{called}, 1,   'downstream app reached' );
     };
 };
 
@@ -194,17 +197,17 @@ subtest 'Path whitelist - non-gated paths passthrough' => sub {
 subtest 'GET passes through, POST is gated' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app             => make_recorder_app(\%state),
+        app             => make_recorder_app( \%state ),
         signing_key     => $SIGNING_KEY,
         public_url_base => 'https://example.ngrok.io',
     );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('GET' => '/swaig');
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'GET' => '/swaig' );
         my $res = $cb->($req);
-        is($res->code, 200, 'GET passes through');
-        is($state{called}, 1, 'downstream app reached on GET');
+        is( $res->code,     200, 'GET passes through' );
+        is( $state{called}, 1,   'downstream app reached on GET' );
     };
 };
 
@@ -215,24 +218,25 @@ subtest 'SWML_PROXY_URL_BASE env var honored' => sub {
     local $ENV{SWML_PROXY_URL_BASE} = 'https://example.ngrok.io';
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app         => make_recorder_app(\%state),
+        app         => make_recorder_app( \%state ),
         signing_key => $SIGNING_KEY,
+
         # Note: no public_url_base passed.
     );
 
     my $body = '{"hello":"world"}';
-    my $sig  = scheme_a_sig($SIGNING_KEY, 'https://example.ngrok.io/post_prompt', $body);
+    my $sig  = scheme_a_sig( $SIGNING_KEY, 'https://example.ngrok.io/post_prompt', $body );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/post_prompt');
-        $req->header('Content-Type'           => 'application/json');
-        $req->header('X-SignalWire-Signature' => $sig);
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/post_prompt' );
+        $req->header( 'Content-Type'           => 'application/json' );
+        $req->header( 'X-SignalWire-Signature' => $sig );
         $req->content($body);
-        $req->header('Content-Length' => length($body));
+        $req->header( 'Content-Length' => length($body) );
         my $res = $cb->($req);
-        is($res->code, 200, 'SWML_PROXY_URL_BASE drives URL reconstruction');
-        is($state{called}, 1, 'app called');
+        is( $res->code,     200, 'SWML_PROXY_URL_BASE drives URL reconstruction' );
+        is( $state{called}, 1,   'app called' );
     };
 };
 
@@ -242,26 +246,26 @@ subtest 'SWML_PROXY_URL_BASE env var honored' => sub {
 subtest 'X-Forwarded-* headers used when trust_proxy is on' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app         => make_recorder_app(\%state),
+        app         => make_recorder_app( \%state ),
         signing_key => $SIGNING_KEY,
         trust_proxy => 1,
     );
 
     my $body = '{"forwarded":"yes"}';
-    my $sig  = scheme_a_sig($SIGNING_KEY, 'https://public.example.com/swaig', $body);
+    my $sig  = scheme_a_sig( $SIGNING_KEY, 'https://public.example.com/swaig', $body );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/swaig');
-        $req->header('Content-Type'           => 'application/json');
-        $req->header('X-SignalWire-Signature' => $sig);
-        $req->header('X-Forwarded-Proto'      => 'https');
-        $req->header('X-Forwarded-Host'       => 'public.example.com');
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/swaig' );
+        $req->header( 'Content-Type'           => 'application/json' );
+        $req->header( 'X-SignalWire-Signature' => $sig );
+        $req->header( 'X-Forwarded-Proto'      => 'https' );
+        $req->header( 'X-Forwarded-Host'       => 'public.example.com' );
         $req->content($body);
-        $req->header('Content-Length' => length($body));
+        $req->header( 'Content-Length' => length($body) );
         my $res = $cb->($req);
-        is($res->code, 200, 'X-Forwarded-* used when trust_proxy is on');
-        is($state{called}, 1, 'app called');
+        is( $res->code,     200, 'X-Forwarded-* used when trust_proxy is on' );
+        is( $state{called}, 1,   'app called' );
     };
 };
 
@@ -271,29 +275,30 @@ subtest 'X-Forwarded-* headers used when trust_proxy is on' => sub {
 subtest 'trust_proxy=0 ignores X-Forwarded-* headers' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app         => make_recorder_app(\%state),
+        app         => make_recorder_app( \%state ),
         signing_key => $SIGNING_KEY,
         trust_proxy => 0,
     );
 
     my $body = '{"forwarded":"yes"}';
+
     # Sign as if the request came in via the public URL — but with
     # trust_proxy=0, the middleware will reconstruct from raw env (which
     # is the test client's loopback) so signature won't match.
-    my $sig  = scheme_a_sig($SIGNING_KEY, 'https://public.example.com/swaig', $body);
+    my $sig = scheme_a_sig( $SIGNING_KEY, 'https://public.example.com/swaig', $body );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/swaig');
-        $req->header('Content-Type'           => 'application/json');
-        $req->header('X-SignalWire-Signature' => $sig);
-        $req->header('X-Forwarded-Proto'      => 'https');
-        $req->header('X-Forwarded-Host'       => 'public.example.com');
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/swaig' );
+        $req->header( 'Content-Type'           => 'application/json' );
+        $req->header( 'X-SignalWire-Signature' => $sig );
+        $req->header( 'X-Forwarded-Proto'      => 'https' );
+        $req->header( 'X-Forwarded-Host'       => 'public.example.com' );
         $req->content($body);
-        $req->header('Content-Length' => length($body));
+        $req->header( 'Content-Length' => length($body) );
         my $res = $cb->($req);
-        is($res->code, 403, '403 because reconstructed URL uses raw env, not X-Forwarded-*');
-        ok(!$state{called}, 'app NOT called');
+        is( $res->code, 403, '403 because reconstructed URL uses raw env, not X-Forwarded-*' );
+        ok( !$state{called}, 'app NOT called' );
     };
 };
 
@@ -303,18 +308,18 @@ subtest 'trust_proxy=0 ignores X-Forwarded-* headers' => sub {
 subtest 'Empty signing_key -> passthrough (no validation)' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app         => make_recorder_app(\%state),
-        signing_key => '',  # disabled
+        app         => make_recorder_app( \%state ),
+        signing_key => '',                             # disabled
     );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/swaig');
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/swaig' );
         $req->content('{"unsigned":"true"}');
-        $req->header('Content-Length' => 19);
+        $req->header( 'Content-Length' => 19 );
         my $res = $cb->($req);
-        is($res->code, 200, 'unsigned request reaches downstream when key is empty');
-        is($state{called}, 1, 'app called');
+        is( $res->code,     200, 'unsigned request reaches downstream when key is empty' );
+        is( $state{called}, 1,   'app called' );
     };
 };
 
@@ -323,17 +328,17 @@ subtest 'Empty signing_key -> passthrough (no validation)' => sub {
 # ---------------------------------------------------------------------------
 subtest 'wrap() input validation' => sub {
     dies_ok {
-        SignalWire::Security::WebhookMiddleware->wrap(
-            signing_key => $SIGNING_KEY,
-        );
-    } "wrap dies without 'app'";
+        SignalWire::Security::WebhookMiddleware->wrap( signing_key => $SIGNING_KEY, );
+    }
+    "wrap dies without 'app'";
 
     dies_ok {
         SignalWire::Security::WebhookMiddleware->wrap(
             app         => 'not-a-coderef',
             signing_key => $SIGNING_KEY,
         );
-    } "wrap dies when 'app' is not a CODE ref";
+    }
+    "wrap dies when 'app' is not a CODE ref";
 };
 
 # ---------------------------------------------------------------------------
@@ -342,7 +347,7 @@ subtest 'wrap() input validation' => sub {
 subtest 'Form-encoded body validates via middleware (Scheme B)' => sub {
     my %state;
     my $app = SignalWire::Security::WebhookMiddleware->wrap(
-        app             => make_recorder_app(\%state),
+        app             => make_recorder_app( \%state ),
         signing_key     => '12345',
         public_url_base => 'https://mycompany.com',
     );
@@ -362,23 +367,25 @@ subtest 'Form-encoded body validates via middleware (Scheme B)' => sub {
         $s =~ s/([^A-Za-z0-9._~-])/sprintf("%%%02X", ord($1))/ge;
         return $s;
     };
-    my $body = join('&', map { $enc->($_) . '=' . $enc->($params{$_}) }
-        sort keys %params);
+    my $body = join(
+        '&', map { $enc->($_) . '=' . $enc->( $params{$_} ) }
+            sort keys %params
+    );
 
-    my $url = 'https://mycompany.com/myapp.php?foo=1&bar=2';
-    my $concat = $url . join('', map { $_ . $params{$_} } sort keys %params);
-    my $sig = encode_base64(hmac_sha1($concat, '12345'), '');
+    my $url    = 'https://mycompany.com/myapp.php?foo=1&bar=2';
+    my $concat = $url . join( '', map { $_ . $params{$_} } sort keys %params );
+    my $sig    = encode_base64( hmac_sha1( $concat, '12345' ), '' );
 
     test_psgi $app, sub {
-        my $cb = shift;
-        my $req = HTTP::Request->new('POST' => '/myapp.php?foo=1&bar=2');
-        $req->header('Content-Type'           => 'application/x-www-form-urlencoded');
-        $req->header('X-SignalWire-Signature' => $sig);
+        my $cb  = shift;
+        my $req = HTTP::Request->new( 'POST' => '/myapp.php?foo=1&bar=2' );
+        $req->header( 'Content-Type'           => 'application/x-www-form-urlencoded' );
+        $req->header( 'X-SignalWire-Signature' => $sig );
         $req->content($body);
-        $req->header('Content-Length' => length($body));
+        $req->header( 'Content-Length' => length($body) );
         my $res = $cb->($req);
-        is($res->code, 200, 'form-encoded request validates (Scheme B)');
-        is($state{called}, 1, 'app called');
+        is( $res->code,     200, 'form-encoded request validates (Scheme B)' );
+        is( $state{called}, 1,   'app called' );
     };
 };
 
@@ -391,70 +398,72 @@ subtest 'Form-encoded body validates via middleware (Scheme B)' => sub {
 subtest 'validate() decomposed core - valid signature -> undef (pass)' => sub {
     my $url  = 'https://example.ngrok.io/webhook';
     my $body = '{"event":"call.state","params":{"call_id":"abc-123"}}';
-    my $sig  = scheme_a_sig($SIGNING_KEY, $url, $body);
+    my $sig  = scheme_a_sig( $SIGNING_KEY, $url, $body );
 
-    my $rej = SignalWire::Security::WebhookMiddleware::validate(
-        'POST', $url, { 'X-SignalWire-Signature' => $sig }, $body,
-        signing_key => $SIGNING_KEY,
-    );
-    is($rej, undef, 'valid signature returns undef (let the handler run)');
+    my $rej =
+        SignalWire::Security::WebhookMiddleware::validate( 'POST', $url,
+        { 'X-SignalWire-Signature' => $sig },
+        $body, signing_key => $SIGNING_KEY, );
+    is( $rej, undef, 'valid signature returns undef (let the handler run)' );
 };
 
 subtest 'validate() decomposed core - bad signature -> [403,{},""] triple' => sub {
     my $url  = 'https://example.ngrok.io/webhook';
     my $body = '{"event":"call.state"}';
 
-    my $rej = SignalWire::Security::WebhookMiddleware::validate(
-        'POST', $url, { 'X-SignalWire-Signature' => 'totally-bogus' }, $body,
-        signing_key => $SIGNING_KEY,
-    );
-    is(ref($rej), 'ARRAY', 'bad signature returns a reject triple (arrayref)');
-    is($rej->[0], 403, 'reject status is 403');
-    is_deeply($rej->[1], {}, 'reject headers are empty (no detail leaked)');
-    is($rej->[2], '', 'reject body is empty (no detail leaked)');
+    my $rej =
+        SignalWire::Security::WebhookMiddleware::validate( 'POST', $url,
+        { 'X-SignalWire-Signature' => 'totally-bogus' },
+        $body, signing_key => $SIGNING_KEY, );
+    is( ref($rej), 'ARRAY', 'bad signature returns a reject triple (arrayref)' );
+    is( $rej->[0], 403,     'reject status is 403' );
+    is_deeply( $rej->[1], {}, 'reject headers are empty (no detail leaked)' );
+    is( $rej->[2], '', 'reject body is empty (no detail leaked)' );
 };
 
 subtest 'validate() decomposed core - missing signature header -> 403 triple' => sub {
-    my $rej = SignalWire::Security::WebhookMiddleware::validate(
-        'POST', 'https://example.ngrok.io/webhook', {}, '{"x":1}',
-        signing_key => $SIGNING_KEY,
-    );
-    is(ref($rej), 'ARRAY', 'missing header returns a reject triple');
-    is($rej->[0], 403, 'missing header rejects with 403 (never throws)');
+    my $rej =
+        SignalWire::Security::WebhookMiddleware::validate( 'POST',
+        'https://example.ngrok.io/webhook',
+        {}, '{"x":1}', signing_key => $SIGNING_KEY, );
+    is( ref($rej), 'ARRAY', 'missing header returns a reject triple' );
+    is( $rej->[0], 403,     'missing header rejects with 403 (never throws)' );
 };
 
 subtest 'validate() decomposed core - X-Twilio-Signature alias honored' => sub {
     my $url  = 'https://example.ngrok.io/cxml';
     my $body = '{"event":"call.state"}';
-    my $sig  = scheme_a_sig($SIGNING_KEY, $url, $body);
+    my $sig  = scheme_a_sig( $SIGNING_KEY, $url, $body );
 
-    my $rej = SignalWire::Security::WebhookMiddleware::validate(
-        'POST', $url, { 'X-Twilio-Signature' => $sig }, $body,
-        signing_key => $SIGNING_KEY,
-    );
-    is($rej, undef, 'legacy X-Twilio-Signature alias accepted (undef = pass)');
+    my $rej =
+        SignalWire::Security::WebhookMiddleware::validate( 'POST', $url,
+        { 'X-Twilio-Signature' => $sig },
+        $body, signing_key => $SIGNING_KEY, );
+    is( $rej, undef, 'legacy X-Twilio-Signature alias accepted (undef = pass)' );
 };
 
 subtest 'validate() decomposed core - header lookup is case-insensitive' => sub {
     my $url  = 'https://example.ngrok.io/webhook';
     my $body = '{"ci":"headers"}';
-    my $sig  = scheme_a_sig($SIGNING_KEY, $url, $body);
+    my $sig  = scheme_a_sig( $SIGNING_KEY, $url, $body );
 
-    my $rej = SignalWire::Security::WebhookMiddleware::validate(
-        'POST', $url, { 'x-signalwire-signature' => $sig }, $body,
-        signing_key => $SIGNING_KEY,
-    );
-    is($rej, undef, 'lower-cased signature header still resolves');
+    my $rej =
+        SignalWire::Security::WebhookMiddleware::validate( 'POST', $url,
+        { 'x-signalwire-signature' => $sig },
+        $body, signing_key => $SIGNING_KEY, );
+    is( $rej, undef, 'lower-cased signature header still resolves' );
 };
 
 subtest 'validate() decomposed core - empty signing_key croaks' => sub {
     dies_ok {
         SignalWire::Security::WebhookMiddleware::validate(
-            'POST', 'https://example.ngrok.io/webhook',
-            { 'X-SignalWire-Signature' => 'x' }, '{}',
-            signing_key => '',
+            'POST',
+            'https://example.ngrok.io/webhook',
+            { 'X-SignalWire-Signature' => 'x' },
+            '{}', signing_key => '',
         );
-    } 'empty signing_key is a programming error (croaks)';
+    }
+    'empty signing_key is a programming error (croaks)';
 };
 
 done_testing;

@@ -11,13 +11,31 @@ my $client = SignalWire::REST::RestClient->new(
 );
 ```
 
-All three parameters are required; the client dies at construction if any are missing.
+Each argument falls back to its environment variable when omitted.
+`project` + `token` authenticate every project-scoped resource with HTTP
+Basic Auth (`project:token`).
 
-Authentication uses HTTP Basic Auth (`project:token`).
+The Space Administration API (`$client->space`) authenticates with a user's
+Personal Access Token instead — HTTP Basic with an empty username and the
+`pat_...` token as the password:
+
+```perl
+my $admin = SignalWire::REST::RestClient->new(
+    personal_access_token => $ENV{SIGNALWIRE_PERSONAL_ACCESS_TOKEN},
+    host                  => $ENV{SIGNALWIRE_SPACE},
+);
+my $members = $admin->space->members->list;
+```
+
+A client may hold either credential or both; `host` is always required. The
+constructor dies if `host` is missing, or if neither a complete
+`project` + `token` pair nor a `personal_access_token` is available. Calling a
+resource whose credential the client was not given dies, naming that
+credential, before any request is sent.
 
 ## Namespaces
 
-There are 21 namespace accessors on the client. Every API surface is available as a lazily-built accessor:
+There are 24 namespace accessors on the client. Every API surface is available as a lazily-built accessor:
 
 ### Fabric API
 
@@ -38,7 +56,7 @@ There are 21 namespace accessors on the client. Every API surface is available a
 | `$client->fabric->cxml_applications` | cXML application resources (no create) |
 | `$client->fabric->resources` | Generic resource operations |
 | `$client->fabric->addresses` | Fabric addresses (list/get only) |
-| `$client->fabric->tokens` | Subscriber/guest/invite/embed token creation |
+| `$client->fabric->tokens` | Subscriber/guest/embed token creation |
 
 (16 Fabric sub-resources.)
 
@@ -75,6 +93,17 @@ There are 21 namespace accessors on the client. Every API surface is available a
 | `$client->project` | API token management |
 | `$client->pubsub` | PubSub token creation |
 | `$client->chat` | Chat token creation |
+| `$client->whatsapp` | WhatsApp numbers, businesses, and message templates |
+| `$client->space` | Space Administration API (Personal Access Token): settings, geographic permissions, billing profile and statements, usage, payment history and methods, members, balance and top-ups, low-balance setting |
+
+Two reads in the Space API return something other than JSON:
+`$client->space->billing_statements->get_csv(month => '2026-08')` returns the
+statement as CSV text, and `get_pdf(month => ...)` returns the URL the PDF
+endpoint redirects to (the redirect is not followed — fetch it with any HTTP
+client). Recording downloads (`$client->recordings->download($id)`,
+`$client->video->room_recordings->download($id)`) likewise return the media
+URL. `$client->space->balance->create_top_up(idempotency_key => ..., ...)`
+sends `idempotency_key` as the `Idempotency-Key` request header.
 
 > Note: the project-token namespace is reached via `$client->project`. The
 > `project` credential passed to the constructor is stored privately (as

@@ -141,8 +141,7 @@ SignalWire::Skills::Builtin::ApiNinjasTrivia - trivia-question skill backed by t
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::ApiNinjasTrivia> is the Perl port of the Python
-reference C<signalwire.skills.api_ninjas_trivia.skill>. It registers a single
+L<SignalWire::Skills::Builtin::ApiNinjasTrivia> registers a single
 DataMap-based SWAIG tool (default name C<get_trivia>) that fetches a trivia
 question from the API Ninjas trivia API.
 

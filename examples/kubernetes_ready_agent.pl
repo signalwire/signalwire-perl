@@ -27,13 +27,13 @@ my $agent = SignalWire::Agent::AgentBase->new(
     port  => $port,
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 $agent->prompt_add_section(
     'Role',
     'You are a production-ready AI agent running in Kubernetes. '
-    . 'You can help users with general questions and demonstrate cloud-native deployment patterns.',
+        . 'You can help users with general questions and demonstrate cloud-native deployment patterns.',
 );
 
 # Health status tool
@@ -42,16 +42,15 @@ $agent->define_tool(
     description => 'Get the health status of this agent',
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
-        my ($args, $raw) = @_;
+        my ( $args, $raw ) = @_;
         return SignalWire::SWAIG::FunctionResult->new(
-            "Agent k8s-agent is healthy, running on port $port in Kubernetes."
-        );
+            "Agent k8s-agent is healthy, running on port $port in Kubernetes.");
     },
 );
 
 print "READY: Kubernetes-ready agent starting on port $port\n";
 print "HEALTH: Health check: http://localhost:$port/health\n";
 print "STATUS: Readiness check: http://localhost:$port/ready\n";
-print "LOG: Log level: " . ($ENV{LOG_LEVEL} || 'INFO') . "\n\n";
+print "LOG: Log level: " . ( $ENV{LOG_LEVEL} || 'INFO' ) . "\n\n";
 
 $agent->run;

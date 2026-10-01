@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'JoinRoomConfig' (flattened SWMLMethod verb 'join_room' config).
+# Generated SWML verb config type 'JoinRoomConfig' ($defs schema 'JoinRoomConfig').
 package SignalWire::SWML::Generated::JoinRoomConfig;
 use strict;
 use warnings;

@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'SendFaxConfig' (flattened SWMLMethod verb 'send_fax' config).
+# Generated SWML verb config type 'SendFaxConfig' ($defs schema 'SendFaxConfig').
 package SignalWire::SWML::Generated::SendFaxConfig;
 use strict;
 use warnings;

@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'SipReferConfig' (flattened SWMLMethod verb 'sip_refer' config).
+# Generated SWML verb config type 'SipReferConfig' ($defs schema 'SipReferConfig').
 package SignalWire::SWML::Generated::SipReferConfig;
 use strict;
 use warnings;
@@ -11,9 +11,10 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'to_uri'     => ( is => 'ro' );
-has 'status_url' => ( is => 'ro' );
-has 'username'   => ( is => 'ro' );
 has 'password'   => ( is => 'ro' );
+has 'status_url' => ( is => 'ro' );
+has 'to'         => ( is => 'ro' );
+has 'to_uri'     => ( is => 'ro' );
+has 'username'   => ( is => 'ro' );
 
 1;

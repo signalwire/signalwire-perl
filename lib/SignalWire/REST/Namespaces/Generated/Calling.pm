@@ -10,6 +10,7 @@ use warnings;
 use Moo;
 use SignalWire::REST::Namespaces::Base ();
 extends 'SignalWire::REST::Namespaces::Base';
+use SignalWire::Core::Random ();
 
 around BUILDARGS => sub {
     my ( $orig, $class, %args ) = @_;
@@ -89,6 +90,7 @@ sub disconnect {
 
 sub play {
     my ( $self, $call_id, %args ) = @_;
+    $args{control_id} //= SignalWire::Core::Random::_random_uuid4();
     return $self->_execute( 'calling.play', $call_id, %args );
 }
 
@@ -114,6 +116,10 @@ sub play_volume {
 
 sub record {
     my ( $self, $call_id, %args ) = @_;
+    if ( defined( my $audio = delete $args{audio} ) ) {
+        $args{record} = { %{ $args{record} // {} }, audio => $audio };
+    }
+    $args{control_id} //= SignalWire::Core::Random::_random_uuid4();
     return $self->_execute( 'calling.record', $call_id, %args );
 }
 
@@ -134,6 +140,7 @@ sub record_stop {
 
 sub collect {
     my ( $self, $call_id, %args ) = @_;
+    $args{control_id} //= SignalWire::Core::Random::_random_uuid4();
     return $self->_execute( 'calling.collect', $call_id, %args );
 }
 
@@ -149,6 +156,7 @@ sub collect_start_input_timers {
 
 sub detect {
     my ( $self, $call_id, %args ) = @_;
+    $args{control_id} //= SignalWire::Core::Random::_random_uuid4();
     return $self->_execute( 'calling.detect', $call_id, %args );
 }
 
@@ -159,6 +167,7 @@ sub detect_stop {
 
 sub tap {
     my ( $self, $call_id, %args ) = @_;
+    $args{control_id} //= SignalWire::Core::Random::_random_uuid4();
     return $self->_execute( 'calling.tap', $call_id, %args );
 }
 
@@ -169,6 +178,7 @@ sub tap_stop {
 
 sub stream {
     my ( $self, $call_id, %args ) = @_;
+    $args{control_id} //= SignalWire::Core::Random::_random_uuid4();
     return $self->_execute( 'calling.stream', $call_id, %args );
 }
 
@@ -189,6 +199,7 @@ sub denoise_stop {
 
 sub transcribe {
     my ( $self, $call_id, %args ) = @_;
+    $args{control_id} //= SignalWire::Core::Random::_random_uuid4();
     return $self->_execute( 'calling.transcribe', $call_id, %args );
 }
 
@@ -200,6 +211,31 @@ sub transcribe_stop {
 sub ai_stop {
     my ( $self, $call_id, %args ) = @_;
     return $self->_execute( 'calling.ai.stop', $call_id, %args );
+}
+
+sub ai_sidecar {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar', $call_id, %args );
+}
+
+sub ai_sidecar_ask {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar.ask', $call_id, %args );
+}
+
+sub ai_sidecar_poke {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar.poke', $call_id, %args );
+}
+
+sub ai_sidecar_stop {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar.stop', $call_id, %args );
+}
+
+sub ai_sidecar_status {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar.status', $call_id, %args );
 }
 
 sub send_fax_stop {

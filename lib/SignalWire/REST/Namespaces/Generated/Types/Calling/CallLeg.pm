@@ -26,6 +26,7 @@ has 'duration'       => ( is => 'ro' );
 has 'duration_ms'    => ( is => 'ro' );
 has 'billing_ms'     => ( is => 'ro' );
 has 'type'           => ( is => 'ro' );
+has 'qos_metrics'    => ( is => 'ro' );
 has 'parent_id'      => ( is => 'ro' );
 
 1;

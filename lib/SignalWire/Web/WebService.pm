@@ -282,8 +282,12 @@ sub _authorize ( $self, $env ) {
     my ( $user, $pass ) = @$auth;
     return unless defined $user && defined $pass;
 
+    # The auth-scheme token is case-insensitive (RFC 7235); the reference
+    # guards this route with FastAPI's HTTPBasic, which compares
+    # ``scheme.lower() != "basic"``. Matching case-sensitively 401s a client
+    # that the reference authenticates.
     my $header = $env->{HTTP_AUTHORIZATION} // '';
-    if ( $header =~ /\ABasic\s+(.+)\z/ ) {
+    if ( $header =~ /\ABasic\s+(.+)\z/i ) {
         my $decoded = decode_base64($1);
         my ( $in_user, $in_pass ) = split /:/, $decoded, 2;
         $in_pass //= '';
@@ -387,7 +391,11 @@ sub _wait_listening ( $host, $port ) {
             Proto    => 'tcp',
             Timeout  => 1,
         );
-        if ($sock) { $sock->close; return 1; }
+
+        # With Timeout, IO::Socket can hand back a socket for a REFUSED port
+        # (perl 5.44 / IO::Socket 1.56 / Darwin 27: an object whose peerport is
+        # undef), so only a socket with a real peer proves the server listens.
+        if ( $sock && defined $sock->peerport ) { $sock->close; return 1; }
         Time::HiRes::sleep(0.02);
     }
     return 0;
@@ -422,12 +430,11 @@ SignalWire::Web::WebService - static file serving service with an HTTP API
 
 =head1 DESCRIPTION
 
-L<SignalWire::Web::WebService> is the Perl port of
-C<signalwire.web.web_service.WebService>. It maps URL route prefixes to
+L<SignalWire::Web::WebService> maps URL route prefixes to
 local directories and serves their files over HTTP with security headers,
 extension filtering, path-traversal protection, and optional basic auth.
 
-Python builds a FastAPI/uvicorn app; this port builds a PSGI app served by
+It builds a PSGI app served by
 L<HTTP::Server::PSGI>. C<start> is non-blocking by default (runs the
 server in a forked child and returns the bound port); pass
 C<block =E<gt> 1> to run in the foreground. C<port =E<gt> 0> binds an

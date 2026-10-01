@@ -13,7 +13,7 @@
 use strict;
 use warnings;
 use lib 'lib';
-use JSON qw(encode_json);
+use JSON  qw(encode_json);
 use POSIX qw(strftime);
 use SignalWire;
 use SignalWire::Agent::AgentBase;
@@ -26,17 +26,15 @@ my $agent = SignalWire::Agent::AgentBase->new(
 
 # --- Declarative Prompt Sections ---
 
-$agent->prompt_add_section(
-    'Personality',
+$agent->prompt_add_section( 'Personality',
     'You are a friendly and helpful AI assistant who responds in a casual, conversational tone.',
 );
 
-$agent->prompt_add_section(
-    'Goal',
-    'Help users with their questions about time and weather.',
-);
+$agent->prompt_add_section( 'Goal', 'Help users with their questions about time and weather.', );
 
-$agent->prompt_add_section('Instructions', '',
+$agent->prompt_add_section(
+    'Instructions',
+    '',
     bullets => [
         'Be concise and direct in your responses.',
         "If you don't know something, say so clearly.",
@@ -45,14 +43,15 @@ $agent->prompt_add_section('Instructions', '',
     ],
 );
 
-$agent->prompt_add_section('Examples',
-    'Here are examples of how to respond to common requests:',
-);
-$agent->prompt_add_subsection('Examples', 'Time request',
+$agent->prompt_add_section( 'Examples',
+    'Here are examples of how to respond to common requests:', );
+$agent->prompt_add_subsection( 'Examples', 'Time request',
     "User: What time is it?\nAssistant: Let me check for you. [call get_time]",
 );
-$agent->prompt_add_subsection('Examples', 'Weather request',
-    "User: What's the weather like in Paris?\nAssistant: Let me check the weather for you. [call get_weather]",
+$agent->prompt_add_subsection(
+    'Examples',
+    'Weather request',
+"User: What's the weather like in Paris?\nAssistant: Let me check the weather for you. [call get_weather]",
 );
 
 # --- Post-prompt for summary ---
@@ -73,8 +72,8 @@ $agent->define_tool(
     description => 'Get the current time',
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
-        my ($args, $raw) = @_;
-        my $time = strftime('%H:%M:%S', localtime);
+        my ( $args, $raw ) = @_;
+        my $time = strftime( '%H:%M:%S', localtime );
         return SignalWire::SWAIG::FunctionResult->new("The current time is $time");
     },
 );
@@ -89,25 +88,25 @@ $agent->define_tool(
         },
     },
     handler => sub {
-        my ($args, $raw) = @_;
+        my ( $args, $raw ) = @_;
         my $loc = $args->{location} // 'Unknown';
-        return SignalWire::SWAIG::FunctionResult->new(
-            "It's sunny and 72F in $loc."
-        );
+        return SignalWire::SWAIG::FunctionResult->new("It's sunny and 72F in $loc.");
     },
 );
 
 # --- Summary callback ---
 
-$agent->on_summary(sub {
-    my ($summary, $raw) = @_;
-    if ($summary) {
-        print "Conversation summary: " . encode_json($summary) . "\n";
+$agent->on_summary(
+    sub {
+        my ( $summary, $raw ) = @_;
+        if ($summary) {
+            print "Conversation summary: " . encode_json($summary) . "\n";
+        }
     }
-});
+);
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 print "Starting Declarative Agent\n";
 print "Available at: http://localhost:3000/declarative\n";

@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'PayConfig' (flattened SWMLMethod verb 'pay' config).
+# Generated SWML verb config type 'PayConfig' ($defs schema 'PayConfig').
 package SignalWire::SWML::Generated::PayConfig;
 use strict;
 use warnings;
@@ -11,18 +11,20 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'payment_connector_url'  => ( is => 'ro' );
+has 'description'            => ( is => 'ro' );
+has 'bank_account_type'      => ( is => 'ro' );
 has 'charge_amount'          => ( is => 'ro' );
 has 'currency'               => ( is => 'ro' );
-has 'description'            => ( is => 'ro' );
 has 'input'                  => ( is => 'ro' );
 has 'language'               => ( is => 'ro' );
 has 'max_attempts'           => ( is => 'ro' );
 has 'min_postal_code_length' => ( is => 'ro' );
 has 'parameters'             => ( is => 'ro' );
+has 'payment_connector_url'  => ( is => 'ro' );
 has 'payment_method'         => ( is => 'ro' );
 has 'postal_code'            => ( is => 'ro' );
 has 'prompts'                => ( is => 'ro' );
+has 'say_voice'              => ( is => 'ro' );
 has 'security_code'          => ( is => 'ro' );
 has 'status_url'             => ( is => 'ro' );
 has 'timeout'                => ( is => 'ro' );

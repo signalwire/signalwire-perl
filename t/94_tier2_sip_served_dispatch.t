@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More;
-use JSON qw(encode_json decode_json);
+use JSON         qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
 # =============================================================================
@@ -47,8 +47,8 @@ sub make_env {
 
 sub psgi_parts {
     my ($res) = @_;
-    my %h = @{ $res->[1] };
-    my $body = join '', @{ $res->[2] };
+    my %h     = @{ $res->[1] };
+    my $body  = join '', @{ $res->[2] };
     return ( $res->[0], \%h, $body );
 }
 
@@ -65,12 +65,15 @@ subtest 'served /sip: callback fires, username extracted, registered -> handled 
         basic_auth_user     => 'u',
         basic_auth_password => 'p',
     );
-    $agent->enable_sip_routing( auto_map => 0 );      # register the /sip callback
+    $agent->enable_sip_routing( auto_map => 0 );    # register the /sip callback
     $agent->register_sip_username('support');
 
     # Wrap _sip_routing_callback to observe it firing without changing behavior.
     my $orig = $agent->can('_sip_routing_callback');
-    no warnings 'redefine';
+
+    # Wrap a real SDK method to observe it firing without changing behaviour;
+    # 'redefine' is exactly the warning this deliberate override raises.
+    no warnings 'redefine';    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
     local *SignalWire::Agent::AgentBase::_sip_routing_callback = sub {
         my ( $self, $body, $headers ) = @_;
         $fired         = 1;
@@ -112,7 +115,9 @@ subtest 'served /sip: unregistered username routes elsewhere (307 via _on_sip_re
 
     # A router-style override: an unregistered username is redirected to the
     # agent that owns it.
-    no warnings 'redefine';
+    # Override a real SDK method to exercise router-style redirection;
+    # 'redefine' is exactly the warning this deliberate override raises.
+    no warnings 'redefine';    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
     local *SignalWire::Agent::AgentBase::_on_sip_request = sub {
         my ( $self, $username, $body, $headers ) = @_;
         $routed_username = $username;
@@ -132,8 +137,11 @@ subtest 'served /sip: unregistered username routes elsewhere (307 via _on_sip_re
 
     is( $routed_username, 'billing', 'the unregistered username was extracted and dispatched' );
     is( $status,          307,       'served /sip redirects an unregistered username (307)' );
-    is( $headers->{Location}, 'https://other.example/agents/billing',
-        'Location carries the routed URL' );
+    is(
+        $headers->{Location},
+        'https://other.example/agents/billing',
+        'Location carries the routed URL'
+    );
 };
 
 subtest 'served /sip: 401 on bad auth through the served endpoint' => sub {

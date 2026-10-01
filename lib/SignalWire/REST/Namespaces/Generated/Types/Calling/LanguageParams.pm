@@ -12,7 +12,14 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::LanguageParams: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'stability'  => ( is => 'ro' );
-has 'similarity' => ( is => 'ro' );
+has 'emotion'      => ( is => 'ro' );
+has 'pitch'        => ( is => 'ro' );
+has 'similarity'   => ( is => 'ro' );
+has 'speakingRate' => ( is => 'ro' );
+has 'speed'        => ( is => 'ro' );
+has 'stability'    => ( is => 'ro' );
+has 'streaming'    => ( is => 'ro' );
+has 'temperature'  => ( is => 'ro' );
+has 'vol'          => ( is => 'ro' );
 
 1;

@@ -12,14 +12,14 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::SWAIGInternalFiller: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'hangup'                  => ( is => 'ro' );
+has 'adjust_response_latency' => ( is => 'ro' );
+has 'change_context'          => ( is => 'ro' );
 has 'check_time'              => ( is => 'ro' );
+has 'get_ideal_strategy'      => ( is => 'ro' );
+has 'get_visual_input'        => ( is => 'ro' );
+has 'next_step'               => ( is => 'ro' );
+has 'pause_conversation'      => ( is => 'ro' );
 has 'wait_for_user'           => ( is => 'ro' );
 has 'wait_seconds'            => ( is => 'ro' );
-has 'adjust_response_latency' => ( is => 'ro' );
-has 'next_step'               => ( is => 'ro' );
-has 'change_context'          => ( is => 'ro' );
-has 'get_visual_input'        => ( is => 'ro' );
-has 'get_ideal_strategy'      => ( is => 'ro' );
 
 1;

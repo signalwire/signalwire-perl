@@ -15,5 +15,6 @@ use Moo;
 has 'name'          => ( is => 'ro' );
 has 'permissions'   => ( is => 'ro' );
 has 'subproject_id' => ( is => 'ro' );
+has 'project_id'    => ( is => 'ro' );
 
 1;

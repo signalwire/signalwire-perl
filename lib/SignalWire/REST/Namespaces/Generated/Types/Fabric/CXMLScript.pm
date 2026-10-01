@@ -18,7 +18,7 @@ has 'request_count'          => ( is => 'ro' );
 has 'last_accessed_at'       => ( is => 'ro' );
 has 'request_url'            => ( is => 'ro' );
 has 'script_type'            => ( is => 'ro' );
-has 'display_name'           => ( is => 'ro' );
+has 'name'                   => ( is => 'ro' );
 has 'status_callback_url'    => ( is => 'ro' );
 has 'status_callback_method' => ( is => 'ro' );
 

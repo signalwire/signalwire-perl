@@ -19,15 +19,15 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/assistant',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
 
 $agent->prompt_add_section(
     'Role',
     'You are a helpful assistant with access to various skills including '
-    . 'date/time information, mathematical calculations, and web search.',
+        . 'date/time information, mathematical calculations, and web search.',
 );
 
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 print "Creating agent with multiple skills...\n";
 
@@ -51,19 +51,22 @@ eval {
     die "Missing GOOGLE_SEARCH_API_KEY or GOOGLE_SEARCH_ENGINE_ID\n"
         unless $api_key && $engine_id;
 
-    $agent->add_skill('web_search', {
-        api_key          => $api_key,
-        search_engine_id => $engine_id,
-        num_results      => 1,
-        delay            => 0,
-    });
+    $agent->add_skill(
+        'web_search',
+        {
+            api_key          => $api_key,
+            search_engine_id => $engine_id,
+            num_results      => 1,
+            delay            => 0,
+        }
+    );
     print "Added web_search skill\n";
 };
 print "Web search not available: $@\n" if $@;
 
 # List loaded skills
 my $loaded = $agent->list_skills;
-print "\nLoaded skills: " . join(', ', @$loaded) . "\n" if $loaded && @$loaded;
+print "\nLoaded skills: " . join( ', ', @$loaded ) . "\n" if $loaded && @$loaded;
 
 print "\nStarting Skills Demo Agent\n";
 print "Available at: http://localhost:3000/assistant\n";

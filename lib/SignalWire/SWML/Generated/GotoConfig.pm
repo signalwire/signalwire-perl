@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'GotoConfig' (flattened SWMLMethod verb 'goto' config).
+# Generated SWML verb config type 'GotoConfig' ($defs schema 'GotoConfig').
 package SignalWire::SWML::Generated::GotoConfig;
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Moo;
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
 has 'label' => ( is => 'ro' );
-has 'when'  => ( is => 'ro' );
 has 'max'   => ( is => 'ro' );
+has 'when'  => ( is => 'ro' );
 
 1;

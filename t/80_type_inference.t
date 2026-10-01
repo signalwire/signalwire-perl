@@ -15,9 +15,14 @@ use_ok('SignalWire::Core::Agent::Tools::TypeInference');
 
 # The two symbols are module-level functions (the package has no
 # constructor and no instances), so they are called as plain functions.
-sub TI_infer_schema { return SignalWire::Core::Agent::Tools::TypeInference::infer_schema(@_) }
+sub TI_infer_schema {
+    my (@args) = @_;
+    return SignalWire::Core::Agent::Tools::TypeInference::infer_schema(@args);
+}
+
 sub TI_wrap {
-    return SignalWire::Core::Agent::Tools::TypeInference::create_typed_handler_wrapper(@_);
+    my (@args) = @_;
+    return SignalWire::Core::Agent::Tools::TypeInference::create_typed_handler_wrapper(@args);
 }
 
 # A typed handler with a required keyword, an optional keyword, and the
@@ -35,7 +40,7 @@ subtest 'infer_schema from keyword params' => sub {
     is_deeply( [ sort keys %$params ], [qw(city days)], 'named params (raw_data excluded)' );
     is( $params->{city}{type}, 'string', 'default string type' );
     is_deeply( $required, ['city'], 'city required (no default); days optional' );
-    is( $desc,     undef, 'description always undef' );
+    is( $desc, undef, 'description always undef' );
     ok( $is_typed, 'is_typed true' );
     ok( $has_raw,  'raw_data detected' );
 };
@@ -65,29 +70,25 @@ subtest 'descriptions map' => sub {
 };
 
 subtest 'positional required and optional' => sub {
-    my ( $params, $required ) = TI_infer_schema(
-        sub { },
-        params => [ { name => 'a', kind => 'req' }, { name => 'b', kind => 'opt' } ],
-    );
+    my ( $params, $required ) = TI_infer_schema( sub { },
+        params => [ { name => 'a', kind => 'req' }, { name => 'b', kind => 'opt' } ], );
     is_deeply( [ sort keys %$params ], [qw(a b)], 'both positional params' );
-    is_deeply( $required, ['a'], 'a required, b optional (default)' );
+    is_deeply( $required,              ['a'],     'a required, b optional (default)' );
 };
 
 subtest 'legacy (args) handler is not typed' => sub {
     my ( $params, $required, $desc, $is_typed, $has_raw ) =
         TI_infer_schema( sub { }, params => [ { name => 'args', kind => 'req' } ] );
-    is_deeply( $params,   {},    'no params' );
-    is_deeply( $required, [],    'no required' );
+    is_deeply( $params,   {}, 'no params' );
+    is_deeply( $required, [], 'no required' );
     is( $desc, undef, 'no description' );
     ok( !$is_typed, 'not typed' );
     ok( !$has_raw,  'no raw_data' );
 };
 
 subtest 'legacy (args, raw_data) handler is not typed' => sub {
-    my ( undef, undef, undef, $is_typed ) = TI_infer_schema(
-        sub { },
-        params => [ { name => 'args', kind => 'req' }, { name => 'raw_data', kind => 'req' } ],
-    );
+    my ( undef, undef, undef, $is_typed ) = TI_infer_schema( sub { },
+        params => [ { name => 'args', kind => 'req' }, { name => 'raw_data', kind => 'req' } ], );
     ok( !$is_typed, 'legacy 2-arg not typed' );
 };
 
@@ -102,8 +103,8 @@ subtest 'zero-param handler is typed' => sub {
         TI_infer_schema( sub { }, params => [] );
     is_deeply( $params,   {}, 'empty params' );
     is_deeply( $required, [], 'empty required' );
-    ok( $is_typed,  'zero-param IS typed' );
-    ok( !$has_raw,  'no raw_data' );
+    ok( $is_typed, 'zero-param IS typed' );
+    ok( !$has_raw, 'no raw_data' );
 };
 
 subtest 'only raw_data handler is typed with raw' => sub {

@@ -323,6 +323,81 @@ C<signalwire.pom.pom.Section> from the Python SignalWire SDK.  Both
 implementations render byte-for-byte identical Markdown/XML/JSON output
 so prompts authored in either language can be consumed interchangeably.
 
+The constructor validates C<body> (must be a plain string — passing an
+arrayref C<croak>s with a hint to use C<bullets> instead) and C<bullets>
+(must be an arrayref or undef).
+
+=head1 METHODS
+
+=head2 Content
+
+=over 4
+
+=item C<add_body($body)>
+
+B<Replace> the body text — this overwrites any prior value rather than
+appending, despite the C<add_> name. C<croak>s on a reference. Returns
+C<$self>.
+
+=item C<add_bullets($arrayref)>
+
+B<Append> to the existing bullet list (unlike C<add_body>, this does not
+replace). C<croak>s unless given an arrayref. Returns C<$self>.
+
+=item C<add_subsection(%opts)>
+
+Add a nested section and B<return the new Section> — not C<$self> — so you
+can chain C<< ->add_body >> / C<< ->add_bullets >> onto it. Accepts
+C<title>, C<body>, C<bullets>, C<numbered> and C<numberedBullets>.
+C<croak>s unless a C<title> is given: unlike a POM's first top-level
+section, a subsection may never be title-less.
+
+=back
+
+=head2 Serialization
+
+=over 4
+
+=item C<to_hash()>
+
+An ordered hashref for JSON/YAML emission, with the reference's key order
+(title, body, bullets, subsections, numbered, numberedBullets). B<Empty
+fields are dropped> entirely, so the result round-trips cleanly back
+through C<from_json> / C<from_yaml>. C<numbered> and C<numberedBullets>
+emit as JSON booleans and only when true.
+
+=back
+
+=head2 Rendering
+
+Both renderers take an optional depth and an optional C<$section_number>
+arrayref (e.g. C<[1,2,3]> renders the prefix C<"1.2.3. ">), and both apply
+the same numbering rule: if B<any> subsection sets C<numbered>, every
+sibling gets a number except one that explicitly sets C<numbered> to a
+defined false value. A root section with no title neither increments the
+numbering nor deepens the heading level, so title-less prose does not
+shift its children.
+
+=over 4
+
+=item C<render_markdown($level, $section_number)>
+
+Render as Markdown. C<$level> is the heading level (1 = C<#>, 2 = C<##>)
+and defaults to 2. Bullets render as C<-> items, or as C<1.>, C<2.> … when
+C<numberedBullets> is set.
+
+=item C<render_xml($indent, $section_number)>
+
+Render as XML. C<$indent> is a count of two-space indentation levels and
+defaults to 0. Bullets gain an C<id> attribute when C<numberedBullets> is
+set.
+
+B<Content is interpolated verbatim and is not XML-escaped>, so a title,
+body or bullet containing C<&>, C<E<lt>> or C<E<gt>> produces malformed
+XML. Escape such text yourself before adding it if the output must parse.
+
+=back
+
 =head1 SEE ALSO
 
 L<SignalWire::POM::PromptObjectModel> — the top-level container that

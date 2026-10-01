@@ -61,8 +61,7 @@ SignalWire::Skills::Builtin::CustomSkills - register user-supplied SWAIG tool de
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::CustomSkills> is the Perl port of the Python
-reference C<signalwire.skills.custom.skill>. It is a thin skill wrapper that lets
+L<SignalWire::Skills::Builtin::CustomSkills> is a thin skill wrapper that lets
 callers register their own tool definitions through the standard skill
 mechanism.
 

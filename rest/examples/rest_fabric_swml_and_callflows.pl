@@ -18,11 +18,11 @@ my $client = SignalWire::REST::RestClient->new(
 );
 
 sub safe {
-    my ($label, $fn) = @_;
+    my ( $label, $fn ) = @_;
     my $result = eval { $fn->() };
     if ($@) {
         print "  $label: failed ($@)\n";
-        return undef;
+        return;
     }
     print "  $label: OK\n";
     return $result;
@@ -35,8 +35,8 @@ sub safe {
 # which shape a given endpoint happens to use.
 sub rows {
     my ($resp) = @_;
-    return []                unless defined $resp;
-    return $resp             if ref $resp eq 'ARRAY';
+    return [] unless defined $resp;
+    return $resp               if ref $resp eq 'ARRAY';
     return $resp->{data} // [] if ref $resp eq 'HASH';
     return [];
 }
@@ -47,7 +47,7 @@ my $swml = $client->fabric->swml_scripts->create(
     name     => 'Greeting Script',
     contents => {
         sections => {
-            main => [{ play => { url => 'say:Hello from SignalWire' } }],
+            main => [ { play => { url => 'say:Hello from SignalWire' } } ],
         },
     },
 );
@@ -57,39 +57,48 @@ print "  Created SWML script: $swml_id\n";
 # 2. List SWML scripts
 print "\nListing SWML scripts...\n";
 my $scripts = $client->fabric->swml_scripts->list;
-for my $s (@{ rows($scripts) }) {
-    print "  - $s->{id}: " . ($s->{display_name} // 'unnamed') . "\n";
+for my $s ( @{ rows($scripts) } ) {
+    print "  - $s->{id}: " . ( $s->{display_name} // 'unnamed' ) . "\n";
 }
 
 # 3. Create a call flow
 print "\nCreating call flow...\n";
-my $flow = $client->fabric->call_flows->create(title => 'Main IVR Flow');
+my $flow    = $client->fabric->call_flows->create( title => 'Main IVR Flow' );
 my $flow_id = $flow->{id};
 print "  Created call flow: $flow_id\n";
 
 # 4. Deploy a version
 print "\nDeploying call flow version...\n";
-safe('Deploy version', sub {
-    $client->fabric->call_flows->deploy_version($flow_id, label => 'v1');
-});
+safe(
+    'Deploy version',
+    sub {
+        $client->fabric->call_flows->deploy_version( $flow_id, label => 'v1' );
+    }
+);
 
 # 5. List call flow versions
 print "\nListing call flow versions...\n";
-safe('List versions', sub {
-    my $versions = $client->fabric->call_flows->list_versions($flow_id);
-    for my $v (@{ rows($versions) }) {
-        print "  - Version: " . ($v->{label} // $v->{id} // 'unknown') . "\n";
+safe(
+    'List versions',
+    sub {
+        my $versions = $client->fabric->call_flows->list_versions($flow_id);
+        for my $v ( @{ rows($versions) } ) {
+            print "  - Version: " . ( $v->{label} // $v->{id} // 'unknown' ) . "\n";
+        }
     }
-});
+);
 
 # 6. List addresses for the call flow
 print "\nListing call flow addresses...\n";
-safe('List addresses', sub {
-    my $addrs = $client->fabric->call_flows->list_addresses($flow_id);
-    for my $a (@{ rows($addrs) }) {
-        print "  - " . ($a->{display_name} // $a->{id} // 'unknown') . "\n";
+safe(
+    'List addresses',
+    sub {
+        my $addrs = $client->fabric->call_flows->list_addresses($flow_id);
+        for my $a ( @{ rows($addrs) } ) {
+            print "  - " . ( $a->{display_name} // $a->{id} // 'unknown' ) . "\n";
+        }
     }
-});
+);
 
 # 7. Create a SWML webhook
 print "\nCreating SWML webhook...\n";

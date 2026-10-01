@@ -12,12 +12,14 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::BedrockParams: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'attention_timeout'    => ( is => 'ro' );
-has 'hard_stop_time'       => ( is => 'ro' );
-has 'inactivity_timeout'   => ( is => 'ro' );
-has 'video_listening_file' => ( is => 'ro' );
-has 'video_idle_file'      => ( is => 'ro' );
-has 'video_talking_file'   => ( is => 'ro' );
-has 'hard_stop_prompt'     => ( is => 'ro' );
+has 'attention_timeout'         => ( is => 'ro' );
+has 'compact_conversation_time' => ( is => 'ro' );
+has 'compact_strategy'          => ( is => 'ro' );
+has 'hard_stop_prompt'          => ( is => 'ro' );
+has 'hard_stop_time'            => ( is => 'ro' );
+has 'inactivity_timeout'        => ( is => 'ro' );
+has 'video_idle_file'           => ( is => 'ro' );
+has 'video_listening_file'      => ( is => 'ro' );
+has 'video_talking_file'        => ( is => 'ro' );
 
 1;

@@ -26,7 +26,7 @@ The assertion oracle is INDEPENDENT of the resource generator (RULES §1):
     generator self-snapshot.
 
 Inputs joined by (METHOD, normalized-path) (RULES §2): the registry's deduped
-routes (path params already {id}) × the spec operationIds (spec path normalized
+routes (path params already {id}) x the spec operationIds (spec path normalized
 the SAME way before the join). Routing collisions are resolved
 longest-template-wins (RULES §7) so the asserted route is the one the mock
 ACTUALLY journals (e.g. GET /rooms/{id} vs GET /rooms/{name}).
@@ -46,6 +46,7 @@ Usage:
     python3 scripts/generate_rest_tests.py           # (re)write the test files
     python3 scripts/generate_rest_tests.py --check   # GEN-FRESH: fail if stale
 """
+
 from __future__ import annotations
 
 import argparse
@@ -66,6 +67,7 @@ except ImportError:  # pragma: no cover
 # ---------------------------------------------------------------------------
 # Resolution.
 # ---------------------------------------------------------------------------
+
 
 def resolve_porting_sdk() -> Path:
     env = os.environ.get("PORTING_SDK")
@@ -90,6 +92,7 @@ def repo_root() -> Path:
 #    route_registry.pl: the SDK's deduped routes (via-merged, {id}-normalized).
 #    rest_test_plan.pl:  per-via call plan (chain, member, sentinel args).
 # ---------------------------------------------------------------------------
+
 
 def _run_perl(script: Path) -> dict:
     proc = subprocess.run(
@@ -130,7 +133,7 @@ def load_plan() -> dict[str, dict]:
 
 
 # ---------------------------------------------------------------------------
-# 2. The join — registry routes × spec operationIds by (method, normalized-path).
+# 2. The join — registry routes x spec operationIds by (method, normalized-path).
 # ---------------------------------------------------------------------------
 
 _BRACE = re.compile(r"\{[^}]+\}")
@@ -150,15 +153,13 @@ def wire_key(p: str) -> str:
 def spec_prefix(doc: dict) -> str:
     url = ((doc.get("servers") or [{}])[0]).get("url", "")
     i = url.find("signalwire.com")
-    return url[i + len("signalwire.com"):] if i >= 0 else ""
+    return url[i + len("signalwire.com") :] if i >= 0 else ""
 
 
 def spec_dirs_with_openapi(psdk: Path) -> list[str]:
     root = psdk / "rest-apis"
     out = [
-        d.name
-        for d in root.iterdir()
-        if d.is_dir() and (d / "openapi.yaml").is_file()
+        d.name for d in root.iterdir() if d.is_dir() and (d / "openapi.yaml").is_file()
     ]
     return sorted(out)
 
@@ -209,19 +210,22 @@ def build_join(routes: list[dict], psdk: Path, spec_dirs: list[str]) -> list[dic
             continue
         op_id = winner[1]
         spec = op_id[: op_id.index(".")]
-        rows.append({
-            "method": method,
-            "path": np,
-            "op_id": op_id,
-            "via": via_list[0],
-            "spec": spec,
-        })
+        rows.append(
+            {
+                "method": method,
+                "path": np,
+                "op_id": op_id,
+                "via": via_list[0],
+                "spec": spec,
+            }
+        )
     return rows
 
 
 # ---------------------------------------------------------------------------
 # 3. Emit — one t/rest/generated/<spec>_generated.t per spec namespace.
 # ---------------------------------------------------------------------------
+
 
 def slug(via: str) -> str:
     """The resource.method tail of the via, slugified — stable for GEN-FRESH.
@@ -230,7 +234,7 @@ def slug(via: str) -> str:
     calling_dial. Non-alnum → '_', trailing '_' trimmed. Used to name the
     subtest.
     """
-    tail = via[via.index(".") + 1:] if "." in via else via
+    tail = via[via.index(".") + 1 :] if "." in via else via
     return re.sub(r"_+$", "", re.sub(r"[^A-Za-z0-9]+", "_", tail))
 
 
@@ -301,6 +305,7 @@ subtest '{name}_error' => sub {{
 # Driver.
 # ---------------------------------------------------------------------------
 
+
 def build_outputs(psdk: Path) -> tuple[dict[str, str], list[str], int]:
     """Return ({filename: source}, uncovered_vias, n_routes_covered)."""
     routes = load_routes()
@@ -348,7 +353,9 @@ def build_outputs(psdk: Path) -> tuple[dict[str, str], list[str], int]:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true", help="GEN-FRESH: exit non-zero if stale")
+    ap.add_argument(
+        "--check", action="store_true", help="GEN-FRESH: exit non-zero if stale"
+    )
     ap.add_argument("--out", default="", help="scratch: emit into this dir")
     args = ap.parse_args(argv)
 
@@ -372,11 +379,15 @@ def main(argv: list[str]) -> int:
                 stale.append(str(p))
         expected = set(outs.keys())
         if out_dir.is_dir():
-            for p in sorted(out_dir.glob("*_generated.t")):
-                if p.name not in expected:
-                    stale.append(f"{p} (leftover — not in generator output)")
+            stale.extend(
+                f"{p} (leftover — not in generator output)"
+                for p in sorted(out_dir.glob("*_generated.t"))
+                if p.name not in expected
+            )
         if stale:
-            sys.stderr.write("GEN-FRESH FAIL: %d generated REST test file(s) stale:\n" % len(stale))
+            sys.stderr.write(
+                f"GEN-FRESH FAIL: {len(stale)} generated REST test file(s) stale:\n"
+            )
             for s in stale:
                 sys.stderr.write(f"  - {s}\n")
             return 1

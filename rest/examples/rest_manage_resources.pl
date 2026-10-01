@@ -18,11 +18,11 @@ my $client = SignalWire::REST::RestClient->new(
 );
 
 sub safe {
-    my ($label, $fn) = @_;
+    my ( $label, $fn ) = @_;
     my $result = eval { $fn->() };
     if ($@) {
         print "  $label: failed ($@)\n";
-        return undef;
+        return;
     }
     print "  $label: OK\n";
     return $result;
@@ -40,30 +40,36 @@ print "  Created agent: $agent_id\n";
 # 2. List all AI agents
 print "\nListing AI agents...\n";
 my $agents = $client->fabric->ai_agents->list;
-for my $a (@{ $agents->{data} // [] }) {
-    print "  - $a->{id}: " . ($a->{name} // 'unnamed') . "\n";
+for my $a ( @{ $agents->{data} // [] } ) {
+    print "  - $a->{id}: " . ( $a->{name} // 'unnamed' ) . "\n";
 }
 
 # 3. Search for a phone number
 print "\nSearching for available phone numbers...\n";
-my $available = safe('Search numbers', sub {
-    $client->phone_numbers->search(areacode => '512', max_results => 3);
-});
+my $available = safe(
+    'Search numbers',
+    sub {
+        $client->phone_numbers->search( areacode => '512', max_results => 3 );
+    }
+);
 if ($available) {
-    for my $num (@{ $available->{data} // [] }) {
-        print "  - " . ($num->{e164} // $num->{number} // 'unknown') . "\n";
+    for my $num ( @{ $available->{data} // [] } ) {
+        print "  - " . ( $num->{e164} // $num->{number} // 'unknown' ) . "\n";
     }
 }
 
 # 4. Place a test call (requires valid numbers)
 print "\nPlacing a test call...\n";
-safe('Dial', sub {
-    $client->calling->dial(
-        from  => '+15559876543',
-        to    => '+15551234567',
-        url   => 'https://example.com/call-handler',
-    );
-});
+safe(
+    'Dial',
+    sub {
+        $client->calling->dial(
+            from => '+15559876543',
+            to   => '+15551234567',
+            url  => 'https://example.com/call-handler',
+        );
+    }
+);
 
 # 5. Clean up
 print "\nDeleting agent $agent_id...\n";

@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More;
-use JSON qw(encode_json decode_json);
+use JSON         qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
 # =============================================================================
@@ -36,10 +36,10 @@ sub make_env {
         QUERY_STRING   => $o{query} // '',
         CONTENT_LENGTH => length($body),
         CONTENT_TYPE   => 'application/json',
-        ( $o{auth} ? ( HTTP_AUTHORIZATION => "Basic $o{auth}" ) : () ),
-        ( $o{extra_headers} ? %{ $o{extra_headers} } : () ),
-        'psgi.input'   => $fh,
-        'psgi.errors'  => \*STDERR,
+        ( $o{auth}          ? ( HTTP_AUTHORIZATION => "Basic $o{auth}" ) : () ),
+        ( $o{extra_headers} ? %{ $o{extra_headers} }                     : () ),
+        'psgi.input'      => $fh,
+        'psgi.errors'     => \*STDERR,
         'psgi.url_scheme' => 'http',
     };
 }
@@ -47,8 +47,8 @@ sub make_env {
 # Turn a PSGI [status, \@headers, \@body] triple into (status, %headers, body).
 sub psgi_parts {
     my ($res) = @_;
-    my %h = @{ $res->[1] };
-    my $body = join '', @{ $res->[2] };
+    my %h     = @{ $res->[1] };
+    my $body  = join '', @{ $res->[2] };
     return ( $res->[0], \%h, $body );
 }
 
@@ -66,13 +66,13 @@ subtest 'AgentBase served path: routing callback drives a real 307' => sub {
     my $seen_body;
     my $seen_headers;
     $agent->register_routing_callback(
-        '/',
         sub {
             my ( $body, $headers ) = @_;
             $seen_body    = $body;
             $seen_headers = $headers;
             return 'https://elsewhere.example/swml';
         },
+        '/',
     );
 
     # This is the exact coderef serve()/run() hands to Plack.
@@ -81,23 +81,24 @@ subtest 'AgentBase served path: routing callback drives a real 307' => sub {
     my ( $status, $headers, $body ) = psgi_parts(
         $app->(
             make_env(
-                method => 'POST',
-                path   => '/',
-                auth   => $AUTH,
-                body   => encode_json( { call_id => 'abc123' } ),
+                method        => 'POST',
+                path          => '/',
+                auth          => $AUTH,
+                body          => encode_json( { call_id => 'abc123' } ),
                 extra_headers => { HTTP_X_TRACE => 'trace-99' },
             )
         )
     );
 
     is( $status, 307, 'served POST / returns 307 (NOT a 200 SWML doc)' );
-    is( $headers->{Location}, 'https://elsewhere.example/swml',
-        'Location header carries the routed URL' );
-    is( $body, '', 'redirect body is empty' );
-    is( $seen_body->{call_id}, 'abc123',
-        'routing callback received the parsed body' );
-    is( $seen_headers->{'X-Trace'}, 'trace-99',
-        'routing callback received the request headers' );
+    is(
+        $headers->{Location},
+        'https://elsewhere.example/swml',
+        'Location header carries the routed URL'
+    );
+    is( $body,                      '',         'redirect body is empty' );
+    is( $seen_body->{call_id},      'abc123',   'routing callback received the parsed body' );
+    is( $seen_headers->{'X-Trace'}, 'trace-99', 'routing callback received the request headers' );
 };
 
 subtest 'AgentBase served path: 401 on bad auth through the served endpoint' => sub {
@@ -106,7 +107,7 @@ subtest 'AgentBase served path: 401 on bad auth through the served endpoint' => 
         basic_auth_user     => 'u',
         basic_auth_password => 'p',
     );
-    $agent->register_routing_callback( '/', sub { return '/nope' } );
+    $agent->register_routing_callback( sub { return '/nope' }, '/' );
     my $app = $agent->psgi_app;
 
     my ( $status, $headers ) = psgi_parts(
@@ -119,9 +120,8 @@ subtest 'AgentBase served path: 401 on bad auth through the served endpoint' => 
             )
         )
     );
-    is( $status, 401, 'bad auth -> 401 through served path' );
-    is( $headers->{'WWW-Authenticate'}, 'Basic',
-        'WWW-Authenticate header set on 401' );
+    is( $status,                        401,     'bad auth -> 401 through served path' );
+    is( $headers->{'WWW-Authenticate'}, 'Basic', 'WWW-Authenticate header set on 401' );
 };
 
 subtest 'AgentBase served path: 200 SWML happy path (no redirect)' => sub {
@@ -132,7 +132,7 @@ subtest 'AgentBase served path: 200 SWML happy path (no redirect)' => sub {
     );
 
     # A callback that returns undef must fall through to the rendered document.
-    $agent->register_routing_callback( '/', sub { return undef } );
+    $agent->register_routing_callback( sub { return }, '/' );
     my $app = $agent->psgi_app;
 
     my ( $status, $headers, $body ) = psgi_parts(
@@ -150,8 +150,8 @@ subtest 'AgentBase served path: 200 SWML happy path (no redirect)' => sub {
     ok( ref $doc eq 'HASH', 'body is a JSON SWML document' );
 
     # GET happy path (no body, no redirect) also 200.
-    my ( $gstatus, undef, $gbody ) = psgi_parts(
-        $app->( make_env( method => 'GET', path => '/', auth => $AUTH ) ) );
+    my ( $gstatus, undef, $gbody ) =
+        psgi_parts( $app->( make_env( method => 'GET', path => '/', auth => $AUTH ) ) );
     is( $gstatus, 200, 'GET / served with 200' );
     ok( decode_json($gbody), 'GET body is JSON SWML' );
 };
@@ -165,7 +165,7 @@ subtest 'as_router served path: routing callback drives a real 307' => sub {
         basic_auth_user     => 'u',
         basic_auth_password => 'p',
     );
-    $agent->register_routing_callback( '/', sub { return '/routed' } );
+    $agent->register_routing_callback( sub { return '/routed' }, '/' );
 
     my $app = $agent->as_router;    # == to_psgi_app (inherited)
 
@@ -179,9 +179,9 @@ subtest 'as_router served path: routing callback drives a real 307' => sub {
             )
         )
     );
-    is( $status, 307, 'as_router POST / returns 307 (NOT a 200)' );
+    is( $status,              307,       'as_router POST / returns 307 (NOT a 200)' );
     is( $headers->{Location}, '/routed', 'Location header carries the route' );
-    is( $body, '', 'redirect body is empty' );
+    is( $body,                '',        'redirect body is empty' );
 };
 
 subtest 'SWMLService served path: routing callback drives a real 307' => sub {
@@ -190,7 +190,7 @@ subtest 'SWMLService served path: routing callback drives a real 307' => sub {
         basic_auth_user     => 'u',
         basic_auth_password => 'p',
     );
-    $svc->register_routing_callback( '/', sub { return '/svc-routed' } );
+    $svc->register_routing_callback( sub { return '/svc-routed' }, '/' );
 
     my $app = $svc->as_router;
 
@@ -204,7 +204,7 @@ subtest 'SWMLService served path: routing callback drives a real 307' => sub {
             )
         )
     );
-    is( $status, 307, 'SWMLService served POST / returns 307' );
+    is( $status,              307,           'SWMLService served POST / returns 307' );
     is( $headers->{Location}, '/svc-routed', 'Location header carries the route' );
 };
 

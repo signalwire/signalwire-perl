@@ -5,7 +5,8 @@ use Moo;
 
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-use JSON ();
+use JSON         ();
+use Scalar::Util ();
 
 has 'response' => (
     is      => 'rw',
@@ -42,13 +43,32 @@ sub _py_truthy {
     return $v ? 1 : 0;
 }
 
+# Python parity: FunctionResult(response, post_process, tool_result, tool_prompt).
+# tool_result / tool_prompt build the structured response at construction
+# (set_tool_response); they are constructor-only, not stored state.
+has '_ctor_tool_result' => ( is => 'ro', init_arg => 'tool_result' );
+has '_ctor_tool_prompt' => ( is => 'ro', init_arg => 'tool_prompt' );
+
+sub BUILD ( $self, $args ) {
+    if ( defined $args->{tool_result} || defined $args->{tool_prompt} ) {
+        $self->set_tool_response(
+            tool_result => $args->{tool_result},
+            tool_prompt => $args->{tool_prompt},
+        );
+    }
+    return;
+}
+
 # Constructor: new(response => "text") or new("text") or new("text", post_process => 1)
 around BUILDARGS => sub {
     my ( $orig, $class, @args ) = @_;
     if ( @args == 1 && !ref $args[0] ) {
         return $class->$orig( response => $args[0] );
     }
-    if ( @args >= 1 && !ref $args[0] && $args[0] !~ /^(response|action|post_process)$/ ) {
+    if (   @args >= 1
+        && !ref $args[0]
+        && $args[0] !~ /^(response|action|post_process|tool_result|tool_prompt)$/ )
+    {
         my $resp = shift @args;
         return $class->$orig( response => $resp, @args );
     }
@@ -64,6 +84,17 @@ sub set_response ( $self, $response ) {
 
 sub set_post_process ( $self, $post_process ) {
     $self->post_process( $post_process ? 1 : 0 );
+    return $self;
+}
+
+# Set the structured response form, separating outcome from instruction:
+# { tool_result => "what the tool DID", tool_prompt => "what to SAY next" }.
+# Each key is included only when given (defined).
+sub set_tool_response ( $self, %opts ) {
+    my %payload;
+    $payload{tool_result} = $opts{tool_result} if defined $opts{tool_result};
+    $payload{tool_prompt} = $opts{tool_prompt} if defined $opts{tool_prompt};
+    $self->response( \%payload );
     return $self;
 }
 
@@ -120,15 +151,64 @@ sub swml_transfer ( $self, $dest, $ai_response, %opts ) {
     return $self;
 }
 
+# Change the agent's voice for the rest of the call (an `engine.voice:model`
+# spec, e.g. "elevenlabs.rachel"; wire action key `change_voice`).
+sub change_voice ( $self, $voice ) {
+    return $self->add_action( 'change_voice', $voice );
+}
+
 sub hangup ($self) {
     return $self->add_action( 'hangup', JSON::true );
 }
 
-sub hold ( $self, $timeout = undef ) {
+# Python parity: hold(prompt=None, timeout=300, step=None, timeout_step=None).
+#
+# `prompt` becomes the structured response (tool_result "status: on hold" +
+# tool_prompt) and switches post_process on, so the model speaks BEFORE the hold
+# lands (speech detection is paused during hold). Back-compat: a NUMBER passed
+# as the first argument is the timeout, so hold(120) keeps meaning
+# hold(timeout => 120); a JSON boolean is neither and is dropped. `step` /
+# `timeout_step` (trailing %opts) route the caller when the hold ends; with
+# neither, the action stays the bare integer form.
+sub hold ( $self, $prompt = undef, $timeout = 300, %opts ) {
+    if ( defined $prompt && JSON::is_bool($prompt) ) {
+        $prompt = undef;
+    } elsif ( _is_number_value($prompt) ) {
+        ( $timeout, $prompt ) = ( $prompt, undef );
+    }
+
+    if ( defined $prompt ) {
+        $self->set_tool_response( tool_result => 'status: on hold', tool_prompt => $prompt );
+        $self->post_process(1);
+    }
+
     $timeout //= 300;
     $timeout = 0   if $timeout < 0;
     $timeout = 900 if $timeout > 900;
-    return $self->add_action( 'hold', $timeout );
+
+    my $step         = $opts{step};
+    my $timeout_step = $opts{timeout_step};
+
+    # Bare integer unless routing is requested, so existing output is unchanged.
+    return $self->add_action( 'hold', $timeout )
+        if !defined $step && !defined $timeout_step;
+
+    my %hold_config = ( timeout => $timeout );
+    $hold_config{step}         = $step         if defined $step;
+    $hold_config{timeout_step} = $timeout_step if defined $timeout_step;
+    return $self->add_action( 'hold', \%hold_config );
+}
+
+# True when $v holds a NUMBER (not a string that happens to look like one): the
+# Perl analog of python's isinstance(prompt, int). A prompt string such as "120"
+# stays a prompt, exactly as it would in the reference.
+sub _is_number_value {
+    my ($v) = @_;
+    return 0 if !defined $v || ref $v;
+    require B;
+    my $flags = B::svref_2object( \$v )->FLAGS;
+    return 0 if $flags & B::SVp_POK();
+    return ( $flags & ( B::SVp_IOK() | B::SVp_NOK() ) ) ? 1 : 0;
 }
 
 sub wait_for_user ( $self, %opts ) {
@@ -350,15 +430,21 @@ sub execute_swml ( $self, $swml_content, %opts ) {
         if ($@) {
             $swml_data = { raw_swml => $swml_content };
         }
+    } elsif ( Scalar::Util::blessed($swml_content) && $swml_content->can('to_hash') ) {
+
+        # SWML SDK object - convert to a plain hash
+        $swml_data = $swml_content->to_hash;
     } else {
         die "swml_content must be a string or hashref";
     }
 
-    if ($transfer) {
-        $swml_data->{transfer} = 'true';
-    }
-
-    return $self->add_action( 'SWML', $swml_data );
+    # transfer rides BESIDE the SWML document, not inside it -- the same shape
+    # connect() and swml_transfer() emit. Inside the document it is not a SWML
+    # key and the call never exits the agent.
+    my %action = ( SWML => $swml_data );
+    $action{transfer} = 'true' if $transfer;
+    push @{ $self->action }, \%action;
+    return $self;
 }
 
 # join_conference — join an ad-hoc audio conference (RELAY + CXML) via
@@ -516,8 +602,11 @@ sub tap ( $self, $uri, %opts ) {
     my $rtp_ptime  = $opts{rtp_ptime} // 20;
     my $status_url = $opts{status_url};
 
-    die "direction must be 'speak', 'hear', or 'both'"
-        unless $direction eq 'speak' || $direction eq 'hear' || $direction eq 'both';
+    # The SWML tap verb's direction enum is speak/listen/both (schema.json
+    # $defs/Tap; the same set record_call uses). 'hear' is not a tap direction —
+    # the platform rejects it — so it dies here like any other bad value.
+    die "direction must be 'speak', 'listen', or 'both'"
+        unless $direction eq 'speak' || $direction eq 'listen' || $direction eq 'both';
     die "codec must be 'PCMU' or 'PCMA'"
         unless $codec eq 'PCMU' || $codec eq 'PCMA';
 
@@ -527,9 +616,11 @@ sub tap ( $self, $uri, %opts ) {
     my %params = ( uri => $uri );
 
     # Conditional keys — each emitted only when it differs from its default,
-    # matching Python's per-key gating.
-    $params{control_id} = $control_id    if $control_id;
-    $params{direction}  = $direction     if $direction ne 'both';
+    # matching Python's per-key gating. direction is ALWAYS sent: the verb's
+    # own default is 'speak', not this helper's 'both', so omitting it would
+    # tap less than the caller asked for.
+    $params{control_id} = $control_id if $control_id;
+    $params{direction}  = $direction;
     $params{codec}      = $codec         if $codec ne 'PCMU';
     $params{rtp_ptime}  = $rtp_ptime + 0 if $rtp_ptime != 20;
     $params{status_url} = $status_url    if $status_url;
@@ -682,19 +773,35 @@ sub rpc_dial ( $self, %opts ) {
     );
 }
 
+# Python parity: rpc_ai_message(call_id, message_text=None, role="system",
+# global_data=None). Either payload, or both: message_text lands as a turn in
+# the other agent's conversation; global_data is MERGED into the other call's
+# global_data. Dies when neither is given.
 sub rpc_ai_message ( $self, %opts ) {
-    my $call_id      = $opts{call_id}      // die "call_id is required";
-    my $message_text = $opts{message_text} // die "message_text is required";
-    my $role         = $opts{role}         // 'system';
+    my $call_id      = $opts{call_id} // die "call_id is required";
+    my $message_text = $opts{message_text};
+    my $role         = $opts{role} // 'system';
+    my $global_data  = $opts{global_data};
+
+    my %params;
+    if ( defined $message_text ) {
+        $params{role}         = $role;
+        $params{message_text} = $message_text;
+    }
+    $params{global_data} = $global_data if defined $global_data;
+    die "rpc_ai_message needs message_text, global_data, or both\n" unless %params;
 
     return $self->execute_rpc(
         method  => 'ai_message',
         call_id => $call_id,
-        params  => {
-            role         => $role,
-            message_text => $message_text,
-        },
+        params  => \%params,
     );
+}
+
+# Merge $data into another call's global_data, with no conversation turn. Thin
+# wrapper over rpc_ai_message(global_data => ...).
+sub rpc_ai_global_data ( $self, $call_id, $data ) {
+    return $self->rpc_ai_message( call_id => $call_id, global_data => $data );
 }
 
 sub rpc_ai_unhold ( $self, %opts ) {
@@ -742,7 +849,11 @@ sub create_payment_parameter ( $class_or_self, $name, $value ) {
 sub to_hash ($self) {
     my %result;
 
-    $result{response} = $self->response if length $self->response;
+    # Python's `if self.response:` — a string is emitted when non-empty, the
+    # structured {tool_result, tool_prompt} form when it is a NON-EMPTY hash.
+    my $response = $self->response;
+    $result{response} = $response
+        if ref $response ? _py_truthy($response) : ( defined $response && length $response );
 
     if ( @{ $self->action } ) {
         $result{action}       = $self->action;
@@ -788,15 +899,16 @@ SignalWire::SWAIG::FunctionResult - build SWAIG function responses and actions
 
 =head1 DESCRIPTION
 
-L<SignalWire::SWAIG::FunctionResult> is the Perl port of
-C<signalwire.core.function_result.FunctionResult>. A SWAIG function
-handler returns one of these to tell the agent what to say and which
+A SWAIG function handler returns an
+L<SignalWire::SWAIG::FunctionResult> to tell the agent what to say and which
 call-control actions to perform. The action list is serialised to the
 wire shape the SignalWire AI engine expects.
 
 Most mutators return C<$self> so calls chain fluently. The constructor
 accepts either C<< new(response => $text) >>, the positional shorthand
-C<< new($text) >>, or C<< new($text, post_process => 1) >>.
+C<< new($text) >>, or C<< new($text, post_process => 1) >>. C<tool_result>
+and C<tool_prompt> constructor arguments build the structured response at
+construction (see C<set_tool_response>).
 
 The class-method payment helpers (C<create_payment_prompt>,
 C<create_payment_action>, C<create_payment_parameter>) may be invoked as
@@ -804,45 +916,366 @@ class or instance methods — they build plain hashrefs and hold no state.
 
 =head1 METHODS
 
-The surface mirrors the Python reference; see that documentation for the
-authoritative per-argument contract. Grouped by area:
+Every mutator below appends to the action list and returns C<$self>, so
+calls chain. The wire key an action lands under is frequently B<not> the
+method name — each entry states the key it actually emits.
 
 =head2 Core
 
-C<set_response>, C<set_post_process>, C<add_action>, C<add_actions>.
+=over 4
+
+=item C<set_response($text)>
+
+Set the spoken response text.
+
+=item C<set_post_process($bool)>
+
+Set the post-process flag, normalized to 1/0. It only reaches the wire when
+the result also carries at least one action (see C<to_hash>).
+
+=item C<set_tool_response(tool_result =E<gt> $status, tool_prompt =E<gt> $instruction)>
+
+Set the structured response form, separating outcome from instruction: the
+response becomes C<< { tool_result => ..., tool_prompt => ... } >>, each key
+present only when given. C<tool_result> is what the tool DID (a status line for
+the model to reason from); C<tool_prompt> is what the model should now SAY.
+Splitting them keeps the model from reading a status line aloud.
+
+=item C<add_action($name, $data)>
+
+Append the raw action C<< { $name => $data } >>. The escape hatch for an
+action this class has no named helper for.
+
+=item C<add_actions($arrayref)>
+
+Append several already-built action hashrefs at once.
+
+=back
 
 =head2 Call control
 
-C<connect>, C<swml_transfer>, C<hangup>, C<hold>, C<wait_for_user>,
-C<stop>, C<join_conference>, C<join_room>, C<sip_refer>, C<send_sms>,
-C<pay>.
+=over 4
+
+=item C<connect($destination, %opts)>
+
+Bridge the caller to C<$destination>. Emits a SWML action whose C<main>
+section holds a C<connect> verb. C<final> defaults to B<true> (the wire
+C<transfer> key becomes the string C<'true'>/C<'false'>, not a JSON
+boolean), and an optional C<from> is included only when defined.
+
+=item C<swml_transfer($dest, $ai_response, %opts)>
+
+Transfer to C<$dest>, first setting C<ai_response> so the agent has
+something to say if control returns. Like C<connect>, C<final> defaults to
+true and maps to the string-valued C<transfer> key.
+
+=item C<hangup()>
+
+End the call (action key C<hangup>, value JSON C<true>).
+
+=item C<hold($prompt, $timeout, step =E<gt> $step, timeout_step =E<gt> $step)>
+
+Put the call on hold. C<$timeout> defaults to 300 and is B<clamped silently>
+into 0..900. During hold speech detection is paused, so anything the caller
+must hear has to be said BEFORE the action lands: a C<$prompt> becomes the
+structured response (C<tool_result> C<"status: on hold"> plus C<tool_prompt>)
+and turns C<post_process> on, so the model speaks first. A B<number> passed as
+the first argument is the timeout (C<hold(120)> keeps working); a JSON boolean
+is ignored. C<step> / C<timeout_step> name the step to land in when the hold
+ends or times out (deferred, unlike C<swml_change_step>); with either, the
+action becomes C<< { timeout, step?, timeout_step? } >>, otherwise it stays
+the bare integer.
+
+=item C<change_voice($voice)>
+
+Change the agent's voice for the rest of the call. C<$voice> is an
+C<engine.voice:model> spec (e.g. C<elevenlabs.rachel>); the platform applies
+it at the next speech batch boundary. Wire action key C<change_voice>.
+
+=item C<wait_for_user(%opts)>
+
+Control whether the agent waits for the user to speak. The emitted value is
+chosen by precedence, B<not> combined: C<answer_first> wins and emits the
+string C<'answer_first'>; else a defined C<timeout> emits that number; else
+C<enabled> emits a JSON boolean; with no arguments at all it emits JSON
+C<true>.
+
+=item C<stop()>
+
+Stop the current AI interaction (action key C<stop>, value JSON C<true>).
+
+=item C<join_conference($name, %opts)>
+
+Join an ad-hoc audio conference via a SWML C<join_conference> verb. Takes
+C<$name> plus 18 optional parameters, and B<validates seven of them,
+dying> with the reference's exact messages: C<beep> must be one of
+true/false/onEnter/onExit; C<max_participants> must be a positive integer
+E<lt>= 250; C<record> one of do-not-record/record-from-start; C<trim> one
+of trim-silence/do-not-trim; C<status_callback_method> and
+C<recording_status_callback_method> each GET or POST; and C<$name> must be
+non-empty after trimming whitespace.
+
+Emission has two forms. When B<every> parameter is at its default the verb
+carries the bare conference name as a string; otherwise it carries an
+object of C<name> plus only those parameters that differ from their
+default. The six optional string parameters are omitted when undef B<or
+empty string> (mirroring the reference's truthiness gate), so C<< coach =>
+'' >> does not reach the wire while C<< coach => '0' >> does.
+
+=item C<join_room($name)>
+
+Join the named video room (SWML C<join_room>).
+
+=item C<sip_refer($to_uri)>
+
+Send a SIP REFER to C<$to_uri> (SWML C<sip_refer>).
+
+=item C<send_sms(%opts)>
+
+Send an SMS (SWML C<send_sms>). C<to_number> and C<from_number> are
+required and die if absent, and at least one of C<body> or C<media> must be
+given. C<media> and C<tags> are omitted when B<empty>, not merely when
+absent — an empty arrayref must not reach the wire.
+
+=item C<pay(%opts)>
+
+Run a payment collection flow (SWML C<pay>, preceded by a C<set> of
+C<ai_response>). C<payment_connector_url> is required and dies if absent.
+Most parameters are always-on with defaults — C<input> dtmf, C<timeout> 5,
+C<max_attempts> 1, C<payment_method> credit-card, C<token_type> reusable,
+C<currency> usd, C<language> en-US, C<voice> woman, C<valid_card_types>
+"visa mastercard amex" — and the numeric ones are emitted as B<strings>.
+C<postal_code> is tri-state: a boolean-ish 0/1 becomes the string
+C<'true'>/C<'false'>, while any other value is passed through as a literal
+postal code. C<parameters> and C<prompts> are omitted when empty.
+
+=back
 
 =head2 State and data
 
-C<update_global_data>, C<remove_global_data>, C<set_metadata>,
-C<remove_metadata>, C<swml_user_event>, C<swml_change_step>,
-C<swml_change_context>, C<switch_context>, C<replace_in_history>.
+=over 4
+
+=item C<update_global_data($hashref)>
+
+Merge keys into the call's global data. B<Emits the wire key
+C<set_global_data>>, not C<update_global_data>.
+
+=item C<remove_global_data($keys)>
+
+Delete global-data keys (wire key C<unset_global_data>).
+
+=item C<set_metadata($hashref)> / C<remove_metadata($keys)>
+
+Set and delete call metadata (wire keys C<set_meta_data> and
+C<unset_meta_data> — note the underscore, which does not match the method
+name).
+
+=item C<swml_user_event($event_data)>
+
+Emit an application-defined event through a SWML C<user_event> verb.
+
+=item C<swml_change_step($step_name)> / C<swml_change_context($context_name)>
+
+Move the contexts state machine to another step or context (wire keys
+C<change_step> and C<change_context>). These are plain actions despite the
+C<swml_> prefix — no SWML document is built.
+
+=item C<switch_context(%opts)>
+
+Switch the AI's prompt context (wire key C<context_switch>). Has two
+emission forms: given B<only> C<system_prompt>, the value is that bare
+string; with any of C<user_prompt>, C<consolidate> or C<full_reset> also
+set, the value is an object carrying just the options supplied.
+
+=item C<replace_in_history($text)>
+
+Replace the function's entry in conversation history with C<$text>, or with
+JSON C<true> when called with no argument.
+
+=back
 
 =head2 Media
 
-C<say>, C<play_background_file>, C<stop_background_file>, C<record_call>,
-C<stop_record_call>, C<tap>, C<stop_tap>.
+=over 4
+
+=item C<say($text)>
+
+Speak C<$text> (action key C<say>).
+
+=item C<play_background_file($filename, %opts)>
+
+Play a background file (wire key C<playback_bg>). The emitted value's
+B<shape depends on C<wait>>: with C<wait> the value is
+C<< { file => $filename, wait => true } >>; without it, the value is the
+bare filename string.
+
+=item C<stop_background_file()>
+
+Stop background playback (wire key C<stop_playback_bg>).
+
+=item C<record_call(%opts)>
+
+Start recording via a SWML C<record_call> verb. Dies unless C<format> is
+wav/mp3/mp4 and C<direction> is speak/listen/both. C<stereo>, C<format>,
+C<direction>, C<beep> and C<input_sensitivity> are emitted
+B<unconditionally> — so C<beep> false and C<input_sensitivity> 44.0 ship
+even at their defaults. The three timeouts (C<initial_timeout>,
+C<end_silence_timeout>, C<max_length>) are gated on being B<defined>, so a
+literal 0 still emits, whereas C<control_id>, C<terminators> and
+C<status_url> are gated on truthiness and so drop when empty.
+
+=item C<stop_record_call(%opts)>
+
+Stop recording (SWML C<stop_record_call>); C<control_id> is included only
+when truthy.
+
+=item C<tap($uri, %opts)>
+
+Start tapping media to C<$uri> (SWML C<tap>). Dies unless C<direction> is
+speak/listen/both (default both), C<codec> is PCMU or PCMA, and
+C<rtp_ptime> is positive. C<direction> is always sent (the SWML verb's own
+default is speak); every other optional key is emitted only when it differs
+from its default.
+
+=item C<stop_tap(%opts)>
+
+Stop tapping (SWML C<stop_tap>).
+
+=back
 
 =head2 Speech and AI
 
-C<add_dynamic_hints>, C<clear_dynamic_hints>, C<set_end_of_speech_timeout>,
-C<set_speech_event_timeout>, C<toggle_functions>,
-C<enable_functions_on_timeout>, C<enable_extensive_data>,
-C<update_settings>, C<simulate_user_input>.
+=over 4
+
+=item C<add_dynamic_hints($hints)> / C<clear_dynamic_hints()>
+
+Add speech-recognition hints for this turn, and clear them. C<clear> emits
+an empty hashref value rather than a boolean.
+
+=item C<set_end_of_speech_timeout($ms)> / C<set_speech_event_timeout($ms)>
+
+Set the end-of-speech and speech-event timeouts in milliseconds (wire keys
+C<end_of_speech_timeout> and C<speech_event_timeout> — the C<set_> prefix
+is method-only).
+
+=item C<toggle_functions($toggles)>
+
+Enable or disable named SWAIG functions for the rest of the call.
+
+=item C<enable_functions_on_timeout($enabled)>
+
+Allow functions to run when the speaker times out. Defaults to enabled;
+emits a JSON boolean under the wire key
+C<functions_on_speaker_timeout>.
+
+=item C<enable_extensive_data($enabled)>
+
+Request the extensive-data payload. Defaults to enabled; wire key
+C<extensive_data>.
+
+=item C<update_settings($settings)>
+
+Update AI settings mid-call (wire key C<settings>).
+
+=item C<simulate_user_input($text)>
+
+Inject C<$text> as if the user had said it (wire key C<user_input>).
+
+=back
 
 =head2 Advanced / RPC
 
-C<execute_swml>, C<execute_rpc>, C<rpc_dial>, C<rpc_ai_message>,
-C<rpc_ai_unhold>.
+=over 4
+
+=item C<execute_swml($swml_content, %opts)>
+
+Attach a raw SWML document as an action. Accepts a hashref, which is
+B<deep-copied> (via a JSON round-trip) so the caller's structure is never
+mutated, or a string, which is parsed as JSON and — if that fails —
+wrapped as C<< { raw_swml => $string } >> rather than raising. Anything
+else dies (an object with C<to_hash> is converted). With
+C<< transfer => 1 >> the action gains a string C<transfer> key B<beside> the
+document -- C<< { SWML => $doc, transfer => 'true' } >>, the shape C<connect>
+and C<swml_transfer> emit; inside the document it is not a SWML key and the
+call would never leave the agent. This is the primitive every SWML-emitting
+helper above funnels through.
+
+=item C<execute_rpc(%opts)>
+
+Emit a SWML C<execute_rpc> verb. C<method> is required and dies if absent;
+C<call_id> and C<node_id> are included when truthy. C<params> is omitted
+when B<empty> — this is load-bearing, and is why C<rpc_ai_unhold> can pass
+C<< params => {} >> without shipping an empty object.
+
+=item C<rpc_dial(%opts)>
+
+Dial out via RPC. C<to_number>, C<from_number> and C<dest_swml> are all
+required and die if absent; C<device_type> defaults to C<phone>.
+
+=item C<rpc_ai_message(%opts)>
+
+Send a message and/or global_data to an AI session on another call over RPC.
+C<call_id> is required. C<message_text> (with C<role>, default C<system>)
+lands as a turn in that conversation; C<global_data> is B<merged> into the
+other call's global_data. Dies when neither C<message_text> nor
+C<global_data> is given.
+
+=item C<rpc_ai_global_data($call_id, $data)>
+
+Merge C<$data> into another call's global_data with no conversation turn --
+a thin wrapper over C<< rpc_ai_message(global_data => $data) >>. The
+destination prompt reads it back with C<${global_data.key}>.
+
+=item C<rpc_ai_unhold(%opts)>
+
+Take a held AI session off hold over RPC. C<call_id> is required and dies
+if absent.
+
+=back
+
+=head2 Payment helpers
+
+Class methods — invokable on the class or an instance. They build and
+return plain hashrefs and hold no state, so they do B<not> chain.
+
+=over 4
+
+=item C<create_payment_prompt(%opts)>
+
+Build a payment prompt hashref for C<pay>'s C<prompts> list.
+C<for_situation> and C<actions> are required and die if absent;
+C<card_type> and C<error_type> are included when truthy. Note the emitted
+key for C<for_situation> is C<for>.
+
+=item C<create_payment_action($action_type, $phrase)>
+
+Build C<< { type => $action_type, phrase => $phrase } >> for a prompt's
+C<actions> list.
+
+=item C<create_payment_parameter($name, $value)>
+
+Build C<< { name => $name, value => $value } >> for C<pay>'s C<parameters>
+list.
+
+=back
 
 =head2 Serialization
 
-C<to_hash> (the Python C<to_dict> equivalent) and C<to_json>.
+=over 4
+
+=item C<to_hash()>
+
+The wire payload (the reference's C<to_dict>). C<response> is included only
+when non-empty; C<action> only when at least one action was added; and
+C<post_process> only alongside actions. If that would leave the payload
+B<empty>, it falls back to C<< { response => 'Action completed.' } >> so a
+handler always returns something valid.
+
+=item C<to_json()>
+
+C<to_hash> encoded as a JSON string.
+
+=back
 
 =head1 SEE ALSO
 

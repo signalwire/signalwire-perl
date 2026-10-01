@@ -35,7 +35,7 @@ no warnings 'experimental::signatures';
 use FindBin qw($RealBin);
 use File::Spec;
 use Time::HiRes ();
-use JSON ();
+use JSON        ();
 
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
 
@@ -65,6 +65,7 @@ use constant DELAY_MS => 150;
 # wait that never pumps this loop returns before the event and is caught as RED.
 # ----------------------------------------------------------------------------
 {
+
     package LivenessClient;
     use Moo;
 
@@ -88,11 +89,12 @@ use constant DELAY_MS => 150;
     }
 
     sub _read_once ($self) {
-        if ( !$self->_emitted && defined $self->_emit_at
+        if (   !$self->_emitted
+            && defined $self->_emit_at
             && Time::HiRes::time() >= $self->_emit_at )
         {
             $self->_emitted(1);
-            my $t = $self->_terminal;
+            my $t     = $self->_terminal;
             my $event = SignalWire::Relay::Event->parse_event(
                 $t->{event_type},
                 {
@@ -104,6 +106,7 @@ use constant DELAY_MS => 150;
             $self->_call->dispatch_event($event);
             return;
         }
+
         # Not yet time — behave like the real client's select() timeout so the
         # wait loop blocks rather than hot-spins.
         Time::HiRes::sleep(0.005);
@@ -128,6 +131,7 @@ my @CORPUS = (
         args     => [ record => { format => 'mp3' } ],
         terminal => { event_type => 'calling.call.record', state => 'finished' },
     },
+
     # NESTED wait: wait() called from inside an on_completed callback (re-entrant
     # _read_once). The first action's completion callback starts a SECOND action ON
     # THE SAME CLIENT and waits on it — so the inner wait() re-enters the SAME
@@ -161,7 +165,7 @@ sub classify_liveness ( $delay_ms, $t_wait_start, $t_return, $completed_state, $
         };
     }
     my $elapsed_ms = ( $t_return - $t_wait_start ) * 1000.0;
-    my $blocked = $elapsed_ms >= ( $delay_ms - BLOCK_TOL_MS );
+    my $blocked    = $elapsed_ms >= ( $delay_ms - BLOCK_TOL_MS );
     return {
         blocked_until_event  => $blocked ? JSON::true : JSON::false,
         returned_after_event => JSON::true,
@@ -204,7 +208,7 @@ sub _drive_one ( $call, $client, $case, $on_completed = undef ) {
     my $result       = $action->wait( timeout => DEADLINE_S );
     my $t_return     = Time::HiRes::time();
 
-    my $timed_out = $action->completed ? 0 : 1;
+    my $timed_out       = $action->completed ? 0 : 1;
     my $completed_state = '';
     if ( !$timed_out && defined $result && ref $result && $result->can('state') ) {
         $completed_state = $result->state // '';
@@ -215,11 +219,13 @@ sub _drive_one ( $call, $client, $case, $on_completed = undef ) {
 my %out;
 for my $case (@CORPUS) {
     if ( $case->{nested} ) {
+
         # Outer play; when it completes, its on_completed starts+waits a record.
         my ( $call, $client ) = _make_call();
         my $inner = $case->{nested};
         my ( $iws, $irt, $istate, $ito );
         my $on_completed = sub ($outer_action) {
+
             # Re-entrant on the SAME client: a second call SHARING the outer's
             # client drives the inner action, whose wait() re-enters that one
             # client's _read_once — all from WITHIN the outer wait()'s
@@ -230,8 +236,8 @@ for my $case (@CORPUS) {
             my ( $icall, $iclient ) = _make_call($client);
             ( $iws, $irt, $istate, $ito ) = _drive_one( $icall, $iclient, $inner );
         };
-        my ( $ows, $ort, $ostate, $oto ) =
-            _drive_one( $call, $client, $case, $on_completed );
+        my ( $ows, $ort, $ostate, $oto ) = _drive_one( $call, $client, $case, $on_completed );
+
         # The nested case passes iff BOTH waits blocked-until-event and returned.
         # Fold the two into one classification: timed_out if EITHER hung; blocked
         # only if BOTH blocked; state from the inner (last) completion.
@@ -239,9 +245,14 @@ for my $case (@CORPUS) {
         my $inner_c =
             defined $iws
             ? classify_liveness( DELAY_MS, $iws, $irt, $istate, $ito )
-            : { blocked_until_event => JSON::false, returned_after_event => JSON::false,
-                completed_state => '', timed_out => JSON::true };
-        my $timed_out = ( $outer->{timed_out} == JSON::true || $inner_c->{timed_out} == JSON::true );
+            : {
+            blocked_until_event  => JSON::false,
+            returned_after_event => JSON::false,
+            completed_state      => '',
+            timed_out            => JSON::true
+            };
+        my $timed_out =
+            ( $outer->{timed_out} == JSON::true || $inner_c->{timed_out} == JSON::true );
         if ($timed_out) {
             $out{ $case->{id} } = {
                 blocked_until_event  => JSON::false,
@@ -251,8 +262,8 @@ for my $case (@CORPUS) {
             };
         } else {
             my $both_blocked =
-                ( $outer->{blocked_until_event} == JSON::true
-                  && $inner_c->{blocked_until_event} == JSON::true );
+                (      $outer->{blocked_until_event} == JSON::true
+                    && $inner_c->{blocked_until_event} == JSON::true );
             $out{ $case->{id} } = {
                 blocked_until_event  => $both_blocked ? JSON::true : JSON::false,
                 returned_after_event => JSON::true,

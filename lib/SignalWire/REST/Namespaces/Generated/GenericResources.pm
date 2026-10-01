@@ -72,4 +72,26 @@ sub assign_domain_application {
     );
 }
 
+sub assign_sip_endpoint {
+    my ( $self, $id, %args ) = @_;
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path( $id, 'sip_endpoints' ),
+        body            => $body,
+        request_options => $request_options
+    );
+}
+
+sub assign_whatsapp_number {
+    my ( $self, $id, %args ) = @_;
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path( $id, 'whatsapp_numbers' ),
+        body            => $body,
+        request_options => $request_options
+    );
+}
+
 1;

@@ -67,10 +67,10 @@ signalwire.core.function_result.RecordCall.directions: perl_constants_idiom: Rec
 signalwire.core.function_result.RecordCall.formats: perl_constants_idiom: RecordCall->formats returns the accepted recording-format set [wav,mp3] (see RecordCall).
 signalwire.core.function_result.RecordCall.is_direction: perl_constants_idiom: RecordCall->is_direction($v) membership check over the record-direction set (see RecordCall).
 signalwire.core.function_result.RecordCall.is_format: perl_constants_idiom: RecordCall->is_format($v) membership check over the recording-format set (see RecordCall).
-signalwire.core.function_result.Tap: perl_constants_idiom: SignalWire::SWAIG::Tap is a constants package single-sourcing the two closed-set string params tap already validates inline — the tap DIRECTION (speak/HEAR/both — note 'hear', NOT record_call's 'listen') and the RTP CODEC (PCMU/PCMA — the SWAIG-tap 2-value set, NOT the RELAY connect superset). tap still takes plain strings (the constants ARE the wire strings) so Python parity + custom callers are unchanged; this is the accepted-values source of truth + autocomplete, not a new compile-time check (tap's own `die` still rejects bad values). Kept distinct from RecordCall so the three direction vocabularies / two codec vocabularies never unify.
-signalwire.core.function_result.Tap.directions: perl_constants_idiom: Tap->directions returns the accepted tap-direction set [speak,hear,both] — distinct from RecordCall's [speak,listen,both] (see Tap).
+signalwire.core.function_result.Tap: perl_constants_idiom: SignalWire::SWAIG::Tap is a constants package single-sourcing the two closed-set string params tap already validates inline — the tap DIRECTION (speak/listen/both — the SWML tap verb enum) and the RTP CODEC (PCMU/PCMA — the SWAIG-tap 2-value set, NOT the RELAY connect superset). tap still takes plain strings (the constants ARE the wire strings) so Python parity + custom callers are unchanged; this is the accepted-values source of truth + autocomplete, not a new compile-time check (tap's own `die` still rejects bad values). Kept distinct from the RELAY connect codec superset.
+signalwire.core.function_result.Tap.directions: perl_constants_idiom: Tap->directions returns the accepted tap-direction set [speak,listen,both] (see Tap).
 signalwire.core.function_result.Tap.codecs: perl_constants_idiom: Tap->codecs returns the accepted SWAIG-tap codec set [PCMU,PCMA] — a strict subset of the RELAY connect codec superset (see Tap).
-signalwire.core.function_result.Tap.is_direction: perl_constants_idiom: Tap->is_direction($v) membership check over the tap-direction set; rejects 'listen' (see Tap).
+signalwire.core.function_result.Tap.is_direction: perl_constants_idiom: Tap->is_direction($v) membership check over the tap-direction set; rejects 'hear', which is not a tap direction (see Tap).
 signalwire.core.function_result.Tap.is_codec: perl_constants_idiom: Tap->is_codec($v) membership check over the tap-codec set (see Tap).
 signalwire.core.function_result.JoinConference: perl_constants_idiom: SignalWire::SWAIG::JoinConference is a constants package single-sourcing the four closed-set string params FunctionResult->join_conference already validates inline — BEEP (true/false/onEnter/onExit), RECORD (do-not-record/record-from-start), TRIM (trim-silence/do-not-trim), and the callback METHOD (GET/POST). join_conference still takes plain strings (the constants ARE the wire strings) so Python parity + custom callers are unchanged; this is the accepted-values source of truth + autocomplete, not a new compile-time check (join_conference's own `die` still rejects bad values, mirroring the reference's exact ValueError messages). The same Tier-1 idiom as RecordCall/Tap; kept distinct so the vocabularies never unify. Python validates these inline with no constants class.
 signalwire.core.function_result.JoinConference.beeps: perl_constants_idiom: JoinConference->beeps returns the accepted beep-behaviour set [true,false,onEnter,onExit] (see JoinConference).
@@ -190,13 +190,23 @@ signalwire.core.security.webhook_middleware.wrap: perl-idiom port-only: Plack mi
 # flask_decorator/get_fastapi_dependency are also present (real impls).
 signalwire.core.auth_handler.AuthHandler.plack_middleware: port-only: PSGI/Plack analog of the Flask decorator; wraps a PSGI app and 401s unauthenticated requests (Python's web binding is Flask/FastAPI)
 signalwire.core.auth_handler.AuthHandler.plack_dependency: port-only: PSGI/Plack analog of the FastAPI dependency; a PSGI-env callable returning the auth decision (Python's web binding is FastAPI)
-signalwire.core.auth_handler.BasicCredentials: port-only: perl-idiom data class carrying HTTP Basic username/password. Python binds FastAPI's HTTPBasicCredentials (an external framework type, not its own class); Perl has no such framework binding, so it re-expresses the same {username,password} carrier as its own typed class fed to verify_basic_auth. Additive; the wire/verification behaviour is unchanged.
-signalwire.core.auth_handler.BasicCredentials.__init__: port-only: BasicCredentials->new({username,password}) constructs the carrier (see BasicCredentials).
-signalwire.core.auth_handler.BasicCredentials.username: port-only: BasicCredentials->username accessor (see BasicCredentials).
-signalwire.core.auth_handler.BasicCredentials.password: port-only: BasicCredentials->password accessor (see BasicCredentials).
-signalwire.core.auth_handler.BearerCredentials: port-only: perl-idiom data class carrying an HTTP Bearer token, fed to verify_bearer_token. Python binds FastAPI's bearer/HTTPAuthorizationCredentials (external framework type); Perl re-expresses the same {credentials} carrier as its own typed class. Additive; behaviour unchanged.
-signalwire.core.auth_handler.BearerCredentials.__init__: port-only: BearerCredentials->new({credentials}) constructs the carrier (see BearerCredentials).
-signalwire.core.auth_handler.BearerCredentials.credentials: port-only: BearerCredentials->credentials accessor — the bearer token string (see BearerCredentials).
+# BasicCredentials/BearerCredentials THEMSELVES, and their username/password/
+# credentials/scheme accessors, are NO LONGER additions. Their rationale was "Python
+# binds an external FastAPI type, not its own class" — porting-sdk dcff742 resolved
+# those framework leaks into real oracle classes, so both carriers now have a Python
+# counterpart and are ordinary parity surface. Those 6 entries are retired here.
+#
+# The two __init__ entries below survive ONLY because the two oracles disagree about
+# them (a known porting-sdk defect, found by the go lane and filed for an owner fix):
+#   python_signatures.json  BasicCredentials -> ["__init__","password","username"]
+#   python_surface.json     BasicCredentials -> ["password","username"]   <- no __init__
+# The SIGNATURE oracle records __init__ on exactly the two classes dcff742 hand-filled,
+# but the SURFACE oracle omits it (hand-written AuthHandler in the same module carries
+# __init__ in BOTH). So the constructor is required by one gate and unexcused-extra in
+# the other. These are placeholders against that oracle bug, NOT a claim that Perl's
+# constructor is port-only — retire them the moment the oracles agree.
+signalwire.core.auth_handler.BasicCredentials.__init__: oracle-disagreement: python_signatures.json records __init__ on BasicCredentials but python_surface.json does not, so the constructor is simultaneously required by DRIFT and an unexcused extra in SURFACE-DIFF. Placeholder against that porting-sdk defect (see the note above); Perl's constructor is ordinary parity surface, not port-only.
+signalwire.core.auth_handler.BearerCredentials.__init__: oracle-disagreement: python_signatures.json records __init__ on BearerCredentials but python_surface.json does not, so the constructor is simultaneously required by DRIFT and an unexcused extra in SURFACE-DIFF. Placeholder against that porting-sdk defect (see the note above); Perl's constructor is ordinary parity surface, not port-only.
 signalwire.core.auth_handler.AuthError: perl_idiom_typed_error: SignalWire::Core::AuthError is a perl-idiom typed exception carrying a 401 response + message, THROWN when auth fails. Python returns a bare 401 response inline with no error class; Perl's idiom is a typed die/throw so the caller can distinguish the auth-failure path (mirrors the cross-port typed-error idiom). The 401 wire response is byte-identical to Python's inline 401; only the control-flow shape (raise vs return) differs.
 signalwire.core.auth_handler.AuthError.__init__: perl_idiom_typed_error: AuthError->new({message,response}) constructs the typed error (see AuthError).
 signalwire.core.auth_handler.AuthError.message: perl_idiom_typed_error: AuthError->message accessor — the human-readable failure reason (see AuthError).

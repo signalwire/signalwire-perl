@@ -14,7 +14,7 @@ use SignalWire::Agent::AgentBase;
 subtest 'list all skills' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 18, '18 skills');
+    is( scalar @$skills, 18, '18 skills' );
 };
 
 # ============================================================
@@ -30,7 +30,7 @@ subtest 'get_factory all skills' => sub {
     );
     for my $name (@expected) {
         my $factory = SignalWire::Skills::SkillRegistry->get_factory($name);
-        ok(defined $factory, "$name: factory found");
+        ok( defined $factory, "$name: factory found" );
     }
 };
 
@@ -39,7 +39,7 @@ subtest 'get_factory all skills' => sub {
 # ============================================================
 subtest 'get_factory unknown' => sub {
     my $factory = SignalWire::Skills::SkillRegistry->get_factory('totally_fake');
-    ok(!defined $factory, 'unknown skill returns undef');
+    ok( !defined $factory, 'unknown skill returns undef' );
 };
 
 # ============================================================
@@ -47,9 +47,10 @@ subtest 'get_factory unknown' => sub {
 # ============================================================
 subtest 'clear_registry' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
+
     # After clearing, list_skills will re-load all builtins
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
-    is(scalar @$skills, 18, 're-loaded after clear');
+    is( scalar @$skills, 18, 're-loaded after clear' );
 };
 
 # ============================================================
@@ -58,13 +59,14 @@ subtest 'clear_registry' => sub {
 subtest 'skills sorted' => sub {
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
     my @sorted = sort @$skills;
-    is_deeply($skills, \@sorted, 'skills are sorted');
+    is_deeply( $skills, \@sorted, 'skills are sorted' );
 };
 
 # ============================================================
 # 6. All skills instantiate and setup
 # ============================================================
 subtest 'all skills instantiate' => sub {
+
     # Network-only skills require mandatory config (e.g. remote_url) and
     # deliberately return false from setup() when it is absent — matches the
     # Python/ruby reference. They still instantiate; we just don't assert a
@@ -78,16 +80,15 @@ subtest 'all skills instantiate' => sub {
 
     my $skills = SignalWire::Skills::SkillRegistry->list_skills;
     for my $name (@$skills) {
-        my $agent = SignalWire::Agent::AgentBase->new(name => "test_$name");
+        my $agent   = SignalWire::Agent::AgentBase->new( name => "test_$name" );
         my $factory = SignalWire::Skills::SkillRegistry->get_factory($name);
-        my $skill = eval { $factory->new(agent => $agent, params => {}) };
-        ok(defined $skill, "$name: instantiated") or diag($@);
+        my $skill   = eval { $factory->new( agent => $agent, params => {} ) };
+        ok( defined $skill, "$name: instantiated" ) or diag($@);
         my $ok = eval { $skill->setup };
-        if ($requires_config{$name}) {
-            ok(!$ok, "$name: setup false without required config") or diag($@);
-        }
-        else {
-            ok($ok, "$name: setup") or diag($@);
+        if ( $requires_config{$name} ) {
+            ok( !$ok, "$name: setup false without required config" ) or diag($@);
+        } else {
+            ok( $ok, "$name: setup" ) or diag($@);
         }
     }
 };
@@ -97,17 +98,18 @@ subtest 'all skills instantiate' => sub {
 # ============================================================
 subtest 'register custom skill' => sub {
     {
+
         package MyCustomSkill;
         use Moo;
         extends 'SignalWire::Skills::SkillBase';
-        has '+skill_name'        => (default => sub { 'test_custom' });
-        has '+skill_description' => (default => sub { 'Test custom skill' });
-        sub setup { 1 }
-        sub register_tools {}
+        has '+skill_name'        => ( default => sub { 'test_custom' } );
+        has '+skill_description' => ( default => sub { 'Test custom skill' } );
+        sub setup          { return 1 }
+        sub register_tools { }
     }
-    SignalWire::Skills::SkillRegistry->register_skill('test_custom', 'MyCustomSkill');
+    SignalWire::Skills::SkillRegistry->register_skill( 'test_custom', 'MyCustomSkill' );
     my $factory = SignalWire::Skills::SkillRegistry->get_factory('test_custom');
-    is($factory, 'MyCustomSkill', 'custom skill registered');
+    is( $factory, 'MyCustomSkill', 'custom skill registered' );
 };
 
 # ============================================================
@@ -116,43 +118,40 @@ subtest 'register custom skill' => sub {
 # ============================================================
 subtest 'add_skill_directory: valid path' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
-    my $tmpdir = tempdir(CLEANUP => 1);
+    my $tmpdir = tempdir( CLEANUP => 1 );
     SignalWire::Skills::SkillRegistry->add_skill_directory($tmpdir);
     my $paths = SignalWire::Skills::SkillRegistry->_external_paths;
-    ok((grep { $_ eq $tmpdir } @$paths), 'tmpdir present in external_paths');
+    ok( ( grep { $_ eq $tmpdir } @$paths ), 'tmpdir present in external_paths' );
 };
 
 subtest 'add_skill_directory: nonexistent path' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
     eval {
         SignalWire::Skills::SkillRegistry->add_skill_directory(
-            '/no/such/path/swperl_abc123_does_not_exist'
-        );
+            '/no/such/path/swperl_abc123_does_not_exist');
     };
     my $err = $@;
-    ok($err, 'raised an error');
-    like($err, qr/does not exist/, 'error mentions does-not-exist');
+    ok( $err, 'raised an error' );
+    like( $err, qr/does not exist/, 'error mentions does-not-exist' );
 };
 
 subtest 'add_skill_directory: not a directory' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
-    my (undef, $filename) = tempfile(UNLINK => 1);
-    eval {
-        SignalWire::Skills::SkillRegistry->add_skill_directory($filename);
-    };
+    my ( undef, $filename ) = tempfile( UNLINK => 1 );
+    eval { SignalWire::Skills::SkillRegistry->add_skill_directory($filename); };
     my $err = $@;
-    ok($err, 'raised an error');
-    like($err, qr/not a directory/, 'error mentions not-a-directory');
+    ok( $err, 'raised an error' );
+    like( $err, qr/not a directory/, 'error mentions not-a-directory' );
 };
 
 subtest 'add_skill_directory: dedup' => sub {
     SignalWire::Skills::SkillRegistry->clear_registry;
-    my $tmpdir = tempdir(CLEANUP => 1);
+    my $tmpdir = tempdir( CLEANUP => 1 );
     SignalWire::Skills::SkillRegistry->add_skill_directory($tmpdir);
     SignalWire::Skills::SkillRegistry->add_skill_directory($tmpdir);
     my $paths = SignalWire::Skills::SkillRegistry->_external_paths;
     my $count = grep { $_ eq $tmpdir } @$paths;
-    is($count, 1, 'tmpdir present exactly once');
+    is( $count, 1, 'tmpdir present exactly once' );
 };
 
 done_testing;

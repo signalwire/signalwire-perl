@@ -21,6 +21,7 @@ use feature 'signatures';
 use JSON::PP     ();
 use MIME::Base64 ();
 use SignalWire::Core::ConfigLoader;
+use SignalWire::Core::Random ();
 use SignalWire::Logging;
 
 # ---------- security environment variable names ----------
@@ -329,12 +330,7 @@ sub _warn_basic_auth_autogen ( $self, $username ) {
 
 # URL-safe random token, base64-flavoured (mirrors secrets.token_urlsafe).
 sub _token_urlsafe ($nbytes) {
-    my $raw = '';
-    $raw .= chr( int rand 256 ) for 1 .. $nbytes;
-    my $b64 = MIME::Base64::encode_base64( $raw, '' );
-    $b64 =~ tr{+/}{-_};
-    $b64 =~ s/=+$//;
-    return $b64;
+    return SignalWire::Core::Random::_random_urlsafe($nbytes);
 }
 
 1;

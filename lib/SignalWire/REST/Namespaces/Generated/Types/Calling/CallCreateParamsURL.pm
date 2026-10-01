@@ -12,13 +12,23 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::CallCreateParamsURL: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'from'          => ( is => 'ro' );
-has 'to'            => ( is => 'ro' );
-has 'caller_id'     => ( is => 'ro' );
-has 'fallback_url'  => ( is => 'ro' );
-has 'status_url'    => ( is => 'ro' );
-has 'status_events' => ( is => 'ro' );
-has 'url_method'    => ( is => 'ro' );
-has 'url'           => ( is => 'ro' );
+has 'from'                 => ( is => 'ro' );
+has 'to'                   => ( is => 'ro' );
+has 'caller_id'            => ( is => 'ro' );
+has 'fallback_url'         => ( is => 'ro' );
+has 'status_url'           => ( is => 'ro' );
+has 'status_events'        => ( is => 'ro' );
+has 'url_method'           => ( is => 'ro' );
+has 'codecs'               => ( is => 'ro' );
+has 'to_script'            => ( is => 'ro' );
+has 'timeout'              => ( is => 'ro' );
+has 'max_price_per_minute' => ( is => 'ro' );
+has 'send_digits'          => ( is => 'ro' );
+has 'region'               => ( is => 'ro' );
+has 'username'             => ( is => 'ro' );
+has 'password'             => ( is => 'ro' );
+has 'headers'              => ( is => 'ro' );
+has 'custom_variables'     => ( is => 'ro' );
+has 'url'                  => ( is => 'ro' );
 
 1;

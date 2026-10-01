@@ -17,5 +17,6 @@ has 'protect_recordings'    => ( is => 'ro' );
 has 'protect_message_media' => ( is => 'ro' );
 has 'protect_fax_media'     => ( is => 'ro' );
 has 'force_https_requests'  => ( is => 'ro' );
+has 'parent_project_id'     => ( is => 'ro' );
 
 1;

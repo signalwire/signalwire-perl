@@ -6,23 +6,21 @@ package SignalWire::SWAIG::Tap;
 # The two closed-set string parameters of
 # SignalWire::SWAIG::FunctionResult->tap, as typed, named constants:
 #
-#   - DIRECTION: which audio channel(s) to tap — 'speak', 'hear', or 'both'
+#   - DIRECTION: which audio channel(s) to tap — 'speak', 'listen', or 'both'
 #   - CODEC:     the RTP codec for the tapped media — 'PCMU' or 'PCMA'
 #
 # Like SignalWire::SWAIG::RecordCall these are NOT merely advisory: tap
 # already validates both inline and dies on anything outside the set
-# ("direction must be 'speak', 'hear', or 'both'", "codec must be 'PCMU'
+# ("direction must be 'speak', 'listen', or 'both'", "codec must be 'PCMU'
 # or 'PCMA'"). This module hoists those two literal sets into a single
 # source of truth so the accepted values are discoverable and
 # autocompletable, instead of living only inside the `die` strings.
 #
-# ★ DISTINCT FROM RecordCall — three direction vocabularies never unify.
-# tap's direction set is {speak, HEAR, both}: the inbound-listen channel
-# is 'hear', NOT record_call's 'listen' ({speak, LISTEN, both}). They are
-# different SWML verbs with different channel words; reusing RecordCall's
-# LISTEN here would be a wire bug. Likewise this 2-value CODEC {PCMU,PCMA}
-# is the SWAIG-tap codec set ONLY — it is a strict subset of, and must NOT
-# be conflated with, the RELAY connect/stream codec superset
+# The tap direction set is the SWML tap verb's enum (schema.json $defs/Tap):
+# {speak, listen, both} — the same words record_call uses. ('hear' is NOT a
+# tap direction: the platform rejects it.) The 2-value CODEC {PCMU,PCMA} is
+# the SWAIG-tap codec set ONLY — a strict subset of, and must NOT be
+# conflated with, the RELAY connect/stream codec superset
 # ({PCMU,PCMA,OPUS,G722,G729,VP8,H264,...}). Keep this module tap-only.
 #
 # Perl has no real enums, so these constants buy no compile-time typo
@@ -32,9 +30,9 @@ package SignalWire::SWAIG::Tap;
 # strings, preserving Python parity and any caller already passing the
 # literals.
 #
-#     use SignalWire::SWAIG::Tap qw(SPEAK HEAR BOTH PCMU PCMA);
-#     $result->tap($uri, direction => HEAR, codec => PCMA);    # constants
-#     $result->tap($uri, direction => 'hear', codec => 'PCMA'); # strings
+#     use SignalWire::SWAIG::Tap qw(SPEAK LISTEN BOTH PCMU PCMA);
+#     $result->tap($uri, direction => LISTEN, codec => PCMA);    # constants
+#     $result->tap($uri, direction => 'listen', codec => 'PCMA'); # strings
 #
 # Mirrors SignalWire::SWAIG::RecordCall / SignalWire::Skills::SkillName /
 # SignalWire::Logging::LogLevel and the cross-port Tier-1 idiom proof,
@@ -47,12 +45,11 @@ use Exporter 'import';
 
 # Tap channel directions. Values are the exact strings tap accepts
 # (anything else dies). Keep in lockstep with tap's
-# `die "direction must be 'speak', 'hear', or 'both'"` guard.
-# NOTE 'hear' (NOT 'listen' — that's record_call's word).
+# `die "direction must be 'speak', 'listen', or 'both'"` guard.
 use constant {
-    SPEAK => 'speak',
-    HEAR  => 'hear',
-    BOTH  => 'both',
+    SPEAK  => 'speak',
+    LISTEN => 'listen',
+    BOTH   => 'both',
 };
 
 # Tap RTP codecs. Values are the exact strings tap accepts. Keep in
@@ -62,16 +59,16 @@ use constant {
     PCMA => 'PCMA',
 };
 
-our @EXPORT_OK   = qw( SPEAK HEAR BOTH PCMU PCMA );
+our @EXPORT_OK   = qw( SPEAK LISTEN BOTH PCMU PCMA );
 our %EXPORT_TAGS = (
     all        => [@EXPORT_OK],
-    directions => [qw( SPEAK HEAR BOTH )],
+    directions => [qw( SPEAK LISTEN BOTH )],
     codecs     => [qw( PCMU PCMA )],
 );
 
 # Canonical accepted sets, in the order tap lists them in its validation
 # messages.
-my @DIRECTIONS = qw( speak hear both );
+my @DIRECTIONS = qw( speak listen both );
 my @CODECS     = qw( PCMU PCMA );
 
 my %IS_DIRECTION = map { $_ => 1 } @DIRECTIONS;
@@ -115,17 +112,17 @@ SignalWire::SWAIG::Tap - typed closed sets for FunctionResult->tap
 
 =head1 SYNOPSIS
 
-    use SignalWire::SWAIG::Tap qw(SPEAK HEAR BOTH PCMU PCMA);
+    use SignalWire::SWAIG::Tap qw(SPEAK LISTEN BOTH PCMU PCMA);
     use SignalWire::SWAIG::FunctionResult;
 
     my $result = SignalWire::SWAIG::FunctionResult->new;
 
     # Named constants and bare wire strings are interchangeable:
-    $result->tap( 'rtp://1.2.3.4:5000', direction => HEAR,   codec => PCMA );
-    $result->tap( 'rtp://1.2.3.4:5000', direction => 'hear', codec => 'PCMA' );
+    $result->tap( 'rtp://1.2.3.4:5000', direction => LISTEN,   codec => PCMA );
+    $result->tap( 'rtp://1.2.3.4:5000', direction => 'listen', codec => 'PCMA' );
 
     # Membership / iteration helpers:
-    SignalWire::SWAIG::Tap->is_direction('hear');  # 1
+    SignalWire::SWAIG::Tap->is_direction('listen');  # 1
     SignalWire::SWAIG::Tap->is_codec('OPUS');      # 0 (RELAY-only codec)
     @{ SignalWire::SWAIG::Tap->codecs };           # ('PCMU','PCMA')
 
@@ -137,7 +134,7 @@ named constants:
 
 =over 4
 
-=item * B<DIRECTION> — which audio channel(s) to tap: C<speak>, C<hear>,
+=item * B<DIRECTION> — which audio channel(s) to tap: C<speak>, C<listen>,
 or C<both>.
 
 =item * B<CODEC> — the RTP codec for the tapped media: C<PCMU> or C<PCMA>.
@@ -150,9 +147,9 @@ accepted values are discoverable and autocompletable instead of living
 only inside the C<die> strings. The constants B<are> the canonical wire
 strings, so C<tap>'s signature is unchanged.
 
-B<Distinct from RecordCall.> The tap direction set is
-C<{speak, hear, both}>: the inbound-listen channel is C<hear>, not
-C<record_call>'s C<listen>. Likewise this two-value codec set
+The tap direction set is the SWML C<tap> verb's enum,
+C<{speak, listen, both}> (C<hear> is not a tap direction; the platform
+rejects it). This two-value codec set
 C<{PCMU, PCMA}> is the SWAIG-tap codec set only — a strict subset of the
 RELAY connect/stream codec superset (C<PCMU>, C<PCMA>, C<OPUS>, C<G722>,
 ...). These vocabularies must never be conflated.
@@ -160,12 +157,12 @@ RELAY connect/stream codec superset (C<PCMU>, C<PCMA>, C<OPUS>, C<G722>,
 =head1 CONSTANTS
 
 Exported on request via L<Exporter>. The C<:directions> tag pulls
-C<SPEAK>/C<HEAR>/C<BOTH>; C<:codecs> pulls C<PCMU>/C<PCMA>; C<:all> pulls
+C<SPEAK>/C<LISTEN>/C<BOTH>; C<:codecs> pulls C<PCMU>/C<PCMA>; C<:all> pulls
 every constant.
 
-    SPEAK => 'speak'    PCMU => 'PCMU'
-    HEAR  => 'hear'     PCMA => 'PCMA'
-    BOTH  => 'both'
+    SPEAK  => 'speak'    PCMU => 'PCMU'
+    LISTEN => 'listen'   PCMA => 'PCMA'
+    BOTH   => 'both'
 
 =head1 METHODS
 

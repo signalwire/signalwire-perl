@@ -18,5 +18,8 @@ has 'processed_at'        => ( is => 'ro' );
 has 'created_at'          => ( is => 'ro' );
 has 'updated_at'          => ( is => 'ro' );
 has 'status_callback_url' => ( is => 'ro' );
+has 'campaign_id'         => ( is => 'ro' );
+has 'brand_id'            => ( is => 'ro' );
+has 'phone_numbers'       => ( is => 'ro' );
 
 1;

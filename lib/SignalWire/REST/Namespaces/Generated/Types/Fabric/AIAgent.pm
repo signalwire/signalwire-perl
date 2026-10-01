@@ -23,5 +23,6 @@ has 'prompt'          => ( is => 'ro' );
 has 'SWAIG'           => ( is => 'ro' );
 has 'agent_id'        => ( is => 'ro' );
 has 'name'            => ( is => 'ro' );
+has 'multilingual'    => ( is => 'ro' );
 
 1;

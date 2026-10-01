@@ -12,11 +12,12 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::RelayRest::AvailablePhoneNumber: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'number'       => ( is => 'ro' );
-has 'region'       => ( is => 'ro' );
-has 'city'         => ( is => 'ro' );
-has 'rate_center'  => ( is => 'ro' );
-has 'lata'         => ( is => 'ro' );
-has 'capabilities' => ( is => 'ro' );
+has 'region'                         => ( is => 'ro' );
+has 'rate_center'                    => ( is => 'ro' );
+has 'capabilities'                   => ( is => 'ro' );
+has 'e164'                           => ( is => 'ro' );
+has 'national_number_formatted'      => ( is => 'ro' );
+has 'international_number_formatted' => ( is => 'ro' );
+has 'country_code'                   => ( is => 'ro' );
 
 1;

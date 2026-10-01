@@ -74,6 +74,7 @@ $client->calling->dial(
 | `SIGNALWIRE_PROJECT_ID` | Project ID for authentication |
 | `SIGNALWIRE_API_TOKEN` | API token for authentication |
 | `SIGNALWIRE_SPACE` | Space hostname (e.g. `example.signalwire.com`) |
+| `SIGNALWIRE_PERSONAL_ACCESS_TOKEN` | A user's Personal Access Token (`pat_...`); authenticates `$client->space` (the Space Administration API) |
 | `SIGNALWIRE_LOG_LEVEL` | Log level (`debug` for HTTP request details) |
 
 ## Module Structure

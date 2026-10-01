@@ -100,9 +100,8 @@ SignalWire::SWML::Document - build and serialize a SWML document
 
 L<SignalWire::SWML::Document> is a Moo class that models a SWML document —
 a versioned collection of named sections, each an ordered list of verbs. A
-freshly constructed document carries an empty C<main> section (matching the
-Python reference's C<_create_empty_document>), so C<sections.main> is always
-present even before any verb is added.
+freshly constructed document carries an empty C<main> section, so
+C<sections.main> is always present even before any verb is added.
 
 =head1 ATTRIBUTES
 

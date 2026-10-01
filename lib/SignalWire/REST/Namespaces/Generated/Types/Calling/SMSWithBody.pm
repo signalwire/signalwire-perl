@@ -12,10 +12,12 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::SMSWithBody: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'to_number'   => ( is => 'ro' );
-has 'from_number' => ( is => 'ro' );
-has 'region'      => ( is => 'ro' );
-has 'tags'        => ( is => 'ro' );
-has 'body'        => ( is => 'ro' );
+has 'body'            => ( is => 'ro' );
+has 'from_number'     => ( is => 'ro' );
+has 'media'           => ( is => 'ro' );
+has 'region'          => ( is => 'ro' );
+has 'status_callback' => ( is => 'ro' );
+has 'tags'            => ( is => 'ro' );
+has 'to_number'       => ( is => 'ro' );
 
 1;

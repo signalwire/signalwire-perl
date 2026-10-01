@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'LiveTranslateConfig' (flattened SWMLMethod verb 'live_translate' config).
+# Generated SWML verb config type 'LiveTranslateConfig' ($defs schema 'LiveTranslateConfig').
 package SignalWire::SWML::Generated::LiveTranslateConfig;
 use strict;
 use warnings;

@@ -227,8 +227,7 @@ SignalWire::Skills::Builtin::WikipediaSearch - Wikipedia article-summary search 
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::WikipediaSearch> is the Perl port of the Python
-reference C<signalwire.skills.wikipedia_search.skill>. It registers a
+L<SignalWire::Skills::Builtin::WikipediaSearch> registers a
 handler-based SWAIG tool, C<search_wiki>, that searches Wikipedia for a C<query>
 and returns article summaries.
 

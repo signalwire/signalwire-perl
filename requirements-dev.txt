@@ -1,0 +1,19 @@
+# Python DEVELOP-phase dependencies for signalwire-perl.
+#
+# This is a Perl SDK, but it ships 7 hand-written Python programs under scripts/
+# — the four code generators (REST / RELAY / SWML / SWAIG), the signature
+# enumerator, the REST test generator, and _perltidy_gen.py (the perltidy
+# backstop every generator runs as its final emit pass). The REPO-LINT gate in
+# scripts/run-ci.sh holds them to the same bar as the shipped Perl.
+#
+# Install with:
+#   python3 -m pip install -r requirements-dev.txt
+#
+# Declared here AND in the CI workflow install step (.github/workflows/test.yml)
+# — "it works because I have it locally" fails on a fresh clone and on a runner.
+#
+# ruff is PINNED for the same reason cpanfile pins Perl::Tidy: a formatter whose
+# output changes between releases makes `ruff format --check` non-deterministic,
+# so local and CI on different versions disagree about the SAME source. Bump
+# deliberately, then reformat in the same commit.
+ruff==0.15.21

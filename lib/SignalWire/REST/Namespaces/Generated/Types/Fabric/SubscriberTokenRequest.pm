@@ -12,6 +12,7 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Fabric::SubscriberTokenRequest: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
+has 'ch'             => ( is => 'ro' );
 has 'reference'      => ( is => 'ro' );
 has 'expire_at'      => ( is => 'ro' );
 has 'application_id' => ( is => 'ro' );
@@ -24,5 +25,7 @@ has 'time_zone'      => ( is => 'ro' );
 has 'country'        => ( is => 'ro' );
 has 'region'         => ( is => 'ro' );
 has 'company_name'   => ( is => 'ro' );
+has 'scope'          => ( is => 'ro' );
+has 'fingerprint'    => ( is => 'ro' );
 
 1;

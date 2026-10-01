@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'UserEventConfig' (flattened SWMLMethod verb 'user_event' config).
+# Generated SWML verb config type 'UserEventConfig' ($defs schema 'UserEventConfig').
 package SignalWire::SWML::Generated::UserEventConfig;
 use strict;
 use warnings;

@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'SendDigitsConfig' (flattened SWMLMethod verb 'send_digits' config).
+# Generated SWML verb config type 'SendDigitsConfig' ($defs schema 'SendDigitsConfig').
 package SignalWire::SWML::Generated::SendDigitsConfig;
 use strict;
 use warnings;

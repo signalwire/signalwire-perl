@@ -12,16 +12,18 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::RelayRest::CreateManagedBrandRequest: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'name'                => ( is => 'ro' );
-has 'company_name'        => ( is => 'ro' );
-has 'contact_email'       => ( is => 'ro' );
-has 'contact_phone'       => ( is => 'ro' );
-has 'ein_issuing_country' => ( is => 'ro' );
-has 'legal_entity_type'   => ( is => 'ro' );
-has 'ein'                 => ( is => 'ro' );
-has 'company_address'     => ( is => 'ro' );
-has 'company_vertical'    => ( is => 'ro' );
-has 'company_website'     => ( is => 'ro' );
-has 'status_callback_url' => ( is => 'ro' );
+has 'name'                      => ( is => 'ro' );
+has 'company_name'              => ( is => 'ro' );
+has 'contact_email'             => ( is => 'ro' );
+has 'contact_phone'             => ( is => 'ro' );
+has 'ein_issuing_country'       => ( is => 'ro' );
+has 'legal_entity_type'         => ( is => 'ro' );
+has 'ein'                       => ( is => 'ro' );
+has 'company_address'           => ( is => 'ro' );
+has 'company_vertical'          => ( is => 'ro' );
+has 'company_website'           => ( is => 'ro' );
+has 'status_callback_url'       => ( is => 'ro' );
+has 'csp_brand_reference'       => ( is => 'ro' );
+has 'signalwire_contact_emails' => ( is => 'ro' );
 
 1;

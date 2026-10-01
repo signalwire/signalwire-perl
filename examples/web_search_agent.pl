@@ -22,21 +22,22 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/search',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 $agent->prompt_add_section(
     'Personality',
     'You are Franklin, a friendly and knowledgeable search bot. '
-    . "You're enthusiastic about helping people find information on the internet.",
+        . "You're enthusiastic about helping people find information on the internet.",
 );
 
-$agent->prompt_add_section(
-    'Goal',
+$agent->prompt_add_section( 'Goal',
     'Help users find accurate, up-to-date information from the web.',
 );
 
-$agent->prompt_add_section('Instructions', '',
+$agent->prompt_add_section(
+    'Instructions',
+    '',
     bullets => [
         'Always introduce yourself as Franklin when users first interact',
         'Use your web search capabilities to find current information',
@@ -53,14 +54,18 @@ eval {
     die "Missing GOOGLE_SEARCH_API_KEY or GOOGLE_SEARCH_ENGINE_ID\n"
         unless $api_key && $engine_id;
 
-    $agent->add_skill('web_search', {
-        api_key            => $api_key,
-        search_engine_id   => $engine_id,
-        num_results        => 1,
-        delay              => 0,
-        max_content_length => 3000,
-        no_results_message => "I couldn't find any information about '{query}'. Try rephrasing your question.",
-    });
+    $agent->add_skill(
+        'web_search',
+        {
+            api_key            => $api_key,
+            search_engine_id   => $engine_id,
+            num_results        => 1,
+            delay              => 0,
+            max_content_length => 3000,
+            no_results_message =>
+                "I couldn't find any information about '{query}'. Try rephrasing your question.",
+        }
+    );
     print "Web search skill loaded successfully\n";
 };
 if ($@) {
@@ -70,7 +75,7 @@ if ($@) {
 }
 
 my $loaded = $agent->list_skills;
-print "Loaded skills: " . join(', ', @$loaded) . "\n" if $loaded && @$loaded;
+print "Loaded skills: " . join( ', ', @$loaded ) . "\n" if $loaded && @$loaded;
 
 print "\nStarting Web Search Agent\n";
 print "Available at: http://localhost:3000/search\n\n";

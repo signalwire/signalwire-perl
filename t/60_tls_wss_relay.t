@@ -49,20 +49,20 @@ subtest 'relay client connects + authenticates over wss://' => sub {
     );
 
     my $result = eval { $client->connect };
-    ok(!$@, 'connect() over wss:// did not die') or diag $@;
-    ok($client->connected, 'client reports connected after wss handshake');
+    ok( !$@,                'connect() over wss:// did not die' ) or diag $@;
+    ok( $client->connected, 'client reports connected after wss handshake' );
 
     # Behavioral proof: the mock only issues a protocol string on a successful
     # credential exchange. A value here means the connect round-trip completed
     # end-to-end over the verified TLS session.
-    like($client->relay_protocol, qr/^signalwire_/,
-         'server-issued protocol string returned over wss://');
+    like( $client->relay_protocol, qr/^signalwire_/,
+        'server-issued protocol string returned over wss://' );
 
     # Wire proof: the mock journaled the inbound signalwire.connect frame on
     # the same (TLS) WebSocket. The journal is read over the plain-HTTP control
     # plane (mock_relay keeps the control plane HTTP even in --tls).
-    ok(TlsMockTest::wss_saw_recv('signalwire.connect'),
-       'mock journaled a recv signalwire.connect frame over the wss connection');
+    ok( TlsMockTest::wss_saw_recv('signalwire.connect'),
+        'mock journaled a recv signalwire.connect frame over the wss connection' );
 
     $client->disconnect;
 };
@@ -83,15 +83,15 @@ subtest 'untrusted client is rejected (real verification in force)' => sub {
         PeerHost        => $TlsMockTest::HOST,
         PeerPort        => $TlsMockTest::WSS_PORT,
         SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
-        SSL_ca_path     => "$empty_dir",       # empty -> no trusted roots
+        SSL_ca_path     => "$empty_dir",                         # empty -> no trusted roots
         SSL_ca_file     => undef,
         Timeout         => 5,
     );
 
-    ok(!$sock, 'TLS handshake to wss endpoint rejected with empty trust store')
+    ok( !$sock, 'TLS handshake to wss endpoint rejected with empty trust store' )
         or do { diag "unexpectedly connected"; $sock->close if $sock };
-    note("untrusted wss handshake correctly rejected: "
-         . ($IO::Socket::SSL::SSL_ERROR // $! // 'verify failure'));
+    note( "untrusted wss handshake correctly rejected: "
+            . ( $IO::Socket::SSL::SSL_ERROR // $! // 'verify failure' ) );
 };
 
 done_testing();

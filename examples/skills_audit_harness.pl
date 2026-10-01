@@ -51,7 +51,7 @@ sub die_with {
 my $skill_name = $ENV{SKILL_NAME}
     or die_with("SKILL_NAME is not set");
 my $args_json = $ENV{SKILL_HANDLER_ARGS} // '{}';
-my $args = eval { JSON::decode_json($args_json) };
+my $args      = eval { JSON::decode_json($args_json) };
 die_with("SKILL_HANDLER_ARGS is not valid JSON: $@") if $@;
 $args //= {};
 
@@ -64,7 +64,13 @@ my @builtins = qw(
 );
 for my $mod (@builtins) {
     my $pkg = "SignalWire::Skills::Builtin::$mod";
-    eval "require $pkg; 1" or die_with("require $pkg failed: $@");
+
+    # Translate the package name to its .pm path and require THAT (a path in a
+    # plain scalar), so we avoid a stringy `eval "require $pkg"` entirely — no
+    # input ever reaches the Perl compiler. Same idiom the shipped loader uses,
+    # SignalWire::Skills::SkillRegistry::get_factory.
+    ( my $module_path = "$pkg.pm" ) =~ s{::}{/}g;
+    eval { require $module_path; 1 } or die_with("require $pkg failed: $@");
 }
 
 my $factory = SignalWire::Skills::SkillRegistry->get_factory($skill_name)
@@ -73,39 +79,45 @@ my $factory = SignalWire::Skills::SkillRegistry->get_factory($skill_name)
 # The skill needs an agent for tool registration. AgentBase consumes
 # SkillManager but we're driving the skill directly, so we just need
 # something with a tools registry.
-my $agent = SignalWire::Agent::AgentBase->new(name => 'skills_audit');
+my $agent = SignalWire::Agent::AgentBase->new( name => 'skills_audit' );
 
 # Build the skill with whatever credentials the audit harness
 # supplied (the audit pre-sets fake keys/tokens so the skill
 # constructor doesn't reject; the upstream env-var redirects the
 # request URL to the fixture).
 my %skill_params;
-$skill_params{api_key} = $ENV{GOOGLE_API_KEY}     if $skill_name eq 'web_search'        && $ENV{GOOGLE_API_KEY};
-$skill_params{search_engine_id} = $ENV{GOOGLE_CSE_ID} if $skill_name eq 'web_search' && $ENV{GOOGLE_CSE_ID};
-$skill_params{api_key} = $ENV{API_NINJAS_KEY}     if $skill_name eq 'api_ninjas_trivia' && $ENV{API_NINJAS_KEY};
-$skill_params{api_key} = $ENV{WEATHER_API_KEY}    if $skill_name eq 'weather_api'       && $ENV{WEATHER_API_KEY};
-$skill_params{token}   = $ENV{DATASPHERE_TOKEN}   if $skill_name eq 'datasphere'        && $ENV{DATASPHERE_TOKEN};
+$skill_params{api_key} = $ENV{GOOGLE_API_KEY}
+    if $skill_name eq 'web_search' && $ENV{GOOGLE_API_KEY};
+$skill_params{search_engine_id} = $ENV{GOOGLE_CSE_ID}
+    if $skill_name eq 'web_search' && $ENV{GOOGLE_CSE_ID};
+$skill_params{api_key} = $ENV{API_NINJAS_KEY}
+    if $skill_name eq 'api_ninjas_trivia' && $ENV{API_NINJAS_KEY};
+$skill_params{api_key} = $ENV{WEATHER_API_KEY}
+    if $skill_name eq 'weather_api' && $ENV{WEATHER_API_KEY};
+$skill_params{token} = $ENV{DATASPHERE_TOKEN}
+    if $skill_name eq 'datasphere' && $ENV{DATASPHERE_TOKEN};
+
 # DataSphere also wants project_id, document_id, space_name. The
 # audit fixture serves regardless of values, but the skill insists.
-$skill_params{project_id}  = 'audit-project'          if $skill_name eq 'datasphere';
-$skill_params{document_id} = 'audit-document'         if $skill_name eq 'datasphere';
-$skill_params{space_name}  = 'audit'                  if $skill_name eq 'datasphere';
+$skill_params{project_id}  = 'audit-project'  if $skill_name eq 'datasphere';
+$skill_params{document_id} = 'audit-document' if $skill_name eq 'datasphere';
+$skill_params{space_name}  = 'audit'          if $skill_name eq 'datasphere';
 
-my $skill = $factory->new(agent => $agent, params => \%skill_params);
+my $skill = $factory->new( agent => $agent, params => \%skill_params );
 $skill->setup;
 $skill->register_tools;
 
 my %dispatchers = (
-    web_search        => sub { $skill->search_web($args->{query} // '') },
-    wikipedia_search  => sub { $skill->search_wiki($args->{query} // '') },
-    spider            => sub { $skill->scrape_url($args->{url}   // '') },
-    datasphere        => sub { $skill->search_knowledge($args->{query} // '') },
+    web_search       => sub { $skill->search_web( $args->{query}       // '' ) },
+    wikipedia_search => sub { $skill->search_wiki( $args->{query}      // '' ) },
+    spider           => sub { $skill->scrape_url( $args->{url}         // '' ) },
+    datasphere       => sub { $skill->search_knowledge( $args->{query} // '' ) },
 
     # DataMap skills — extract the webhook URL from the registered
     # data_map block, perform the GET in-process to stand in for the
     # SignalWire platform's webhook fetch.
-    api_ninjas_trivia => sub { _datamap_dispatch($agent, 'get_trivia', $args, 'array') },
-    weather_api       => sub { _datamap_dispatch($agent, 'get_weather', $args, 'object') },
+    api_ninjas_trivia => sub { _datamap_dispatch( $agent, 'get_trivia',  $args, 'array' ) },
+    weather_api       => sub { _datamap_dispatch( $agent, 'get_weather', $args, 'object' ) },
 );
 
 my $disp = $dispatchers{$skill_name}
@@ -117,12 +129,12 @@ die_with("skill dispatch died: $@") if $@;
 # Output: print the parsed response as JSON. The audit asserts a
 # sentinel substring is present in stdout.
 require Scalar::Util;
-if (Scalar::Util::blessed($reply) && $reply->can('response')) {
-    print JSON::encode_json({ response => $reply->response });
-} elsif (ref $reply) {
+if ( Scalar::Util::blessed($reply) && $reply->can('response') ) {
+    print JSON::encode_json( { response => $reply->response } );
+} elsif ( ref $reply ) {
     print JSON::encode_json($reply);
 } else {
-    print JSON::encode_json({ response => "$reply" });
+    print JSON::encode_json( { response => "$reply" } );
 }
 print "\n";
 exit 0;
@@ -134,7 +146,7 @@ exit 0;
 # the response shape per the data_map output template.
 # ---------------------------------------------------------------------------
 sub _datamap_dispatch {
-    my ($agent, $tool_name, $args, $shape) = @_;
+    my ( $agent, $tool_name, $args, $shape ) = @_;
     my $tool = $agent->tools->{$tool_name}
         or die_with("DataMap tool '$tool_name' not registered");
     my $dm = $tool->{data_map}
@@ -144,8 +156,9 @@ sub _datamap_dispatch {
     my $wh = $whs->[0];
 
     my $url = $wh->{url} // '';
+
     # Substitute %{args.X}, ${args.X}, ${lc:enc:args.X}.
-    for my $k (keys %$args) {
+    for my $k ( keys %$args ) {
         my $v = $args->{$k} // '';
         $url =~ s/\$\{lc:enc:args\.\Q$k\E\}/lc(_url_encode($v))/ge;
         $url =~ s/\$\{args\.\Q$k\E\}/_url_encode($v)/ge;
@@ -153,22 +166,19 @@ sub _datamap_dispatch {
     }
 
     my %headers;
-    if (ref $wh->{headers} eq 'HASH') {
-        for my $h (keys %{ $wh->{headers} }) {
+    if ( ref $wh->{headers} eq 'HASH' ) {
+        for my $h ( keys %{ $wh->{headers} } ) {
             $headers{$h} = $wh->{headers}{$h};
         }
     }
 
-    my $resp = HTTP::Tiny->new(timeout => 15)->request(
-        $wh->{method} || 'GET',
-        $url,
-        { headers => \%headers },
-    );
-    unless ($resp->{success}) {
+    my $resp = HTTP::Tiny->new( timeout => 15 )
+        ->request( $wh->{method} || 'GET', $url, { headers => \%headers }, );
+    unless ( $resp->{success} ) {
         die_with("data_map webhook failed: $resp->{status} $resp->{reason}");
     }
 
-    my $parsed = eval { JSON::decode_json($resp->{content}) };
+    my $parsed = eval { JSON::decode_json( $resp->{content} ) };
     die_with("data_map response not JSON: $@") if $@;
 
     # The output template for these two skills is a FunctionResult
@@ -180,5 +190,5 @@ sub _datamap_dispatch {
 sub _url_encode {
     my ($v) = @_;
     require URI::Escape;
-    return URI::Escape::uri_escape($v // '');
+    return URI::Escape::uri_escape( $v // '' );
 }

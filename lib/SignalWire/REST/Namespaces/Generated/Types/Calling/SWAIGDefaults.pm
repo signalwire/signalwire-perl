@@ -12,6 +12,11 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::SWAIGDefaults: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'web_hook_url' => ( is => 'ro' );
+has 'meta_data'              => ( is => 'ro' );
+has 'meta_data_token'        => ( is => 'ro' );
+has 'web_hook_auth_pass'     => ( is => 'ro' );
+has 'web_hook_auth_password' => ( is => 'ro' );
+has 'web_hook_auth_user'     => ( is => 'ro' );
+has 'web_hook_url'           => ( is => 'ro' );
 
 1;

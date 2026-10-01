@@ -115,8 +115,7 @@ SignalWire::Skills::Builtin::WeatherApi - current-weather skill backed by Weathe
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::WeatherApi> is the Perl port of the Python
-reference C<signalwire.skills.weather_api.skill>. It registers a single
+L<SignalWire::Skills::Builtin::WeatherApi> registers a single
 DataMap-based SWAIG tool (default name C<get_weather>) that returns current
 weather for a C<location> from WeatherAPI.com.
 

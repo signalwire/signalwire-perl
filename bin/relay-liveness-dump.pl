@@ -41,9 +41,9 @@ no warnings 'experimental::signatures';
 use FindBin qw($RealBin);
 use File::Spec;
 use IO::Socket::INET ();
-use JSON ();
-use Time::HiRes ();
-use Test::More ();    # RelayMockTest uses plan(skip_all) on a missing mock
+use JSON             ();
+use Time::HiRes      ();
+use Test::More       ();    # RelayMockTest uses plan(skip_all) on a missing mock
 
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 't', 'lib' );
@@ -56,19 +56,24 @@ use lib File::Spec->catdir( $RealBin, File::Spec->updir, 't', 'lib' );
 # The client reads these lazily on first use, so setting them here (before any
 # client is constructed) takes effect; production defaults apply when unset.
 # Mirrors ts's scripts/relay-liveness-dump.ts preamble.
-$ENV{SIGNALWIRE_RELAY_REQUEST_TIMEOUT_MS}     = '400';
-$ENV{SIGNALWIRE_RELAY_RECONNECT_MIN_DELAY_S}  = '0.02';
-$ENV{SIGNALWIRE_RELAY_RECONNECT_MAX_DELAY_S}  = '0.05';
+# Process-wide on purpose: this single-purpose dump program configures its own
+# process before the client module loads (the client reads these lazily on first
+# use). A `local` here would be restored before the client ever read them.
+## no critic (Variables::RequireLocalizedPunctuationVars)
+$ENV{SIGNALWIRE_RELAY_REQUEST_TIMEOUT_MS}    = '400';
+$ENV{SIGNALWIRE_RELAY_RECONNECT_MIN_DELAY_S} = '0.02';
+$ENV{SIGNALWIRE_RELAY_RECONNECT_MAX_DELAY_S} = '0.05';
+## use critic
 
 use Protocol::WebSocket::Handshake::Server ();
-use Protocol::WebSocket::Frame ();
+use Protocol::WebSocket::Frame             ();
 
 use SignalWire::Relay::Client ();
 
 # Keep stdout PURE JSON (the differ does json.loads(proc.stdout)); redirect the
 # STDOUT filehandle to STDERR during setup, restore it only for the final JSON.
 open( my $REAL_STDOUT, '>&', \*STDOUT ) or die "dup stdout: $!";
-open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
+open( STDOUT,          '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
 
 # ======================================================================
 # ControllableWsServer — a minimal single-thread WebSocket server that speaks
@@ -86,11 +91,11 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
     use warnings;
     use feature 'signatures';
     no warnings 'experimental::signatures';
-    use IO::Socket::INET ();
-    use POSIX ();
-    use JSON ();
+    use IO::Socket::INET                       ();
+    use POSIX                                  ();
+    use JSON                                   ();
     use Protocol::WebSocket::Handshake::Server ();
-    use Protocol::WebSocket::Frame ();
+    use Protocol::WebSocket::Frame             ();
 
     my $AUTH_REQUIRED_CODE = -32002;
 
@@ -107,6 +112,7 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
         # A temp file the child bumps on each accepted+authed connection; the
         # parent polls it to observe reconnects. Repo-local scratch, never /tmp.
         my $countfile = File::Spec->catfile( File::Spec->tmpdir, "rl-conn-$$-$port" );
+
         # Prefer a worktree-local scratch dir over the system tmpdir.
         my $localtmp = File::Spec->catdir( $FindBin::RealBin, File::Spec->updir, '.sw-tmp' );
         if ( -d $localtmp || mkdir $localtmp ) {
@@ -119,16 +125,17 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
         my $pid = fork();
         die "fork: $!" unless defined $pid;
         if ( $pid == 0 ) {
+
             # CHILD: serve until killed.
             _child_loop( $listen, $args{fault}, $args{auth_message}, $countfile );
             POSIX::_exit(0);
         }
         $listen->close;    # parent doesn't accept
         return bless {
-            port         => $port,
-            pid          => $pid,
-            countfile    => $countfile,
-            relay_host   => "127.0.0.1:$port",
+            port       => $port,
+            pid        => $pid,
+            countfile  => $countfile,
+            relay_host => "127.0.0.1:$port",
         }, $class;
     }
 
@@ -161,7 +168,7 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
             my $deadline = Time::HiRes::time() + 5;
             while ( Time::HiRes::time() < $deadline ) {
                 my $reaped = waitpid( $self->{pid}, POSIX::WNOHANG() );
-                last if $reaped != 0;    # reaped, or already auto-reaped (-1)
+                last if $reaped != 0;                # reaped, or already auto-reaped (-1)
                 last if !kill( 0, $self->{pid} );    # gone
                 Time::HiRes::sleep(0.02);
             }
@@ -200,6 +207,7 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
     # Perform the WS upgrade, then inject the fault on the first signalwire.connect.
     sub _serve ( $sock, $fault, $auth_message, $countfile, $conn_seen ) {
         my $hs = Protocol::WebSocket::Handshake::Server->new;
+
         # Read handshake request bytes until parsed.
         while ( !$hs->is_done ) {
             my $buf;
@@ -210,6 +218,7 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
         syswrite( $sock, $hs->to_string );
 
         my $frame = Protocol::WebSocket::Frame->new;
+
         # Read frames until a signalwire.connect arrives.
         while (1) {
             my $buf;
@@ -223,26 +232,31 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
                 _bump_count($countfile);
                 my $id = $req->{id};
                 if ( $fault eq 'auth_reject' ) {
-                    _send( $sock,
-                        { jsonrpc => '2.0', id => $id,
-                            error => { code => $AUTH_REQUIRED_CODE, message => $auth_message } } );
+                    _send(
+                        $sock,
+                        {
+                            jsonrpc => '2.0',
+                            id      => $id,
+                            error   => { code => $AUTH_REQUIRED_CODE, message => $auth_message }
+                        }
+                    );
                     return;
-                }
-                elsif ( $fault eq 'black_hole' ) {
+                } elsif ( $fault eq 'black_hole' ) {
+
                     # Never answer the connect — the client's request must time out.
                     # Hold the socket open so the client blocks on recv.
                     Time::HiRes::sleep(30);
                     return;
-                }
-                elsif ( $fault eq 'dead_peer' ) {
+                } elsif ( $fault eq 'dead_peer' ) {
                     _send_connect_ok( $sock, $id );
+
                     # After a successful connect, ignore everything forever.
                     Time::HiRes::sleep(30);
                     return;
-                }
-                elsif ( $fault eq 'reconnect' ) {
+                } elsif ( $fault eq 'reconnect' ) {
                     _send_connect_ok( $sock, $id );
                     if ( $conn_seen == 1 ) {
+
                         # First connection drops shortly after a SUCCESSFUL auth so
                         # the client must reconnect. Later connections stay up.
                         Time::HiRes::sleep(0.3);
@@ -254,20 +268,32 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
                 }
             }
         }
+        return;
     }
 
     sub _send ( $sock, $obj ) {
         my $text = JSON::encode_json($obj);
-        my $f = Protocol::WebSocket::Frame->new( buffer => $text, type => 'text' );
+        my $f    = Protocol::WebSocket::Frame->new( buffer => $text, type => 'text' );
         syswrite( $sock, $f->to_bytes );
         return;
     }
 
     sub _send_connect_ok ( $sock, $id ) {
-        _send( $sock,
-            { jsonrpc => '2.0', id => $id,
-                result => { protocol => 'relay_proto_test', sessionid => 'sess-test',
-                    nodeid => 'n', master_nodeid => 'n', identity => '', protocols => [] } } );
+        _send(
+            $sock,
+            {
+                jsonrpc => '2.0',
+                id      => $id,
+                result  => {
+                    protocol      => 'relay_proto_test',
+                    sessionid     => 'sess-test',
+                    nodeid        => 'n',
+                    master_nodeid => 'n',
+                    identity      => '',
+                    protocols     => []
+                }
+            }
+        );
         return;
     }
 
@@ -283,21 +309,23 @@ open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
 # ======================================================================
 sub clear_relay_env {
     delete @ENV{
-        qw(SIGNALWIRE_PROJECT_ID SIGNALWIRE_API_TOKEN SIGNALWIRE_JWT_TOKEN SIGNALWIRE_SPACE)
-    };
+        qw(SIGNALWIRE_PROJECT_ID SIGNALWIRE_API_TOKEN SIGNALWIRE_JWT_TOKEN SIGNALWIRE_SPACE)};
     return;
 }
 
 sub new_fault_client ($host) {
     return SignalWire::Relay::Client->new(
-        project => 'p', token => 't', host => $host, scheme => 'ws',
+        project => 'p',
+        token   => 't',
+        host    => $host,
+        scheme  => 'ws',
     );
 }
 
 # Run $code under a wall-clock alarm; returns (timed_out_bool).
 sub with_deadline ( $seconds, $code ) {
     my $timed_out = 0;
-    my $ok = eval {
+    my $ok        = eval {
         local $SIG{ALRM} = sub { die "deadline\n" };
         alarm $seconds;
         $code->();
@@ -326,14 +354,15 @@ sub drive_cred_missing ( $omit, @expect ) {
     my $failed = 0;
     my $msg    = '';
     my $client = SignalWire::Relay::Client->new(%kwargs);
-    my $ok = eval { $client->connect; 1 };
+    my $ok     = eval { $client->connect; 1 };
     if ( !$ok ) {
         $failed = 1;
         $msg    = "$@";
     }
     my $actionable = 1;
     $actionable = 0 for grep { index( $msg, $_ ) < 0 } @expect;
-    return { failed_preconnect_on_missing => ( $failed && $actionable ) ? JSON::true : JSON::false };
+    return {
+        failed_preconnect_on_missing => ( $failed && $actionable ) ? JSON::true : JSON::false };
 }
 
 # cred_auth_reject: a 401-class connect rejection must RAISE the server message,
@@ -346,7 +375,7 @@ sub drive_cred_auth_reject ($server_message) {
         infinite_reconnect         => JSON::false,
         server_message_surfaced    => JSON::false,
     };
-    my $client = new_fault_client( $srv->relay_host );
+    my $client    = new_fault_client( $srv->relay_host );
     my $raised    = 0;
     my $surfaced  = 0;
     my $timed_out = with_deadline(
@@ -354,15 +383,14 @@ sub drive_cred_auth_reject ($server_message) {
         sub {
             my $ok = eval { $client->connect; 1 };
             if ( !$ok ) {
-                $raised = 1;
+                $raised   = 1;
                 $surfaced = 1 if index( "$@", $server_message ) >= 0;
             }
         }
     );
     if ($timed_out) {
         $out->{infinite_reconnect} = JSON::true;
-    }
-    else {
+    } else {
         $out->{raised_after_bounded_retry} = $raised   ? JSON::true : JSON::false;
         $out->{server_message_surfaced}    = $surfaced ? JSON::true : JSON::false;
     }
@@ -373,9 +401,10 @@ sub drive_cred_auth_reject ($server_message) {
 # dead_peer: connect succeeds, then the peer ignores every request. A subsequent
 # execute() must bounded-error (RelayError), never hang forever.
 sub drive_dead_peer {
-    my $srv    = ControllableWsServer->new( fault => 'dead_peer' );
-    my $client = new_fault_client( $srv->relay_host );
+    my $srv      = ControllableWsServer->new( fault => 'dead_peer' );
+    my $client   = new_fault_client( $srv->relay_host );
     my $detected = 0;
+
     # The client's request timeout is bounded (~30s); the outer deadline must be
     # LARGER so a genuine bounded-error at the request timeout counts as bounded,
     # and only a truly unbounded hang blows this deadline.
@@ -384,21 +413,24 @@ sub drive_dead_peer {
         sub {
             eval { $client->connect };    # brings the socket up + authenticates
             my $ok = eval { $client->execute( 'calling.play', { control_id => 'x' } ); 1 };
-            $detected = 1 if !$ok;         # bounded RelayError surfaced
+            $detected = 1 if !$ok;        # bounded RelayError surfaced
         }
     );
-    $detected = 0 if $timed_out;           # exceeded our generous outer bound => hung
+    $detected = 0 if $timed_out;          # exceeded our generous outer bound => hung
     $srv->stop;
-    return { detected_bounded => $detected ? JSON::true : JSON::false,
-        hung => $detected ? JSON::false : JSON::true };
+    return {
+        detected_bounded => $detected ? JSON::true  : JSON::false,
+        hung             => $detected ? JSON::false : JSON::true
+    };
 }
 
 # black_hole: the connect frame is never answered. The client's connect must
 # bounded-error within its request deadline, never hang forever.
 sub drive_black_hole {
-    my $srv    = ControllableWsServer->new( fault => 'black_hole' );
-    my $client = new_fault_client( $srv->relay_host );
+    my $srv     = ControllableWsServer->new( fault => 'black_hole' );
+    my $client  = new_fault_client( $srv->relay_host );
     my $bounded = 0;
+
     # Outer deadline > the client's bounded request timeout (~30s) so a genuine
     # bounded connect-timeout counts as bounded, not a false hang.
     my $timed_out = with_deadline(
@@ -410,8 +442,10 @@ sub drive_black_hole {
     );
     $bounded = 0 if $timed_out;      # never returned => unbounded hang
     $srv->stop;
-    return { bounded_error => $bounded ? JSON::true : JSON::false,
-        unbounded_hang => $bounded ? JSON::false : JSON::true };
+    return {
+        bounded_error  => $bounded ? JSON::true  : JSON::false,
+        unbounded_hang => $bounded ? JSON::false : JSON::true
+    };
 }
 
 # reconnect: the first socket drops right after auth. A REAL second connect+auth
@@ -433,6 +467,7 @@ sub drive_reconnect {
                 eval { $client->run };
                 POSIX::_exit(0);
             }
+
             # Poll the server's connection count for a second connect.
             while ( $srv->connect_count < 2 ) {
                 Time::HiRes::sleep(0.1);
@@ -477,9 +512,9 @@ sub drive_reconnect {
 
     $srv->stop;
     return {
-        reconnected             => $reconnected ? JSON::true : JSON::false,
-        pending_faulted_not_hung => $faulted    ? JSON::true : JSON::false,
-        zombie                  => $zombie      ? JSON::true : JSON::false,
+        reconnected              => $reconnected ? JSON::true : JSON::false,
+        pending_faulted_not_hung => $faulted     ? JSON::true : JSON::false,
+        zombie                   => $zombie      ? JSON::true : JSON::false,
     };
 }
 
@@ -488,7 +523,7 @@ sub drive_reconnect {
 # actions_mock test harness (connect, pump _read_once, arm rpc_code, _execute).
 sub drive_relay_contract ( $verb, $code ) {
     require RelayMockTest;
-    my $out = { raised => JSON::false, swallowed => JSON::false };
+    my $out    = { raised => JSON::false, swallowed => JSON::false };
     my $client = RelayMockTest::client( contexts => ['default'] );
     $client->connect;
     my $call = _build_answered_call( $client, "call-relay-live-$code" );
@@ -497,6 +532,7 @@ sub drive_relay_contract ( $verb, $code ) {
         return $out;    # could not stand up a call — leave both false (RED, loud)
     }
     RelayMockTest::arm_method( "calling.$verb", [ { rpc_code => $code } ] );
+
     # Call::_execute takes the FULL RELAY method name (the high-level verbs call
     # _start_action('calling.play', ...)); pass calling.<verb>, not the bare verb.
     my $ok = eval {
@@ -536,7 +572,7 @@ sub _build_answered_call ( $client, $call_id ) {
     );
     RelayMockTest::inbound_call( call_id => $call_id, auto_states => ['created'] );
     _pump_until( $client, 10, sub { defined $captured } );
-    _pump_until( $client, 1,  sub { 0 } );    # let the answer round-trip
+    _pump_until( $client, 1,  sub { 0 } );                   # let the answer round-trip
     $captured->state('answered') if $captured;
     return $captured;
 }
@@ -544,13 +580,16 @@ sub _build_answered_call ( $client, $call_id ) {
 # max_active_calls: with cap=N, the N+1th inbound call is dropped (not accepted).
 sub drive_max_active_calls ($cap) {
     clear_relay_env();
-    my $client =
-        SignalWire::Relay::Client->new( project => 'p', token => 't', host => 'x',
-            max_active_calls => $cap );
+    my $client = SignalWire::Relay::Client->new(
+        project          => 'p',
+        token            => 't',
+        host             => 'x',
+        max_active_calls => $cap
+    );
     $client->on_call( sub { } );    # accept each call (keeps it "active" in _calls)
     for my $i ( 0 .. $cap ) {
-        $client->_handle_inbound_call(
-            {}, { call_id => "c$i", node_id => 'node-relay-live', call_state => 'created' },
+        $client->_handle_inbound_call( {},
+            { call_id => "c$i", node_id => 'node-relay-live', call_state => 'created' },
         );
     }
     my $active = keys %{ $client->_calls };
@@ -561,15 +600,15 @@ sub drive_max_active_calls ($cap) {
 # main
 # ======================================================================
 my %out;
-$out{cred_missing_project} = drive_cred_missing( 'project', 'project', 'SIGNALWIRE_PROJECT_ID' );
-$out{cred_missing_token}   = drive_cred_missing( 'token',   'token',   'SIGNALWIRE_API_TOKEN' );
-$out{cred_auth_reject}     = drive_cred_auth_reject('auth rejected: bad token');
-$out{relay_contract_500}   = drive_relay_contract( 'play', '500' );
-$out{relay_contract_404}   = drive_relay_contract( 'play', '404' );
-$out{relay_contract_410}   = drive_relay_contract( 'play', '410' );
-$out{dead_peer_half_open}  = drive_dead_peer();
+$out{cred_missing_project}   = drive_cred_missing( 'project', 'project', 'SIGNALWIRE_PROJECT_ID' );
+$out{cred_missing_token}     = drive_cred_missing( 'token',   'token',   'SIGNALWIRE_API_TOKEN' );
+$out{cred_auth_reject}       = drive_cred_auth_reject('auth rejected: bad token');
+$out{relay_contract_500}     = drive_relay_contract( 'play', '500' );
+$out{relay_contract_404}     = drive_relay_contract( 'play', '404' );
+$out{relay_contract_410}     = drive_relay_contract( 'play', '410' );
+$out{dead_peer_half_open}    = drive_dead_peer();
 $out{black_hole_silent_peer} = drive_black_hole();
-$out{reconnect_after_drop} = drive_reconnect();
-$out{max_active_calls_cap} = drive_max_active_calls(2);
+$out{reconnect_after_drop}   = drive_reconnect();
+$out{max_active_calls_cap}   = drive_max_active_calls(2);
 
 print {$REAL_STDOUT} JSON->new->canonical->encode( \%out ), "\n";

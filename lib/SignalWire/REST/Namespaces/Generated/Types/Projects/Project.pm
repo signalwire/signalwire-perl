@@ -16,7 +16,6 @@ has 'id'                    => ( is => 'ro' );
 has 'name'                  => ( is => 'ro' );
 has 'parent_project_id'     => ( is => 'ro' );
 has 'subproject'            => ( is => 'ro' );
-has 'region_preference'     => ( is => 'ro' );
 has 'protect_recordings'    => ( is => 'ro' );
 has 'protect_message_media' => ( is => 'ro' );
 has 'protect_fax_media'     => ( is => 'ro' );

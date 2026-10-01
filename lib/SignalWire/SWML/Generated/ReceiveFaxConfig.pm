@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'ReceiveFaxConfig' (flattened SWMLMethod verb 'receive_fax' config).
+# Generated SWML verb config type 'ReceiveFaxConfig' ($defs schema 'ReceiveFaxConfig').
 package SignalWire::SWML::Generated::ReceiveFaxConfig;
 use strict;
 use warnings;

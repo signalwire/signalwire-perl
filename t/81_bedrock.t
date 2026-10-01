@@ -18,7 +18,7 @@ sub bedrock_verb {
     for my $v (@$main) {
         return $v->{amazon_bedrock} if ref $v eq 'HASH' && exists $v->{amazon_bedrock};
     }
-    return undef;
+    return;
 }
 
 subtest 'defaults' => sub {
@@ -33,8 +33,7 @@ subtest 'renders amazon_bedrock verb not ai' => sub {
     my $main = $agent->render_swml->{sections}{main};
     ok( ( grep { ref $_ eq 'HASH' && exists $_->{amazon_bedrock} } @$main ),
         'amazon_bedrock verb present' );
-    ok( !( grep { ref $_ eq 'HASH' && exists $_->{ai} } @$main ),
-        'ai verb transformed away' );
+    ok( !( grep { ref $_ eq 'HASH' && exists $_->{ai} } @$main ), 'ai verb transformed away' );
 };
 
 subtest 'voice and inference params in prompt' => sub {
@@ -80,7 +79,7 @@ subtest 'set_voice' => sub {
     my $agent = SignalWire::Agents::Bedrock->new;
     $agent->set_prompt_text('Hi');
     my $ret = $agent->set_voice('stephen');
-    is( $ret, $agent, 'set_voice returns self' );
+    is( $ret,                                     $agent,    'set_voice returns self' );
     is( bedrock_verb($agent)->{prompt}{voice_id}, 'stephen', 'voice updated' );
 };
 
@@ -129,7 +128,7 @@ subtest 'text-model-only prompt keys stripped' => sub {
 };
 
 subtest 'to_string / stringification representation (__repr__)' => sub {
-    my $agent = SignalWire::Agents::Bedrock->new( name => 'myb', voice_id => 'joanna' );
+    my $agent    = SignalWire::Agents::Bedrock->new( name => 'myb', voice_id => 'joanna' );
     my $expected = "BedrockAgent(name='myb', route='/bedrock', voice='joanna')";
     is( $agent->to_string, $expected, 'to_string representation' );
     is( "$agent",          $expected, 'overloaded stringification' );

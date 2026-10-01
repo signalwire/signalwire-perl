@@ -120,8 +120,7 @@ SignalWire::Skills::Builtin::GoogleMaps - address validation and driving-route s
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::Builtin::GoogleMaps> is the Perl port of the Python
-reference C<signalwire.skills.google_maps.skill>. It registers two handler-based
+L<SignalWire::Skills::Builtin::GoogleMaps> registers two handler-based
 SWAIG tools:
 
 =over

@@ -37,26 +37,27 @@ plan skip_all => 'mock_signalwire --tls not available' unless defined $base;
 # ---------------------------------------------------------------------------
 
 subtest 'REST client performs a verified https:// GET' => sub {
+
     # RestClient accepts a fully-qualified host; the HttpClient uses it verbatim
     # when it already carries a scheme, so this drives the real client over TLS.
     my $client = SignalWire::REST::RestClient->new(
         project => $TlsMockTest::PROJECT,
         token   => $TlsMockTest::TOKEN,
-        host    => $base,                  # https://127.0.0.1:<port>
+        host    => $base,                   # https://127.0.0.1:<port>
     );
 
     # GET a spec-backed collection endpoint over HTTPS. A JSON response with a
     # 'data' array can only come back over a completed, CA-verified TLS session.
     my $body = eval { $client->fabric->addresses->list() };
-    ok(!$@, 'fabric.addresses.list() over https:// did not die') or diag $@;
-    is(ref $body, 'HASH', 'response is a hashref');
-    ok(exists $body->{data}, "response has a 'data' key")
-        or diag 'keys: ' . join(',', sort keys %{ $body || {} });
+    ok( !$@, 'fabric.addresses.list() over https:// did not die' ) or diag $@;
+    is( ref $body, 'HASH', 'response is a hashref' );
+    ok( exists $body->{data}, "response has a 'data' key" )
+        or diag 'keys: ' . join( ',', sort keys %{ $body || {} } );
 
     # Wire proof: the mock journaled the GET on its (HTTPS) control plane.
     my $last = TlsMockTest::https_journal_last();
-    is($last->{method}, 'GET', 'mock recorded a GET over HTTPS');
-    is($last->{path}, '/api/fabric/addresses', 'recorded path matches the GET');
+    is( $last->{method}, 'GET',                   'mock recorded a GET over HTTPS' );
+    is( $last->{path},   '/api/fabric/addresses', 'recorded path matches the GET' );
 };
 
 # ---------------------------------------------------------------------------
@@ -69,13 +70,14 @@ subtest 'untrusted client is rejected (real verification in force)' => sub {
     # Point SSL_CERT_FILE at an empty trust source so there is no anchor for the
     # leaf. verify_SSL => 1 then forces a chain that cannot be built.
     local $ENV{SSL_CERT_FILE} = '/dev/null';
-    my $ua = HTTP::Tiny->new(timeout => 5, verify_SSL => 1);
+    my $ua   = HTTP::Tiny->new( timeout => 5, verify_SSL => 1 );
     my $resp = $ua->get("$base/__mock__/health");
 
-    ok(!$resp->{success}, 'HTTPS GET with empty trust store was rejected')
+    ok( !$resp->{success}, 'HTTPS GET with empty trust store was rejected' )
         or diag "unexpectedly succeeded: status=$resp->{status}";
-    note("untrusted https GET correctly rejected: status=$resp->{status} "
-         . "reason=" . ($resp->{reason} // ''));
+    note(     "untrusted https GET correctly rejected: status=$resp->{status} "
+            . "reason="
+            . ( $resp->{reason} // '' ) );
 };
 
 done_testing();

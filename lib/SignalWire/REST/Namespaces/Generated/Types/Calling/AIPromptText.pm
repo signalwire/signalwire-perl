@@ -12,13 +12,18 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::AIPromptText: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'max_tokens'        => ( is => 'ro' );
-has 'temperature'       => ( is => 'ro' );
-has 'top_p'             => ( is => 'ro' );
-has 'confidence'        => ( is => 'ro' );
-has 'presence_penalty'  => ( is => 'ro' );
-has 'frequency_penalty' => ( is => 'ro' );
-has 'text'              => ( is => 'ro' );
-has 'contexts'          => ( is => 'ro' );
+has 'contexts'              => ( is => 'ro' );
+has 'frequency_penalty'     => ( is => 'ro' );
+has 'max_completion_tokens' => ( is => 'ro' );
+has 'max_tokens'            => ( is => 'ro' );
+has 'model'                 => ( is => 'ro' );
+has 'pom'                   => ( is => 'ro' );
+has 'presence_penalty'      => ( is => 'ro' );
+has 'reasoning_effort'      => ( is => 'ro' );
+has 'steps'                 => ( is => 'ro' );
+has 'temperature'           => ( is => 'ro' );
+has 'text'                  => ( is => 'ro' );
+has 'top_p'                 => ( is => 'ro' );
+has 'verbosity'             => ( is => 'ro' );
 
 1;

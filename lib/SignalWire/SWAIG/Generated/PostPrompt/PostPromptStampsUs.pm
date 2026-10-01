@@ -13,7 +13,6 @@ use Moo;
 # wire key; no methods (the reference records this as a method-less type).
 has 'speech_start'    => ( is => 'ro' );
 has 'last_word_end'   => ( is => 'ro' );
-has 'suspected_end'   => ( is => 'ro' );
 has 'turn_decided'    => ( is => 'ro' );
 has 'status_pushed'   => ( is => 'ro' );
 has 'request_detect'  => ( is => 'ro' );

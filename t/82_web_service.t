@@ -61,8 +61,8 @@ subtest 'remove_directory drops the route' => sub {
 
 subtest 'file_allowed predicate' => sub {
     my $svc = SignalWire::Web::WebService->new;
-    ok( $svc->file_allowed( File::Spec->catfile( $dir, 'hello.txt' ) ), 'plain file allowed' );
-    ok( !$svc->file_allowed( File::Spec->catfile( $dir, '.env' ) ),     'blocked .env not allowed' );
+    ok( $svc->file_allowed( File::Spec->catfile( $dir,  'hello.txt' ) ), 'plain file allowed' );
+    ok( !$svc->file_allowed( File::Spec->catfile( $dir, '.env' ) ), 'blocked .env not allowed' );
 };
 
 # ---- real HTTP server tests ----
@@ -90,7 +90,7 @@ sub _get {
 
 subtest 'serves real file contents' => sub {
     my $res = _get('/static/hello.txt');
-    is( $res->{status}, 200,           'HTTP 200' );
+    is( $res->{status},  200,           'HTTP 200' );
     is( $res->{content}, 'hello world', 'file body served' );
 };
 
@@ -98,8 +98,8 @@ subtest 'serves html with security headers' => sub {
     my $res = _get('/static/page.html');
     is( $res->{status}, 200, 'HTTP 200' );
     like( $res->{content}, qr{<h1>hi</h1>}, 'html body served' );
-    is( $res->{headers}{'x-content-type-options'}, 'nosniff', 'nosniff header' );
-    is( $res->{headers}{'cache-control'}, 'public, max-age=3600', 'cache-control header' );
+    is( $res->{headers}{'x-content-type-options'}, 'nosniff',              'nosniff header' );
+    is( $res->{headers}{'cache-control'},          'public, max-age=3600', 'cache-control header' );
 };
 
 subtest 'missing file is not found' => sub {
@@ -120,6 +120,30 @@ subtest 'requires auth' => sub {
 subtest 'wrong auth rejected' => sub {
     my $res = _get( '/static/hello.txt', pass => 'wrongpass' );
     is( $res->{status}, 401, 'HTTP 401 with wrong password' );
+};
+
+subtest 'auth-scheme token is matched case-insensitively (RFC 7235)' => sub {
+
+    # The reference guards this route with FastAPI's HTTPBasic, which compares
+    # ``scheme.lower() != "basic"``. A client sending the legal lowercase form
+    # authenticates there and must authenticate here.
+    chomp( my $b64 = encode_base64("$USER:$PASS") );
+    for my $scheme ( 'Basic', 'basic', 'BASIC', 'BaSiC' ) {
+        my $res = $http->get(
+            "http://127.0.0.1:$port/static/hello.txt",
+            { headers => { Authorization => "$scheme $b64" } }
+        );
+        is( $res->{status}, 200, "authenticated with scheme '$scheme'" );
+    }
+
+    # ...and the scheme check is still a real check.
+    for my $bad ( 'Digest', 'Bearer', 'Basicx', 'Negotiate' ) {
+        my $res = $http->get(
+            "http://127.0.0.1:$port/static/hello.txt",
+            { headers => { Authorization => "$bad $b64" } }
+        );
+        is( $res->{status}, 401, "scheme '$bad' rejected" );
+    }
 };
 
 subtest 'path traversal denied' => sub {

@@ -1,4 +1,5 @@
 package CompileCheck;
+
 # t/lib/CompileCheck.pm — a fork-pressure-robust wrapper around `perl -c`.
 #
 # Several smoke tests (t/12_cli.t, t/53_surface_audit.t, t/54_doc_audit.t)
@@ -37,15 +38,15 @@ our @EXPORT_OK = qw(compile_ok);
 # Run $cmd (a backtick command string that already redirects 2>&1) and classify
 # the result. Returns nothing; emits exactly one Test::More assertion or skip.
 sub compile_ok {
-    my ($cmd, $desc) = @_;
+    my ( $cmd, $desc ) = @_;
 
-    my $out = `$cmd`;
-    my $status = $?;              # $? from the backtick child (or -1 if it never launched)
-    my $shell_err = $!;          # errno if the shell/backtick itself failed to spawn
+    my $out       = `$cmd`;
+    my $status    = $?;       # $? from the backtick child (or -1 if it never launched)
+    my $shell_err = $!;       # errno if the shell/backtick itself failed to spawn
     $out = '' unless defined $out;
 
     # ---- Success: the compiler said so. -------------------------------------
-    if ($out =~ /syntax OK/) {
+    if ( $out =~ /syntax OK/ ) {
         Test::More::pass($desc);
         return;
     }
@@ -64,7 +65,7 @@ sub compile_ok {
     #      a signal death.
     #  (d) Output is a fork/exec/resource-exhaustion diagnostic from perl or the
     #      shell (out of processes/memory, cannot exec), not a compile error.
-    my $signalled = ($status != -1) && (($status & 127) != 0);
+    my $signalled    = ( $status != -1 ) && ( ( $status & 127 ) != 0 );
     my $resource_err = $out =~ /
           Can't[ ]fork
         | Resource[ ]temporarily[ ]unavailable
@@ -74,17 +75,16 @@ sub compile_ok {
         | too[ ]many[ ]open[ ]files
     /xi;
 
-    if ($out !~ /\S/ || $status == -1 || $signalled || $resource_err) {
+    if ( $out !~ /\S/ || $status == -1 || $signalled || $resource_err ) {
         my $why =
-              ($out !~ /\S/)      ? 'empty output (child never reported)'
-            : ($status == -1)     ? "backtick failed to spawn ($shell_err)"
-            : $signalled          ? 'child killed by signal'
-            :                       'fork/resource-exhaustion diagnostic';
-        Test::More::note(
-            "compile check inconclusive under fork pressure — $why "
-          . "(status=$status); skipping rather than failing: $desc");
-      SKIP: {
-            Test::More::skip("compile check inconclusive ($why)", 1);
+              ( $out !~ /\S/ )  ? 'empty output (child never reported)'
+            : ( $status == -1 ) ? "backtick failed to spawn ($shell_err)"
+            : $signalled        ? 'child killed by signal'
+            :                     'fork/resource-exhaustion diagnostic';
+        Test::More::note( "compile check inconclusive under fork pressure — $why "
+                . "(status=$status); skipping rather than failing: $desc" );
+    SKIP: {
+            Test::More::skip( "compile check inconclusive ($why)", 1 );
         }
         return;
     }

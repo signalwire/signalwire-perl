@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More;
-use JSON qw(decode_json);
+use JSON         qw(decode_json);
 use MIME::Base64 qw(encode_base64);
 
 # =============================================================================
@@ -31,6 +31,7 @@ sub new_agent {
 }
 
 subtest 'lambda: direct dispatch -> Lambda-proxy response' => sub {
+
     # Python parity (serverless_mixin.py, mode "lambda"): the event is
     # dispatched DIRECTLY — Basic-auth gate, then a root event renders the SWML
     # document as a {statusCode,headers,body} Lambda-proxy response. Lambda does
@@ -41,8 +42,8 @@ subtest 'lambda: direct dispatch -> Lambda-proxy response' => sub {
         mode  => 'lambda',
         event => { rawPath => '/', headers => { authorization => $auth } },
     );
-    is( ref $resp,           'HASH', 'lambda response is a hashref' );
-    is( $resp->{statusCode}, 200,    'lambda root statusCode 200' );
+    is( ref $resp,            'HASH', 'lambda response is a hashref' );
+    is( $resp->{statusCode},  200,    'lambda root statusCode 200' );
     is( ref $resp->{headers}, 'HASH', 'headers folded to a hashref' );
     my $doc = eval { decode_json( $resp->{body} ) };
     is( ref $doc, 'HASH', 'root event renders the SWML document' );
@@ -73,8 +74,8 @@ subtest 'gcf: google_cloud_function event -> {status,headers,body}' => sub {
             mode  => $mode,
             event => { path => '/health', method => 'GET' },
         );
-        is( ref $resp,      'HASH', "$mode response is a hashref" );
-        is( $resp->{status}, 200,   "$mode status 200" );
+        is( ref $resp,            'HASH', "$mode response is a hashref" );
+        is( $resp->{status},      200,    "$mode status 200" );
         is( ref $resp->{headers}, 'HASH', "$mode headers hashref" );
         my $doc = eval { decode_json( $resp->{body} ) };
         is( $doc->{status}, 'healthy', "$mode dispatched to the health document" );
@@ -90,8 +91,8 @@ subtest 'azure: azure_function event (URL) -> {status,headers,body}' => sub {
                 method => 'GET',
             },
         );
-        is( ref $resp,      'HASH', "$mode response is a hashref" );
-        is( $resp->{status}, 200,   "$mode status 200" );
+        is( ref $resp,            'HASH', "$mode response is a hashref" );
+        is( $resp->{status},      200,    "$mode status 200" );
         is( ref $resp->{headers}, 'HASH', "$mode headers hashref" );
         my $doc = eval { decode_json( $resp->{body} ) };
         is( $doc->{status}, 'healthy', "$mode dispatched (path parsed out of the URL)" );

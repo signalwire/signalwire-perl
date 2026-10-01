@@ -15,5 +15,6 @@ use Moo;
 has 'name'                => ( is => 'ro' );
 has 'contents'            => ( is => 'ro' );
 has 'status_callback_url' => ( is => 'ro' );
+has 'script_type'         => ( is => 'ro' );
 
 1;

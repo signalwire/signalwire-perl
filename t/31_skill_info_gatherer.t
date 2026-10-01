@@ -7,98 +7,115 @@ use SignalWire::Agent::AgentBase;
 use SignalWire::Skills::SkillRegistry;
 
 my $factory = SignalWire::Skills::SkillRegistry->get_factory('info_gatherer');
-ok(defined $factory, 'factory found');
+ok( defined $factory, 'factory found' );
 
 subtest 'construction' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig');
-    my $skill = $factory->new(agent => $agent, params => {});
-    is($skill->skill_name, 'info_gatherer', 'skill_name');
-    ok($skill->supports_multiple_instances, 'multi-instance');
+    my $agent = SignalWire::Agent::AgentBase->new( name => 'ig' );
+    my $skill = $factory->new( agent => $agent, params => {} );
+    is( $skill->skill_name, 'info_gatherer', 'skill_name' );
+    ok( $skill->supports_multiple_instances, 'multi-instance' );
 };
 
 subtest 'registers tools' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_reg');
-    my $skill = $factory->new(agent => $agent, params => {
-        questions => [{ key_name => 'name', question_text => 'Your name?' }],
-    });
+    my $agent = SignalWire::Agent::AgentBase->new( name => 'ig_reg' );
+    my $skill = $factory->new(
+        agent  => $agent,
+        params => {
+            questions => [ { key_name => 'name', question_text => 'Your name?' } ],
+        }
+    );
     $skill->setup;
     $skill->register_tools;
-    ok(exists $agent->tools->{start_questions}, 'start_questions');
-    ok(exists $agent->tools->{submit_answer}, 'submit_answer');
+    ok( exists $agent->tools->{start_questions}, 'start_questions' );
+    ok( exists $agent->tools->{submit_answer},   'submit_answer' );
 };
 
 subtest 'prefix option' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_prefix');
-    my $skill = $factory->new(agent => $agent, params => {
-        prefix    => 'intake',
-        questions => [{ key_name => 'x', question_text => 'Q?' }],
-    });
+    my $agent = SignalWire::Agent::AgentBase->new( name => 'ig_prefix' );
+    my $skill = $factory->new(
+        agent  => $agent,
+        params => {
+            prefix    => 'intake',
+            questions => [ { key_name => 'x', question_text => 'Q?' } ],
+        }
+    );
     $skill->setup;
     $skill->register_tools;
-    ok(exists $agent->tools->{intake_start_questions}, 'prefixed start');
-    ok(exists $agent->tools->{intake_submit_answer}, 'prefixed submit');
+    ok( exists $agent->tools->{intake_start_questions}, 'prefixed start' );
+    ok( exists $agent->tools->{intake_submit_answer},   'prefixed submit' );
 };
 
 subtest 'global data' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_gd');
-    my $skill = $factory->new(agent => $agent, params => {
-        questions => [{ key_name => 'n', question_text => 'Name?' }],
-    });
+    my $agent = SignalWire::Agent::AgentBase->new( name => 'ig_gd' );
+    my $skill = $factory->new(
+        agent  => $agent,
+        params => {
+            questions => [ { key_name => 'n', question_text => 'Name?' } ],
+        }
+    );
     my $gdata = $skill->get_global_data;
+
     # State is stored under the skill namespace (skill:<instance_key>), the same
     # key the handlers read/write via get_skill_data / update_skill_data.
     my $ns = $gdata->{ $skill->_skill_namespace };
-    ok(defined $ns, 'namespace exists');
-    is(scalar @{$ns->{questions}}, 1, 'one question');
-    is($ns->{question_index}, 0, 'index starts at 0');
+    ok( defined $ns, 'namespace exists' );
+    is( scalar @{ $ns->{questions} }, 1, 'one question' );
+    is( $ns->{question_index},        0, 'index starts at 0' );
 };
 
 # Contract #3 (skill form): the submit_answer handler is a real state machine,
 # not an "Answer recorded" echo. It reads the namespaced state from raw_data,
 # stores the answer, advances the index, and presents the next question.
 subtest 'submit_answer state machine (namespaced)' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_sm');
-    my $skill = $factory->new(agent => $agent, params => {
-        questions => [
-            { key_name => 'full_name', question_text => 'What is your full name?' },
-            { key_name => 'email',     question_text => 'What is your email?' },
-        ],
-    });
+    my $agent = SignalWire::Agent::AgentBase->new( name => 'ig_sm' );
+    my $skill = $factory->new(
+        agent  => $agent,
+        params => {
+            questions => [
+                { key_name => 'full_name', question_text => 'What is your full name?' },
+                { key_name => 'email',     question_text => 'What is your email?' },
+            ],
+        }
+    );
     $skill->setup;
     $skill->register_tools;
 
-    my $ns = $skill->_skill_namespace;
-    my $raw = { global_data => { $ns => {
-        questions      => $skill->params->{questions},
-        question_index => 0,
-        answers        => [],
-    } } };
+    my $ns  = $skill->_skill_namespace;
+    my $raw = {
+        global_data => {
+            $ns => {
+                questions      => $skill->params->{questions},
+                question_index => 0,
+                answers        => [],
+            }
+        }
+    };
 
-    my $result = $agent->on_function_call('submit_answer', { answer => 'Ada' }, $raw);
+    my $result = $agent->on_function_call( 'submit_answer', { answer => 'Ada' }, $raw );
     my ($upd) = grep { exists $_->{set_global_data} } @{ $result->action };
-    ok(defined $upd, 'emits a set_global_data action (not an echo)');
+    ok( defined $upd, 'emits a set_global_data action (not an echo)' );
     my $new = $upd->{set_global_data}{$ns};
-    is($new->{question_index}, 1, 'question_index advanced');
+    is( $new->{question_index}, 1, 'question_index advanced' );
     is_deeply(
         $new->{answers},
         [ { key_name => 'full_name', answer => 'Ada' } ],
         'answer recorded under its key_name',
     );
-    like($result->response, qr/email/i, 'next question presented');
+    like( $result->response, qr/email/i, 'next question presented' );
 };
 
 subtest 'prompt sections' => sub {
-    my $agent = SignalWire::Agent::AgentBase->new(name => 'ig_ps');
-    my $skill = $factory->new(agent => $agent, params => {});
+    my $agent    = SignalWire::Agent::AgentBase->new( name => 'ig_ps' );
+    my $skill    = $factory->new( agent => $agent, params => {} );
     my $sections = $skill->get_prompt_sections;
-    ok(scalar @$sections > 0, 'has sections');
-    like($sections->[0]{title}, qr/Info Gatherer/, 'title');
+    ok( scalar @$sections > 0, 'has sections' );
+    like( $sections->[0]{title}, qr/Info Gatherer/, 'title' );
 };
 
 subtest 'parameter schema' => sub {
     my $schema = $factory->get_parameter_schema;
-    ok(exists $schema->{questions}, 'has questions');
-    ok(exists $schema->{prefix}, 'has prefix');
+    ok( exists $schema->{questions}, 'has questions' );
+    ok( exists $schema->{prefix},    'has prefix' );
 };
 
 done_testing;

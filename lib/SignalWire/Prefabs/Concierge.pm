@@ -221,8 +221,7 @@ SignalWire::Prefabs::Concierge - ready-made venue concierge AI agent
 
 =head1 DESCRIPTION
 
-L<SignalWire::Prefabs::Concierge> is the Perl port of
-C<signalwire.prefabs.concierge.ConciergeAgent>. It is a ready-made
+L<SignalWire::Prefabs::Concierge> is a ready-made
 subclass of L<SignalWire::Agent::AgentBase> that acts as a virtual
 concierge for a venue: it welcomes callers, explains available services,
 answers questions about amenities and hours, and helps with bookings.

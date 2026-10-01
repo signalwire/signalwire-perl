@@ -21,30 +21,30 @@ my $client = SignalWire::REST::RestClient->new(
 print "Uploading document to Datasphere...\n";
 my $doc = $client->datasphere->documents->create(
     url  => 'https://filesamples.com/samples/document/txt/sample3.txt',
-    tags => ['support', 'demo'],
+    tags => [ 'support', 'demo' ],
 );
 my $doc_id = $doc->{id};
-print "  Document created: $doc_id (status: " . ($doc->{status} // 'unknown') . ")\n";
+print "  Document created: $doc_id (status: " . ( $doc->{status} // 'unknown' ) . ")\n";
 
 # 2. Wait for vectorization to complete
 print "\nWaiting for document to be vectorized...\n";
-for my $i (1 .. 30) {
+for my $i ( 1 .. 30 ) {
     sleep 2;
     my $doc_status = $client->datasphere->documents->get($doc_id);
-    my $status = $doc_status->{status} // 'unknown';
+    my $status     = $doc_status->{status} // 'unknown';
     print "  Poll $i: status=$status\n";
 
-    if ($status eq 'completed') {
-        print "  Vectorized! Chunks: " . ($doc_status->{number_of_chunks} // 0) . "\n";
+    if ( $status eq 'completed' ) {
+        print "  Vectorized! Chunks: " . ( $doc_status->{number_of_chunks} // 0 ) . "\n";
         last;
     }
-    if ($status eq 'error' || $status eq 'failed') {
+    if ( $status eq 'error' || $status eq 'failed' ) {
         print "  Document processing failed: $status\n";
         $client->datasphere->documents->delete($doc_id);
         exit 1;
     }
 
-    if ($i == 30) {
+    if ( $i == 30 ) {
         print "  Timed out waiting for vectorization.\n";
         $client->datasphere->documents->delete($doc_id);
         exit 1;
@@ -53,11 +53,11 @@ for my $i (1 .. 30) {
 
 # 3. List chunks
 print "\nListing chunks for document $doc_id...\n";
-my $chunks = $client->datasphere->documents->list_chunks($doc_id);
+my $chunks     = $client->datasphere->documents->list_chunks($doc_id);
 my @chunk_list = @{ $chunks->{data} // [] };
-for my $chunk (@chunk_list[0 .. ($#chunk_list < 4 ? $#chunk_list : 4)]) {
+for my $chunk ( @chunk_list[ 0 .. ( $#chunk_list < 4 ? $#chunk_list : 4 ) ] ) {
     my $content = $chunk->{content} // '';
-    $content = substr($content, 0, 80) . '...' if length($content) > 80;
+    $content = substr( $content, 0, 80 ) . '...' if length($content) > 80;
     print "  - Chunk $chunk->{id}: $content\n";
 }
 
@@ -67,9 +67,9 @@ my $results = $client->datasphere->documents->search(
     query_string => 'lorem ipsum dolor sit amet',
     count        => 3,
 );
-for my $chunk (@{ $results->{chunks} // [] }) {
+for my $chunk ( @{ $results->{chunks} // [] } ) {
     my $text = $chunk->{text} // '';
-    $text = substr($text, 0, 100) . '...' if length($text) > 100;
+    $text = substr( $text, 0, 100 ) . '...' if length($text) > 100;
     print "  - $text\n";
 }
 

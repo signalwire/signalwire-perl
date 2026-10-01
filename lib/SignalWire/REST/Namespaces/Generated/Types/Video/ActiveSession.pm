@@ -31,6 +31,15 @@ has 'status'                       => ( is => 'ro' );
 has 'record_on_start'              => ( is => 'ro' );
 has 'enable_room_previews'         => ( is => 'ro' );
 has 'preview_url'                  => ( is => 'ro' );
-has 'audio_video_sync'             => ( is => 'ro' );
+has 'sync_audio_video'             => ( is => 'ro' );
+has 'tone_on_entry_and_exit'       => ( is => 'ro' );
+has 'room_join_video_off'          => ( is => 'ro' );
+has 'user_join_video_off'          => ( is => 'ro' );
+has 'locked'                       => ( is => 'ro' );
+has 'cost_in_dollars'              => ( is => 'ro' );
+has 'created_at'                   => ( is => 'ro' );
+has 'updated_at'                   => ( is => 'ro' );
+has 'locked_cover'                 => ( is => 'ro' );
+has 'prioritize_handraise'         => ( is => 'ro' );
 
 1;

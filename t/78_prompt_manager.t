@@ -27,12 +27,12 @@ subtest 'post_prompt' => sub {
 
 subtest 'prompt_add_section builds POM array' => sub {
     my $pm = $CLASS->new;
-    $pm->prompt_add_section( 'Personality', body => 'Be helpful' );
-    $pm->prompt_add_section( 'Rules', bullets => [ 'Be concise', 'Be accurate' ] );
+    $pm->prompt_add_section( 'Personality', body    => 'Be helpful' );
+    $pm->prompt_add_section( 'Rules',       bullets => [ 'Be concise', 'Be accurate' ] );
     my $prompt = $pm->get_prompt;
 
-    is( ref $prompt, 'ARRAY', 'get_prompt returns an arrayref in POM mode' );
-    is( scalar @$prompt, 2, 'two sections' );
+    is( ref $prompt,         'ARRAY',       'get_prompt returns an arrayref in POM mode' );
+    is( scalar @$prompt,     2,             'two sections' );
     is( $prompt->[0]{title}, 'Personality', 'first section title' );
     is( $prompt->[0]{body},  'Be helpful',  'first section body' );
     is_deeply( $prompt->[1]{bullets}, [ 'Be concise', 'Be accurate' ], 'second section bullets' );
@@ -74,8 +74,8 @@ subtest 'prompt_add_subsection creates parent' => sub {
 subtest 'prompt_has_section' => sub {
     my $pm = $CLASS->new;
     $pm->prompt_add_section( 'Foo', body => 'bar' );
-    ok( $pm->prompt_has_section('Foo'),   'existing section found' );
-    ok( !$pm->prompt_has_section('Baz'),  'absent section not found' );
+    ok( $pm->prompt_has_section('Foo'),  'existing section found' );
+    ok( !$pm->prompt_has_section('Baz'), 'absent section not found' );
 };
 
 subtest 'set_prompt_pom' => sub {
@@ -106,7 +106,7 @@ subtest 'pom then text does not raise (asymmetric guard)' => sub {
     my $pm = $CLASS->new;
     $pm->prompt_add_section( 'Sec', body => 'b' );
     eval { $pm->set_prompt_text('raw'); 1 };
-    is( $@, '', 'no error when text set after POM' );
+    is( $@,                  '',    'no error when text set after POM' );
     is( $pm->get_raw_prompt, 'raw', 'raw text stored' );
 };
 
@@ -145,13 +145,14 @@ subtest 'contexts take precedence in get_prompt' => sub {
 
 subtest 'returns self for chaining' => sub {
     my $pm = $CLASS->new;
-    is( $pm->set_prompt_text('x'),  $pm, 'set_prompt_text chains' );
-    is( $pm->set_post_prompt('x'),  $pm, 'set_post_prompt chains' );
+    is( $pm->set_prompt_text('x'), $pm, 'set_prompt_text chains' );
+    is( $pm->set_post_prompt('x'), $pm, 'set_post_prompt chains' );
 
     my $pm2 = $CLASS->new;
-    is( $pm2->prompt_add_section( 'T', body => 'b' ),        $pm2, 'prompt_add_section chains' );
-    is( $pm2->prompt_add_to_section( 'T', body => 'more' ),  $pm2, 'prompt_add_to_section chains' );
-    is( $pm2->prompt_add_subsection( 'T', 'S', body => 'b' ), $pm2, 'prompt_add_subsection chains' );
+    is( $pm2->prompt_add_section( 'T', body => 'b' ),       $pm2, 'prompt_add_section chains' );
+    is( $pm2->prompt_add_to_section( 'T', body => 'more' ), $pm2, 'prompt_add_to_section chains' );
+    is( $pm2->prompt_add_subsection( 'T', 'S', body => 'b' ), $pm2,
+        'prompt_add_subsection chains' );
 };
 
 done_testing;

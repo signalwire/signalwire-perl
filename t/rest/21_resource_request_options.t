@@ -40,29 +40,28 @@ my $CREATE_PATH        = '/api/relay/rest/addresses';
 sub count_hits {
     my ( $method, $path ) = @_;
     my $entries = MockTest::journal_all();
-    return scalar grep {
-        ( $_->{method} // '' ) eq $method && ( $_->{path} // '' ) eq $path
-    } @$entries;
+    return
+        scalar grep { ( $_->{method} // '' ) eq $method && ( $_->{path} // '' ) eq $path }
+        @$entries;
 }
 
 # Return the most recent journal entry for (method, path) for THIS client.
 sub last_hit {
     my ( $method, $path ) = @_;
     my $entries = MockTest::journal_all();
-    my @m = grep {
-        ( $_->{method} // '' ) eq $method && ( $_->{path} // '' ) eq $path
-    } @$entries;
+    my @m = grep { ( $_->{method} // '' ) eq $method && ( $_->{path} // '' ) eq $path } @$entries;
     return $m[-1];
 }
 
 # ---- 1. A GET resource verb forwards request_options (retry observable) -----
 subtest 'get_verb_forwards_request_options' => sub {
     my $client = MockTest::client();
-    my $ro = SignalWire::REST::RequestOptions->new( retries => 1, retry_backoff => 0 );
+    my $ro     = SignalWire::REST::RequestOptions->new( retries => 1, retry_backoff => 0 );
 
     # fabric.addresses->paginate is a generated ReadResource verb. A single armed
     # 503 + retries=1 must retry into the default 200 => 2 transport attempts.
     my $before = count_hits( 'GET', $ADDRESSES_PATH );
+
     # Arm a TERMINATING two-page sequence, with a 503 in front of page 1. retries=1
     # retries the 503 into page 1; page 1 carries links.next -> page 2 (terminal,
     # empty links). This proves request_options is forwarded through the paginator
@@ -71,41 +70,48 @@ subtest 'get_verb_forwards_request_options' => sub {
     # links.next, so the terminating sequence is deliberate.
     MockTest::scenario_set( $ADDRESSES_ENDPOINT, 503, { errors => [ { code => 'X' } ] } );
     MockTest::scenario_set(
-        $ADDRESSES_ENDPOINT, 200,
-        {   data  => [ { id => 'ro-pg-1' } ],
+        $ADDRESSES_ENDPOINT,
+        200,
+        {
+            data  => [ { id => 'ro-pg-1' } ],
             links => { next => 'http://example.com/api/fabric/addresses?page_token=ro2' },
         },
     );
-    MockTest::scenario_set(
-        $ADDRESSES_ENDPOINT, 200,
+    MockTest::scenario_set( $ADDRESSES_ENDPOINT, 200,
         { data => [ { id => 'ro-pg-2' } ], links => {} },
     );
-    my $iter = $client->fabric->addresses->paginate( request_options => $ro );
+    my $iter  = $client->fabric->addresses->paginate( request_options => $ro );
     my @items = $iter->all;
-    is_deeply( [ map { $_->{id} } @items ], [ 'ro-pg-1', 'ro-pg-2' ],
-        'paginate walked both pages to termination' );
-    is( count_hits( 'GET', $ADDRESSES_PATH ) - $before, 3,
+    is_deeply(
+        [ map { $_->{id} } @items ],
+        [ 'ro-pg-1', 'ro-pg-2' ],
+        'paginate walked both pages to termination'
+    );
+    is(
+        count_hits( 'GET', $ADDRESSES_PATH ) - $before,
+        3,
         'paginate(request_options=>retries): 503-retry + page1 + page2 = 3 GETs '
-            . '(retry threaded through the paginator)' );
+            . '(retry threaded through the paginator)'
+    );
 };
 
 # ---- 2. list() (CrudResource) forwards request_options ----------------------
 subtest 'list_verb_forwards_request_options' => sub {
     my $client = MockTest::client();
-    my $ro = SignalWire::REST::RequestOptions->new( retries => 1, retry_backoff => 0 );
+    my $ro     = SignalWire::REST::RequestOptions->new( retries => 1, retry_backoff => 0 );
     my $before = count_hits( 'GET', $CREATE_PATH );
     MockTest::scenario_set( 'relay-rest.list_addresses', 503, { errors => [ { code => 'X' } ] } );
     my $res = $client->addresses->list( request_options => $ro );
-    is( count_hits( 'GET', $CREATE_PATH ) - $before, 2,
-        'list(request_options=>retries) retried the 503 into the 200 (2 attempts)' );
+    is( count_hits( 'GET', $CREATE_PATH ) - $before,
+        2, 'list(request_options=>retries) retried the 503 into the 200 (2 attempts)' );
 };
 
 # ---- 3. create() forwards request_options and NEVER leaks it into the body --
 subtest 'create_verb_forwards_and_does_not_leak_request_options' => sub {
     my $client = MockTest::client();
-    my $ro = SignalWire::REST::RequestOptions->new( retries => 0 );
+    my $ro     = SignalWire::REST::RequestOptions->new( retries => 0 );
     my $before = count_hits( 'POST', $CREATE_PATH );
-    my $res = $client->addresses->create(
+    my $res    = $client->addresses->create(
         address_type    => 'commercial',
         first_name      => 'Ada',
         request_options => $ro,
@@ -115,9 +121,8 @@ subtest 'create_verb_forwards_and_does_not_leak_request_options' => sub {
     my $entry = last_hit( 'POST', $CREATE_PATH );
     ok( $entry, 'captured the create POST in the journal' );
     my $body = $entry->{body} || {};
-    ok( ref $body eq 'HASH', 'wire body is a JSON object' );
-    ok( !exists $body->{request_options},
-        'request_options is NOT folded into the wire body' );
+    ok( ref $body eq 'HASH',              'wire body is a JSON object' );
+    ok( !exists $body->{request_options}, 'request_options is NOT folded into the wire body' );
     is( $body->{address_type}, 'commercial', 'the real field IS in the wire body' );
 };
 

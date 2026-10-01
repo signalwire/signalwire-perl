@@ -3,7 +3,7 @@
 # AUTO-GENERATED from porting-sdk/schema.json ($defs) — regenerate with:
 #   python3 scripts/generate_swml_verbs.py
 #
-# Generated SWML verb config type 'ConnectConfig' (flattened SWMLMethod verb 'connect' config).
+# Generated SWML verb config type 'ConnectConfig' ($defs schema 'ConnectConfig').
 package SignalWire::SWML::Generated::ConnectConfig;
 use strict;
 use warnings;
@@ -11,27 +11,36 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'from'                  => ( is => 'ro' );
-has 'headers'               => ( is => 'ro' );
-has 'codecs'                => ( is => 'ro' );
-has 'webrtc_media'          => ( is => 'ro' );
-has 'session_timeout'       => ( is => 'ro' );
-has 'ringback'              => ( is => 'ro' );
-has 'result'                => ( is => 'ro' );
-has 'timeout'               => ( is => 'ro' );
-has 'max_duration'          => ( is => 'ro' );
-has 'answer_on_bridge'      => ( is => 'ro' );
-has 'confirm'               => ( is => 'ro' );
-has 'confirm_timeout'       => ( is => 'ro' );
-has 'username'              => ( is => 'ro' );
-has 'password'              => ( is => 'ro' );
-has 'encryption'            => ( is => 'ro' );
-has 'call_state_url'        => ( is => 'ro' );
-has 'transfer_after_bridge' => ( is => 'ro' );
-has 'call_state_events'     => ( is => 'ro' );
-has 'to'                    => ( is => 'ro' );
-has 'serial'                => ( is => 'ro' );
-has 'parallel'              => ( is => 'ro' );
-has 'serial_parallel'       => ( is => 'ro' );
+has 'answer_on_bridge'           => ( is => 'ro' );
+has 'authorization_bearer_token' => ( is => 'ro' );
+has 'call_state_events'          => ( is => 'ro' );
+has 'call_state_url'             => ( is => 'ro' );
+has 'codec'                      => ( is => 'ro' );
+has 'codecs'                     => ( is => 'ro' );
+has 'confirm'                    => ( is => 'ro' );
+has 'confirm_timeout'            => ( is => 'ro' );
+has 'custom_parameters'          => ( is => 'ro' );
+has 'encryption'                 => ( is => 'ro' );
+has 'execute_after_queue'        => ( is => 'ro' );
+has 'from'                       => ( is => 'ro' );
+has 'from_name'                  => ( is => 'ro' );
+has 'headers'                    => ( is => 'ro' );
+has 'max_duration'               => ( is => 'ro' );
+has 'name'                       => ( is => 'ro' );
+has 'parallel'                   => ( is => 'ro' );
+has 'password'                   => ( is => 'ro' );
+has 'realtime'                   => ( is => 'ro' );
+has 'result'                     => ( is => 'ro' );
+has 'ringback'                   => ( is => 'ro' );
+has 'serial'                     => ( is => 'ro' );
+has 'serial_parallel'            => ( is => 'ro' );
+has 'session_timeout'            => ( is => 'ro' );
+has 'status_url'                 => ( is => 'ro' );
+has 'status_url_method'          => ( is => 'ro' );
+has 'stop_all_on_reject'         => ( is => 'ro' );
+has 'timeout'                    => ( is => 'ro' );
+has 'to'                         => ( is => 'ro' );
+has 'username'                   => ( is => 'ro' );
+has 'webrtc_media'               => ( is => 'ro' );
 
 1;

@@ -264,7 +264,7 @@ C<signalwire.core.config_loader.ConfigLoader>. It loads the first available
 JSON (or YAML) config file from a search path and supports C<${VAR|default}>
 syntax for referencing environment variables within configuration values.
 After substitution, string values that look like booleans, integers, or
-floats are coerced to native Perl types (matching Python's JSON typing).
+floats are coerced to the native Perl type the JSON value would have had.
 
 =head1 METHODS
 

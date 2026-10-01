@@ -14,7 +14,7 @@ use warnings;
 #       params   => { page_size => 10 },
 #       data_key => 'data',
 #   );
-#   while (defined(my $item = $it->next)) { ... }
+#   while (defined(my $item = $it->__next__)) { ... }
 #   # or:
 #   my @items = $it->all;
 #
@@ -152,6 +152,8 @@ sub _fetch_next {
 
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
 SignalWire::REST::Pagination - Cursor-based pagination iterator.
@@ -166,9 +168,12 @@ SignalWire::REST::Pagination - Cursor-based pagination iterator.
         params   => { page_size => 25 },
         data_key => 'data',
     );
-    while (defined(my $item = $it->next)) {
+    while (defined(my $item = $it->__next__)) {
         ...
     }
+
+    # ...or drain it in one go:
+    my @all = $it->all;
 
 =head1 DESCRIPTION
 
@@ -177,5 +182,34 @@ Walks the C<links.next> cursor until no further page is advertised.
 Each fetch is performed via the SDK's L<SignalWire::REST::HttpClient>
 so authentication and base-URL handling is shared with the rest of
 the SDK.
+
+=head1 METHODS
+
+Iteration lives on C<SignalWire::REST::Pagination::PaginatedIterator>.
+The step method is spelled C<__next__>, keeping the reference's name —
+there is deliberately no C<next> alias, since C<next> is a Perl keyword.
+
+=over 4
+
+=item C<__iter__()>
+
+Return the iterator itself, so it can be used where the reference's
+iterator protocol is expected.
+
+=item C<__next__()>
+
+The next item, fetching the next page when the current buffer is
+exhausted, or C<undef> once the C<links.next> cursor runs out. Because
+exhaustion is signalled by C<undef>, test it with C<defined> rather than
+truthiness — a legitimately false item would otherwise end the loop early.
+
+=item C<all()>
+
+Drain the whole iterator and return every remaining item as a B<list>
+(not an arrayref). Convenient, but it holds every page in memory at once
+and issues all the remaining requests before returning, so prefer
+C<__next__> for large collections.
+
+=back
 
 =cut

@@ -151,8 +151,7 @@ SignalWire::Prefabs::Receptionist - ready-made call-routing receptionist AI agen
 
 =head1 DESCRIPTION
 
-L<SignalWire::Prefabs::Receptionist> is the Perl port of
-C<signalwire.prefabs.receptionist.ReceptionistAgent>. It is a ready-made
+L<SignalWire::Prefabs::Receptionist> is a ready-made
 subclass of L<SignalWire::Agent::AgentBase> that greets callers,
 determines which department they need, and transfers them to that
 department's phone number via a real C<connect> action.

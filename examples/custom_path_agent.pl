@@ -27,53 +27,58 @@ my $agent = SignalWire::Agent::AgentBase->new(
 );
 
 # Base prompt
-$agent->prompt_add_section(
-    'Role',
+$agent->prompt_add_section( 'Role',
     'You are a friendly chat assistant ready to help with any questions or conversations.',
 );
 
 # Dynamic configuration based on query parameters
-$agent->set_dynamic_config_callback(sub {
-    my ($qp, $bp, $headers, $a) = @_;
+$agent->set_dynamic_config_callback(
+    sub {
+        my ( $qp, $bp, $headers, $a ) = @_;
 
-    my $user_name = $qp->{user_name} // 'friend';
-    my $topic     = $qp->{topic}     // 'general conversation';
-    my $mood      = lc($qp->{mood}   // 'friendly');
+        my $user_name = $qp->{user_name} // 'friend';
+        my $topic     = $qp->{topic}     // 'general conversation';
+        my $mood      = lc( $qp->{mood} // 'friendly' );
 
-    # Personalize the greeting
-    $a->prompt_add_section(
-        'Personalization',
-        "The user's name is $user_name. They're interested in discussing $topic.",
-    );
-
-    # Voice setup
-    $a->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-    $a->set_params({ ai_model => 'gpt-4.1-nano' });
-
-    # Mood-based communication style
-    if ($mood eq 'professional') {
-        $a->prompt_add_section('Communication Style',
-            'Maintain a professional, business-appropriate tone in all interactions.',
+        # Personalize the greeting
+        $a->prompt_add_section( 'Personalization',
+            "The user's name is $user_name. They're interested in discussing $topic.",
         );
-    } elsif ($mood eq 'casual') {
-        $a->prompt_add_section('Communication Style',
-            'Use a casual, relaxed conversational style. Feel free to use informal language.',
+
+        # Voice setup
+        $a->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+        $a->set_params( { ai_model => 'gpt-4.1-nano' } );
+
+        # Mood-based communication style
+        if ( $mood eq 'professional' ) {
+            $a->prompt_add_section(
+                'Communication Style',
+                'Maintain a professional, business-appropriate tone in all interactions.',
+            );
+        } elsif ( $mood eq 'casual' ) {
+            $a->prompt_add_section(
+                'Communication Style',
+                'Use a casual, relaxed conversational style. Feel free to use informal language.',
+            );
+        } else {
+            $a->prompt_add_section(
+                'Communication Style',
+                'Be warm, friendly, and approachable in your responses.',
+            );
+        }
+
+        $a->set_global_data(
+            {
+                user_name    => $user_name,
+                topic        => $topic,
+                mood         => $mood,
+                session_type => 'chat',
+            }
         );
-    } else {
-        $a->prompt_add_section('Communication Style',
-            'Be warm, friendly, and approachable in your responses.',
-        );
+
+        $a->add_hints( 'chat', 'assistant', 'help', 'conversation', 'question' );
     }
-
-    $a->set_global_data({
-        user_name    => $user_name,
-        topic        => $topic,
-        mood         => $mood,
-        session_type => 'chat',
-    });
-
-    $a->add_hints('chat', 'assistant', 'help', 'conversation', 'question');
-});
+);
 
 print "Starting Chat Agent at custom path /chat\n";
 print "Available at: http://localhost:3000/chat\n";

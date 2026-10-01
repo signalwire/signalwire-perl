@@ -12,6 +12,34 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::ContextSwitchAction: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'context_switch' => ( is => 'ro' );
+has 'SWML'                         => ( is => 'ro' );
+has 'add_dynamic_hints'            => ( is => 'ro' );
+has 'back_to_back_functions'       => ( is => 'ro' );
+has 'change_context'               => ( is => 'ro' );
+has 'change_step'                  => ( is => 'ro' );
+has 'change_voice'                 => ( is => 'ro' );
+has 'clear_dynamic_hints'          => ( is => 'ro' );
+has 'context_switch'               => ( is => 'ro' );
+has 'end_of_speech_timeout'        => ( is => 'ro' );
+has 'extensive_data'               => ( is => 'ro' );
+has 'functions_on_speaker_timeout' => ( is => 'ro' );
+has 'hangup'                       => ( is => 'ro' );
+has 'hold'                         => ( is => 'ro' );
+has 'playback_bg'                  => ( is => 'ro' );
+has 'replace_in_history'           => ( is => 'ro' );
+has 'say'                          => ( is => 'ro' );
+has 'set_global_data'              => ( is => 'ro' );
+has 'set_meta_data'                => ( is => 'ro' );
+has 'settings'                     => ( is => 'ro' );
+has 'speech_event_timeout'         => ( is => 'ro' );
+has 'stop'                         => ( is => 'ro' );
+has 'stop_playback_bg'             => ( is => 'ro' );
+has 'toggle_functions'             => ( is => 'ro' );
+has 'transfer'                     => ( is => 'ro' );
+has 'unset_global_data'            => ( is => 'ro' );
+has 'unset_meta_data'              => ( is => 'ro' );
+has 'user_event'                   => ( is => 'ro' );
+has 'user_input'                   => ( is => 'ro' );
+has 'wait_for_user'                => ( is => 'ro' );
 
 1;

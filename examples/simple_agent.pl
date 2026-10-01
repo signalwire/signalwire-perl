@@ -22,9 +22,11 @@ my $agent = SignalWire::Agent::AgentBase->new(
 
 # --- Prompt Configuration ---
 
-$agent->prompt_add_section('Personality', 'You are a friendly and helpful assistant.');
-$agent->prompt_add_section('Goal', 'Help users with basic tasks and answer questions.');
-$agent->prompt_add_section('Instructions', '',
+$agent->prompt_add_section( 'Personality', 'You are a friendly and helpful assistant.' );
+$agent->prompt_add_section( 'Goal',        'Help users with basic tasks and answer questions.' );
+$agent->prompt_add_section(
+    'Instructions',
+    '',
     bullets => [
         'Be concise and direct in your responses.',
         "If you don't know something, say so clearly.",
@@ -54,36 +56,40 @@ POST_PROMPT
 
 # --- Pronunciation and Hints ---
 
-$agent->add_hints('SignalWire', 'SWML', 'SWAIG');
-$agent->add_pronunciation('API', 'A P I', ignore_case => 0);
-$agent->add_pronunciation('SIP', 'sip',   ignore_case => 1);
+$agent->add_hints( 'SignalWire', 'SWML', 'SWAIG' );
+$agent->add_pronunciation( 'API', 'A P I', ignore_case => 0 );
+$agent->add_pronunciation( 'SIP', 'sip',   ignore_case => 1 );
 
 # --- Languages ---
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->add_language(name => 'Spanish', code => 'es',    voice => 'inworld.Sarah');
-$agent->add_language(name => 'French',  code => 'fr-FR', voice => 'inworld.Hanna');
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->add_language( name => 'Spanish', code => 'es',    voice => 'inworld.Sarah' );
+$agent->add_language( name => 'French',  code => 'fr-FR', voice => 'inworld.Hanna' );
 
 # --- AI Behavior ---
 
-$agent->set_params({
-    ai_model             => 'gpt-4.1-nano',
-    wait_for_user        => JSON::false,
-    end_of_speech_timeout => 1000,
-    ai_volume            => 5,
-    languages_enabled    => JSON::true,
-    local_tz             => 'America/Los_Angeles',
-});
+$agent->set_params(
+    {
+        ai_model              => 'gpt-4.1-nano',
+        wait_for_user         => JSON::false,
+        end_of_speech_timeout => 1000,
+        ai_volume             => 5,
+        languages_enabled     => JSON::true,
+        local_tz              => 'America/Los_Angeles',
+    }
+);
 
-$agent->set_global_data({
-    company_name       => 'SignalWire',
-    product            => 'AI Agent SDK',
-    supported_features => ['Voice AI', 'Telephone integration', 'SWAIG functions'],
-});
+$agent->set_global_data(
+    {
+        company_name       => 'SignalWire',
+        product            => 'AI Agent SDK',
+        supported_features => [ 'Voice AI', 'Telephone integration', 'SWAIG functions' ],
+    }
+);
 
 # --- Native Functions ---
 
-$agent->set_native_functions(['check_time', 'wait_seconds']);
+$agent->set_native_functions( [ 'check_time', 'wait_seconds' ] );
 
 # --- Tool Definitions ---
 
@@ -92,8 +98,8 @@ $agent->define_tool(
     description => 'Get the current time',
     parameters  => { type => 'object', properties => {} },
     handler     => sub {
-        my ($args, $raw_data) = @_;
-        my $time = strftime('%H:%M:%S', localtime);
+        my ( $args, $raw_data ) = @_;
+        my $time = strftime( '%H:%M:%S', localtime );
         return SignalWire::SWAIG::FunctionResult->new("The current time is $time");
     },
 );
@@ -104,33 +110,34 @@ $agent->define_tool(
     parameters  => {
         type       => 'object',
         properties => {
-            location => { type => 'string', description => 'The city or location to get weather for' },
+            location =>
+                { type => 'string', description => 'The city or location to get weather for' },
         },
     },
     handler => sub {
-        my ($args, $raw_data) = @_;
+        my ( $args, $raw_data ) = @_;
         my $location = $args->{location} // 'Unknown location';
-        my $result = SignalWire::SWAIG::FunctionResult->new(
-            "It's sunny and 72F in $location."
-        );
-        $result->add_action('set_global_data', { weather_location => $location });
+        my $result   = SignalWire::SWAIG::FunctionResult->new("It's sunny and 72F in $location.");
+        $result->add_action( 'set_global_data', { weather_location => $location } );
         return $result;
     },
 );
 
 # --- Summary Callback ---
 
-$agent->on_summary(sub {
-    my ($summary, $raw_data) = @_;
-    if ($summary) {
-        require JSON;
-        if (ref $summary) {
-            print "SUMMARY: " . JSON::encode_json($summary) . "\n";
-        } else {
-            print "SUMMARY: $summary\n";
+$agent->on_summary(
+    sub {
+        my ( $summary, $raw_data ) = @_;
+        if ($summary) {
+            require JSON;
+            if ( ref $summary ) {
+                print "SUMMARY: " . JSON::encode_json($summary) . "\n";
+            } else {
+                print "SUMMARY: $summary\n";
+            }
         }
     }
-});
+);
 
 # --- Start the Agent ---
 

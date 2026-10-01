@@ -55,7 +55,7 @@ sub extract ( $doc, $path ) {
     }
     my $node = defined $ai ? { ai => $ai } : $doc;
     for my $part ( split /\./, $path ) {
-        return undef unless ref $node eq 'HASH';
+        return unless ref $node eq 'HASH';
         $node = $node->{$part};
     }
     return $node;
@@ -71,12 +71,12 @@ sub pick ( $frag, @keys ) {
 # build_oracle): given the ai.SWAIG.functions LIST, find the entry whose
 # `function` matches $fn, then return that entry's $field.
 sub swaig_field ( $frag, $fn, $field ) {
-    return undef unless ref $frag eq 'ARRAY';
+    return unless ref $frag eq 'ARRAY';
     for my $f (@$frag) {
         next unless ref $f eq 'HASH';
         return $f->{$field} if defined $f->{function} && $f->{function} eq $fn;
     }
-    return undef;
+    return;
 }
 
 sub render ($a) {
@@ -91,7 +91,8 @@ sub main {
         my $a = new_agent();
         $a->set_prompt_llm_params( temperature => 0.5 );
         $a->set_prompt_llm_params( top_p       => 0.9 );
-        $out{swml_set_prompt_llm_params} = pick( extract( render($a), 'ai.prompt' ), 'temperature', 'top_p' );
+        $out{swml_set_prompt_llm_params} =
+            pick( extract( render($a), 'ai.prompt' ), 'temperature', 'top_p' );
     }
 
     # swml_set_post_prompt_llm_params: establish a post-prompt, then merge params.
@@ -108,8 +109,11 @@ sub main {
     {
         my $a = new_agent();
         $a->add_language(
-            name  => 'English', code   => 'en-US', voice => 'rime.spore',
-            engine => 'rime',   model => 'mistv2',
+            name   => 'English',
+            code   => 'en-US',
+            voice  => 'rime.spore',
+            engine => 'rime',
+            model  => 'mistv2',
         );
         $out{swml_add_language} = extract( render($a), 'ai.languages' );
     }
@@ -118,7 +122,13 @@ sub main {
     {
         my $a = new_agent();
         $a->add_pattern_hint(
-            { hint => 'SignalWire', pattern => 'signal wire', replace => 'SignalWire', ignore_case => 1 } );
+            {
+                hint        => 'SignalWire',
+                pattern     => 'signal wire',
+                replace     => 'SignalWire',
+                ignore_case => 1
+            }
+        );
         $out{swml_add_pattern_hint} = extract( render($a), 'ai.hints' );
     }
 

@@ -29,11 +29,8 @@ is( SignalWire::REST::HttpClient::_uri_encode('☺'),
     '%E2%98%BA', '☺ encodes as UTF-8 bytes %E2%98%BA (not %263A)' );
 
 # Mixed ASCII + unicode + space.
-is(
-    SignalWire::REST::HttpClient::_uri_encode('café ☺'),
-    'caf%C3%A9%20%E2%98%BA',
-    'mixed ASCII/unicode/space round-trips as UTF-8 percent-encoding'
-);
+is( SignalWire::REST::HttpClient::_uri_encode('café ☺'),
+    'caf%C3%A9%20%E2%98%BA', 'mixed ASCII/unicode/space round-trips as UTF-8 percent-encoding' );
 
 # Unreserved set (RFC 3986) passes through unencoded.
 is( SignalWire::REST::HttpClient::_uri_encode('aZ0-_.~'),
@@ -46,6 +43,7 @@ is( SignalWire::REST::HttpClient::_uri_encode('a b&c=d'),
 # No corruption: the encoded output never contains a stray high hex-triplet.
 my $enc = SignalWire::REST::HttpClient::_uri_encode('naïve ☺ 日本');
 unlike( $enc, qr/%[0-9A-F]{3,}/, 'no >2-hex-digit escape (no wide-char corruption)' );
+
 # Every %XX is a valid single byte escape.
 ok( $enc =~ /^(?:[A-Za-z0-9\-_.~]|%[0-9A-F]{2})+$/,
     'output is well-formed percent-encoding (byte escapes only)' );

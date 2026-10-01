@@ -8,8 +8,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use SignalWire::Security::SecurityUtils
-    qw(filter_sensitive_headers redact_url is_valid_hostname);
+use SignalWire::Security::SecurityUtils qw(filter_sensitive_headers redact_url is_valid_hostname);
 
 # --- filter_sensitive_headers ----------------------------------------
 
@@ -37,8 +36,11 @@ subtest 'filter_sensitive_headers removes credential headers' => sub {
 subtest 'filter_sensitive_headers is case-insensitive on keys' => sub {
     my $out = filter_sensitive_headers(
         { 'AUTHORIZATION' => 'x', 'cookie' => 'y', 'SeT-CookIE' => 'z', 'Accept' => 'text/html' } );
-    is_deeply( $out, { 'Accept' => 'text/html' },
-        'mixed-case sensitive keys all removed regardless of casing' );
+    is_deeply(
+        $out,
+        { 'Accept' => 'text/html' },
+        'mixed-case sensitive keys all removed regardless of casing'
+    );
 };
 
 subtest 'filter_sensitive_headers preserves original key casing of kept headers' => sub {
@@ -56,18 +58,15 @@ subtest 'filter_sensitive_headers returns a NEW hashref (copy)' => sub {
 };
 
 subtest 'filter_sensitive_headers empty / undef input -> empty hashref' => sub {
-    is_deeply( filter_sensitive_headers( {} ),    {}, 'empty hash -> empty hash' );
-    is_deeply( filter_sensitive_headers(undef),   {}, 'undef -> empty hash' );
+    is_deeply( filter_sensitive_headers( {} ),  {}, 'empty hash -> empty hash' );
+    is_deeply( filter_sensitive_headers(undef), {}, 'undef -> empty hash' );
 };
 
 # --- redact_url -------------------------------------------------------
 
 subtest 'redact_url masks password in userinfo' => sub {
-    is(
-        redact_url('https://user:secret@host/path'),
-        'https://user:****@host/path',
-        'password replaced with ****'
-    );
+    is( redact_url('https://user:secret@host/path'),
+        'https://user:****@host/path', 'password replaced with ****' );
 };
 
 subtest 'redact_url leaves credential-free URL unchanged' => sub {
@@ -93,10 +92,10 @@ subtest 'redact_url non-string input returned as-is' => sub {
 # --- is_valid_hostname ------------------------------------------------
 
 subtest 'is_valid_hostname accepts plain hostnames' => sub {
-    ok( is_valid_hostname('example.com'),       'dotted hostname valid' );
-    ok( is_valid_hostname('localhost'),         'bare hostname valid' );
-    ok( is_valid_hostname('host-name_1'),       'hyphen/underscore/digit valid' );
-    ok( is_valid_hostname('192.168.1.1'),       'IP literal valid (char-level)' );
+    ok( is_valid_hostname('example.com'), 'dotted hostname valid' );
+    ok( is_valid_hostname('localhost'),   'bare hostname valid' );
+    ok( is_valid_hostname('host-name_1'), 'hyphen/underscore/digit valid' );
+    ok( is_valid_hostname('192.168.1.1'), 'IP literal valid (char-level)' );
 };
 
 subtest 'is_valid_hostname rejects empty / undef' => sub {
@@ -105,14 +104,14 @@ subtest 'is_valid_hostname rejects empty / undef' => sub {
 };
 
 subtest 'is_valid_hostname rejects whitespace, slashes, control chars' => sub {
-    ok( !is_valid_hostname('bad host'),       'space rejected' );
-    ok( !is_valid_hostname("tab\thost"),      'tab rejected' );
-    ok( !is_valid_hostname('host/path'),      'forward slash rejected' );
-    ok( !is_valid_hostname('host\\path'),     'backslash rejected' );
-    ok( !is_valid_hostname("host\x00null"),   'null byte rejected' );
-    ok( !is_valid_hostname("host\x1fctl"),    'control char rejected' );
-    ok( !is_valid_hostname("host\x7fdel"),    'DEL char rejected' );
-    ok( !is_valid_hostname("host\nnewline"),  'newline rejected' );
+    ok( !is_valid_hostname('bad host'),      'space rejected' );
+    ok( !is_valid_hostname("tab\thost"),     'tab rejected' );
+    ok( !is_valid_hostname('host/path'),     'forward slash rejected' );
+    ok( !is_valid_hostname('host\\path'),    'backslash rejected' );
+    ok( !is_valid_hostname("host\x00null"),  'null byte rejected' );
+    ok( !is_valid_hostname("host\x1fctl"),   'control char rejected' );
+    ok( !is_valid_hostname("host\x7fdel"),   'DEL char rejected' );
+    ok( !is_valid_hostname("host\nnewline"), 'newline rejected' );
 };
 
 done_testing();

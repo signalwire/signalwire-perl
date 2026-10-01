@@ -11,14 +11,8 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'url'          => ( is => 'ro' );
-has 'urls'         => ( is => 'ro' );
-has 'volume'       => ( is => 'ro' );
-has 'auto_answer'  => ( is => 'ro' );
-has 'say_voice'    => ( is => 'ro' );
-has 'say_language' => ( is => 'ro' );
-has 'say_gender'   => ( is => 'ro' );
-has 'status_url'   => ( is => 'ro' );
-has 'loop'         => ( is => 'ro' );
+has 'url'    => ( is => 'ro' );
+has 'urls'   => ( is => 'ro' );
+has 'volume' => ( is => 'ro' );
 
 1;

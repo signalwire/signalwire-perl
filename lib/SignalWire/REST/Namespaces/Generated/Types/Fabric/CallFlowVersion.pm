@@ -12,11 +12,11 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Fabric::CallFlowVersion: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'id'         => ( is => 'ro' );
-has 'version'    => ( is => 'ro' );
-has 'created_at' => ( is => 'ro' );
-has 'updated_at' => ( is => 'ro' );
-has 'flow_data'  => ( is => 'ro' );
-has 'relayml'    => ( is => 'ro' );
+has 'id'               => ( is => 'ro' );
+has 'document_version' => ( is => 'ro' );
+has 'created_at'       => ( is => 'ro' );
+has 'updated_at'       => ( is => 'ro' );
+has 'flow_data'        => ( is => 'ro' );
+has 'relayml'          => ( is => 'ro' );
 
 1;

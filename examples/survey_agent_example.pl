@@ -11,13 +11,13 @@ use SignalWire;
 use SignalWire::Prefabs::Survey;
 
 my $agent = SignalWire::Prefabs::Survey->new(
-    name        => 'customer-satisfaction',
-    route       => '/survey',
-    survey_name => 'Customer Satisfaction Survey',
-    brand_name  => 'Acme Corp',
+    name         => 'customer-satisfaction',
+    route        => '/survey',
+    survey_name  => 'Customer Satisfaction Survey',
+    brand_name   => 'Acme Corp',
     introduction => 'Thank you for choosing Acme Corp! We would love your feedback.',
     conclusion   => 'Thank you for completing our survey. Your feedback helps us improve!',
-    questions => [
+    questions    => [
         {
             id       => 'satisfaction',
             text     => 'On a scale of 1-5, how satisfied are you with our service?',
@@ -39,8 +39,8 @@ my $agent = SignalWire::Prefabs::Survey->new(
     ],
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
 $agent->set_post_prompt(<<'POST');
 Return a JSON summary of the survey responses:
@@ -52,18 +52,20 @@ Return a JSON summary of the survey responses:
 }
 POST
 
-$agent->on_summary(sub {
-    my ($summary, $raw) = @_;
-    if ($summary) {
-        require JSON;
-        print "Survey results:\n";
-        if (ref $summary) {
-            print JSON::encode_json($summary) . "\n";
-        } else {
-            print "$summary\n";
+$agent->on_summary(
+    sub {
+        my ( $summary, $raw ) = @_;
+        if ($summary) {
+            require JSON;
+            print "Survey results:\n";
+            if ( ref $summary ) {
+                print JSON::encode_json($summary) . "\n";
+            } else {
+                print "$summary\n";
+            }
         }
     }
-});
+);
 
 print "Starting Customer Satisfaction Survey\n";
 print "Available at: http://localhost:3000/survey\n";

@@ -19,7 +19,7 @@ has 'cover_url'    => ( is => 'ro' );
 has 'preview_url'  => ( is => 'ro' );
 has 'locked'       => ( is => 'ro' );
 has 'channels'     => ( is => 'ro' );
-has 'created_at'   => ( is => 'ro' );
 has 'type'         => ( is => 'ro' );
+has 'resource_id'  => ( is => 'ro' );
 
 1;

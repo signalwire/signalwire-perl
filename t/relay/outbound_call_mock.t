@@ -8,14 +8,14 @@ use Test::More;
 use FindBin ();
 use lib "$FindBin::Bin/../lib";
 use Time::HiRes qw(sleep time);
-use File::Path ();
-use POSIX ();
+use File::Path  ();
+use POSIX       ();
 
 use RelayMockTest;
 use SignalWire::Relay::Client;
 
 sub _connected_client {
-    my $client = RelayMockTest::client(contexts => ['default']);
+    my $client = RelayMockTest::client( contexts => ['default'] );
     $client->connect;
     return $client;
 }
@@ -40,20 +40,20 @@ subtest 'dial resolves to call with winner id' => sub {
     RelayMockTest::arm_dial(
         tag            => 't-happy',
         winner_call_id => 'winner-1',
-        states         => ['created', 'ringing', 'answered'],
+        states         => [ 'created', 'ringing', 'answered' ],
         node_id        => 'node-mock-1',
         device         => _phone_device(),
         delay_ms       => 1,
     );
     my $call = $client->dial(
-        devices => [[ _phone_device() ]],
+        devices => [ [ _phone_device() ] ],
         tag     => 't-happy',
         timeout => 5,
     );
-    isa_ok($call, 'SignalWire::Relay::Call');
-    is($call->call_id, 'winner-1',  'call_id is winner');
-    is($call->tag,     't-happy',   'tag preserved');
-    is($call->state,   'answered',  'state is answered');
+    isa_ok( $call, 'SignalWire::Relay::Call' );
+    is( $call->call_id, 'winner-1', 'call_id is winner' );
+    is( $call->tag,     't-happy',  'tag preserved' );
+    is( $call->state,   'answered', 'state is answered' );
     $client->disconnect;
 };
 
@@ -62,25 +62,26 @@ subtest 'dial journal records calling.dial frame' => sub {
     RelayMockTest::arm_dial(
         tag            => 't-frame',
         winner_call_id => 'winner-frame',
-        states         => ['created', 'answered'],
+        states         => [ 'created', 'answered' ],
         node_id        => 'node-mock-1',
         device         => _phone_device(),
     );
     $client->dial(
-        devices => [[ _phone_device() ]],
+        devices => [ [ _phone_device() ] ],
         tag     => 't-frame',
         timeout => 5,
     );
-    my $entries = RelayMockTest::journal_recv(method => 'calling.dial');
-    is(scalar @$entries, 1, 'one calling.dial entry');
+    my $entries = RelayMockTest::journal_recv( method => 'calling.dial' );
+    is( scalar @$entries, 1, 'one calling.dial entry' );
     my $p = $entries->[0]{frame}{params};
-    is($p->{tag}, 't-frame', 'tag on wire');
-    ok(ref $p->{devices} eq 'ARRAY', 'devices is array');
-    is($p->{devices}[0][0]{type}, 'phone', 'devices[0][0].type on wire');
+    is( $p->{tag}, 't-frame', 'tag on wire' );
+    ok( ref $p->{devices} eq 'ARRAY', 'devices is array' );
+    is( $p->{devices}[0][0]{type}, 'phone', 'devices[0][0].type on wire' );
     $client->disconnect;
 };
 
 subtest 'dial auto-generates UUID tag when omitted' => sub {
+
     # Drive a separate Perl process that watches for the dial frame and
     # pushes the answer; meanwhile the test process runs $client->dial
     # with no tag. We can't fork in-process because the WebSocket socket
@@ -160,18 +161,15 @@ PERLEOF
     local $ENV{RMT_HTTP_URL}   = $RelayMockTest::HTTP_URL;
     local $ENV{RMT_SESSION_ID} = $client->session_id // '';
     my $pid = fork();
-    if ($pid == 0) {
+    if ( $pid == 0 ) {
+
         # Use exec to fully detach (no shared sockets, no Moo state, etc.)
-        exec('perl', $tmp) or do { exit 127; };
+        exec( 'perl', $tmp ) or do { exit 127; };
     }
 
     my $call;
-    eval {
-        $call = $client->dial(
-            devices => [[ _phone_device() ]],
-            timeout => 5,
-        );
-    };
+    eval { $call = $client->dial( devices => [ [ _phone_device() ] ], timeout => 5, ); };
+
     # BOUNDED reap: the watcher polls the mock's HTTP journal (up to 400 * 5s
     # HTTP::Tiny timeouts). If the mock's control endpoint wedges, an unbounded
     # waitpid($pid, 0) hangs the whole suite forever (root cause of the historic
@@ -180,23 +178,25 @@ PERLEOF
     # SIGKILL a wedged child and reap the corpse so the suite never hangs.
     my $deadline = time + 30;
     my $reaped   = 0;
-    while (time < $deadline) {
-        my $w = waitpid($pid, POSIX::WNOHANG());
-        if ($w == $pid || $w == -1) { $reaped = 1; last; }
+    while ( time < $deadline ) {
+        my $w = waitpid( $pid, POSIX::WNOHANG() );
+        if ( $w == $pid || $w == -1 ) { $reaped = 1; last; }
         Time::HiRes::sleep(0.05);
     }
     unless ($reaped) {
         kill 'KILL', $pid;
-        waitpid($pid, 0);
-        diag("outbound_call_mock: watcher child $pid exceeded 30s reap deadline "
-            . "(mock HTTP control endpoint likely wedged) — killed to avoid suite hang");
+        waitpid( $pid, 0 );
+        diag(     "outbound_call_mock: watcher child $pid exceeded 30s reap deadline "
+                . "(mock HTTP control endpoint likely wedged) — killed to avoid suite hang" );
     }
     unlink $tmp;
-    isa_ok($call, 'SignalWire::Relay::Call');
-    is($call->call_id, 'auto-tag-winner', 'auto-tag winner');
-    like($call->tag,
-         qr/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-         'tag is UUID-shaped');
+    isa_ok( $call, 'SignalWire::Relay::Call' );
+    is( $call->call_id, 'auto-tag-winner', 'auto-tag winner' );
+    like(
+        $call->tag,
+        qr/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+        'tag is UUID-shaped'
+    );
     $client->disconnect;
 };
 
@@ -206,6 +206,7 @@ PERLEOF
 
 subtest 'dial timeout when no dial event' => sub {
     my $client = _connected_client();
+
     # Don't arm any scenario. The dial event never arrives — the SDK
     # returns undef once the dial timeout elapses (Perl variant; Python
     # raises RelayError). We assert the journal still recorded the
@@ -213,17 +214,15 @@ subtest 'dial timeout when no dial event' => sub {
     my $call;
     eval {
         $call = $client->dial(
-            devices => [[ _phone_device() ]],
+            devices => [ [ _phone_device() ] ],
             tag     => 't-timeout',
             timeout => 0.5,
         );
     };
-    ok(!defined $call, 'dial returns undef on timeout');
-    my $entries = RelayMockTest::journal_recv(method => 'calling.dial');
-    is(scalar @$entries, 1,
-       'calling.dial frame still landed even though no answer came');
-    is($entries->[0]{frame}{params}{tag}, 't-timeout',
-       'tag preserved on the wire');
+    ok( !defined $call, 'dial returns undef on timeout' );
+    my $entries = RelayMockTest::journal_recv( method => 'calling.dial' );
+    is( scalar @$entries, 1, 'calling.dial frame still landed even though no answer came' );
+    is( $entries->[0]{frame}{params}{tag}, 't-timeout', 'tag preserved on the wire' );
     $client->disconnect;
 };
 
@@ -236,23 +235,19 @@ subtest 'dial devices serial two legs on wire' => sub {
     RelayMockTest::arm_dial(
         tag            => 't-serial',
         winner_call_id => 'WIN-SER',
-        states         => ['created', 'answered'],
+        states         => [ 'created', 'answered' ],
         node_id        => 'node-mock-1',
         device         => _phone_device(),
     );
-    my $devs = [
-        [
-            _phone_device(to => '+15551110001'),
-            _phone_device(to => '+15551110002'),
-        ],
-    ];
-    $client->dial(devices => $devs, tag => 't-serial', timeout => 5);
-    my $entries = RelayMockTest::journal_recv(method => 'calling.dial');
-    is(scalar @$entries, 1, 'one entry');
-    is(scalar @{ $entries->[0]{frame}{params}{devices} }, 1, 'one outer leg');
-    is(scalar @{ $entries->[0]{frame}{params}{devices}[0] }, 2, 'two devices');
-    is($entries->[0]{frame}{params}{devices}[0][0]{params}{to_number},
-       '+15551110001', 'first device to_number');
+    my $devs =
+        [ [ _phone_device( to => '+15551110001' ), _phone_device( to => '+15551110002' ), ], ];
+    $client->dial( devices => $devs, tag => 't-serial', timeout => 5 );
+    my $entries = RelayMockTest::journal_recv( method => 'calling.dial' );
+    is( scalar @$entries,                                     1, 'one entry' );
+    is( scalar @{ $entries->[0]{frame}{params}{devices} },    1, 'one outer leg' );
+    is( scalar @{ $entries->[0]{frame}{params}{devices}[0] }, 2, 'two devices' );
+    is( $entries->[0]{frame}{params}{devices}[0][0]{params}{to_number},
+        '+15551110001', 'first device to_number' );
     $client->disconnect;
 };
 
@@ -261,18 +256,15 @@ subtest 'dial devices parallel two legs on wire' => sub {
     RelayMockTest::arm_dial(
         tag            => 't-par',
         winner_call_id => 'WIN-PAR',
-        states         => ['created', 'answered'],
+        states         => [ 'created', 'answered' ],
         node_id        => 'node-mock-1',
         device         => _phone_device(),
     );
-    my $devs = [
-        [ _phone_device(to => '+15551110001') ],
-        [ _phone_device(to => '+15551110002') ],
-    ];
-    $client->dial(devices => $devs, tag => 't-par', timeout => 5);
-    my $entries = RelayMockTest::journal_recv(method => 'calling.dial');
-    is(scalar @{ $entries->[0]{frame}{params}{devices} }, 2,
-       'two parallel legs');
+    my $devs =
+        [ [ _phone_device( to => '+15551110001' ) ], [ _phone_device( to => '+15551110002' ) ], ];
+    $client->dial( devices => $devs, tag => 't-par', timeout => 5 );
+    my $entries = RelayMockTest::journal_recv( method => 'calling.dial' );
+    is( scalar @{ $entries->[0]{frame}{params}{devices} }, 2, 'two parallel legs' );
     $client->disconnect;
 };
 
@@ -285,26 +277,23 @@ subtest 'dial records call state progression on winner' => sub {
     RelayMockTest::arm_dial(
         tag            => 't-prog',
         winner_call_id => 'WIN-PROG',
-        states         => ['created', 'ringing', 'answered'],
+        states         => [ 'created', 'ringing', 'answered' ],
         node_id        => 'node-mock-1',
         device         => _phone_device(),
     );
     my $call = $client->dial(
-        devices => [[ _phone_device() ]],
+        devices => [ [ _phone_device() ] ],
         tag     => 't-prog',
         timeout => 5,
     );
-    isa_ok($call, 'SignalWire::Relay::Call');
-    is($call->state, 'answered', 'final state is answered');
-    my $sends = RelayMockTest::journal_send(event_type => 'calling.call.state');
-    my @winner_states = map {
-        $_->{frame}{params}{params}{call_state} // ''
-    } grep {
-        ($_->{frame}{params}{params}{call_id} // '') eq 'WIN-PROG'
-    } @$sends;
-    ok((grep { $_ eq 'created' }  @winner_states), 'created state seen');
-    ok((grep { $_ eq 'ringing' }  @winner_states), 'ringing state seen');
-    ok((grep { $_ eq 'answered' } @winner_states), 'answered state seen');
+    isa_ok( $call, 'SignalWire::Relay::Call' );
+    is( $call->state, 'answered', 'final state is answered' );
+    my $sends         = RelayMockTest::journal_send( event_type => 'calling.call.state' );
+    my @winner_states = map { $_->{frame}{params}{params}{call_state} // '' }
+        grep { ( $_->{frame}{params}{params}{call_id} // '' ) eq 'WIN-PROG' } @$sends;
+    ok( ( grep { $_ eq 'created' } @winner_states ),  'created state seen' );
+    ok( ( grep { $_ eq 'ringing' } @winner_states ),  'ringing state seen' );
+    ok( ( grep { $_ eq 'answered' } @winner_states ), 'answered state seen' );
     $client->disconnect;
 };
 
@@ -317,20 +306,19 @@ subtest 'dialed call can hangup' => sub {
     RelayMockTest::arm_dial(
         tag            => 't-after',
         winner_call_id => 'WIN-AFTER',
-        states         => ['created', 'answered'],
+        states         => [ 'created', 'answered' ],
         node_id        => 'node-mock-1',
         device         => _phone_device(),
     );
     my $call = $client->dial(
-        devices => [[ _phone_device() ]],
+        devices => [ [ _phone_device() ] ],
         tag     => 't-after',
         timeout => 5,
     );
     $call->hangup;
-    my $ends = RelayMockTest::journal_recv(method => 'calling.end');
-    ok(scalar @$ends, 'calling.end in journal');
-    is($ends->[-1]{frame}{params}{call_id}, 'WIN-AFTER',
-       'hangup carries winner call_id');
+    my $ends = RelayMockTest::journal_recv( method => 'calling.end' );
+    ok( scalar @$ends, 'calling.end in journal' );
+    is( $ends->[-1]{frame}{params}{call_id}, 'WIN-AFTER', 'hangup carries winner call_id' );
     $client->disconnect;
 };
 
@@ -339,21 +327,21 @@ subtest 'dialed call can play' => sub {
     RelayMockTest::arm_dial(
         tag            => 't-play',
         winner_call_id => 'WIN-PLAY',
-        states         => ['created', 'answered'],
+        states         => [ 'created', 'answered' ],
         node_id        => 'node-mock-1',
         device         => _phone_device(),
     );
     my $call = $client->dial(
-        devices => [[ _phone_device() ]],
+        devices => [ [ _phone_device() ] ],
         tag     => 't-play',
         timeout => 5,
     );
-    $call->play(play => [{ type => 'tts', params => { text => 'hi' } }]);
-    my $plays = RelayMockTest::journal_recv(method => 'calling.play');
-    ok(scalar @$plays, 'calling.play in journal');
+    $call->play( play => [ { type => 'tts', params => { text => 'hi' } } ] );
+    my $plays = RelayMockTest::journal_recv( method => 'calling.play' );
+    ok( scalar @$plays, 'calling.play in journal' );
     my $p = $plays->[-1]{frame}{params};
-    is($p->{call_id}, 'WIN-PLAY', 'play call_id matches winner');
-    is($p->{play}[0]{type}, 'tts', 'play[0].type on wire');
+    is( $p->{call_id},       'WIN-PLAY', 'play call_id matches winner' );
+    is( $p->{play}[0]{type}, 'tts',      'play[0].type on wire' );
     $client->disconnect;
 };
 
@@ -366,16 +354,16 @@ subtest 'dial preserves explicit tag' => sub {
     RelayMockTest::arm_dial(
         tag            => 'my-very-explicit-tag-99',
         winner_call_id => 'WIN-T',
-        states         => ['created', 'answered'],
+        states         => [ 'created', 'answered' ],
         node_id        => 'node-mock-1',
         device         => _phone_device(),
     );
     my $call = $client->dial(
-        devices => [[ _phone_device() ]],
+        devices => [ [ _phone_device() ] ],
         tag     => 'my-very-explicit-tag-99',
         timeout => 5,
     );
-    is($call->tag, 'my-very-explicit-tag-99', 'explicit tag preserved');
+    is( $call->tag, 'my-very-explicit-tag-99', 'explicit tag preserved' );
     $client->disconnect;
 };
 
@@ -388,21 +376,21 @@ subtest 'dial uses jsonrpc 2.0' => sub {
     RelayMockTest::arm_dial(
         tag            => 't-rpc',
         winner_call_id => 'W',
-        states         => ['created', 'answered'],
+        states         => [ 'created', 'answered' ],
         node_id        => 'n',
         device         => _phone_device(),
     );
     $client->dial(
-        devices => [[ _phone_device() ]],
+        devices => [ [ _phone_device() ] ],
         tag     => 't-rpc',
         timeout => 5,
     );
-    my $entries = RelayMockTest::journal_recv(method => 'calling.dial');
-    is(scalar @$entries, 1, 'one entry');
-    is($entries->[0]{frame}{jsonrpc}, '2.0', 'jsonrpc 2.0');
-    is($entries->[0]{frame}{method},  'calling.dial', 'method');
-    ok($entries->[0]{frame}{id},      'id present');
-    ok(ref $entries->[0]{frame}{params}, 'params present');
+    my $entries = RelayMockTest::journal_recv( method => 'calling.dial' );
+    is( scalar @$entries,              1,              'one entry' );
+    is( $entries->[0]{frame}{jsonrpc}, '2.0',          'jsonrpc 2.0' );
+    is( $entries->[0]{frame}{method},  'calling.dial', 'method' );
+    ok( $entries->[0]{frame}{id},         'id present' );
+    ok( ref $entries->[0]{frame}{params}, 'params present' );
     $client->disconnect;
 };
 

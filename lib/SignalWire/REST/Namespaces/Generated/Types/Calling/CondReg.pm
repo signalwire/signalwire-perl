@@ -12,8 +12,8 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::CondReg: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'when' => ( is => 'ro' );
-has 'then' => ( is => 'ro' );
 has 'else' => ( is => 'ro' );
+has 'then' => ( is => 'ro' );
+has 'when' => ( is => 'ro' );
 
 1;

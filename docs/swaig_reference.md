@@ -414,7 +414,7 @@ $result->tap('wss://monitoring.company.com/audio-stream',
 - `control_id`: Identifier for this tap to use with `stop_tap` (optional)
 
 **Audio Configuration:**
-- `direction`: "speak", "hear", or "both" (default: "both")
+- `direction`: "speak", "listen", or "both" (default: "both"; always sent, since the SWML verb itself defaults to "speak")
 - `codec`: "PCMU" or "PCMA" (default: "PCMU")
 - `rtp_ptime`: RTP packetization time in milliseconds (default: 20)
 

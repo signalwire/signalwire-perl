@@ -30,6 +30,17 @@ has 'host' => (
     default => sub { $ENV{SIGNALWIRE_SPACE} },
 );
 
+# A user's Personal Access Token (`pat_...`). It authenticates `$client->space`
+# (the Space Administration API), which the server serves ONLY to a Personal
+# Access Token — HTTP Basic with an EMPTY username (prime-rails
+# API::Space::BaseController -> Authenticators::PersonalAccessToken). Falls back
+# to SIGNALWIRE_PERSONAL_ACCESS_TOKEN. Mirrors the Python reference's
+# RestClient(..., personal_access_token=...).
+has 'personal_access_token' => (
+    is      => 'ro',
+    default => sub { $ENV{SIGNALWIRE_PERSONAL_ACCESS_TOKEN} },
+);
+
 # Client-default request options (plan 4.2): a SignalWire::REST::RequestOptions
 # applied to every request the shared HttpClient issues, shallow-overridden
 # per-call by a request_options passed to a verb. undef => the built-in defaults
@@ -41,25 +52,35 @@ has 'request_options' => (
 );
 
 # Fail loud when a credential is neither passed nor present in the environment —
-# same contract as the Python reference (rest/client.py raises ValueError with a
-# message naming the three SIGNALWIRE_* env vars).
+# same contract as the Python reference (rest/client.py raises ValueError). A
+# client holds the project credential (project + token), a Personal Access Token,
+# or both; host is always required.
 sub BUILD {
     my ($self) = @_;
-    unless ( length( $self->_project_id // '' )
-        && length( $self->token // '' )
-        && length( $self->host  // '' ) )
+    unless ( length( $self->host // '' )
+        && ( $self->_has_project_credential || length( $self->personal_access_token // '' ) ) )
     {
         die "project, token, and host are required. Provide them as arguments or "
             . "set SIGNALWIRE_PROJECT_ID, SIGNALWIRE_API_TOKEN, and SIGNALWIRE_SPACE "
-            . "environment variables.\n";
+            . "environment variables (or, for client.space only, host and "
+            . "personal_access_token / SIGNALWIRE_PERSONAL_ACCESS_TOKEN).\n";
     }
     return;
 }
 
-# The HTTP client the whole resource tree shares. Declared BEFORE composing the
-# ResourceTree role below, because the role `requires '_http'` and Moo checks that
-# requirement at `with`-time.
-has '_http' => ( init_arg => undef, is => 'lazy' );
+sub _has_project_credential {
+    my ($self) = @_;
+    return length( $self->_project_id // '' ) && length( $self->token // '' ) ? 1 : 0;
+}
+
+# The HTTP clients the resource tree shares: `_http` carries the project token
+# (every project-scoped resource), `_pat_http` the Personal Access Token
+# (`$client->space`). Declared BEFORE composing the ResourceTree role below,
+# because the role `requires` both and Moo checks that at `with`-time. A client
+# built without one of the credentials gets a stand-in that dies, naming the
+# missing credential, before any request is sent.
+has '_http'     => ( init_arg => undef, is => 'lazy' );
+has '_pat_http' => ( init_arg => undef, is => 'lazy' );
 
 # The resource object tree (flat resources + namespace containers) is GENERATED
 # from the specs: scripts/generate_rest.py emits the per-resource classes, the
@@ -73,9 +94,43 @@ with 'SignalWire::REST::Namespaces::Generated::ResourceTree';
 
 sub _build__http {
     my ($self) = @_;
+    return $self->_missing_credential_http( "project and token are required for this resource "
+            . "(SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN); this client has only "
+            . "a personal access token, which authenticates client.space" )
+        unless $self->_has_project_credential;
     return SignalWire::REST::HttpClient->new(
         project         => $self->_project_id,
         token           => $self->token,
+        host            => $self->host,
+        request_options => $self->request_options,
+    );
+}
+
+# Stands in for the HTTP client of a credential this client was not given: every
+# request dies naming the missing credential, before anything is sent — so a
+# PAT-only client fails loudly on a project resource (and a project-only client on
+# $client->space) instead of sending a request the server can only refuse.
+sub _missing_credential_http {
+    my ( $self, $message ) = @_;
+    return SignalWire::REST::HttpClient->new(
+        project             => '',
+        token               => '',
+        host                => $self->host,
+        _missing_credential => $message,
+    );
+}
+
+sub _build__pat_http {
+    my ($self) = @_;
+    my $pat = $self->personal_access_token // '';
+    return $self->_missing_credential_http(
+        "personal_access_token is required for client.space (SIGNALWIRE_PERSONAL_ACCESS_TOKEN)")
+        unless length $pat;
+
+    # A Personal Access Token is HTTP Basic with an EMPTY username.
+    return SignalWire::REST::HttpClient->new(
+        project         => '',
+        token           => $pat,
         host            => $self->host,
         request_options => $self->request_options,
     );
@@ -109,8 +164,7 @@ SignalWire::REST::RestClient - synchronous SignalWire REST API client
 
 =head1 DESCRIPTION
 
-L<SignalWire::REST::RestClient> is the Perl port of
-C<signalwire.rest.client.RestClient>. It is the entry point for the
+L<SignalWire::REST::RestClient> is the entry point for the
 synchronous REST API: it holds the project/token/host credentials, owns
 the shared L<SignalWire::REST::HttpClient>, and exposes the generated
 resource tree (flat resources such as C<phone_numbers> and C<addresses>,
@@ -123,10 +177,23 @@ class composes; this hand class owns only authentication and the HTTP
 client.
 
 Each credential falls back to its C<SIGNALWIRE_*> environment variable
-(C<SIGNALWIRE_PROJECT_ID>, C<SIGNALWIRE_API_TOKEN>, C<SIGNALWIRE_SPACE>)
-when the corresponding constructor argument is omitted, matching the
-Python reference. The constructor dies if any of the three is neither
-passed nor present in the environment.
+(C<SIGNALWIRE_PROJECT_ID>, C<SIGNALWIRE_API_TOKEN>, C<SIGNALWIRE_SPACE>,
+C<SIGNALWIRE_PERSONAL_ACCESS_TOKEN>) when the corresponding constructor
+argument is omitted. C<project> + C<token> authenticate every
+project-scoped resource; C<personal_access_token> authenticates
+C<< $client->space >> (the Space Administration API). Either credential, or
+both, may be given. The constructor dies if C<host> is missing, or if
+neither a complete C<project> + C<token> pair nor a
+C<personal_access_token> is available; calling a resource whose credential
+is missing dies naming that credential, before any request is sent.
+
+    # The Space Administration API authenticates with a user's
+    # Personal Access Token instead of a project token:
+    my $admin = SignalWire::REST::RestClient->new(
+        personal_access_token => 'pat_...',
+        host                  => 'your-space.signalwire.com',
+    );
+    my $members = $admin->space->members->list;
 
 =head1 ATTRIBUTES
 
@@ -145,6 +212,12 @@ The API token. Defaults to C<$ENV{SIGNALWIRE_API_TOKEN}>.
 =item host
 
 The SignalWire space host. Defaults to C<$ENV{SIGNALWIRE_SPACE}>.
+
+=item personal_access_token
+
+A user's Personal Access Token (C<pat_...>), which authenticates
+C<< $client->space >>. Defaults to
+C<$ENV{SIGNALWIRE_PERSONAL_ACCESS_TOKEN}>.
 
 =item request_options
 

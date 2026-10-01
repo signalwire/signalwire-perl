@@ -14,5 +14,15 @@ use Moo;
 # methods (the reference records this as a method-less type).
 has 'allowed_addresses' => ( is => 'ro' );
 has 'expire_at'         => ( is => 'ro' );
+has 'ch'                => ( is => 'ro' );
+has 'region'            => ( is => 'ro' );
+has 'email'             => ( is => 'ro' );
+has 'first_name'        => ( is => 'ro' );
+has 'last_name'         => ( is => 'ro' );
+has 'display_name'      => ( is => 'ro' );
+has 'job_title'         => ( is => 'ro' );
+has 'time_zone'         => ( is => 'ro' );
+has 'country'           => ( is => 'ro' );
+has 'company_name'      => ( is => 'ro' );
 
 1;

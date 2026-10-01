@@ -19,8 +19,5 @@ has 'lang'         => ( is => 'ro' );
 has 'tokens'       => ( is => 'ro' );
 has 'content_type' => ( is => 'ro' );
 has 'metadata'     => ( is => 'ro' );
-has 'context'      => ( is => 'ro' );
-has 'step'         => ( is => 'ro' );
-has 'step_index'   => ( is => 'ro' );
 
 1;

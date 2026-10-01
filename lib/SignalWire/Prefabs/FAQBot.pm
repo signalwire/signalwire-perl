@@ -148,8 +148,7 @@ SignalWire::Prefabs::FAQBot - ready-made FAQ-answering AI agent
 
 =head1 DESCRIPTION
 
-L<SignalWire::Prefabs::FAQBot> is the Perl port of
-C<signalwire.prefabs.faq_bot.FAQBotAgent>. It is a ready-made subclass of
+L<SignalWire::Prefabs::FAQBot> is a ready-made subclass of
 L<SignalWire::Agent::AgentBase> that answers callers' questions from a
 supplied list of frequently asked questions.
 

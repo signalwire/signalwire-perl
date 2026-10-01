@@ -23,7 +23,7 @@ sub list_addresses {
     my $request_options = delete $params{request_options};
     my $p               = %params ? \%params : undef;
     return $self->_http->get(
-        '/api/fabric/resources/conference_room/' . $id . '/addresses',
+        $self->_path( $id, 'addresses' ),
         params          => $p,
         request_options => $request_options
     );

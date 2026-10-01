@@ -152,6 +152,7 @@ sub run {
         } else {
             my $err = $@;
             die $err unless ref $err && $err->isa('SignalWire::AIChat::Error');
+
             # Coerce to numeric so JSON emits a bare number, not a quoted string:
             # a hash-key lookup on the code (in the client's error mapping) leaves
             # it flagged as a string (PV), which encode_json would serialize as

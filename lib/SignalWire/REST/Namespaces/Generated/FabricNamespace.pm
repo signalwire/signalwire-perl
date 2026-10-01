@@ -9,6 +9,9 @@ package SignalWire::REST::Namespaces::Generated::FabricNamespace;
 use strict;
 use warnings;
 use Moo;
+use SignalWire::REST::Namespaces::Generated::AliasAddresses       ();
+use SignalWire::REST::Namespaces::Generated::SipAddresses         ();
+use SignalWire::REST::Namespaces::Generated::PhoneNumberAddresses ();
 use SignalWire::REST::Namespaces::Generated::FabricAddresses      ();
 use SignalWire::REST::Namespaces::Generated::GenericResources     ();
 use SignalWire::REST::Namespaces::Generated::AiAgents             ();
@@ -26,23 +29,42 @@ use SignalWire::REST::Namespaces::Generated::SwmlScripts          ();
 use SignalWire::REST::Namespaces::Generated::SwmlWebhooks         ();
 use SignalWire::REST::Namespaces::Generated::FabricTokens         ();
 
-has '_http'                 => ( is => 'ro',   required => 1 );
-has 'addresses'             => ( is => 'lazy', init_arg => undef );
-has 'resources'             => ( is => 'lazy', init_arg => undef );
-has 'ai_agents'             => ( is => 'lazy', init_arg => undef );
-has 'call_flows'            => ( is => 'lazy', init_arg => undef );
-has 'conference_rooms'      => ( is => 'lazy', init_arg => undef );
-has 'cxml_applications'     => ( is => 'lazy', init_arg => undef );
-has 'cxml_scripts'          => ( is => 'lazy', init_arg => undef );
-has 'cxml_webhooks'         => ( is => 'lazy', init_arg => undef );
-has 'freeswitch_connectors' => ( is => 'lazy', init_arg => undef );
-has 'relay_applications'    => ( is => 'lazy', init_arg => undef );
-has 'sip_endpoints'         => ( is => 'lazy', init_arg => undef );
-has 'sip_gateways'          => ( is => 'lazy', init_arg => undef );
-has 'subscribers'           => ( is => 'lazy', init_arg => undef );
-has 'swml_scripts'          => ( is => 'lazy', init_arg => undef );
-has 'swml_webhooks'         => ( is => 'lazy', init_arg => undef );
-has 'tokens'                => ( is => 'lazy', init_arg => undef );
+has '_http'                  => ( is => 'ro',   required => 1 );
+has 'alias_addresses'        => ( is => 'lazy', init_arg => undef );
+has 'sip_addresses'          => ( is => 'lazy', init_arg => undef );
+has 'phone_number_addresses' => ( is => 'lazy', init_arg => undef );
+has 'addresses'              => ( is => 'lazy', init_arg => undef );
+has 'resources'              => ( is => 'lazy', init_arg => undef );
+has 'ai_agents'              => ( is => 'lazy', init_arg => undef );
+has 'call_flows'             => ( is => 'lazy', init_arg => undef );
+has 'conference_rooms'       => ( is => 'lazy', init_arg => undef );
+has 'cxml_applications'      => ( is => 'lazy', init_arg => undef );
+has 'cxml_scripts'           => ( is => 'lazy', init_arg => undef );
+has 'cxml_webhooks'          => ( is => 'lazy', init_arg => undef );
+has 'freeswitch_connectors'  => ( is => 'lazy', init_arg => undef );
+has 'relay_applications'     => ( is => 'lazy', init_arg => undef );
+has 'sip_endpoints'          => ( is => 'lazy', init_arg => undef );
+has 'sip_gateways'           => ( is => 'lazy', init_arg => undef );
+has 'subscribers'            => ( is => 'lazy', init_arg => undef );
+has 'swml_scripts'           => ( is => 'lazy', init_arg => undef );
+has 'swml_webhooks'          => ( is => 'lazy', init_arg => undef );
+has 'tokens'                 => ( is => 'lazy', init_arg => undef );
+
+sub _build_alias_addresses {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Generated::AliasAddresses->new( _http => $self->_http );
+}
+
+sub _build_sip_addresses {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Generated::SipAddresses->new( _http => $self->_http );
+}
+
+sub _build_phone_number_addresses {
+    my ($self) = @_;
+    return SignalWire::REST::Namespaces::Generated::PhoneNumberAddresses->new(
+        _http => $self->_http );
+}
 
 sub _build_addresses {
     my ($self) = @_;

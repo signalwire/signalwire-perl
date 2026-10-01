@@ -25,5 +25,7 @@ has 'number_of_segments' => ( is => 'ro' );
 has 'charge'             => ( is => 'ro' );
 has 'charge_details'     => ( is => 'ro' );
 has 'created_at'         => ( is => 'ro' );
+has 'error_code'         => ( is => 'ro' );
+has 'error_message'      => ( is => 'ro' );
 
 1;

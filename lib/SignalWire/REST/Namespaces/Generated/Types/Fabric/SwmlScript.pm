@@ -18,5 +18,6 @@ has 'request_url'            => ( is => 'ro' );
 has 'display_name'           => ( is => 'ro' );
 has 'status_callback_url'    => ( is => 'ro' );
 has 'status_callback_method' => ( is => 'ro' );
+has 'script_type'            => ( is => 'ro' );
 
 1;

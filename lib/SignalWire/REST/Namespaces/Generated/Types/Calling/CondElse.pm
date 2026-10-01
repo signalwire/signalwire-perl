@@ -13,5 +13,7 @@ use Moo;
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
 has 'else' => ( is => 'ro' );
+has 'then' => ( is => 'ro' );
+has 'when' => ( is => 'ro' );
 
 1;

@@ -17,4 +17,10 @@ around BUILDARGS => sub {
     return $class->$orig(%args);
 };
 
+sub delete {
+    my ( $self, $id, %opts ) = @_;
+    return $self->_http->delete_request( $self->_path($id),
+        request_options => $opts{request_options} );
+}
+
 1;

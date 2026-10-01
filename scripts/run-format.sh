@@ -38,9 +38,18 @@ cd "$REPO_ROOT"
 
 if ! command -v perltidy >/dev/null 2>&1; then
     echo "ERROR: perltidy not found on PATH after bootstrap. Install it with:" >&2
-    echo "         cpanm --local-lib=\"\${PERL_LOCAL_LIB_ROOT:-\$HOME/perl5}\" Perl::Tidy" >&2
+    echo "         cpanm --local-lib=\"\${PERL_LOCAL_LIB_ROOT:-\$HOME/perl5}\" Perl::Tidy@$SW_PERLTIDY_VERSION" >&2
     exit 1
 fi
+
+# Perl::Tidy is pinned EXACT in the cpanfile because its vertical-alignment
+# heuristics change between releases, which makes --assert-tidy non-deterministic
+# across versions. Assert the LOADED version, not just the manifest: the cpanfile
+# pin governs a FRESH install, but a local::lib populated before the pin was
+# tightened keeps its old copy indefinitely (cpanm does not re-resolve a dep it
+# already considers satisfied) — so the pin can be right in the manifest and wrong
+# on disk, which is precisely the local-vs-CI split it was meant to prevent.
+_sw_assert_module_version Perl::Tidy "$SW_PERLTIDY_VERSION" || exit 1
 
 CHECK=0
 case "${1:-}" in

@@ -17,8 +17,8 @@ use SignalWire::Agent::AgentBase;
 # Pull the ai verb's prompt/post_prompt blocks out of a rendered SWML doc.
 sub ai_blocks {
     my ($agent) = @_;
-    my $swml = $agent->render_swml;
-    my ($ai) = map { $_->{ai} } grep { exists $_->{ai} } @{ $swml->{sections}{main} };
+    my $swml    = $agent->render_swml;
+    my ($ai)    = map { $_->{ai} } grep { exists $_->{ai} } @{ $swml->{sections}{main} };
     return $ai;
 }
 
@@ -44,17 +44,17 @@ subtest 'set_post_prompt_llm_params merges across two calls' => sub {
     # A post_prompt must exist for the post_prompt block to render.
     $agent->set_post_prompt('Summarize the conversation.');
 
-    $agent->set_post_prompt_llm_params( temperature       => 0.3 );
-    $agent->set_post_prompt_llm_params( presence_penalty  => 0.2 );
+    $agent->set_post_prompt_llm_params( temperature      => 0.3 );
+    $agent->set_post_prompt_llm_params( presence_penalty => 0.2 );
 
     my $ai = ai_blocks($agent);
-    ok( defined $ai, 'AI verb rendered' );
+    ok( defined $ai,               'AI verb rendered' );
     ok( exists $ai->{post_prompt}, 'post_prompt block present' );
 
-    is( $ai->{post_prompt}{temperature}, 0.3,
-        'post_prompt temperature from the FIRST call is retained' );
-    is( $ai->{post_prompt}{presence_penalty}, 0.2,
-        'post_prompt presence_penalty from the SECOND call is present' );
+    is( $ai->{post_prompt}{temperature},
+        0.3, 'post_prompt temperature from the FIRST call is retained' );
+    is( $ai->{post_prompt}{presence_penalty},
+        0.2, 'post_prompt presence_penalty from the SECOND call is present' );
 };
 
 done_testing;

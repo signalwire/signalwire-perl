@@ -12,8 +12,10 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Fabric::ConversationMessage: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'role'    => ( is => 'ro' );
-has 'content' => ( is => 'ro' );
-has 'lang'    => ( is => 'ro' );
+has 'content'      => ( is => 'ro' );
+has 'lang'         => ( is => 'ro' );
+has 'role'         => ( is => 'ro' );
+has 'tool_call_id' => ( is => 'ro' );
+has 'tool_calls'   => ( is => 'ro' );
 
 1;

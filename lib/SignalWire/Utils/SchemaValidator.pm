@@ -65,7 +65,7 @@ sub _resolve_ref ( $self, $ref ) {
 # used by anyOf/oneOf/not/if and by unevaluatedProperties bookkeeping.
 sub _matches ( $self, $instance, $schema ) {
     my @errors;
-    $self->_eval( $instance, $schema, '', \@errors );
+    $self->_eval( $instance, $schema, '', \@errors, undef );
     return @errors ? 0 : 1;
 }
 
@@ -157,7 +157,8 @@ sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef ) {
 
     # oneOf — exactly one branch must match.
     if ( ref $schema->{oneOf} eq 'ARRAY' ) {
-        my @matched = grep { $self->_matches( $instance, $_ ) } @{ $schema->{oneOf} };
+        my @matched =
+            grep { $self->_matches( $instance, $_ ) } @{ $schema->{oneOf} };
         if ( @matched != 1 ) {
             push @$errors, "$path: matched " . scalar(@matched) . " oneOf branches (want 1)";
         } elsif ($evaluated) {
@@ -171,7 +172,8 @@ sub _eval ( $self, $instance, $schema, $path, $errors, $evaluated = undef ) {
             if $self->_matches( $instance, $schema->{not} );
     }
 
-    # if / then / else
+    # if / then / else — the `if` condition is a TEST, not a constraint on the
+    # instance.
     if ( exists $schema->{if} ) {
         if ( $self->_matches( $instance, $schema->{if} ) ) {
             $self->_eval( $instance, $schema->{then}, $path, $errors, $evaluated )
@@ -402,10 +404,9 @@ SignalWire::Utils::SchemaValidator - focused JSON Schema evaluator for SWML verb
 =head1 DESCRIPTION
 
 A small JSON Schema (Draft 2020-12 subset) evaluator over the bundled SWML
-schema, the Perl analogue of the python reference's jsonschema-rs full
-validator. It enforces the closed-object / typed-key semantics that make a
+schema. It enforces the closed-object / typed-key semantics that make a
 misspelled, unknown, or wrong-typed SWML verb config an ERROR rather than a
-silent accept (the Wave-2 P#5 STRICT-RENDER contract). It supports exactly the
+silent accept. It supports exactly the
 keywords the SWML C<schema.json> uses (C<$ref>, C<allOf>/C<anyOf>/C<oneOf>,
 C<not>, C<if>/C<then>/C<else>, C<type>, C<const>, C<enum>, C<properties>,
 C<required>, C<items>, numeric bounds, and

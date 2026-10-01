@@ -35,7 +35,7 @@ no warnings 'experimental::signatures';
 
 use FindBin qw($RealBin);
 use File::Spec;
-use JSON ();
+use JSON       ();
 use Test::More ();    # MockTest uses plan(skip_all) on a missing mock
 
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
@@ -46,7 +46,7 @@ use SignalWire::REST::Pagination ();
 # Keep stdout PURE JSON (the differ does json.loads(proc.stdout)); redirect the
 # STDOUT filehandle to STDERR during setup, restore it only to emit the final JSON.
 open( my $REAL_STDOUT, '>&', \*STDOUT ) or die "dup stdout: $!";
-open( STDOUT, '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
+open( STDOUT,          '>&', \*STDERR ) or die "redirect stdout->stderr: $!";
 
 require MockTest;
 
@@ -82,12 +82,13 @@ sub new_iterator ($client) {
 # empty_page_with_next — page 1 empty but carries links.next; page 2 has the item.
 # A naive `while data:` stops on page 1 and drops page 2.
 sub run_empty_page_with_next ($client) {
-    push_page( [], { next => next_link('EP_page2') } );
+    push_page( [],                                { next => next_link('EP_page2') } );
     push_page( [ { id => 'found-after-empty' } ], {} );
     my @ids = map { $_->{id} } new_iterator($client)->all;
     return {
-        continued_past_empty =>
-            ( @ids == 1 && $ids[0] eq 'found-after-empty' ) ? JSON::true : JSON::false,
+          continued_past_empty => ( @ids == 1 && $ids[0] eq 'found-after-empty' )
+        ? JSON::true
+        : JSON::false,
         items_seen => scalar(@ids),
     };
 }
@@ -123,7 +124,7 @@ sub run_exhaustion ($client) {
     push_page( [ { id => 'x-1' }, { id => 'x-2' } ], { next => next_link('EX_page2') } );
     push_page( [ { id => 'x-3' }, { id => 'x-4' } ], { next => next_link('EX_page3') } );
     push_page( [ { id => 'x-5' } ], {} );
-    my @ids = map { $_->{id} } new_iterator($client)->all;
+    my @ids   = map { $_->{id} } new_iterator($client)->all;
     my $exact = ( join( ',', @ids ) eq 'x-1,x-2,x-3,x-4,x-5' );
     return {
         terminated  => $exact ? JSON::true : JSON::false,
@@ -132,6 +133,7 @@ sub run_exhaustion ($client) {
 }
 
 my %out;
+
 # A fresh client (fresh auth-scoped scenario view) per fixture so an armed FIFO
 # sequence never crosses between fixtures.
 $out{empty_page_with_next}   = run_empty_page_with_next( MockTest::client() );

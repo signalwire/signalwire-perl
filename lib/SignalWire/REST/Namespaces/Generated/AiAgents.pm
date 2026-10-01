@@ -18,4 +18,26 @@ around BUILDARGS => sub {
     return $class->$orig(%args);
 };
 
+sub list_voices {
+    my ( $self, %params ) = @_;
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path('voices'),
+        params          => $p,
+        request_options => $request_options
+    );
+}
+
+sub list_conversation_logs {
+    my ( $self, $ai_agent_id, %params ) = @_;
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $ai_agent_id, 'conversation_logs' ),
+        params          => $p,
+        request_options => $request_options
+    );
+}
+
 1;

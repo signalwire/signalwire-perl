@@ -23,7 +23,7 @@ sub list_addresses {
     my $request_options = delete $params{request_options};
     my $p               = %params ? \%params : undef;
     return $self->_http->get(
-        '/api/fabric/resources/call_flow/' . $id . '/addresses',
+        $self->_path( $id, 'addresses' ),
         params          => $p,
         request_options => $request_options
     );
@@ -34,7 +34,7 @@ sub list_versions {
     my $request_options = delete $params{request_options};
     my $p               = %params ? \%params : undef;
     return $self->_http->get(
-        '/api/fabric/resources/call_flow/' . $id . '/versions',
+        $self->_path( $id, 'versions' ),
         params          => $p,
         request_options => $request_options
     );
@@ -43,7 +43,7 @@ sub list_versions {
 sub deploy_version {
     my ( $self, $id, $body, %opts ) = @_;
     return $self->_http->post(
-        '/api/fabric/resources/call_flow/' . $id . '/versions',
+        $self->_path( $id, 'versions' ),
         body            => $body,
         request_options => $opts{request_options}
     );

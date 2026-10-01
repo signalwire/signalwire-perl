@@ -49,7 +49,8 @@ ok( defined $captured, 'on_call delivered the call object' )
 # internal _read_once; without the fix (bare sleep) it hangs to the timeout and
 # returns undef.
 RelayMockTest::push_frame(
-    {   jsonrpc => '2.0',
+    {
+        jsonrpc => '2.0',
         id      => 'evt-wl-answered',
         method  => 'signalwire.event',
         params  => {

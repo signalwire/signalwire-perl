@@ -41,11 +41,11 @@ sub die_with {
     exit 2;
 }
 
-my $host    = $ENV{SIGNALWIRE_RELAY_HOST}   or die_with("SIGNALWIRE_RELAY_HOST is not set");
+my $host    = $ENV{SIGNALWIRE_RELAY_HOST} or die_with("SIGNALWIRE_RELAY_HOST is not set");
 my $scheme  = $ENV{SIGNALWIRE_RELAY_SCHEME} || 'wss';
-my $project = $ENV{SIGNALWIRE_PROJECT_ID}   or die_with("SIGNALWIRE_PROJECT_ID is not set");
-my $token   = $ENV{SIGNALWIRE_API_TOKEN}    or die_with("SIGNALWIRE_API_TOKEN is not set");
-my $ctxs    = $ENV{SIGNALWIRE_CONTEXTS}     // 'audit_ctx';
+my $project = $ENV{SIGNALWIRE_PROJECT_ID} or die_with("SIGNALWIRE_PROJECT_ID is not set");
+my $token   = $ENV{SIGNALWIRE_API_TOKEN}  or die_with("SIGNALWIRE_API_TOKEN is not set");
+my $ctxs    = $ENV{SIGNALWIRE_CONTEXTS} // 'audit_ctx';
 
 my @contexts = grep { length } split /,/, $ctxs;
 @contexts = ('audit_ctx') unless @contexts;
@@ -59,40 +59,44 @@ my $client = SignalWire::Relay::Client->new(
 );
 
 my $event_acked = 0;
-$client->on_event(sub {
-    my ($event) = @_;
-    # The audit fixture pushes a `calling.call.state` event with
-    # call_id "audit-call-1". Mirror it back as a method-bearing
-    # `signalwire.event` frame: the fixture watches for that exact
-    # method on the client→server direction to mark the event
-    # dispatched. Python's bare-result ack is invisible to it.
-    return if $event_acked;
-    $event_acked = 1;
+$client->on_event(
+    sub {
+        my ($event) = @_;
 
-    my $payload = {
-        jsonrpc => '2.0',
-        id      => 'audit-event-ack',
-        method  => 'signalwire.event',
-        params  => {
-            event_type => $event->event_type,
-            params     => {
-                call_id => 'audit-call-1',
-                acked   => 1,
+        # The audit fixture pushes a `calling.call.state` event with
+        # call_id "audit-call-1". Mirror it back as a method-bearing
+        # `signalwire.event` frame: the fixture watches for that exact
+        # method on the client→server direction to mark the event
+        # dispatched. Python's bare-result ack is invisible to it.
+        return if $event_acked;
+        $event_acked = 1;
+
+        my $payload = {
+            jsonrpc => '2.0',
+            id      => 'audit-event-ack',
+            method  => 'signalwire.event',
+            params  => {
+                event_type => $event->event_type,
+                params     => {
+                    call_id => 'audit-call-1',
+                    acked   => 1,
+                },
             },
-        },
-    };
-    # _send is a private helper; OK for harness use because we need a
-    # method-bearing frame the public ACK path explicitly omits.
-    $client->_send($payload);
-});
+        };
 
-unless ($client->connect_ws) {
+        # _send is a private helper; OK for harness use because we need a
+        # method-bearing frame the public ACK path explicitly omits.
+        $client->_send($payload);
+    }
+);
+
+unless ( $client->connect_ws ) {
     die_with("connect_ws() failed");
 }
 
 # Authenticate (sends signalwire.connect with params.project populated).
 my $auth = eval { $client->authenticate };
-if ($@ || !$auth) {
+if ( $@ || !$auth ) {
     die_with("authenticate() failed: $@");
 }
 
@@ -100,9 +104,7 @@ if ($@ || !$auth) {
 # Python's RELAY client uses signalwire.receive (matched on the
 # server, not the audit fixture); the audit harness sends the
 # subscribe variant directly.
-my $sub_result = eval {
-    $client->execute('signalwire.subscribe', { contexts => \@contexts });
-};
+my $sub_result = eval { $client->execute( 'signalwire.subscribe', { contexts => \@contexts } ); };
 if ($@) {
     die_with("subscribe failed: $@");
 }
@@ -110,7 +112,7 @@ if ($@) {
 # Pump the read loop until either the fixture pushes an event (which
 # our on_event callback ACKs) or we time out.
 my $deadline = time() + 5;
-while (time() < $deadline && !$event_acked) {
+while ( time() < $deadline && !$event_acked ) {
     $client->_read_once;
 }
 

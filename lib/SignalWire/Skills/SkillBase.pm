@@ -149,8 +149,11 @@ sub get_instance_key ($self) {
 # ``raw_data["global_data"][namespace]`` and returns it (or an empty
 # hashref when absent). raw_data is the per-call data a SWAIG handler
 # receives; global_data is its agent-state bucket.
+# Python parity: SkillBase.get_skill_data(raw_data) — ``raw_data`` is REQUIRED.
+# The former ``//= {}`` invented a default the reference does not have, so a
+# caller who omitted the post-prompt payload silently read an empty namespace
+# instead of failing.
 sub get_skill_data ( $self, $raw_data ) {
-    $raw_data //= {};
     my $global_data = $raw_data->{global_data} // {};
     return $global_data->{ $self->_skill_namespace } // {};
 }
@@ -225,8 +228,8 @@ SignalWire::Skills::SkillBase - abstract base class for agent skills
 
 =head1 DESCRIPTION
 
-L<SignalWire::Skills::SkillBase> is the Perl port of the Python reference's
-C<SkillBase>. Every built-in or custom skill extends it. A skill declares
+L<SignalWire::Skills::SkillBase> is the base class every built-in or custom
+skill extends. A skill declares
 metadata (C<skill_name>, C<skill_description>, C<skill_version>), optional
 package / environment requirements, and overrides the abstract C<setup>
 and C<register_tools> hooks to wire its SWAIG tools onto the owning agent.
@@ -266,6 +269,21 @@ config params the skill accepts.
 
 =item * C<get_instance_key> — the registry key for this skill instance
 (C<skill_name>, optionally suffixed by C<tool_name>).
+
+=item * C<validate_packages> — 1 when every C<required_packages> entry can
+be C<require>d, 0 when any cannot. A successful check leaves those modules
+B<loaded>, matching the reference's C<importlib.import_module>, so it is a
+load as much as a test.
+
+=item * C<get_skill_data($raw_data)> — read this skill instance's slice of
+the call's global data, looked up under the skill's own namespace. Returns
+an empty hashref when the request carries no global data or the namespace
+is absent, never undef.
+
+=item * C<update_skill_data($result, $data)> — write C<$data> into a
+L<SignalWire::SWAIG::FunctionResult> under the skill's namespace, so one
+skill cannot clobber another's state. Returns the B<result> (not C<$self>)
+so the call chains onto the FunctionResult.
 
 =back
 

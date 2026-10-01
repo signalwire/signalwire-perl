@@ -39,7 +39,7 @@ subtest 'start_questions presents the first question from state' => sub {
     my $raw = { global_data => { questions => $QUESTIONS, question_index => 0, answers => [] } };
 
     my $start = $agent->on_function_call( 'start_questions', {}, $raw );
-    like( $start->response, qr/full name/i, 'first question presented' );
+    like( $start->response, qr/full name/i,      'first question presented' );
     like( $start->response, qr/Question 1 of 2/, 'question 1 of 2 framing' );
 };
 
@@ -65,7 +65,7 @@ subtest 'submit_answer records the answer, advances the index, presents Q2' => s
     is( $gd->{question_index}, 1, 'question_index advanced to 1' );
 
     # (c) the 2nd question is presented
-    like( $result->response, qr/email address/i, '2nd question presented in the response' );
+    like( $result->response, qr/email address/i,  '2nd question presented in the response' );
     like( $result->response, qr/Question 2 of 2/, 'question 2 of 2 framing' );
 };
 
@@ -82,7 +82,7 @@ subtest 'submitting the final answer completes (index past the end)' => sub {
     };
 
     my $result = $agent->on_function_call( 'submit_answer', { answer => 'ada@example.com' }, $raw );
-    my $gd = global_update($result);
+    my $gd     = global_update($result);
 
     is( $gd->{question_index}, 2, 'question_index advanced past the last question' );
     is_deeply(

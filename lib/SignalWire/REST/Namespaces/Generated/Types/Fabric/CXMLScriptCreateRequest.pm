@@ -12,9 +12,10 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Fabric::CXMLScriptCreateRequest: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'display_name'           => ( is => 'ro' );
 has 'contents'               => ( is => 'ro' );
 has 'status_callback_url'    => ( is => 'ro' );
 has 'status_callback_method' => ( is => 'ro' );
+has 'name'                   => ( is => 'ro' );
+has 'script_type'            => ( is => 'ro' );
 
 1;

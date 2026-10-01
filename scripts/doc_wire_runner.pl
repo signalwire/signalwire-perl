@@ -30,16 +30,15 @@ if ( !$port ) {
     exit 2;
 }
 
-my $client   = MockTest::client();
-my $call_id  = 'call-doc-wire';
+my $client  = MockTest::client();
+my $call_id = 'call-doc-wire';
 
 # --- README.md + rest/README.md quickstart (region: rest) --------------------
 $client->fabric->ai_agents->create(
     name   => 'Support Bot',
     prompt => { text => 'You are helpful.' },
 );
-$client->calling->play( $call_id,
-    play => [ { type => 'tts', params => { text => 'Hello!' } } ] );
+$client->calling->play( $call_id, play => [ { type => 'tts', params => { text => 'Hello!' } } ] );
 $client->phone_numbers->search( areacode => '512' );
 $client->datasphere->documents->search( query_string => 'billing policy' );
 
@@ -47,7 +46,8 @@ $client->datasphere->documents->search( query_string => 'billing policy' );
 $client->phone_numbers->search( areacode => '512', number_type => 'local' );
 
 # --- rest/docs/calling.md play (nested params => { text }, volume) -----------
-$client->calling->play( $call_id,
+$client->calling->play(
+    $call_id,
     play   => [ { type => 'tts', params => { text => 'Hello!' } } ],
     volume => 5.0,
 );

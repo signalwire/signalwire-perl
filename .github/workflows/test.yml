@@ -37,14 +37,21 @@ jobs:
         with:
           path: signalwire-perl
 
+      - name: Resolve coordinated refs (branch-local .github/porting-sdk-ref pin; no pin = main)
+        # See porting-sdk/COORDINATED_PASS.md. Every foreign coordinated-set
+        # checkout below takes its ref from this step's outputs.
+        id: coord
+        shell: bash
+        run: bash signalwire-perl/.github/coordinated-ref.sh signalwire-perl
+
       - name: Checkout porting-sdk (mock servers + audit scripts + EMISSION corpus)
         uses: actions/checkout@v7
         with:
           repository: signalwire/porting-sdk
-          # Coordinated-pass pin: 'main' normally; set the PORTING_SDK_REF repo variable
-          # to a wave branch to test a coordinated porting-sdk change, declared on the PR
-          # (see porting-sdk/COORDINATED_PASS.md). No revert commit.
-          ref: ${{ vars.PORTING_SDK_REF || 'main' }}
+          # Coordinated-pass pin: resolved by the `coord` step from the branch-local
+          # .github/porting-sdk-ref pin file; main when the file is absent, so only a branch
+          # that commits the pin is affected (see porting-sdk/COORDINATED_PASS.md).
+          ref: ${{ steps.coord.outputs.ref }}
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 
@@ -60,7 +67,7 @@ jobs:
           # PINNED to wave/1-aplus: the reference SDK carrying PY-7 request_options +
           # the new paginator/relay behavior this PR mirrors. REVERT to main when the
           # python wave/1-aplus work merges.
-          ref: ${{ vars.PORTING_SDK_REF || 'main' }}
+          ref: ${{ steps.coord.outputs.ref_python }}
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1
@@ -80,6 +87,15 @@ jobs:
         # `perltidy: command not found`. (doc-audit/surface-audit workflows don't
         # run those gates, so they keep plain --installdeps.)
         run: cpanm --notest --quiet --with-develop --installdeps .
+
+      - name: Install Python dev deps (ruff — the REPO-LINT gate)
+        working-directory: signalwire-perl
+        # REPO-LINT in run-ci.sh runs scripts/run-python-lint.sh, which shells out
+        # to the `ruff` binary to check+format this repo's 7 hand-written Python
+        # programs under scripts/. Without this the gate fails with
+        # `ruff: command not found`. Pinned in requirements-dev.txt so
+        # `ruff format --check` is reproducible between local and CI.
+        run: python3 -m pip install --quiet -r requirements-dev.txt
 
       - name: Install Python test harnesses (mock_relay + mock_signalwire)
         run: |

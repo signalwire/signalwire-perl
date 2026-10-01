@@ -12,12 +12,17 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Messages::CreateMessageRequest: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'to'               => ( is => 'ro' );
-has 'from'             => ( is => 'ro' );
-has 'body'             => ( is => 'ro' );
-has 'media'            => ( is => 'ro' );
-has 'send_as_mms'      => ( is => 'ro' );
-has 'status_callback'  => ( is => 'ro' );
-has 'custom_variables' => ( is => 'ro' );
+has 'to'                         => ( is => 'ro' );
+has 'from'                       => ( is => 'ro' );
+has 'body'                       => ( is => 'ro' );
+has 'media'                      => ( is => 'ro' );
+has 'send_as_mms'                => ( is => 'ro' );
+has 'status_callback'            => ( is => 'ro' );
+has 'custom_variables'           => ( is => 'ro' );
+has 'message_type'               => ( is => 'ro' );
+has 'template_id'                => ( is => 'ro' );
+has 'header_template_parameters' => ( is => 'ro' );
+has 'body_template_parameters'   => ( is => 'ro' );
+has 'button_template_parameters' => ( is => 'ro' );
 
 1;

@@ -12,10 +12,11 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::EnterQueueObject: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'queue_name'            => ( is => 'ro' );
-has 'transfer_after_bridge' => ( is => 'ro' );
-has 'status_url'            => ( is => 'ro' );
-has 'wait_url'              => ( is => 'ro' );
-has 'wait_time'             => ( is => 'ro' );
+has 'execute_after_queue' => ( is => 'ro' );
+has 'queue_name'          => ( is => 'ro' );
+has 'status_url'          => ( is => 'ro' );
+has 'wait_time'           => ( is => 'ro' );
+has 'wait_url'            => ( is => 'ro' );
+has 'whisper_url'         => ( is => 'ro' );
 
 1;

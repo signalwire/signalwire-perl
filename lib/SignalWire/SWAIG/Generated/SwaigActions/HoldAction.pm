@@ -11,6 +11,8 @@ use Moo;
 
 # Pure data DTO: one read-only accessor per property carrying the snake
 # wire key; no methods (the reference records this as a method-less type).
-has 'timeout' => ( is => 'ro' );
+has 'step'         => ( is => 'ro' );
+has 'timeout'      => ( is => 'ro' );
+has 'timeout_step' => ( is => 'ro' );
 
 1;

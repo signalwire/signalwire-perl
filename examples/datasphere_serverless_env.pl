@@ -31,12 +31,12 @@ my $agent = SignalWire::Agent::AgentBase->new(
     route => '/datasphere-env',
 );
 
-$agent->add_language(name => 'English', code => 'en-US', voice => 'inworld.Mark');
-$agent->set_params({ ai_model => 'gpt-4.1-nano' });
+$agent->add_language( name => 'English', code => 'en-US', voice => 'inworld.Mark' );
+$agent->set_params( { ai_model => 'gpt-4.1-nano' } );
 
-$agent->prompt_add_section('Role',
-    'You are a knowledge assistant with access to a document library. '
-    . 'Search the knowledge base to answer user questions.');
+$agent->prompt_add_section( 'Role',
+          'You are a knowledge assistant with access to a document library. '
+        . 'Search the knowledge base to answer user questions.' );
 
 eval { $agent->add_skill('datetime') };
 eval { $agent->add_skill('math') };
@@ -47,12 +47,12 @@ my %config = (
     distance    => $distance,
 );
 
-if (my $tags = $ENV{DATASPHERE_TAGS}) {
-    $config{tags} = [split /,/, $tags];
+if ( my $tags = $ENV{DATASPHERE_TAGS} ) {
+    $config{tags} = [ split /,/, $tags ];
 }
 
 eval {
-    $agent->add_skill('datasphere', \%config);
+    $agent->add_skill( 'datasphere', \%config );
     print "Added DataSphere serverless skill\n";
 };
 print "DataSphere error: $@\n" if $@;

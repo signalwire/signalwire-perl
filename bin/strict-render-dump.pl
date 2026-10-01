@@ -79,77 +79,106 @@ sub main {
     # ==============================================================
 
     # unknown verb 'foobar' must raise.
-    $out{strict_unknown_verb} = run_swml_case( sub {
-        new_service()->add_verb( 'foobar', {} );
-    } );
+    $out{strict_unknown_verb} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'foobar', {} );
+        }
+    );
 
     # misspelled 'maxduration' (should be max_duration) must raise.
-    $out{strict_answer_misspelled_key} = run_swml_case( sub {
-        new_service()->add_verb( 'answer', { maxduration => 5 } );
-    } );
+    $out{strict_answer_misspelled_key} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'answer', { maxduration => 5 } );
+        }
+    );
 
     # unknown key 'wibble' on a closed verb must raise.
-    $out{strict_answer_unknown_key} = run_swml_case( sub {
-        new_service()->add_verb( 'answer', { wibble => 1 } );
-    } );
+    $out{strict_answer_unknown_key} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'answer', { wibble => 1 } );
+        }
+    );
 
     # misspelled 'urlz' (should be urls) must raise.
-    $out{strict_play_misspelled_key} = run_swml_case( sub {
-        new_service()->add_verb( 'play', { urlz => ['say:hi'] } );
-    } );
+    $out{strict_play_misspelled_key} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'play', { urlz => ['say:hi'] } );
+        }
+    );
 
     # a valid key plus an unknown extra key still must raise.
-    $out{strict_play_valid_plus_unknown_key} = run_swml_case( sub {
-        new_service()->add_verb( 'play', { url => 'say:hi', foo => 1 } );
-    } );
+    $out{strict_play_valid_plus_unknown_key} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'play', { url => 'say:hi', foo => 1 } );
+        }
+    );
 
     # misspelled 'formatt' (should be format) must raise.
-    $out{strict_record_misspelled_key} = run_swml_case( sub {
-        new_service()->add_verb( 'record', { formatt => 'wav' } );
-    } );
+    $out{strict_record_misspelled_key} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'record', { formatt => 'wav' } );
+        }
+    );
 
     # max_duration must be numeric; a string must raise.
-    $out{strict_answer_wrong_type} = run_swml_case( sub {
-        new_service()->add_verb( 'answer', { max_duration => 'notanumber' } );
-    } );
+    $out{strict_answer_wrong_type} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'answer', { max_duration => 'notanumber' } );
+        }
+    );
 
     # GAP1: misspelled top-level ai key 'temperatur' must raise.
-    $out{strict_ai_misspelled_top_key} = run_swml_case( sub {
-        new_service()->add_verb( 'ai', { prompt => { text => 'hi' }, temperatur => 0.5 } );
-    } );
+    $out{strict_ai_misspelled_top_key} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'ai', { prompt => { text => 'hi' }, temperatur => 0.5 } );
+        }
+    );
 
     # GAP1: unknown top-level ai key 'zzz' must raise.
-    $out{strict_ai_unknown_top_key} = run_swml_case( sub {
-        new_service()->add_verb( 'ai', { prompt => { text => 'hi' }, zzz => 1 } );
-    } );
+    $out{strict_ai_unknown_top_key} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'ai', { prompt => { text => 'hi' }, zzz => 1 } );
+        }
+    );
 
     # the ai verb requires a prompt; omitting it must raise.
-    $out{strict_ai_missing_prompt} = run_swml_case( sub {
-        new_service()->add_verb( 'ai', { post_prompt => { text => 'bye' } } );
-    } );
+    $out{strict_ai_missing_prompt} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'ai', { post_prompt => { text => 'bye' } } );
+        }
+    );
 
     # ---- good documents must still render ----
 
     # a valid answer verb must render.
-    $out{strict_answer_ok} = run_swml_case( sub {
-        new_service()->add_verb( 'answer', { max_duration => 5 } );
-    } );
+    $out{strict_answer_ok} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'answer', { max_duration => 5 } );
+        }
+    );
 
     # a valid play verb must render.
-    $out{strict_play_ok} = run_swml_case( sub {
-        new_service()->add_verb( 'play', { url => 'say:hi' } );
-    } );
+    $out{strict_play_ok} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'play', { url => 'say:hi' } );
+        }
+    );
 
     # a valid ai verb must render.
-    $out{strict_ai_ok} = run_swml_case( sub {
-        new_service()->add_verb( 'ai', { prompt => { text => 'hi' } } );
-    } );
+    $out{strict_ai_ok} = run_swml_case(
+        sub {
+            new_service()->add_verb( 'ai', { prompt => { text => 'hi' } } );
+        }
+    );
 
     # ai.params is the DELIBERATE open door; a key inside it must render.
-    $out{strict_ai_params_open_ok} = run_swml_case( sub {
-        new_service()->add_verb( 'ai',
-            { prompt => { text => 'hi' }, params => { some_future_param => 1 } } );
-    } );
+    $out{strict_ai_params_open_ok} = run_swml_case(
+        sub {
+            new_service()
+                ->add_verb( 'ai',
+                { prompt => { text => 'hi' }, params => { some_future_param => 1 } } );
+        }
+    );
 
     # ==============================================================
     # Contexts-level strict render (AgentBase; dangling refs)
@@ -157,56 +186,64 @@ sub main {
 
     # GAP2/F3: step whitelists 'get_datetime', an unregistered/non-native
     # function — dangling reference must raise.
-    $out{strict_dangling_step_function} = run_agent_case( sub ($agent) {
-        $agent->define_tool(
-            name        => 'order_status',
-            description => 'look up an order',
-            parameters  => {},
-            handler     => sub { return; },
-        );
-        my $cb   = $agent->define_contexts;
-        my $ctx  = $cb->add_context('default');
-        my $step = $ctx->add_step('help');
-        $step->set_text('help');
-        $step->set_functions( [ 'order_status', 'get_datetime' ] );
-        $cb->to_hash;
-    } );
+    $out{strict_dangling_step_function} = run_agent_case(
+        sub ($agent) {
+            $agent->define_tool(
+                name        => 'order_status',
+                description => 'look up an order',
+                parameters  => {},
+                handler     => sub { return; },
+            );
+            my $cb   = $agent->define_contexts;
+            my $ctx  = $cb->add_context('default');
+            my $step = $ctx->add_step('help');
+            $step->set_text('help');
+            $step->set_functions( [ 'order_status', 'get_datetime' ] );
+            $cb->to_hash;
+        }
+    );
 
     # a step referencing a registered tool must render.
-    $out{strict_registered_step_function_ok} = run_agent_case( sub ($agent) {
-        $agent->define_tool(
-            name        => 'order_status',
-            description => 'look up an order',
-            parameters  => {},
-            handler     => sub { return; },
-        );
-        my $cb   = $agent->define_contexts;
-        my $ctx  = $cb->add_context('default');
-        my $step = $ctx->add_step('help');
-        $step->set_text('help');
-        $step->set_functions( ['order_status'] );
-        $cb->to_hash;
-    } );
+    $out{strict_registered_step_function_ok} = run_agent_case(
+        sub ($agent) {
+            $agent->define_tool(
+                name        => 'order_status',
+                description => 'look up an order',
+                parameters  => {},
+                handler     => sub { return; },
+            );
+            my $cb   = $agent->define_contexts;
+            my $ctx  = $cb->add_context('default');
+            my $step = $ctx->add_step('help');
+            $step->set_text('help');
+            $step->set_functions( ['order_status'] );
+            $cb->to_hash;
+        }
+    );
 
     # reserved native tools (next_step/change_context) are not dangling.
-    $out{strict_reserved_native_function_ok} = run_agent_case( sub ($agent) {
-        my $cb   = $agent->define_contexts;
-        my $ctx  = $cb->add_context('default');
-        my $step = $ctx->add_step('help');
-        $step->set_text('help');
-        $step->set_functions( [ 'next_step', 'change_context' ] );
-        $cb->to_hash;
-    } );
+    $out{strict_reserved_native_function_ok} = run_agent_case(
+        sub ($agent) {
+            my $cb   = $agent->define_contexts;
+            my $ctx  = $cb->add_context('default');
+            my $step = $ctx->add_step('help');
+            $step->set_text('help');
+            $step->set_functions( [ 'next_step', 'change_context' ] );
+            $cb->to_hash;
+        }
+    );
 
     # valid_contexts references an undefined context — must raise.
-    $out{strict_dangling_valid_context} = run_agent_case( sub ($agent) {
-        my $cb   = $agent->define_contexts;
-        my $ctx  = $cb->add_context('default');
-        my $step = $ctx->add_step('help');
-        $step->set_text('help');
-        $step->set_valid_contexts( ['nowhere'] );
-        $cb->to_hash;
-    } );
+    $out{strict_dangling_valid_context} = run_agent_case(
+        sub ($agent) {
+            my $cb   = $agent->define_contexts;
+            my $ctx  = $cb->add_context('default');
+            my $step = $ctx->add_step('help');
+            $step->set_text('help');
+            $step->set_valid_contexts( ['nowhere'] );
+            $cb->to_hash;
+        }
+    );
 
     print JSON->new->canonical->encode( \%out ), "\n";
     return 0;

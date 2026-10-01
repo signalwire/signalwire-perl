@@ -29,9 +29,8 @@ use lib 'lib';
 use SignalWire::SWML::Service;
 
 sub build_service {
-    my %opts = @_;
-    my $public_url = $opts{public_url}
-        // 'https://your-host.example.com/sales-sidecar';
+    my %opts       = @_;
+    my $public_url = $opts{public_url} // 'https://your-host.example.com/sales-sidecar';
 
     my %args = (
         name                => 'sales-sidecar',
@@ -39,40 +38,47 @@ sub build_service {
         basic_auth_user     => $opts{user} // 'user',
         basic_auth_password => $opts{pass} // 'pass',
     );
+
     # Only override host/port when caller provides one - otherwise the
     # Service constructor honors SWML_HOST / SWML_PORT environment vars.
     $args{host} = $opts{host} if defined $opts{host};
     $args{port} = $opts{port} if defined $opts{port};
     my $svc = SignalWire::SWML::Service->new(%args);
 
-    # 1. Emit any SWML - including ai_sidecar. The Document API's
-    #    add_verb() accepts arbitrary verb dicts, so new platform verbs
-    #    work without an SDK release. NOTE the SWAIG hash key MUST be
-    #    UPPERCASE - that is how mod_openai recognizes it.
-    $svc->document->add_verb('main', 'answer', {});
-    $svc->document->add_verb('main', 'ai_sidecar', {
-        prompt => 'You are a real-time sales copilot. Listen to the call '
+    # 1. Emit any SWML - including ai_sidecar - through the Service-level
+    #    add_verb(), which validates the verb and its config against the SWML
+    #    schema. The schema knows ai_sidecar, so no SDK release is needed for
+    #    it. NOTE the SWAIG hash key MUST be UPPERCASE - that is how
+    #    mod_openai recognizes it.
+    $svc->add_verb( 'answer', {} );
+    $svc->add_verb(
+        'ai_sidecar',
+        {
+            prompt => 'You are a real-time sales copilot. Listen to the call '
                 . 'and surface competitor pricing comparisons when relevant.',
-        lang      => 'en-US',
-        direction => ['remote-caller', 'local-caller'],
-        # Where the sidecar POSTs lifecycle / transcription events.
-        # Optional - skip if you don't need an event sink.
-        url   => "$public_url/events",
-        # Where the sidecar's LLM POSTs SWAIG tool calls. This SDK's
-        # /swaig route is what answers them.
-        SWAIG => {
-            defaults => { web_hook_url => "$public_url/swaig" },
-        },
-    });
-    $svc->document->add_verb('main', 'hangup', {});
+            lang      => 'en-US',
+            direction => [ 'remote-caller', 'local-caller' ],
+
+            # Where the sidecar POSTs lifecycle / transcription events.
+            # Optional - skip if you don't need an event sink.
+            url => "$public_url/events",
+
+            # Where the sidecar's LLM POSTs SWAIG tool calls. This SDK's
+            # /swaig route is what answers them.
+            SWAIG => {
+                defaults => { web_hook_url => "$public_url/swaig" },
+            },
+        }
+    );
+    $svc->add_verb( 'hangup', {} );
 
     # 2. Register tools the sidecar's LLM can call. Same define_tool()
     #    you'd use on AgentBase - it lives on SWML::Service.
     $svc->define_tool(
         name        => 'lookup_competitor',
         description => 'Look up competitor pricing by company name. The sidecar '
-                     . 'should call this whenever the caller mentions a competitor.',
-        parameters  => {
+            . 'should call this whenever the caller mentions a competitor.',
+        parameters => {
             type       => 'object',
             properties => {
                 competitor => {
@@ -80,15 +86,13 @@ sub build_service {
                     description => "The competitor's company name, e.g. 'ACME'.",
                 },
             },
-            required   => ['competitor'],
+            required => ['competitor'],
         },
         handler => sub {
-            my ($args, $raw_data) = @_;
+            my ( $args, $raw_data ) = @_;
             my $competitor = $args->{competitor} // '<unknown>';
-            return {
-                response => "Pricing for $competitor: \$99/seat. Our equivalent "
-                          . 'plan is $79/seat with the same SLA.',
-            };
+            return { response => "Pricing for $competitor: \$99/seat. Our equivalent "
+                    . 'plan is $79/seat with the same SLA.', };
         },
     );
 
@@ -97,12 +101,15 @@ sub build_service {
     #    table; it is invoked by handlers that override
     #    handle_additional_route() in subclasses. Comment this out if
     #    you don't need it.
-    $svc->register_routing_callback('/events', sub {
-        my ($request_data, $env) = @_;
-        my $event_type = $request_data->{type} // '<unknown>';
-        warn "[sidecar event] type=$event_type\n";
-        return { ok => 1 };
-    });
+    $svc->register_routing_callback(
+        sub {
+            my ( $request_data, $env ) = @_;
+            my $event_type = $request_data->{type} // '<unknown>';
+            warn "[sidecar event] type=$event_type\n";
+            return { ok => 1 };
+        },
+        '/events',
+    );
 
     return $svc;
 }
@@ -114,8 +121,11 @@ unless (caller) {
     print "Route:      " . $svc->route . "\n";
     print "Basic auth: " . $svc->basic_auth_user . ":" . $svc->basic_auth_password . "\n";
     print "SWML URL:   http://"
-        . $svc->basic_auth_user . ":" . $svc->basic_auth_password
-        . "\@" . $svc->host . ":" . $svc->port . $svc->route . "\n\n";
+        . $svc->basic_auth_user . ":"
+        . $svc->basic_auth_password . "\@"
+        . $svc->host . ":"
+        . $svc->port
+        . $svc->route . "\n\n";
 
     require Plack::Runner;
     my $runner = Plack::Runner->new;
@@ -124,7 +134,7 @@ unless (caller) {
         '--port'   => $svc->port,
         '--server' => 'HTTP::Server::PSGI',
     );
-    $runner->run($svc->to_psgi_app);
+    $runner->run( $svc->to_psgi_app );
 }
 
 1;

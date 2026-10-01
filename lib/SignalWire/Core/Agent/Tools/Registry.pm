@@ -210,8 +210,7 @@ SignalWire::Core::Agent::Tools::Registry - SWAIG function registration and manag
 
 =head1 DESCRIPTION
 
-L<SignalWire::Core::Agent::Tools::Registry> is the Perl port of
-C<signalwire.core.agent.tools.registry.ToolRegistry>. It holds SWAIG
+L<SignalWire::Core::Agent::Tools::Registry> holds SWAIG
 function definitions keyed by name, supporting both handler-carrying
 definitions built by C<define_tool> and raw SWAIG dictionaries registered
 via C<register_swaig_function> (e.g. from a DataMap).

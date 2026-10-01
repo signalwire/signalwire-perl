@@ -12,20 +12,23 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::StartUpHookSWAIGFunction: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'description'      => ( is => 'ro' );
-has 'purpose'          => ( is => 'ro' );
-has 'parameters'       => ( is => 'ro' );
-has 'fillers'          => ( is => 'ro' );
-has 'argument'         => ( is => 'ro' );
-has 'active'           => ( is => 'ro' );
-has 'meta_data'        => ( is => 'ro' );
-has 'meta_data_token'  => ( is => 'ro' );
-has 'data_map'         => ( is => 'ro' );
-has 'skip_fillers'     => ( is => 'ro' );
-has 'web_hook_url'     => ( is => 'ro' );
-has 'wait_file'        => ( is => 'ro' );
-has 'wait_file_loops'  => ( is => 'ro' );
-has 'wait_for_fillers' => ( is => 'ro' );
-has 'function'         => ( is => 'ro' );
+has 'description'            => ( is => 'ro' );
+has 'active'                 => ( is => 'ro' );
+has 'argument'               => ( is => 'ro' );
+has 'data_map'               => ( is => 'ro' );
+has 'fillers'                => ( is => 'ro' );
+has 'function'               => ( is => 'ro' );
+has 'meta_data'              => ( is => 'ro' );
+has 'meta_data_token'        => ( is => 'ro' );
+has 'parameters'             => ( is => 'ro' );
+has 'purpose'                => ( is => 'ro' );
+has 'skip_fillers'           => ( is => 'ro' );
+has 'wait_file'              => ( is => 'ro' );
+has 'wait_file_loops'        => ( is => 'ro' );
+has 'wait_for_fillers'       => ( is => 'ro' );
+has 'web_hook_auth_pass'     => ( is => 'ro' );
+has 'web_hook_auth_password' => ( is => 'ro' );
+has 'web_hook_auth_user'     => ( is => 'ro' );
+has 'web_hook_url'           => ( is => 'ro' );
 
 1;

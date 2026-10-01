@@ -122,8 +122,8 @@ C<%LEVELS> table and emits from C<debug>/C<info>/C<warn>/C<error>.
 The constants B<are> the canonical level strings, so nothing about
 L<SignalWire::Logging> changes: the C<level> attribute, the
 C<SIGNALWIRE_LOG_LEVEL> env var, and the level methods all still take /
-emit plain strings. The level names match Python's stdlib C<logging>
-names, and any custom threshold string keeps working exactly as before.
+emit plain strings. The level names are C<debug>, C<info>, C<warn> and
+C<error>, and any custom threshold string keeps working exactly as before.
 
 This buys a single source of truth for the four levels (otherwise they
 live only inside the C<%LEVELS> table), plus editor autocomplete and the

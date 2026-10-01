@@ -12,14 +12,20 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::LanguagesWithSoloFillers: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'name'    => ( is => 'ro' );
-has 'code'    => ( is => 'ro' );
-has 'voice'   => ( is => 'ro' );
-has 'model'   => ( is => 'ro' );
-has 'emotion' => ( is => 'ro' );
-has 'speed'   => ( is => 'ro' );
-has 'engine'  => ( is => 'ro' );
-has 'params'  => ( is => 'ro' );
-has 'fillers' => ( is => 'ro' );
+has 'auto_emotion'        => ( is => 'ro' );
+has 'auto_speed'          => ( is => 'ro' );
+has 'code'                => ( is => 'ro' );
+has 'double_turn_fillers' => ( is => 'ro' );
+has 'engine'              => ( is => 'ro' );
+has 'fillers'             => ( is => 'ro' );
+has 'function_fillers'    => ( is => 'ro' );
+has 'listen_language'     => ( is => 'ro' );
+has 'model'               => ( is => 'ro' );
+has 'name'                => ( is => 'ro' );
+has 'params'              => ( is => 'ro' );
+has 'pronounce'           => ( is => 'ro' );
+has 'speech_fillers'      => ( is => 'ro' );
+has 'turn_fillers'        => ( is => 'ro' );
+has 'voice'               => ( is => 'ro' );
 
 1;

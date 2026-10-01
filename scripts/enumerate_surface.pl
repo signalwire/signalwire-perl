@@ -214,6 +214,14 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Core::LoggingConfig' =>
         { module => 'signalwire.core.logging_config', class => undef },
 
+    # Post-prompt normalization + client capability reading: module-level free
+    # functions (FREE_FN) plus the NormalizedPostPrompt carrier class.
+    'SignalWire::Core::PostPrompt' => { module => 'signalwire.core.post_prompt', class => undef },
+    'SignalWire::Core::PostPrompt::NormalizedPostPrompt' =>
+        { module => 'signalwire.core.post_prompt', class => 'NormalizedPostPrompt' },
+    'SignalWire::Core::Capabilities' =>
+        { module => 'signalwire.core.capabilities', class => undef },
+
     # Standalone core helpers (cluster A)
     'SignalWire::Core::PomBuilder' =>
         { module => 'signalwire.core.pom_builder', class => 'PomBuilder' },
@@ -223,8 +231,21 @@ my %PACKAGE_TO_PY = (
         { module => 'signalwire.core.security_config', class => 'SecurityConfig' },
     'SignalWire::Core::AuthHandler' =>
         { module => 'signalwire.core.auth_handler', class => 'AuthHandler' },
-    'SignalWire::Utils'               => { module => 'signalwire.utils', class => undef },
+
+    # The SDK's single CSPRNG entropy source — internal plumbing with no
+    # reference counterpart (Python calls `secrets` / `os.urandom` inline at
+    # each site). Every sub in it is underscore-private, so with class => undef
+    # it emits ZERO surface: it hides no reference symbol and is therefore not
+    # a PORT_ADDITION. Routed here only to satisfy the C1-V7 fail-closed check.
+    'SignalWire::Core::Random'        => { module => 'signalwire.core.random', class => undef },
+    'SignalWire::Utils'               => { module => 'signalwire.utils',       class => undef },
     'SignalWire::Utils::UrlValidator' =>
+        { module => 'signalwire.utils.url_validator', class => undef },
+
+    # The reference's PRIVATE url_validator._PublicSession (the session
+    # SpiderSkill.session holds). class => undef and NOT a free-function
+    # package, so -- like the private python class -- it emits zero surface.
+    'SignalWire::Utils::UrlValidator::PublicSession' =>
         { module => 'signalwire.utils.url_validator', class => undef },
 
     # Contexts (multiple classes in one .pm)
@@ -368,6 +389,19 @@ my %PACKAGE_TO_PY = (
     'SignalWire::AIChat::ChatResponse' =>
         { module => 'signalwire.ai_chat.client', class => 'ChatResponse' },
     'SignalWire::AIChat::ChatLog' => { module => 'signalwire.ai_chat.client', class => 'ChatLog' },
+
+    # AI Chat browser gateway + voice/text handoff (signalwire.ai_chat.gateway /
+    # .handoff). Perl file names mirror the python module names (Client.pm <->
+    # client.py), so ChatGateway lives in Gateway.pm and HandoffRouter in
+    # Handoff.pm; the carrier/exception classes get their own packages.
+    'SignalWire::AIChat::Gateway' =>
+        { module => 'signalwire.ai_chat.gateway', class => 'ChatGateway' },
+    'SignalWire::AIChat::GatewayRejection' =>
+        { module => 'signalwire.ai_chat.gateway', class => 'GatewayRejection' },
+    'SignalWire::AIChat::Handoff' =>
+        { module => 'signalwire.ai_chat.handoff', class => 'HandoffRouter' },
+    'SignalWire::AIChat::NonceEntry' =>
+        { module => 'signalwire.ai_chat.handoff', class => 'NonceEntry' },
 
     # RELAY client
     'SignalWire::Relay::Client'  => { module => 'signalwire.relay.client', class => 'RelayClient' },
@@ -737,63 +771,26 @@ my %PACKAGE_TO_PY = (
 # Mirrors php's/go's generated projection. GEN-FRESH keeps the emitted classes in
 # sync with the specs; diff_port_surface keeps THIS table in sync with the oracle
 # (a missing/renamed class fails the surface diff loudly).
-my %GENERATED_PROJECTION = (
-    'Addresses'             => { ns => 'relay_rest',   base => 'Base' },
-    'AiAgents'              => { ns => 'fabric',       base => 'FabricResource' },
-    'CallFlows'             => { ns => 'fabric',       base => 'FabricResource' },
-    'Calling'               => { ns => 'calling',      base => 'Base' },
-    'Chat'                  => { ns => 'chat',         base => 'Base' },
-    'ConferenceLogs'        => { ns => 'logs',         base => 'Base' },
-    'ConferenceRooms'       => { ns => 'fabric',       base => 'FabricResource' },
-    'CxmlApplications'      => { ns => 'fabric',       base => 'Base' },
-    'CxmlScripts'           => { ns => 'fabric',       base => 'FabricResource' },
-    'CxmlWebhooks'          => { ns => 'fabric',       base => 'FabricResource' },
-    'DatasphereDocuments'   => { ns => 'datasphere',   base => 'CrudResource' },
-    'DatasphereNamespace'   => { ns => '_client_tree', base => 'Base' },
-    'FabricAddresses'       => { ns => 'fabric',       base => 'ReadResource' },
-    'FabricNamespace'       => { ns => '_client_tree', base => 'Base' },
-    'FabricTokens'          => { ns => 'fabric',       base => 'Base' },
-    'FaxLogs'               => { ns => 'fax',          base => 'ReadResource' },
-    'FreeswitchConnectors'  => { ns => 'fabric',       base => 'FabricResource' },
-    'GenericResources'      => { ns => 'fabric',       base => 'Base' },
-    'ImportedNumbers'       => { ns => 'relay_rest',   base => 'Base' },
-    'LogsNamespace'         => { ns => '_client_tree', base => 'Base' },
-    'Lookup'                => { ns => 'relay_rest',   base => 'Base' },
-    'MessageLogs'           => { ns => 'message',      base => 'ReadResource' },
-    'Messages'              => { ns => 'messages',     base => 'Base' },
-    'Mfa'                   => { ns => 'relay_rest',   base => 'Base' },
-    'NumberGroups'          => { ns => 'relay_rest',   base => 'CrudResource' },
-    'PhoneNumbers'          => { ns => 'relay_rest',   base => 'CrudResource' },
-    'ProjectNamespace'      => { ns => '_client_tree', base => 'Base' },
-    'ProjectTokens'         => { ns => 'project',      base => 'Base' },
-    'Projects'              => { ns => 'projects',     base => 'CrudResource' },
-    'PubSub'                => { ns => 'pubsub',       base => 'Base' },
-    'Queues'                => { ns => 'relay_rest',   base => 'CrudResource' },
-    'Recordings'            => { ns => 'relay_rest',   base => 'Base' },
-    'RegistryBrands'        => { ns => 'relay_rest',   base => 'Base' },
-    'RegistryCampaigns'     => { ns => 'relay_rest',   base => 'Base' },
-    'RegistryNamespace'     => { ns => '_client_tree', base => 'Base' },
-    'RegistryNumbers'       => { ns => 'relay_rest',   base => 'Base' },
-    'RegistryOrders'        => { ns => 'relay_rest',   base => 'Base' },
-    'RelayApplications'     => { ns => 'fabric',       base => 'FabricResource' },
-    'ShortCodes'            => { ns => 'relay_rest',   base => 'Base' },
-    'SipEndpoints'          => { ns => 'fabric',       base => 'FabricResource' },
-    'SipGateways'           => { ns => 'fabric',       base => 'FabricResource' },
-    'SipProfile'            => { ns => 'relay_rest',   base => 'Base' },
-    'Subscribers'           => { ns => 'fabric',       base => 'FabricResource' },
-    'SwmlScripts'           => { ns => 'fabric',       base => 'FabricResource' },
-    'SwmlWebhooks'          => { ns => 'fabric',       base => 'FabricResource' },
-    'VerifiedCallers'       => { ns => 'relay_rest',   base => 'CrudResource' },
-    'VideoConferenceTokens' => { ns => 'video',        base => 'Base' },
-    'VideoConferences'      => { ns => 'video',        base => 'CrudResource' },
-    'VideoNamespace'        => { ns => '_client_tree', base => 'Base' },
-    'VideoRoomRecordings'   => { ns => 'video',        base => 'Base' },
-    'VideoRoomSessions'     => { ns => 'video',        base => 'ReadResource' },
-    'VideoRoomTokens'       => { ns => 'video',        base => 'Base' },
-    'VideoRooms'            => { ns => 'video',        base => 'CrudResource' },
-    'VideoStreams'          => { ns => 'video',        base => 'Base' },
-    'VoiceLogs'             => { ns => 'voice',        base => 'ReadResource' },
-);
+# The table is GENERATED: scripts/generate_rest.py writes it into the sidecar's
+# "classes" map (lib/SignalWire/REST/Namespaces/Generated/rest_signatures.json)
+# from each resource's spec placement and x-sdk-resource base, so a resource the
+# specs add is projected with no hand edit here. A generated package missing from
+# it aborts loud (below).
+my $_GENERATED_SIDECAR;
+my %GENERATED_PROJECTION = %{ _load_generated_sidecar()->{classes}
+        // die "enumerate_surface: rest_signatures.json has no 'classes' projection\n" };
+
+sub _load_generated_sidecar {
+    return $_GENERATED_SIDECAR if $_GENERATED_SIDECAR;
+    my $path = File::Spec->catfile( $REPO_ROOT, qw(lib SignalWire REST Namespaces Generated),
+        'rest_signatures.json' );
+    open my $fh, '<:raw', $path or die "enumerate_surface: cannot read $path: $!\n";
+    local $/;
+    my $raw = <$fh>;
+    close $fh;
+    $_GENERATED_SIDECAR = JSON->new->utf8->decode($raw);
+    return $_GENERATED_SIDECAR;
+}
 
 # Base-provided methods the oracle SURFACE lists on a generated subclass.
 my %GENERATED_BASE_SURFACE = (
@@ -815,23 +812,10 @@ my %GENERATED_BASE_SURFACE = (
 # builder classes of the same name). Each type surfaces as a method-less class
 # (Moo `has` accessors are not `sub` decls, so parse_file records zero subs).
 # Scoped strictly to the Types/<Sub>/ subtree so no other package leaks.
-my %TYPE_SUBDIR_NS = (
-    'RelayRest'    => 'relay_rest',
-    'Fabric'       => 'fabric',
-    'Calling'      => 'calling',
-    'Video'        => 'video',
-    'Datasphere'   => 'datasphere',
-    'Logs'         => 'logs',
-    'Message'      => 'message',
-    'Messages'     => 'messages',
-    'Voice'        => 'voice',
-    'Fax'          => 'fax',
-    'Project'      => 'project',
-    'Projects'     => 'projects',
-    'Chat'         => 'chat',
-    'PubSub'       => 'pubsub',
-    'SwmlWebhooks' => 'swml_webhooks',
-);
+# The table is GENERATED into the sidecar ("type_subdirs" in rest_signatures.json)
+# by scripts/generate_rest.py from the discovered spec dirs.
+my %TYPE_SUBDIR_NS = %{ _load_generated_sidecar()->{type_subdirs}
+        // die "enumerate_surface: rest_signatures.json has no 'type_subdirs' map\n" };
 
 # -------------------------------------------------------------------------
 # AgentBase method -> Python module/class router.
@@ -902,6 +886,8 @@ my %AGENTBASE_METHOD_TO_PY = (
     },
     'on_summary' =>
         { module => 'signalwire.core.agent_base', class => 'AgentBase', method => 'on_summary' },
+    'on_call_end' =>
+        { module => 'signalwire.core.agent_base', class => 'AgentBase', method => 'on_call_end' },
     'on_debug_event' => {
         module => 'signalwire.core.agent_base',
         class  => 'AgentBase',
@@ -1209,6 +1195,13 @@ my %AGENTBASE_METHOD_TO_PY = (
         class  => 'WebMixin',
         method => 'manual_set_proxy_url'
     },
+    'add_per_call_config' => {
+        module => 'signalwire.core.mixins.web_mixin',
+        class  => 'WebMixin',
+        method => 'add_per_call_config'
+    },
+    'mount' =>
+        { module => 'signalwire.core.mixins.web_mixin', class => 'WebMixin', method => 'mount' },
     'set_dynamic_config_callback' => {
         module => 'signalwire.core.mixins.web_mixin',
         class  => 'WebMixin',
@@ -1558,45 +1551,20 @@ my %FORCE_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::Relay::Action::Stream',
     'SignalWire::Relay::Action::Tap',
     'SignalWire::Relay::Action::Transcribe',
-);
 
-# Suppress implicit __init__ emission. Relay::Event subclasses and the
-# Constants holder are dataclasses in Python: they don't expose __init__
-# as a public method. Matching that keeps the diff meaningful.
-my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
-    'SignalWire::Relay::Constants',
-
-    # RequestOptions (plan 4.2): the oracle surface for
-    # signalwire.rest._request_options.RequestOptions is ONLY `merge` -- the
-    # python @dataclass's auto-generated __init__ is not recorded as surface, so
-    # the Perl Moo root's implicit __init__ is suppressed to match.
-    'SignalWire::REST::RequestOptions',
-
-    # AI Chat data carriers: the reference records ConversationInfo /
-    # ChatResponse / ChatLog as @dataclass whose surface is EMPTY (no
-    # __init__ recorded). Each Perl package is a Moo root, which would
-    # otherwise emit an implicit __init__ — suppress it so they surface as
-    # empty classes, matching the reference. (AIChatClient + the base
-    # AIChatError DO expose __init__ in the oracle, so they are NOT listed.)
-    'SignalWire::AIChat::ConversationInfo',
-    'SignalWire::AIChat::ChatResponse',
-    'SignalWire::AIChat::ChatLog',
-
-    # SWML helper classes whose Python reference class does NOT expose an
-    # __init__ in the surface oracle: SwmlRenderer (staticmethod-only) and the
-    # base SWMLVerbHandler ABC. SWMLBuilder / SchemaUtils DO have __init__ in
-    # the oracle, so they are NOT skipped. AIVerbHandler extends the base (not
-    # is_moo_root) so it already gets no implicit __init__.
-    'SignalWire::SWML::SWMLRenderer',
-    'SignalWire::SWML::SWMLHandler',
-
-    # Relay::Event and every Relay::Event::Foo subclass
-    'SignalWire::Relay::Event',
+    # Relay Event subclasses: same shape as the Action subclasses above. Since
+    # porting-sdk 8828dd2 the oracle records the SYNTHESIZED __init__ of each
+    # concrete event dataclass, so every one of these compares as MISSING
+    # unless the constructor is emitted. Perl's subclasses `extends` the base
+    # Event (is_moo_root false) yet each carries the capability — a Moo
+    # constructor taking that event's own `has` fields. Only the subclasses
+    # with a reference counterpart are listed; the three Perl-only events
+    # (CallDisconnect / AuthorizationState / Disconnect) stay suppressed so we
+    # do not invent addition surface.
     'SignalWire::Relay::Event::CallState',
     'SignalWire::Relay::Event::CallReceive',
     'SignalWire::Relay::Event::CallDial',
     'SignalWire::Relay::Event::CallConnect',
-    'SignalWire::Relay::Event::CallDisconnect',
     'SignalWire::Relay::Event::CallPlay',
     'SignalWire::Relay::Event::CallRecord',
     'SignalWire::Relay::Event::CallCollect',
@@ -1610,13 +1578,44 @@ my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
     'SignalWire::Relay::Event::CallRefer',
     'SignalWire::Relay::Event::Conference',
     'SignalWire::Relay::Event::CallAI',
+    'SignalWire::Relay::Event::CallDenoise',
+    'SignalWire::Relay::Event::CallEcho',
+    'SignalWire::Relay::Event::CallHold',
+    'SignalWire::Relay::Event::CallQueue',
     'SignalWire::Relay::Event::MessageReceive',
     'SignalWire::Relay::Event::MessageState',
+);
+
+# Suppress implicit __init__ emission for the Perl packages whose Python
+# counterpart genuinely records NO __init__ on the surface. The list shrank
+# sharply with porting-sdk 8828dd2 ("surface must record a synthesized
+# __init__, not just a `def` one"): before that commit a python @dataclass's
+# auto-generated __init__ was invisible to the oracle, so every Perl Moo root
+# facing a dataclass had to suppress its implicit constructor to compare equal.
+# The oracle now records those synthesized constructors, so suppressing here
+# would MANUFACTURE a missing symbol. Only classes the oracle still shows
+# without __init__ belong below — re-verify against python_surface.json before
+# adding an entry.
+my %SKIP_IMPLICIT_INIT = map { $_ => 1 } (
+
+    # relay.client.Constants is not a class the oracle records __init__ on.
+    'SignalWire::Relay::Constants',
+
+    # SWML helper classes whose Python reference class does NOT expose an
+    # __init__ in the surface oracle: SwmlRenderer (staticmethod-only) and the
+    # base SWMLVerbHandler ABC. SWMLBuilder / SchemaUtils DO have __init__ in
+    # the oracle, so they are NOT skipped. AIVerbHandler extends the base (not
+    # is_moo_root) so it already gets no implicit __init__.
+    'SignalWire::SWML::SWMLRenderer',
+    'SignalWire::SWML::SWMLHandler',
+
+    # Perl-only events (no reference counterpart at all — they surface via
+    # PORT_ADDITIONS). Emitting an implicit __init__ on them would invent
+    # addition surface the reference cannot have, so they stay suppressed
+    # while every oracle-mapped Relay::Event subclass no longer is.
+    'SignalWire::Relay::Event::CallDisconnect',
     'SignalWire::Relay::Event::AuthorizationState',
     'SignalWire::Relay::Event::Disconnect',
-
-    # CLI-only container packages with no instantiable class contract
-    # (we don't emit them here, but listed for future use).
 );
 
 # Subs to always skip: private helpers, Moo plumbing, __PACKAGE__ accessors.
@@ -1649,6 +1648,7 @@ my %SKIP_SUB = map { $_ => 1 } qw(
 my %FREE_FN_PACKAGES = map { $_ => 1 } (
     'SignalWire',                                    'SignalWire::Contexts',
     'SignalWire::Core::Agent::Tools::TypeInference', 'SignalWire::Core::LoggingConfig',
+    'SignalWire::Core::PostPrompt',                  'SignalWire::Core::Capabilities',
     'SignalWire::REST::Namespaces::Resources',       'SignalWire::REST::Pagination',
     'SignalWire::REST::RequestOptions::Resolver',    'SignalWire::Security::SecurityUtils',
     'SignalWire::Security::WebhookMiddleware',       'SignalWire::Security::WebhookValidator',
@@ -1669,7 +1669,8 @@ sub parse_file {
     # and explicitly closed once the file is consumed (close $fh, ~45 lines on).
     # See RequireBriefOpen exemption rationale in .perlcriticrc.
     open my $fh, '<', $path or die "open $path: $!";
-    my @packages;    # list of { name => ..., subs => [...], _seen => {...} }
+    my @packages;            # list of { name => ..., subs => [...], _seen => {...} }
+    my $pending_wire_key;    # a `# wire key: <key>` comment awaiting its `has`
     my $current;
     my $in_pod = 0;
     while ( my $line = <$fh> ) {
@@ -1697,6 +1698,7 @@ sub parse_file {
                 name        => $pkg,
                 subs        => [],
                 attrs       => [],
+                consumes    => [],
                 _seen       => {},
                 _seen_attr  => {},
                 uses_moo    => 0,
@@ -1714,17 +1716,27 @@ sub parse_file {
         # NAMES here; the intersection with the reference surface (below, in
         # collect_surface) gates which are emitted, so a scalar payload field
         # perl holds but the reference doesn't surface is never over-emitted.
+        # A generator emits `# wire key: <key>` right above a `has` whose wire
+        # key is not a Perl identifier (`nomatch-output` -> nomatch_output); the
+        # reference records the WIRE key, so that is the name surfaced.
+        if ( $line =~ /^\s*#\s*wire key:\s*(\S+)\s*$/ ) {
+            $pending_wire_key = $1;
+            next;
+        }
         if ( $line =~ /^\s*has\s+(?:'([^']+)'|"([^"]+)"|([A-Za-z_]\w*))\s*=>/ ) {
             my $attr = defined $1 ? $1 : ( defined $2 ? $2 : $3 );
+            my $wire = $pending_wire_key;
+            undef $pending_wire_key unless $line =~ /^\s*#/;
             if (   $current
                 && $attr
                 && $attr =~ /^[A-Za-z_]\w*$/
                 && !$current->{_seen_attr}{$attr}++ )
             {
-                push @{ $current->{attrs} }, $attr;
+                push @{ $current->{attrs} }, ( defined $wire ? $wire : $attr );
             }
             next;
         }
+        undef $pending_wire_key;
 
         # Detect `use Moo;` / `use Moo::Role;`
         if ( $line =~ /^\s*use\s+Moo(?:::Role)?\b/ ) {
@@ -1737,6 +1749,43 @@ sub parse_file {
             $current->{has_extends} = 1 if $current;
 
             # fall through — no 'next' needed, but nothing else to match
+        }
+
+        # Detect `with 'Some::Role';` (Moo ROLE COMPOSITION).
+        #
+        # Unlike `extends`, a role is not a parent class: Moo flattens the
+        # role's `has` accessors and subs straight into the consuming package,
+        # so they are the consumer's OWN public surface. Record the role names
+        # here; flatten_roles() below lifts their members onto each consumer.
+        # Without this, every member reached through a role is invisible to
+        # the surface audit — which is how RestClient's 22 generated
+        # resource-tree accessors (composed from
+        # SignalWire::REST::Namespaces::Generated::ResourceTree) went
+        # unrecorded despite being reachable at runtime.
+        if ( $line =~ /^\s*with\s*\(?\s*['"]/ ) {
+            my $decl = $line;
+
+            # A `with` may list several roles and may wrap across lines; read
+            # forward (bounded) to the terminating `;`. This consumes from the
+            # same handle the outer loop reads, which is correct: the
+            # continuation lines belong to this declaration and carry nothing
+            # else we parse.
+            if ( $line !~ /;/ ) {
+                my $k = 0;
+                while ( $k++ < 10 ) {
+                    my $nxt = <$fh>;
+                    last unless defined $nxt;
+                    $decl .= $nxt;
+                    last if $nxt =~ /;/;
+                }
+            }
+            if ($current) {
+                while ( $decl =~ /(?:'([^']+)'|"([^"]+)")/g ) {
+                    my $role = defined $1 ? $1 : $2;
+                    push @{ $current->{consumes} }, $role;
+                }
+            }
+            next;
         }
 
         # Only match sub definitions at column 0. Indented subs are almost
@@ -1827,9 +1876,70 @@ sub collect_surface {
     my $top = File::Spec->catfile( File::Spec->catdir( $lib_root, '..' ), 'SignalWire.pm' );
     push @pm_files, $top if -f $top;
 
+    # PASS 1 — parse every file, so role providers are known before any
+    # consumer is projected. A role may be declared in a different file from
+    # the class that composes it (RestClient.pm composes the role defined in
+    # Namespaces/Generated/ResourceTree.pm), so flattening cannot be done
+    # inside the per-file parse.
+    my @parsed;    # [ $file, $packages ]
+    my %pkg_by_name;
     for my $file ( sort @pm_files ) {
         next if $SKIP_FILE{$file};
         my $packages = parse_file($file);
+        push @parsed, [ $file, $packages ];
+        for my $pkg (@$packages) {
+            $pkg_by_name{ $pkg->{name} } //= $pkg;
+        }
+    }
+
+    # PASS 1b — flatten composed roles into their consumers.
+    #
+    # Moo installs a role's `has` accessors and subs into the consuming class
+    # at composition time; they are the consumer's own public surface, with no
+    # @ISA link for an inheritance walk to follow. Mirror that here so members
+    # reached through a role are enumerated on the consumer. The consumer's own
+    # declarations take precedence (Moo gives the class priority over the
+    # role), and the walk recurses so a role composing another role is covered.
+    my $flatten_roles;
+    $flatten_roles = sub {
+        my ( $pkg, $seen ) = @_;
+        return ( [], [] ) if $seen->{ $pkg->{name} }++;
+        my ( @subs, @attrs );
+        for my $role_name ( @{ $pkg->{consumes} || [] } ) {
+            my $role = $pkg_by_name{$role_name};
+            if ( !$role ) {
+
+                # An unresolvable role is a genuine blind spot: its members
+                # would be silently dropped. Fail loud rather than emit a
+                # valid-looking but incomplete surface.
+                die "enumerate_surface: $pkg->{name} composes role '$role_name', "
+                    . "which was not found in lib/. Its members would be dropped "
+                    . "from the surface — resolve the role or fix the parser.\n";
+            }
+            my ( $rs, $ra ) = $flatten_roles->( $role, $seen );
+            push @subs,  @$rs, @{ $role->{subs}  || [] };
+            push @attrs, @$ra, @{ $role->{attrs} || [] };
+        }
+        return ( \@subs, \@attrs );
+    };
+    for my $pkg ( values %pkg_by_name ) {
+        next unless @{ $pkg->{consumes} || [] };
+        my ( $role_subs, $role_attrs ) = $flatten_roles->( $pkg, {} );
+        for my $s (@$role_subs) {
+            next if $s =~ /^_/ && !( $s =~ /^__\w+__$/ );
+            next if $SKIP_SUB{$s};
+            next if $pkg->{_seen}{$s}++;
+            push @{ $pkg->{subs} }, $s;
+        }
+        for my $a (@$role_attrs) {
+            next if $pkg->{_seen_attr}{$a}++;
+            push @{ $pkg->{attrs} }, $a;
+        }
+    }
+
+    # PASS 2 — project each package onto the canonical surface buckets.
+    for my $entry (@parsed) {
+        my ( $file, $packages ) = @$entry;
         for my $pkg (@$packages) {
             my $pkg_name = $pkg->{name};
 
@@ -1839,12 +1949,9 @@ sub collect_surface {
             # as a method-less class (its `has` accessors are not `sub` decls).
             if ( $pkg_name =~ /^SignalWire::REST::Namespaces::Generated::Types::(\w+)::(\w+)$/ ) {
                 my ( $sub, $tname ) = ( $1, $2 );
-                my $ns = $TYPE_SUBDIR_NS{$sub};
-                if ( !$ns ) {
-                    warn "enumerate_surface: generated type package $pkg_name has "
-                        . "no Types subdir mapping\n";
-                    next;
-                }
+                my $ns = $TYPE_SUBDIR_NS{$sub}
+                    or die "enumerate_surface: generated type package $pkg_name has "
+                    . "no Types subdir mapping in rest_signatures.json 'type_subdirs'\n";
                 my $tmod = "signalwire.rest.namespaces.${ns}_types_generated";
                 $record_class_only->( $tmod, $tname );
                 $emit_ref_attrs->( $tmod, $tname, $pkg->{attrs} );
@@ -1935,11 +2042,9 @@ sub collect_surface {
                     next;
                 }
 
-                my $proj = $GENERATED_PROJECTION{$gname};
-                if ( !$proj ) {
-                    warn "enumerate_surface: generated package $pkg_name has no projection entry\n";
-                    next;
-                }
+                my $proj = $GENERATED_PROJECTION{$gname}
+                    or die "enumerate_surface: generated package $pkg_name has no projection "
+                    . "in rest_signatures.json 'classes' — regenerate with scripts/generate_rest.py\n";
                 my $gmod =
                     $proj->{ns} eq '_client_tree'
                     ? 'signalwire.rest.namespaces._client_tree_generated'
@@ -2212,6 +2317,25 @@ sub collect_surface {
     # reference declares for THAT skill (union; a method already declared on
     # the concrete Perl class is a no-op). Real inherited capability
     # (RULES §2 idiom-via-enumerator), not invented surface.
+    #
+    # ORACLE-GATED, not list-gated. The per-class lists below are HAND-KEPT and
+    # therefore go stale the moment the reference moves a member. They did: the
+    # reference made `SkillBase.get_prompt_sections()` a FINAL template method
+    # carrying the `skip_prompt` guard, delegating to a PROTECTED
+    # `_get_prompt_sections()` hook (signalwire-python core/skill_base.py), which
+    # Perl mirrors exactly (SkillBase.pm:108/113, subclasses override
+    # `_get_prompt_sections`). The public member now exists on the BASE ONLY, so
+    # the oracle dropped it from 11 skill classes — while this list still named
+    # it, projecting 11 phantom `missing-reference` additions.
+    #
+    # So the hand list is an UPPER BOUND, intersected with what the surface
+    # oracle LIVE records for that (module, class). A member the reference stops
+    # exposing stops being projected on the next regen with no hand edit — the
+    # same discipline the `has`-accessor emission above already uses, and the
+    # same one the signature enumerator's PROTECTED_TEMPLATE_PROJECTIONS uses.
+    # No fail-safe fallback is needed here: %REF_SURFACE_MEMBERS is fail-LOUD
+    # (an unresolvable oracle dies at load, above), so an empty intersection can
+    # only mean the reference genuinely stopped recording the member.
     {
         my %SKILL_INHERITED_PROJECTION = (
             DateTimeSkill             => [ 'get_hints', 'get_prompt_sections' ],
@@ -2235,10 +2359,14 @@ sub collect_surface {
             next unless $mod =~ /^signalwire\.skills\.[^.]+\.skill$/;
             my $classes = $modules{$mod}{classes} // {};
             for my $cls ( keys %$classes ) {
-                my $projection = $SKILL_INHERITED_PROJECTION{$cls} or next;
-                my %seen       = map { $_ => 1 } @{ $classes->{$cls} };
+                my $projection  = $SKILL_INHERITED_PROJECTION{$cls} or next;
+                my %seen        = map { $_ => 1 } @{ $classes->{$cls} };
+                my $ref_members = $REF_SURFACE_MEMBERS{"$mod.$cls"} // {};
                 for my $method (@$projection) {
                     next if $seen{$method};
+
+                    # Intersect the hand list with the LIVE oracle (see above).
+                    next unless $ref_members->{$method};
                     push @{ $classes->{$cls} }, $method;
                     $seen{$method} = 1;
                 }
