@@ -127,16 +127,6 @@ safe(
     }
 );
 safe(
-    'Invite token',
-    sub {
-        # An invite token is scoped to a single subscriber address.
-        my $invite = $client->fabric->tokens->create_invite_token(
-            address_id => '3fa85f64-5717-4562-b3fc-2c963f66afa6', );
-        my $t = $invite->{token} // '';
-        print "  Invite token: " . substr( $t, 0, 40 ) . "...\n" if $t;
-    }
-);
-safe(
     'Embed token',
     sub {
         # An embed token is minted from a Click-to-Call (c2c) token.

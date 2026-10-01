@@ -138,6 +138,21 @@ env var to override.
   (default enabled).
 - `SWML_HSTS_MAX_AGE` - HSTS `max-age` in seconds (default 31536000 = 1 year).
 
+### Outbound page fetches (spider / web_search)
+
+- `SWML_URL_FETCH_USE_PROXY` - Let the spider and web_search skills fetch pages
+  through `HTTP_PROXY` / `HTTPS_PROXY` (`1`/`true`/`yes`). They ignore those by
+  default, because the private-address check can't see where a proxy connects.
+  Set it only for a proxy that blocks private destinations itself.
+
+### AI Chat gateway (read by `SignalWire::AIChat::Gateway`)
+
+- `SIGNALWIRE_CHAT_GATEWAY_KEY` - The publishable key the browser chat widget
+  carries (else a random `pk_...` key is generated per process).
+- `SIGNALWIRE_CHAT_GATEWAY_SECRET` - The secret that signs conversation handles
+  (else random per process). Set it explicitly when you run more than one
+  replica or need handles to survive a restart.
+
 ## TLS / HTTPS
 
 There are two ways to serve HTTPS:

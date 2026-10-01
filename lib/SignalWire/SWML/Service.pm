@@ -821,6 +821,21 @@ sub add_verb {
 sub _validate_verb_strict {
     my ( $self, $verb_name, $config ) = @_;
     return unless $self->full_validation;
+
+    # The python reference's verb registry ships the AI verb handler by default,
+    # so an ai config always passes through its validate_config (prompt required,
+    # text-or-pom, ...) before the shallow schema pass. The engine-derived schema
+    # declares no required ai key, so without a registered handler the strict pass
+    # applies the default AI handler's checks here.
+    if ( $verb_name eq 'ai' && !$self->verb_handlers->{ai} ) {
+        require SignalWire::SWML::SWMLHandler;
+        my ( $ok, $errors ) =
+            SignalWire::SWML::SWMLHandler::AIVerbHandler->new->validate_config($config);
+        die SignalWire::Utils::SchemaValidationError->new(
+            verb_name => $verb_name,
+            errors    => $errors // [],
+        ) unless $ok;
+    }
     my ( $ok, $errors ) = $self->_schema_validator->validate_verb( $verb_name, $config );
     return if $ok;
     die SignalWire::Utils::SchemaValidationError->new(

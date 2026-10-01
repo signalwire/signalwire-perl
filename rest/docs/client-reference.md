@@ -56,7 +56,7 @@ There are 24 namespace accessors on the client. Every API surface is available a
 | `$client->fabric->cxml_applications` | cXML application resources (no create) |
 | `$client->fabric->resources` | Generic resource operations |
 | `$client->fabric->addresses` | Fabric addresses (list/get only) |
-| `$client->fabric->tokens` | Subscriber/guest/invite/embed token creation |
+| `$client->fabric->tokens` | Subscriber/guest/embed token creation |
 
 (16 Fabric sub-resources.)
 
