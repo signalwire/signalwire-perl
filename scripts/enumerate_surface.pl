@@ -930,6 +930,8 @@ my %AGENTBASE_METHOD_TO_PY = (
     },
     'on_summary' =>
         { module => 'signalwire.core.agent_base', class => 'AgentBase', method => 'on_summary' },
+    'on_call_end' =>
+        { module => 'signalwire.core.agent_base', class => 'AgentBase', method => 'on_call_end' },
     'on_debug_event' => {
         module => 'signalwire.core.agent_base',
         class  => 'AgentBase',
@@ -1237,6 +1239,13 @@ my %AGENTBASE_METHOD_TO_PY = (
         class  => 'WebMixin',
         method => 'manual_set_proxy_url'
     },
+    'add_per_call_config' => {
+        module => 'signalwire.core.mixins.web_mixin',
+        class  => 'WebMixin',
+        method => 'add_per_call_config'
+    },
+    'mount' =>
+        { module => 'signalwire.core.mixins.web_mixin', class => 'WebMixin', method => 'mount' },
     'set_dynamic_config_callback' => {
         module => 'signalwire.core.mixins.web_mixin',
         class  => 'WebMixin',

@@ -800,6 +800,8 @@ MIXIN_PROJECTIONS = {
         "run",
         "serve",
         "set_dynamic_config_callback",
+        "add_per_call_config",
+        "mount",
         "setup_graceful_shutdown",
         "on_request",
         "on_swml_request",
