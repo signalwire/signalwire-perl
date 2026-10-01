@@ -1166,6 +1166,8 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
         f"Generated command-dispatch resource for the {spec.name!r} namespace. "
         f"Each method POSTs {{command, params, id?}} to the base path.",
     )
+    # x-sdk-autofill: uuid4 ids come from the SDK's single CSPRNG entropy source.
+    out += "use SignalWire::Core::Random ();\n"
     out += "\n"
     # Bake the base path into the constructor (§4) so construction is
     # `<Class>->new( _http => $http )` — matching the other resources.
@@ -1196,6 +1198,55 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
         cmd_leaf = cmd_schema_ref.rsplit("/", 1)[-1] if cmd_schema_ref else ""
         cmd_schema = spec.schemas.get(cmd_leaf, {})
         fields, with_id = command_param_fields(spec, cmd_schema)
+        pnode = resolve_schema(
+            spec,
+            (resolve_schema(spec, cmd_schema).get("properties") or {}).get("params"),
+        )
+        field_names = {f[0] for f in fields}
+
+        # x-sdk-compat-kwargs (on the params schema): an SDK kwarg kept for
+        # compatibility that is sent INTO a nested wire key (calling.record
+        # `audio` -> params.record.audio). The nested root it fills becomes an
+        # OPTIONAL kwarg (mirrors the reference generator).
+        compat: list[tuple[str, str, str]] = []  # (arg, root, leaf)
+        for carg, cspec in ((pnode or {}).get("x-sdk-compat-kwargs") or {}).items():
+            into = (cspec or {}).get("into", "") if isinstance(cspec, dict) else ""
+            parts = into.split(".")
+            if len(parts) != 2 or carg in field_names or parts[0] not in field_names:
+                raise SystemExit(
+                    f"{name}.{mname}: x-sdk-compat-kwargs.{carg} into {into!r} must name "
+                    "<existing param>.<key> and must not shadow a param"
+                )
+            root_schema = next(f[1] for f in fields if f[0] == parts[0])
+            if parts[1] not in schema_fields(spec, root_schema):
+                raise SystemExit(
+                    f"{name}.{mname}: x-sdk-compat-kwargs.{carg}: {into!r} not found"
+                )
+            compat.append((carg, parts[0], parts[1]))
+        compat_roots = {r for _a, r, _l in compat}
+
+        # x-sdk-autofill: uuid4 — a server-required id the SDK generates when the
+        # caller omits it (the RELAY client's control_id idiom), so it is OPTIONAL.
+        autofill: list[str] = []
+        shaped: list[tuple[str, dict, bool]] = []
+        for wire_name, schema, required in fields:
+            af = schema.get("x-sdk-autofill") if isinstance(schema, dict) else None
+            if af not in (None, "uuid4"):
+                raise SystemExit(
+                    f"{name}.{mname}: {wire_name}: x-sdk-autofill {af!r} is not a "
+                    "known generator (uuid4)"
+                )
+            if isinstance(schema, dict) and schema.get("x-sdk-positional"):
+                raise SystemExit(
+                    f"{name}.{mname}: {wire_name}: x-sdk-positional is not supported "
+                    "by this emitter"
+                )
+            if af == "uuid4":
+                autofill.append(wire_name)
+                required = False
+            if wire_name in compat_roots:
+                required = False
+            shaped.append((wire_name, schema, required))
 
         records: list[dict] = []
         if with_id:
@@ -1207,7 +1258,7 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
                     "required": True,
                 }
             )
-        for wire_name, schema, required in ordered_fields(fields):
+        for wire_name, schema, required in ordered_fields(shaped):
             ct = canonical_type(spec, schema, required)
             rec: dict = {
                 "name": wire_name,
@@ -1218,6 +1269,20 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
             if not required:
                 rec["default"] = None
             records.append(rec)
+        for carg, root, leaf in compat:
+            root_schema = next(f[1] for f in fields if f[0] == root)
+            leaf_schema = (
+                resolve_schema(spec, root_schema).get("properties") or {}
+            ).get(leaf) or {}
+            records.append(
+                {
+                    "name": carg,
+                    "kind": "keyword",
+                    "type": canonical_type(spec, leaf_schema, False),
+                    "required": False,
+                    "default": None,
+                }
+            )
         records.append(
             {
                 "name": "extras",
@@ -1230,16 +1295,25 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
         _register_sidecar(name, mname, records)
 
         out += "\n"
+        out += f"sub {mname} {{\n"
         if with_id:
-            out += f"sub {mname} {{\n"
             out += "    my ( $self, $call_id, %args ) = @_;\n"
-            out += f"    return $self->_execute( {perl_str(cmd)}, $call_id, %args );\n"
-            out += "}\n"
         else:
-            out += f"sub {mname} {{\n"
             out += "    my ( $self, %args ) = @_;\n"
-            out += f"    return $self->_execute( {perl_str(cmd)}, undef, %args );\n"
-            out += "}\n"
+        for carg, root, leaf in compat:
+            out += f"    if ( defined( my ${carg} = delete $args{{{carg}}} ) ) {{\n"
+            out += (
+                f"        $args{{{root}}} = {{ %{{ $args{{{root}}} // {{}} }}, "
+                f"{leaf} => ${carg} }};\n"
+            )
+            out += "    }\n"
+        for key in autofill:
+            out += (
+                f"    $args{{{key}}} //= SignalWire::Core::Random::_random_uuid4();\n"
+            )
+        call_arg = "$call_id" if with_id else "undef"
+        out += f"    return $self->_execute( {perl_str(cmd)}, {call_arg}, %args );\n"
+        out += "}\n"
     out += "\n1;\n"
     return out
 
@@ -1298,14 +1372,12 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
         op_id = spec_ref.get("op")
         if not op_id:
             raise SystemExit(f"{name}.{method_snake}: method markup missing op")
-        if method_snake in provided:
-            if method_snake == "list_addresses":
-                _verb, op_path, _ = spec.ops[op_id]
-                _, sibling = relative_tail(spec, anchor, markup, op_path)
-                if not sibling:
-                    continue
-            else:
-                continue
+        # A declared list_addresses is emitted even though FabricResource provides
+        # one: the reference emits every declared method (an override of the base
+        # one), so the oracle records it on the subclass (CallFlows /
+        # ConferenceRooms / ...). Other base-provided verbs come from the base.
+        if method_snake in provided and method_snake != "list_addresses":
+            continue
         out += "\n"
         out += emit_method(spec, anchor, markup, base, method_snake, op_id)
 
@@ -1804,6 +1876,15 @@ def emit_types(psdk: Path, outs: dict, type_ns: list[tuple[str, str, str]]) -> N
 # ---------------------------------------------------------------------------
 
 
+# x-sdk-resource base -> the projection base name the enumerators use.
+_PROJECTION_BASE = {
+    "BaseResource": "Base",
+    "CrudResource": "CrudResource",
+    "FabricResource": "FabricResource",
+    "ReadResource": "ReadResource",
+}
+
+
 def build_outputs(psdk: Path) -> dict[str, str]:
     load_bases(psdk)  # validate x-sdk-bases (fail loud)
     _SIDECAR.clear()
@@ -1814,10 +1895,24 @@ def build_outputs(psdk: Path) -> dict[str, str]:
     outs["ReadResource.pm"] = emit_read_resource_base()
     outs["FabricResource.pm"] = emit_fabric_resource_base()
 
+    # Class -> oracle projection (the python module each generated package maps
+    # onto, and the base whose methods it inherits). Emitted into the sidecar so
+    # both enumerators read ONE generated table instead of hand-maintained copies
+    # that go stale whenever the specs add a resource.
+    projection: dict[str, dict[str, str]] = {}
     for spec in specs:
         for anchor, markup in spec.resources():
             src = emit_resource(spec, anchor, markup)
             outs[markup["name"] + ".pm"] = src
+            base = (
+                "Base"
+                if markup.get("kind") == "command-dispatch"
+                else _PROJECTION_BASE[markup["base"]]
+            )
+            projection[markup["name"]] = {
+                "ns": spec.name.replace("-", "_"),
+                "base": base,
+            }
 
     placed = resolve_placement(specs)
     by_container: dict[str, list[tuple[str, str]]] = {}
@@ -1837,6 +1932,7 @@ def build_outputs(psdk: Path) -> dict[str, str]:
             )
         cls, _ = CONTAINERS[container]
         outs[cls + ".pm"] = emit_container(container, by_container[container])
+        projection[cls] = {"ns": "_client_tree", "base": "Base"}
 
     outs["ResourceTree.pm"] = emit_resource_tree(placed)
 
@@ -1858,6 +1954,7 @@ def build_outputs(psdk: Path) -> dict[str, str]:
                 "command/set methods; consumed by scripts/enumerate_signatures.py "
                 "to unfold the regex-parsed Perl params onto the Python oracle shape.",
                 "methods": sidecar,
+                "classes": dict(sorted(projection.items())),
             },
             indent=2,
             sort_keys=False,

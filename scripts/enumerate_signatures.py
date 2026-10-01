@@ -412,63 +412,12 @@ def normalize_defaults_to_type(out_modules: dict) -> None:
 # resolved per-method form is idiom). So projecting each class's OWN methods + a
 # constructor is sufficient for the method-set join this turn (typed create/update
 # bodies + the crud_base binding are the follow-up typed-inputs pass).
-GENERATED_SIG_PROJECTION = {
-    "Addresses": ("relay_rest", "Base"),
-    "AiAgents": ("fabric", "FabricResource"),
-    "CallFlows": ("fabric", "FabricResource"),
-    "Calling": ("calling", "Base"),
-    "Chat": ("chat", "Base"),
-    "ConferenceLogs": ("logs", "Base"),
-    "ConferenceRooms": ("fabric", "FabricResource"),
-    "CxmlApplications": ("fabric", "Base"),
-    "CxmlScripts": ("fabric", "FabricResource"),
-    "CxmlWebhooks": ("fabric", "FabricResource"),
-    "DatasphereDocuments": ("datasphere", "CrudResource"),
-    "DatasphereNamespace": ("_client_tree", "Base"),
-    "FabricAddresses": ("fabric", "ReadResource"),
-    "FabricNamespace": ("_client_tree", "Base"),
-    "FabricTokens": ("fabric", "Base"),
-    "FaxLogs": ("fax", "ReadResource"),
-    "FreeswitchConnectors": ("fabric", "FabricResource"),
-    "GenericResources": ("fabric", "Base"),
-    "ImportedNumbers": ("relay_rest", "Base"),
-    "LogsNamespace": ("_client_tree", "Base"),
-    "Lookup": ("relay_rest", "Base"),
-    "MessageLogs": ("message", "ReadResource"),
-    "Messages": ("messages", "Base"),
-    "Mfa": ("relay_rest", "Base"),
-    "NumberGroups": ("relay_rest", "CrudResource"),
-    "PhoneNumbers": ("relay_rest", "CrudResource"),
-    "ProjectNamespace": ("_client_tree", "Base"),
-    "ProjectTokens": ("project", "Base"),
-    "Projects": ("projects", "CrudResource"),
-    "PubSub": ("pubsub", "Base"),
-    "Queues": ("relay_rest", "CrudResource"),
-    "Recordings": ("relay_rest", "Base"),
-    "RegistryBrands": ("relay_rest", "Base"),
-    "RegistryCampaigns": ("relay_rest", "Base"),
-    "RegistryNamespace": ("_client_tree", "Base"),
-    "RegistryNumbers": ("relay_rest", "Base"),
-    "RegistryOrders": ("relay_rest", "Base"),
-    "RelayApplications": ("fabric", "FabricResource"),
-    "ShortCodes": ("relay_rest", "Base"),
-    "SipEndpoints": ("fabric", "FabricResource"),
-    "SipGateways": ("fabric", "FabricResource"),
-    "SipProfile": ("relay_rest", "Base"),
-    "Subscribers": ("fabric", "FabricResource"),
-    "SwmlScripts": ("fabric", "FabricResource"),
-    "SwmlWebhooks": ("fabric", "FabricResource"),
-    "VerifiedCallers": ("relay_rest", "CrudResource"),
-    "VideoConferenceTokens": ("video", "Base"),
-    "VideoConferences": ("video", "CrudResource"),
-    "VideoNamespace": ("_client_tree", "Base"),
-    "VideoRoomRecordings": ("video", "Base"),
-    "VideoRoomSessions": ("video", "ReadResource"),
-    "VideoRoomTokens": ("video", "Base"),
-    "VideoRooms": ("video", "CrudResource"),
-    "VideoStreams": ("video", "Base"),
-    "VoiceLogs": ("voice", "ReadResource"),
-}
+# The class -> (oracle ns, base) table is GENERATED: scripts/generate_rest.py
+# writes it into the sidecar's "classes" map from each resource's spec placement
+# and x-sdk-resource base, so a resource the specs add is projected without a
+# hand edit here (the hand copy went stale when space/whatsapp landed). Loaded
+# below with the sidecar; a generated package missing from it aborts loud.
+GENERATED_SIG_PROJECTION: dict[str, tuple[str, str]] = {}
 
 # The two generated bases + client-tree containers project onto these oracle
 # signature classes under signalwire.rest._base (the Perl ReadResource == oracle
@@ -487,7 +436,10 @@ def _load_rest_sidecar() -> dict:
         / "rest_signatures.json"
     )
     if p.is_file():
-        return json.loads(p.read_text(encoding="utf-8")).get("methods", {})
+        doc = json.loads(p.read_text(encoding="utf-8"))
+        for cls, proj in (doc.get("classes") or {}).items():
+            GENERATED_SIG_PROJECTION[cls] = (proj["ns"], proj["base"])
+        return doc.get("methods", {})
     return {}
 
 
@@ -1125,6 +1077,24 @@ def _surface_fields_by_class() -> dict:
     return result
 
 
+_PERL_ATTR_FOLD: list = []
+
+
+def _perl_attr_fold():
+    """The generator's own wire-key -> Perl attr fold (generate_rest.perl_attr_name),
+    loaded once."""
+    if not _PERL_ATTR_FOLD:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "_gen_rest_fold", HERE / "generate_rest.py"
+        )
+        gmod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gmod)
+        _PERL_ATTR_FOLD.append(gmod.perl_attr_name)
+    return _PERL_ATTR_FOLD[0]
+
+
 def project_swml_verbs(cls: str, type_entry: dict, out_modules: dict) -> None:
     """Project a generated SWML-verb config class (SignalWire::SWML::Generated::<Name>)
     onto the oracle signature module signalwire.core.swml_verbs_generated (item D2).
@@ -1133,11 +1103,21 @@ def project_swml_verbs(cls: str, type_entry: dict, out_modules: dict) -> None:
     reference's generated swml_verbs_generated field set. Method-less config classes
     (no properties) still record the bare class (empty member set)."""
     surface = _surface_fields_by_class().get(cls)
+    # A wire key that is not a Perl identifier (`nomatch-output`) is emitted as a
+    # folded attr (`nomatch_output`); the reference records the WIRE key, so map
+    # the attr back to it (the generator's own perl_attr_name fold, inverted over
+    # the class's declared wire keys).
+    attr_to_wire: dict = {}
+    for wire in surface or {}:
+        folded = _perl_attr_fold()(wire)
+        if folded != wire:
+            attr_to_wire[folded] = wire
     methods: dict = {}
     for a in type_entry.get("attributes", []):
         attr = (a.get("name") or "").lstrip("+")
         if not attr or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", attr):
             continue
+        attr = attr_to_wire.get(attr, attr)
         # Apply the oracle's field-surface rule: drop primitive payload fields
         # (only class-carrying fields are cross-port surface). `surface` is keyed
         # by wire key; the generated attr name == wire key except for reserved-word
@@ -1353,7 +1333,12 @@ def project_generated(gname: str, type_entry: dict, out_modules: dict) -> None:
         return
     proj = GENERATED_SIG_PROJECTION.get(gname)
     if not proj:
-        return
+        # Fail closed: an unprojected generated package is public surface the
+        # diff would never see.
+        raise SystemExit(
+            f"enumerate_signatures: generated REST package {gname} has no projection "
+            "in rest_signatures.json 'classes' — regenerate with scripts/generate_rest.py"
+        )
     ns, _base = proj
     mod = _generated_module(ns)
 

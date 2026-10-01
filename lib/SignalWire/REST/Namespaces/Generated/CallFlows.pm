@@ -18,6 +18,17 @@ around BUILDARGS => sub {
     return $class->$orig(%args);
 };
 
+sub list_addresses {
+    my ( $self, $id, %params ) = @_;
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $id, 'addresses' ),
+        params          => $p,
+        request_options => $request_options
+    );
+}
+
 sub list_versions {
     my ( $self, $id, %params ) = @_;
     my $request_options = delete $params{request_options};

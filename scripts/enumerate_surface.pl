@@ -744,63 +744,23 @@ my %PACKAGE_TO_PY = (
 # Mirrors php's/go's generated projection. GEN-FRESH keeps the emitted classes in
 # sync with the specs; diff_port_surface keeps THIS table in sync with the oracle
 # (a missing/renamed class fails the surface diff loudly).
-my %GENERATED_PROJECTION = (
-    'Addresses'             => { ns => 'relay_rest',   base => 'Base' },
-    'AiAgents'              => { ns => 'fabric',       base => 'FabricResource' },
-    'CallFlows'             => { ns => 'fabric',       base => 'FabricResource' },
-    'Calling'               => { ns => 'calling',      base => 'Base' },
-    'Chat'                  => { ns => 'chat',         base => 'Base' },
-    'ConferenceLogs'        => { ns => 'logs',         base => 'Base' },
-    'ConferenceRooms'       => { ns => 'fabric',       base => 'FabricResource' },
-    'CxmlApplications'      => { ns => 'fabric',       base => 'Base' },
-    'CxmlScripts'           => { ns => 'fabric',       base => 'FabricResource' },
-    'CxmlWebhooks'          => { ns => 'fabric',       base => 'FabricResource' },
-    'DatasphereDocuments'   => { ns => 'datasphere',   base => 'CrudResource' },
-    'DatasphereNamespace'   => { ns => '_client_tree', base => 'Base' },
-    'FabricAddresses'       => { ns => 'fabric',       base => 'ReadResource' },
-    'FabricNamespace'       => { ns => '_client_tree', base => 'Base' },
-    'FabricTokens'          => { ns => 'fabric',       base => 'Base' },
-    'FaxLogs'               => { ns => 'fax',          base => 'ReadResource' },
-    'FreeswitchConnectors'  => { ns => 'fabric',       base => 'FabricResource' },
-    'GenericResources'      => { ns => 'fabric',       base => 'Base' },
-    'ImportedNumbers'       => { ns => 'relay_rest',   base => 'Base' },
-    'LogsNamespace'         => { ns => '_client_tree', base => 'Base' },
-    'Lookup'                => { ns => 'relay_rest',   base => 'Base' },
-    'MessageLogs'           => { ns => 'message',      base => 'ReadResource' },
-    'Messages'              => { ns => 'messages',     base => 'Base' },
-    'Mfa'                   => { ns => 'relay_rest',   base => 'Base' },
-    'NumberGroups'          => { ns => 'relay_rest',   base => 'CrudResource' },
-    'PhoneNumbers'          => { ns => 'relay_rest',   base => 'CrudResource' },
-    'ProjectNamespace'      => { ns => '_client_tree', base => 'Base' },
-    'ProjectTokens'         => { ns => 'project',      base => 'Base' },
-    'Projects'              => { ns => 'projects',     base => 'CrudResource' },
-    'PubSub'                => { ns => 'pubsub',       base => 'Base' },
-    'Queues'                => { ns => 'relay_rest',   base => 'CrudResource' },
-    'Recordings'            => { ns => 'relay_rest',   base => 'Base' },
-    'RegistryBrands'        => { ns => 'relay_rest',   base => 'Base' },
-    'RegistryCampaigns'     => { ns => 'relay_rest',   base => 'Base' },
-    'RegistryNamespace'     => { ns => '_client_tree', base => 'Base' },
-    'RegistryNumbers'       => { ns => 'relay_rest',   base => 'Base' },
-    'RegistryOrders'        => { ns => 'relay_rest',   base => 'Base' },
-    'RelayApplications'     => { ns => 'fabric',       base => 'FabricResource' },
-    'ShortCodes'            => { ns => 'relay_rest',   base => 'Base' },
-    'SipEndpoints'          => { ns => 'fabric',       base => 'FabricResource' },
-    'SipGateways'           => { ns => 'fabric',       base => 'FabricResource' },
-    'SipProfile'            => { ns => 'relay_rest',   base => 'Base' },
-    'Subscribers'           => { ns => 'fabric',       base => 'FabricResource' },
-    'SwmlScripts'           => { ns => 'fabric',       base => 'FabricResource' },
-    'SwmlWebhooks'          => { ns => 'fabric',       base => 'FabricResource' },
-    'VerifiedCallers'       => { ns => 'relay_rest',   base => 'CrudResource' },
-    'VideoConferenceTokens' => { ns => 'video',        base => 'Base' },
-    'VideoConferences'      => { ns => 'video',        base => 'CrudResource' },
-    'VideoNamespace'        => { ns => '_client_tree', base => 'Base' },
-    'VideoRoomRecordings'   => { ns => 'video',        base => 'Base' },
-    'VideoRoomSessions'     => { ns => 'video',        base => 'ReadResource' },
-    'VideoRoomTokens'       => { ns => 'video',        base => 'Base' },
-    'VideoRooms'            => { ns => 'video',        base => 'CrudResource' },
-    'VideoStreams'          => { ns => 'video',        base => 'Base' },
-    'VoiceLogs'             => { ns => 'voice',        base => 'ReadResource' },
-);
+# The table is GENERATED: scripts/generate_rest.py writes it into the sidecar's
+# "classes" map (lib/SignalWire/REST/Namespaces/Generated/rest_signatures.json)
+# from each resource's spec placement and x-sdk-resource base, so a resource the
+# specs add is projected with no hand edit here. A generated package missing from
+# it aborts loud (below).
+my %GENERATED_PROJECTION = %{ _load_generated_projection() };
+
+sub _load_generated_projection {
+    my $path = File::Spec->catfile( $REPO_ROOT, qw(lib SignalWire REST Namespaces Generated),
+        'rest_signatures.json' );
+    open my $fh, '<:raw', $path or die "enumerate_surface: cannot read $path: $!\n";
+    local $/;
+    my $raw = <$fh>;
+    close $fh;
+    my $doc = JSON->new->utf8->decode($raw);
+    return $doc->{classes} // die "enumerate_surface: $path has no 'classes' projection\n";
+}
 
 # Base-provided methods the oracle SURFACE lists on a generated subclass.
 my %GENERATED_BASE_SURFACE = (
@@ -2047,11 +2007,9 @@ sub collect_surface {
                     next;
                 }
 
-                my $proj = $GENERATED_PROJECTION{$gname};
-                if ( !$proj ) {
-                    warn "enumerate_surface: generated package $pkg_name has no projection entry\n";
-                    next;
-                }
+                my $proj = $GENERATED_PROJECTION{$gname}
+                    or die "enumerate_surface: generated package $pkg_name has no projection "
+                    . "in rest_signatures.json 'classes' — regenerate with scripts/generate_rest.py\n";
                 my $gmod =
                     $proj->{ns} eq '_client_tree'
                     ? 'signalwire.rest.namespaces._client_tree_generated'
