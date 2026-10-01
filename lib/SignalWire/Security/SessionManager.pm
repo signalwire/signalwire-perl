@@ -90,10 +90,12 @@ sub validate_token {
     eval { $decoded = MIME::Base64::decode_base64url($token); };
     return 0 if $@ || !$decoded;
 
-    my @parts = split( /\./, $decoded );
-    return 0 unless @parts == 5;
-
-    my ( $token_call_id, $token_function, $token_expiry, $token_nonce, $token_signature ) = @parts;
+    # The call_id comes first and may itself contain dots (composed
+    # conversation ids such as "root.2"); the other four fields never do, so
+    # split from the RIGHT (python parity: decoded_token.rsplit(".", 4)).
+    my ( $token_call_id, $token_function, $token_expiry, $token_nonce, $token_signature ) =
+        $decoded =~ /\A(.*)\.([^.]*)\.([^.]*)\.([^.]*)\.([^.]*)\z/s;
+    return 0 unless defined $token_signature;
 
     # Verify function matches
     return 0 unless _timing_safe_compare( $token_function, $function_name );

@@ -5,7 +5,8 @@ use Moo;
 
 # Subroutine signatures (stable since Perl 5.36, the SDK's floor).
 use feature 'signatures';
-use JSON ();
+use JSON         ();
+use Scalar::Util ();
 
 has 'response' => (
     is      => 'rw',
@@ -42,13 +43,32 @@ sub _py_truthy {
     return $v ? 1 : 0;
 }
 
+# Python parity: FunctionResult(response, post_process, tool_result, tool_prompt).
+# tool_result / tool_prompt build the structured response at construction
+# (set_tool_response); they are constructor-only, not stored state.
+has '_ctor_tool_result' => ( is => 'ro', init_arg => 'tool_result' );
+has '_ctor_tool_prompt' => ( is => 'ro', init_arg => 'tool_prompt' );
+
+sub BUILD ( $self, $args ) {
+    if ( defined $args->{tool_result} || defined $args->{tool_prompt} ) {
+        $self->set_tool_response(
+            tool_result => $args->{tool_result},
+            tool_prompt => $args->{tool_prompt},
+        );
+    }
+    return;
+}
+
 # Constructor: new(response => "text") or new("text") or new("text", post_process => 1)
 around BUILDARGS => sub {
     my ( $orig, $class, @args ) = @_;
     if ( @args == 1 && !ref $args[0] ) {
         return $class->$orig( response => $args[0] );
     }
-    if ( @args >= 1 && !ref $args[0] && $args[0] !~ /^(response|action|post_process)$/ ) {
+    if (   @args >= 1
+        && !ref $args[0]
+        && $args[0] !~ /^(response|action|post_process|tool_result|tool_prompt)$/ )
+    {
         my $resp = shift @args;
         return $class->$orig( response => $resp, @args );
     }
@@ -410,15 +430,21 @@ sub execute_swml ( $self, $swml_content, %opts ) {
         if ($@) {
             $swml_data = { raw_swml => $swml_content };
         }
+    } elsif ( Scalar::Util::blessed($swml_content) && $swml_content->can('to_hash') ) {
+
+        # SWML SDK object - convert to a plain hash
+        $swml_data = $swml_content->to_hash;
     } else {
         die "swml_content must be a string or hashref";
     }
 
-    if ($transfer) {
-        $swml_data->{transfer} = 'true';
-    }
-
-    return $self->add_action( 'SWML', $swml_data );
+    # transfer rides BESIDE the SWML document, not inside it -- the same shape
+    # connect() and swml_transfer() emit. Inside the document it is not a SWML
+    # key and the call never exits the agent.
+    my %action = ( SWML => $swml_data );
+    $action{transfer} = 'true' if $transfer;
+    push @{ $self->action }, \%action;
+    return $self;
 }
 
 # join_conference — join an ad-hoc audio conference (RELAY + CXML) via
@@ -875,7 +901,9 @@ wire shape the SignalWire AI engine expects.
 
 Most mutators return C<$self> so calls chain fluently. The constructor
 accepts either C<< new(response => $text) >>, the positional shorthand
-C<< new($text) >>, or C<< new($text, post_process => 1) >>.
+C<< new($text) >>, or C<< new($text, post_process => 1) >>. C<tool_result>
+and C<tool_prompt> constructor arguments build the structured response at
+construction (see C<set_tool_response>).
 
 The class-method payment helpers (C<create_payment_prompt>,
 C<create_payment_action>, C<create_payment_parameter>) may be invoked as
@@ -1160,9 +1188,12 @@ Attach a raw SWML document as an action. Accepts a hashref, which is
 B<deep-copied> (via a JSON round-trip) so the caller's structure is never
 mutated, or a string, which is parsed as JSON and — if that fails —
 wrapped as C<< { raw_swml => $string } >> rather than raising. Anything
-else dies. With C<< transfer => 1 >> the document gains a string
-C<transfer> key. This is the primitive every SWML-emitting helper above
-funnels through.
+else dies (an object with C<to_hash> is converted). With
+C<< transfer => 1 >> the action gains a string C<transfer> key B<beside> the
+document -- C<< { SWML => $doc, transfer => 'true' } >>, the shape C<connect>
+and C<swml_transfer> emit; inside the document it is not a SWML key and the
+call would never leave the agent. This is the primitive every SWML-emitting
+helper above funnels through.
 
 =item C<execute_rpc(%opts)>
 

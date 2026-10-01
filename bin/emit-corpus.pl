@@ -132,7 +132,8 @@ my %DISPATCH;
 # ---- pure single-positional verbs (Python positional -> Perl positional) ----
 for my $m (
     qw(
-    say hold update_global_data remove_global_data set_metadata remove_metadata
+    say change_voice rpc_ai_global_data update_global_data remove_global_data
+    set_metadata remove_metadata
     swml_user_event swml_change_step swml_change_context add_dynamic_hints
     set_end_of_speech_timeout set_speech_event_timeout toggle_functions
     update_settings simulate_user_input join_room sip_refer
@@ -241,6 +242,27 @@ $DISPATCH{pay} = sub ( $fr, $args, $kwargs ) {
     );
 };
 
+# ---- hold: Python hold(prompt, timeout, step, timeout_step) -----------------
+# prompt/timeout are Perl positionals (a bare NUMBER first is the timeout, as in
+# python); step/timeout_step ride the trailing %opts. A keyword prompt/timeout
+# in the corpus is moved into its positional slot.
+$DISPATCH{hold} = sub ( $fr, $args, $kwargs ) {
+    my %kw  = %{ $kwargs // {} };
+    my @pos = @$args;
+    $pos[0] = delete $kw{prompt}  if exists $kw{prompt};
+    $pos[1] = delete $kw{timeout} if exists $kw{timeout};
+    $pos[1] //= 300 if exists $pos[1] || %kw;
+    return $fr->hold( @pos, %kw );
+};
+
+# ---- set_tool_response: Python (tool_result, tool_prompt) positional -> named -
+$DISPATCH{set_tool_response} = sub ( $fr, $args, $kwargs ) {
+    my %named;
+    $named{tool_result} = $args->[0] if @$args > 0;
+    $named{tool_prompt} = $args->[1] if @$args > 1;
+    return $fr->set_tool_response( %named, kw_list($kwargs) );
+};
+
 # ---- execute_rpc: Python method positional -> Perl named --------------------
 $DISPATCH{execute_rpc} = sub ( $fr, $args, $kwargs ) {
     return $fr->execute_rpc(
@@ -294,6 +316,9 @@ sub build_emission ($entry) {
     # to JSON::PP::Boolean; set_post_process / the post_process attr read them
     # in boolean context.
     $args{response} = $ctor->{response} if exists $ctor->{response};
+    for my $k (qw(tool_result tool_prompt)) {
+        $args{$k} = $ctor->{$k} if exists $ctor->{$k};
+    }
     my $fr = SignalWire::SWAIG::FunctionResult->new(%args);
     $fr->set_post_process( $ctor->{post_process} ? 1 : 0 ) if exists $ctor->{post_process};
 

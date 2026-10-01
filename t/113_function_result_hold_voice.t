@@ -138,4 +138,36 @@ subtest 'rpc_ai_global_data / rpc_ai_message global_data' => sub {
     like( $err, qr/needs message_text, global_data, or both/, 'neither payload dies' );
 };
 
+subtest 'constructor tool_result / tool_prompt' => sub {
+    is_deeply(
+        SignalWire::SWAIG::FunctionResult->new(
+            tool_result => 'Order 1042 placed.',
+            tool_prompt => 'Tell them.'
+        )->to_hash,
+        { response => { tool_result => 'Order 1042 placed.', tool_prompt => 'Tell them.' } },
+        'structured response built at construction'
+    );
+    is_deeply(
+        SignalWire::SWAIG::FunctionResult->new( tool_result => 'Saved.' )->to_hash,
+        { response => { tool_result => 'Saved.' } },
+        'tool_result only'
+    );
+    is( SignalWire::SWAIG::FunctionResult->new('plain')->response,
+        'plain', 'plain response unchanged' );
+};
+
+subtest 'execute_swml transfer rides beside the document' => sub {
+    my $doc = { version => '1.0.0', sections => { main => [ { answer => {} } ] } };
+    is_deeply(
+        fr()->execute_swml( $doc, transfer => 1 )->to_hash->{action},
+        [ { SWML => $doc, transfer => 'true' } ],
+        'action-level transfer'
+    );
+    is_deeply(
+        fr()->execute_swml($doc)->to_hash->{action},
+        [ { SWML => $doc } ],
+        'no transfer key by default'
+    );
+};
+
 done_testing;

@@ -38,8 +38,9 @@ use Digest::SHA  qw(hmac_sha256_hex);
 use lib File::Spec->catdir( $RealBin, File::Spec->updir, 'lib' );
 
 use SignalWire::Security::SessionManager;
-use SignalWire::Security::SecurityUtils    qw(redact_url filter_sensitive_headers);
-use SignalWire::Security::WebhookValidator qw(validate_webhook_signature);
+use SignalWire::Security::SecurityUtils qw(redact_url filter_sensitive_headers);
+use SignalWire::Security::WebhookValidator
+    qw(validate_webhook_signature validate_webhook_signature_sha256);
 
 # SECRET mirrors wire_crypto_corpus.SECRET ("a" * 64).
 my $SECRET = 'a' x 64;
@@ -72,6 +73,12 @@ sub tampered_token {
 sub oracle_sig ( $url, $body, $key ) {
     require Digest::SHA;
     return Digest::SHA::hmac_sha1_hex( $url . $body, $key );
+}
+
+# oracle_sig_sha256: the X-SignalWire-Sha256-Signature value,
+# hex(HMAC-SHA256(key, url+body)).
+sub oracle_sig_sha256 ( $url, $body, $key ) {
+    return hmac_sha256_hex( $url . $body, $key );
 }
 
 # observe_token_fields decodes a token and returns its wire-format shape.
@@ -115,6 +122,14 @@ sub main {
         ),
     };
 
+    # token_interop_dotted_call_id: a call_id that itself contains dots (a
+    # composed conversation id such as "root.2") must still validate.
+    $out{token_interop_dotted_call_id} = {
+        valid => jbool(
+            $sm->validate_token( 'root.2', 'oracle_fn', oracle_token( 'root.2', 'oracle_fn' ) )
+        ),
+    };
+
     # token_tamper_rejected: a one-byte-flipped signature must fail.
     $out{token_tamper_rejected} =
         { valid => jbool( $sm->validate_token( 'c', 'f', tampered_token() ) ) };
@@ -135,6 +150,27 @@ sub main {
     my $bad_sig = 'deadbeef' x 8;
     $out{wire_validate_webhook_signature_bad} =
         { valid => jbool( validate_webhook_signature( $SECRET, $bad_sig, $wh_url, $wh_body ) ), };
+
+    # wire_validate_webhook_signature_sha256: correct HMAC-SHA256 -> valid.
+    $out{wire_validate_webhook_signature_sha256} = {
+        valid => jbool(
+            validate_webhook_signature_sha256(
+                $SECRET, oracle_sig_sha256( $wh_url, $wh_body, $SECRET ),
+                $wh_url, $wh_body
+            )
+        ),
+    };
+
+    # wire_validate_webhook_signature_sha256_bad: a correct SHA-1 signature is
+    # not a SHA-256 one -> invalid.
+    $out{wire_validate_webhook_signature_sha256_bad} = {
+        valid => jbool(
+            validate_webhook_signature_sha256(
+                $SECRET, oracle_sig( $wh_url, $wh_body, $SECRET ),
+                $wh_url, $wh_body
+            )
+        ),
+    };
 
     # redact_url: credentials + token redacted, structure preserved.
     $out{wire_redact_url} =
