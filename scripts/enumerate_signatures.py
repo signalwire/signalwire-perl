@@ -606,6 +606,8 @@ FREE_FN_PACKAGES = {
     "SignalWire",  # top-level RestClient/register_skill/add_skill_directory/list_skills_with_params
     "SignalWire::Core::Agent::Tools::TypeInference",  # infer_schema + create_typed_handler_wrapper (module-level fns)
     "SignalWire::Core::LoggingConfig",
+    "SignalWire::Core::PostPrompt",  # normalize_post_prompt / dialogue_turns / ...
+    "SignalWire::Core::Capabilities",  # user_variables / declared_capabilities / has_capability
     "SignalWire::Contexts",  # create_simple_context() helper
     "SignalWire::Utils",
     "SignalWire::Utils::UrlValidator",
@@ -885,6 +887,9 @@ PERL_HASHREF_KWARG_METHODS = {
     # summary_prompt). Whitelisting them unfolds the slurpy into those named
     # kwargs from the oracle so the decomposed methods drift 0 (the same
     # kwargs-idiom fold as the AIConfigMixin/webhook_middleware methods above).
+    # post_prompt.dialogue_turns — free FUNCTION whose ``%opts`` slurpy carries
+    # the reference's keyword-only ``roles`` / ``drop_echo``.
+    ("signalwire.core.post_prompt", None, "dialogue_turns"),
     ("signalwire.ai_chat.client", "AIChatClient", "chat"),
     ("signalwire.ai_chat.client", "AIChatClient", "create_conversation"),
     ("signalwire.ai_chat.client", "AIChatClient", "summarize"),
