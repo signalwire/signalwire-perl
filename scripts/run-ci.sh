@@ -228,6 +228,14 @@ sched_gate PREDICATE-SELFTEST desc="field-surface predicate at locked anchors (A
 sched_gate ROUTE-COLLISION res=surface desc="no split routes / duplicate CRUD bases (spec-aware; fed by route_registry.pl)" \
     -- bash scripts/route_collision.sh
 
+# SCHEMA-BUNDLE (porting-sdk docs/SCHEMA_ROUND_TRIP.md): the bundled
+# lib/SignalWire/SWML/schema.json is byte-identical to porting-sdk's schema.json
+# (itself == the api-reference-specs output at its recorded commit), and
+# schema.json.sha256 beside it names those bytes. Cheap; per-PR.
+sched_gate SCHEMA-BUNDLE desc="bundled schema.json == porting-sdk's == ARS output (record matches)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/port_schema_bundle.py" check \
+       --port signalwire-perl --port-root "$PORT_ROOT" --selftest
+
 # GEN (regen-from-specs family): the 5 GEN-FRESH rules. The perltidy backstop each
 # generator runs needs _env.sh (sourced above, exported into every worker subshell).
 sched_gate GEN defer=1 desc="generated-code freshness suite (GEN-FRESH/-TESTS/-RELAY/-SWAIG/-SWML)" \

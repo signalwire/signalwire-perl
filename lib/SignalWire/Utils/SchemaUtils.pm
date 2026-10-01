@@ -147,7 +147,13 @@ sub load_schema ($self) {
 # (Python preserves insertion order; Ruby sorts — Perl mirrors Ruby's sort
 # for deterministic output). Returns a list.
 sub get_all_verb_names ($self) {
-    my @names = sort keys %{ $self->verbs };
+
+    # A verb the schema marks `deprecated: true` (dial / eval / if) is not SDK
+    # surface: it stays known to validation (a document that already carries it
+    # still validates) but no builder method is offered for it (python parity:
+    # get_all_verb_names skips deprecated verbs).
+    my $verbs = $self->verbs;
+    my @names = sort grep { !$verbs->{$_}{deprecated} } keys %$verbs;
     return @names;
 }
 
@@ -327,10 +333,15 @@ sub _register_verb_entry ( $verbs, $entry, $defs ) {
     # Python/Ruby take the FIRST declared property. Perl hash order is not
     # stable, so pick deterministically by sorted key (verb defs have a single
     # property in practice, so this is equivalent).
+    my $verb_prop = $props->{$actual_verb};
     $verbs->{$actual_verb} = {
         name        => $actual_verb,
         schema_name => $schema_name,
         definition  => $defn,
+        deprecated  => (
+            _is_json_true( $defn->{deprecated} )
+                || ( ref $verb_prop eq 'HASH' && _is_json_true( $verb_prop->{deprecated} ) )
+        ) ? 1 : 0,
     };
     return;
 }
@@ -383,14 +394,11 @@ sub _validate_verb_full ( $self, $verb_name, $verb_config ) {
         unless ref $defn eq 'HASH';
 
     # The ai verb is validated TOP-LEVEL-KEYS only (STRICT-RENDER contract):
-    # reject an unknown/misspelled top-level ai key and a missing required
-    # prompt, but do NOT deep-validate the prompt / SWAIG shapes. The reference
-    # emits legitimate deep shapes (empty prompt.pom [], SWAIG.defaults,
-    # functions[].web_hook_url / __token) the bundled JSON-schema does not fully
-    # accept — deep-validating the ai verb would FALSE-REJECT valid documents.
-    # ai.params stays OPEN. Matches the python reference (jsonschema-rs closes
-    # the AIObject's top-level keys via unevaluatedProperties, and ai.params is
-    # its own open door).
+    # reject an unknown/misspelled top-level ai key (and any key the closed arm
+    # marks required), but do NOT deep-validate the prompt / SWAIG shapes — the
+    # handler owns them, and deep-validating would FALSE-REJECT legitimate
+    # emissions. ai.params stays OPEN. Matches the python reference's
+    # _validate_verb_top_level_keys for handler verbs.
     if ( $verb_name eq 'ai' ) {
         return $self->_validate_ai_top_level($verb_config);
     }
@@ -401,46 +409,86 @@ sub _validate_verb_full ( $self, $verb_name, $verb_config ) {
         : ( 1, [] );
 }
 
-# Shallow validation for the ai verb: the config must be a hashref, must carry
-# the required `prompt`, and every top-level key must be a known AIObject
-# property (so a misspelled/unknown top-level key is rejected). The property
-# VALUES are not validated (the deep prompt/SWAIG shapes are the reference's
-# domain and are intentionally not schema-checked here). Returns
-# ($valid, $errors_arrayref).
+# Shallow validation for the ai verb (a handler verb whose deep shapes the
+# handler owns): every top-level key must be a property of the verb body's ONE
+# closed object arm, and that arm's `required` keys must be present. The
+# property VALUES are not validated. A body that is not an object (the engine
+# also accepts the bare-agent string / positional array / number forms —
+# swml_schema.c check_method_type_and_unknown_params) carries no keys to check.
+# Returns ($valid, $errors_arrayref).
 sub _validate_ai_top_level ( $self, $verb_config ) {
+    return ( 1, [] ) unless ref $verb_config eq 'HASH';
+
+    my $arm = $self->_verb_closed_arm('ai');
+    return ( 1, [] ) unless defined $arm;    # no single closed arm: disengage (#223)
+
+    my %known    = map { $_ => 1 } keys %{ $arm->{properties} };
+    my @required = ref $arm->{required} eq 'ARRAY' ? @{ $arm->{required} } : ();
+
     my @errors;
-    if ( ref $verb_config ne 'HASH' ) {
-        return ( 0, ["Schema validation error for 'ai': config must be an object"] );
-    }
-
-    # Known top-level AIObject property names + required list, read from the
-    # bundled schema (AIObject def) so this tracks the schema, not a hardcode.
-    my $ai_obj   = $self->_ai_object_schema;
-    my %known    = map { $_ => 1 } keys %{ $ai_obj->{properties} // {} };
-    my @required = ref $ai_obj->{required} eq 'ARRAY' ? @{ $ai_obj->{required} } : ('prompt');
-
     for my $r (@required) {
         push @errors, "missing required property '$r'"
             unless exists $verb_config->{$r};
     }
-    if (%known) {
-        for my $k ( sort keys %$verb_config ) {
-            push @errors, "unknown/unexpected top-level property '$k'"
-                unless $known{$k};
-        }
+    for my $k ( sort keys %$verb_config ) {
+        push @errors, "unknown/unexpected top-level property '$k'"
+            unless $known{$k};
     }
     return @errors
         ? ( 0, [ "Schema validation error for 'ai': " . join( '; ', @errors ) ] )
         : ( 1, [] );
 }
 
-# The AIObject definition from the bundled schema (resolved from the ai verb's
-# `ai` property $ref). Returns {} when the schema is partial/absent.
-sub _ai_object_schema ($self) {
-    my $defs = $self->schema->{'$defs'};
-    return {} unless ref $defs eq 'HASH';
-    my $ai_obj = $defs->{AIObject};
-    return ref $ai_obj eq 'HASH' ? $ai_obj : {};
+# The #223 resolver contract (porting-sdk docs/legacy-census/DISC-g-d21.md §1.4 /
+# §4): a verb body's closed key-set comes from EXACTLY ONE closed object arm,
+# else the shallow check disengages. `$ref` is followed into $defs (recursively,
+# depth-bounded so a self-referential $ref cannot spin); an anyOf/oneOf is
+# resolved arm by arm and engages only when exactly one arm yields a closed
+# object; a plain object counts only when the schema itself closes it
+# (additionalProperties:false / unevaluatedProperties:false or {not:{}}).
+# Returns that closed object node, or undef (disengage).
+my $MAX_SCHEMA_RESOLVE_DEPTH = 8;
+
+sub _verb_closed_arm ( $self, $verb_name ) {
+    my $entry = $self->verbs->{$verb_name};
+    return unless ref $entry eq 'HASH';
+    my $body = eval { $entry->{definition}{properties}{$verb_name} };
+    return $self->_closed_arm( $body, 0 );
+}
+
+sub _closed_arm ( $self, $node, $depth ) {
+    return unless ref $node eq 'HASH' && $depth <= $MAX_SCHEMA_RESOLVE_DEPTH;
+
+    if ( defined $node->{'$ref'} && !ref $node->{'$ref'} ) {
+        my ($name) = $node->{'$ref'} =~ m{([^/]+)\z};
+        my $resolved = eval { $self->schema->{'$defs'}{$name} };
+        return $self->_closed_arm( $resolved, $depth + 1 );
+    }
+
+    my $arms = ref $node->{anyOf} eq 'ARRAY' ? $node->{anyOf} : $node->{oneOf};
+    if ( ref $arms eq 'ARRAY' ) {
+        my @closed = grep { defined } map { $self->_closed_arm( $_, $depth + 1 ) } @$arms;
+        return @closed == 1 ? $closed[0] : undef;
+    }
+
+    return unless ( $node->{type} // '' ) eq 'object' && ref $node->{properties} eq 'HASH';
+    my $closes =
+        ( exists $node->{additionalProperties} && _is_json_false( $node->{additionalProperties} ) )
+        || ( exists $node->{unevaluatedProperties}
+        && _is_json_false( $node->{unevaluatedProperties} ) )
+        || ( ref $node->{unevaluatedProperties} eq 'HASH'
+        && ref $node->{unevaluatedProperties}{not} eq 'HASH'
+        && !%{ $node->{unevaluatedProperties}{not} } );
+    return $closes ? $node : undef;
+}
+
+sub _is_json_true ($v) {
+    return 0 unless defined $v;
+    return JSON::is_bool($v) ? ( $v ? 1 : 0 ) : ( !ref $v && $v eq '1' ? 1 : 0 );
+}
+
+sub _is_json_false ($v) {
+    return defined $v && !ref $v ? !$v : ( JSON::is_bool($v) && !$v );
 }
 
 sub _validate_verb_lightweight ( $self, $verb_name, $verb_config ) {

@@ -54,8 +54,14 @@ subtest 'ai verb: unknown/misspelled top-level keys raise (GAP1)' => sub {
         "ai temperatur (misspelled top key) raises" );
     ok( raises_verb( 'ai', { prompt => { text => 'hi' }, zzz => 1 } ),
         "ai zzz (unknown top key) raises" );
-    ok( raises_verb( 'ai', { post_prompt => { text => 'bye' } } ),
-        "ai without required prompt raises" );
+
+    # NOT a case any more: the engine-derived schema declares no required ai key
+    # (the engine accepts `{ai: {agent: ...}}` without a prompt), so an ai config
+    # without `prompt` is valid and must not be refused client-side.
+    ok(
+        !raises_verb( 'ai', { agent => 'my-agent' } ),
+        "ai without prompt (agent form) is accepted"
+    );
 };
 
 # ------------------------------------------------------------------

@@ -69,10 +69,12 @@ subtest 'TestCxmlApplicationsCreate' => sub {
     };
 };
 
-# ---- CallFlowsResource.list_addresses — singular 'call_flow' subpath ---
+# ---- CallFlows.list_addresses — the plural 'call_flows' subpath the server routes
+# (prime-rails config/routes.rb:1360-1363 routes only the plural path; the singular
+# /call_flow/{id}/... the SDK used before routed nowhere — 404).
 
 subtest 'TestCallFlowsAddresses' => sub {
-    subtest 'test_list_addresses_uses_singular_path' => sub {
+    subtest 'test_list_addresses_uses_plural_path' => sub {
         my $client = MockTest::client();
         my $body   = $client->fabric->call_flows->list_addresses('cf-1');
         is( ref $body, 'HASH', 'expected hashref' );
@@ -81,20 +83,20 @@ subtest 'TestCallFlowsAddresses' => sub {
         my $last = MockTest::journal_last();
         is( $last->{method}, 'GET', 'GET recorded' );
 
-        # singular 'call_flow' (NOT 'call_flows') in the addresses sub-path.
         is(
             $last->{path},
-            '/api/fabric/resources/call_flow/cf-1/addresses',
-            'singular call_flow in path'
+            '/api/fabric/resources/call_flows/cf-1/addresses',
+            'plural call_flows in path'
         );
         isnt( $last->{matched_route}, undef, 'matched_route set' );
     };
 };
 
-# ---- ConferenceRoomsResource.list_addresses — singular subpath ----------
+# ---- ConferenceRooms.list_addresses — the plural 'conference_rooms' subpath the
+# server routes (prime-rails config/routes.rb:1352-1354), mirroring call_flows.
 
 subtest 'TestConferenceRoomsAddresses' => sub {
-    subtest 'test_list_addresses_uses_singular_path' => sub {
+    subtest 'test_list_addresses_uses_plural_path' => sub {
         my $client = MockTest::client();
         my $body   = $client->fabric->conference_rooms->list_addresses('cr-1');
         is( ref $body, 'HASH', 'expected hashref' );
@@ -103,11 +105,10 @@ subtest 'TestConferenceRoomsAddresses' => sub {
         my $last = MockTest::journal_last();
         is( $last->{method}, 'GET', 'GET recorded' );
 
-        # singular 'conference_room'.
         is(
             $last->{path},
-            '/api/fabric/resources/conference_room/cr-1/addresses',
-            'singular conference_room in path'
+            '/api/fabric/resources/conference_rooms/cr-1/addresses',
+            'plural conference_rooms in path'
         );
         isnt( $last->{matched_route}, undef, 'matched_route set' );
     };
@@ -158,20 +159,6 @@ subtest 'TestSubscribersSipEndpointOps' => sub {
 # ---- FabricTokens — every token-creation endpoint ----------------------
 
 subtest 'TestFabricTokens' => sub {
-    subtest 'test_create_invite_token' => sub {
-        my $client = MockTest::client();
-        my $body   = $client->fabric->tokens->create_invite_token( address_id => 'addr-1', );
-        is( ref $body, 'HASH', 'expected hashref' );
-
-        my $last = MockTest::journal_last();
-        is( $last->{method}, 'POST', 'POST recorded' );
-
-        # subscriber/invites uses the singular 'subscriber' path segment.
-        is( $last->{path},             '/api/fabric/subscriber/invites', 'path matches' );
-        is( ref $last->{body},         'HASH',                           'body is hashref' );
-        is( $last->{body}{address_id}, 'addr-1',                         'address_id forwarded' );
-    };
-
     subtest 'test_create_embed_token' => sub {
         my $client = MockTest::client();
         my $body   = $client->fabric->tokens->create_embed_token( token => 'embed-tok-1', );

@@ -90,10 +90,18 @@ subtest 'the base type is still enforced' => sub {
 subtest 'the bundled schema publishes the engine values' => sub {
     my $svc    = strict_service();
     my $schema = $svc->schema_utils->schema;
-    my $reason = $schema->{'$defs'}{Hangup}{properties}{hangup}{properties}{reason};
+
+    # The engine-derived schema carries the hangup body as an anyOf of its body
+    # forms (object | positional array | ...); the object arm declares `reason`,
+    # itself an anyOf of the enumerated string and SWMLVar.
+    my $body       = $schema->{'$defs'}{Hangup}{properties}{hangup};
+    my ($obj)      = grep { ( $_->{type} // '' ) eq 'object' } @{ $body->{anyOf} // [] };
+    my $reason     = $obj->{properties}{reason};
+    my ($enum_arm) = grep { ref $_->{enum} eq 'ARRAY' } @{ $reason->{anyOf} // [] };
 
     ok( !exists $reason->{'x-sdk-widen'}, 'the widen marker is gone from hangup.reason' );
-    is_deeply( $reason->{enum}, \@ENGINE_REASONS, 'hangup.reason publishes the six engine values' );
+    is_deeply( $enum_arm->{enum}, \@ENGINE_REASONS,
+        'hangup.reason publishes the six engine values' );
 };
 
 subtest 'const and enum are enforced generally' => sub {
