@@ -1955,6 +1955,10 @@ def build_outputs(psdk: Path) -> dict[str, str]:
                 "to unfold the regex-parsed Perl params onto the Python oracle shape.",
                 "methods": sidecar,
                 "classes": dict(sorted(projection.items())),
+                # Types/<Sub>/ subdir -> the oracle <ns>_types_generated key, so
+                # the surface enumerator path-routes every generated type without
+                # a hand table (the hand copy went stale when `space` landed).
+                "type_subdirs": {sub: ns_key for _d, sub, ns_key in sorted(type_ns)},
             },
             indent=2,
             sort_keys=False,

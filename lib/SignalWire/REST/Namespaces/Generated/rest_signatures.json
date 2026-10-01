@@ -6522,5 +6522,23 @@
       "ns": "message",
       "base": "CrudResource"
     }
+  },
+  "type_subdirs": {
+    "Calling": "calling",
+    "Chat": "chat",
+    "Datasphere": "datasphere",
+    "Fabric": "fabric",
+    "Fax": "fax",
+    "Logs": "logs",
+    "Message": "message",
+    "Messages": "messages",
+    "Project": "project",
+    "Projects": "projects",
+    "PubSub": "pubsub",
+    "RelayRest": "relay_rest",
+    "Space": "space",
+    "SwmlWebhooks": "swml_webhooks",
+    "Video": "video",
+    "Voice": "voice"
   }
 }

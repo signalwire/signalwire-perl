@@ -749,17 +749,20 @@ my %PACKAGE_TO_PY = (
 # from each resource's spec placement and x-sdk-resource base, so a resource the
 # specs add is projected with no hand edit here. A generated package missing from
 # it aborts loud (below).
-my %GENERATED_PROJECTION = %{ _load_generated_projection() };
+my $_GENERATED_SIDECAR;
+my %GENERATED_PROJECTION = %{ _load_generated_sidecar()->{classes}
+        // die "enumerate_surface: rest_signatures.json has no 'classes' projection\n" };
 
-sub _load_generated_projection {
+sub _load_generated_sidecar {
+    return $_GENERATED_SIDECAR if $_GENERATED_SIDECAR;
     my $path = File::Spec->catfile( $REPO_ROOT, qw(lib SignalWire REST Namespaces Generated),
         'rest_signatures.json' );
     open my $fh, '<:raw', $path or die "enumerate_surface: cannot read $path: $!\n";
     local $/;
     my $raw = <$fh>;
     close $fh;
-    my $doc = JSON->new->utf8->decode($raw);
-    return $doc->{classes} // die "enumerate_surface: $path has no 'classes' projection\n";
+    $_GENERATED_SIDECAR = JSON->new->utf8->decode($raw);
+    return $_GENERATED_SIDECAR;
 }
 
 # Base-provided methods the oracle SURFACE lists on a generated subclass.
@@ -782,23 +785,10 @@ my %GENERATED_BASE_SURFACE = (
 # builder classes of the same name). Each type surfaces as a method-less class
 # (Moo `has` accessors are not `sub` decls, so parse_file records zero subs).
 # Scoped strictly to the Types/<Sub>/ subtree so no other package leaks.
-my %TYPE_SUBDIR_NS = (
-    'RelayRest'    => 'relay_rest',
-    'Fabric'       => 'fabric',
-    'Calling'      => 'calling',
-    'Video'        => 'video',
-    'Datasphere'   => 'datasphere',
-    'Logs'         => 'logs',
-    'Message'      => 'message',
-    'Messages'     => 'messages',
-    'Voice'        => 'voice',
-    'Fax'          => 'fax',
-    'Project'      => 'project',
-    'Projects'     => 'projects',
-    'Chat'         => 'chat',
-    'PubSub'       => 'pubsub',
-    'SwmlWebhooks' => 'swml_webhooks',
-);
+# The table is GENERATED into the sidecar ("type_subdirs" in rest_signatures.json)
+# by scripts/generate_rest.py from the discovered spec dirs.
+my %TYPE_SUBDIR_NS = %{ _load_generated_sidecar()->{type_subdirs}
+        // die "enumerate_surface: rest_signatures.json has no 'type_subdirs' map\n" };
 
 # -------------------------------------------------------------------------
 # AgentBase method -> Python module/class router.
@@ -1642,7 +1632,8 @@ sub parse_file {
     # and explicitly closed once the file is consumed (close $fh, ~45 lines on).
     # See RequireBriefOpen exemption rationale in .perlcriticrc.
     open my $fh, '<', $path or die "open $path: $!";
-    my @packages;    # list of { name => ..., subs => [...], _seen => {...} }
+    my @packages;            # list of { name => ..., subs => [...], _seen => {...} }
+    my $pending_wire_key;    # a `# wire key: <key>` comment awaiting its `has`
     my $current;
     my $in_pod = 0;
     while ( my $line = <$fh> ) {
@@ -1688,17 +1679,27 @@ sub parse_file {
         # NAMES here; the intersection with the reference surface (below, in
         # collect_surface) gates which are emitted, so a scalar payload field
         # perl holds but the reference doesn't surface is never over-emitted.
+        # A generator emits `# wire key: <key>` right above a `has` whose wire
+        # key is not a Perl identifier (`nomatch-output` -> nomatch_output); the
+        # reference records the WIRE key, so that is the name surfaced.
+        if ( $line =~ /^\s*#\s*wire key:\s*(\S+)\s*$/ ) {
+            $pending_wire_key = $1;
+            next;
+        }
         if ( $line =~ /^\s*has\s+(?:'([^']+)'|"([^"]+)"|([A-Za-z_]\w*))\s*=>/ ) {
             my $attr = defined $1 ? $1 : ( defined $2 ? $2 : $3 );
+            my $wire = $pending_wire_key;
+            undef $pending_wire_key unless $line =~ /^\s*#/;
             if (   $current
                 && $attr
                 && $attr =~ /^[A-Za-z_]\w*$/
                 && !$current->{_seen_attr}{$attr}++ )
             {
-                push @{ $current->{attrs} }, $attr;
+                push @{ $current->{attrs} }, ( defined $wire ? $wire : $attr );
             }
             next;
         }
+        undef $pending_wire_key;
 
         # Detect `use Moo;` / `use Moo::Role;`
         if ( $line =~ /^\s*use\s+Moo(?:::Role)?\b/ ) {
@@ -1911,12 +1912,9 @@ sub collect_surface {
             # as a method-less class (its `has` accessors are not `sub` decls).
             if ( $pkg_name =~ /^SignalWire::REST::Namespaces::Generated::Types::(\w+)::(\w+)$/ ) {
                 my ( $sub, $tname ) = ( $1, $2 );
-                my $ns = $TYPE_SUBDIR_NS{$sub};
-                if ( !$ns ) {
-                    warn "enumerate_surface: generated type package $pkg_name has "
-                        . "no Types subdir mapping\n";
-                    next;
-                }
+                my $ns = $TYPE_SUBDIR_NS{$sub}
+                    or die "enumerate_surface: generated type package $pkg_name has "
+                    . "no Types subdir mapping in rest_signatures.json 'type_subdirs'\n";
                 my $tmod = "signalwire.rest.namespaces.${ns}_types_generated";
                 $record_class_only->( $tmod, $tname );
                 $emit_ref_attrs->( $tmod, $tname, $pkg->{attrs} );
