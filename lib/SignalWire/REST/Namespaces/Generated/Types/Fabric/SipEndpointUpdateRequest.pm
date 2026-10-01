@@ -20,5 +20,6 @@ has 'codecs'                      => ( is => 'ro' );
 has 'encryption'                  => ( is => 'ro' );
 has 'call_handler'                => ( is => 'ro' );
 has 'calling_handler_resource_id' => ( is => 'ro' );
+has 'password'                    => ( is => 'ro' );
 
 1;

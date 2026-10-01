@@ -57,4 +57,156 @@ subtest 'messages_list_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'message.list_message_logs', 'matched_route message.list_message_logs');
 };
 
+subtest 'businesses_list_success' => sub {
+    my $client = MockTest::client();
+    $client->whatsapp->businesses->list();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'message.list_whatsapp_businesses', 'matched_route message.list_whatsapp_businesses');
+};
+
+subtest 'businesses_list_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('message.list_whatsapp_businesses', 500, { error => 'x' });
+    my $ok = eval { $client->whatsapp->businesses->list(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'message.list_whatsapp_businesses', 'matched_route message.list_whatsapp_businesses');
+};
+
+subtest 'numbers_get_success' => sub {
+    my $client = MockTest::client();
+    $client->whatsapp->numbers->get('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'message.retrieve_whatsapp_number', 'matched_route message.retrieve_whatsapp_number');
+};
+
+subtest 'numbers_get_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('message.retrieve_whatsapp_number', 500, { error => 'x' });
+    my $ok = eval { $client->whatsapp->numbers->get('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'message.retrieve_whatsapp_number', 'matched_route message.retrieve_whatsapp_number');
+};
+
+subtest 'numbers_list_success' => sub {
+    my $client = MockTest::client();
+    $client->whatsapp->numbers->list();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'message.list_whatsapp_numbers', 'matched_route message.list_whatsapp_numbers');
+};
+
+subtest 'numbers_list_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('message.list_whatsapp_numbers', 500, { error => 'x' });
+    my $ok = eval { $client->whatsapp->numbers->list(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'message.list_whatsapp_numbers', 'matched_route message.list_whatsapp_numbers');
+};
+
+subtest 'templates_create_success' => sub {
+    my $client = MockTest::client();
+    $client->whatsapp->templates->create();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'POST', 'method POST');
+    is($last->{matched_route}, 'message.create_whatsapp_template', 'matched_route message.create_whatsapp_template');
+};
+
+subtest 'templates_create_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('message.create_whatsapp_template', 500, { error => 'x' });
+    my $ok = eval { $client->whatsapp->templates->create(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'message.create_whatsapp_template', 'matched_route message.create_whatsapp_template');
+};
+
+subtest 'templates_delete_success' => sub {
+    my $client = MockTest::client();
+    $client->whatsapp->templates->delete('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'message.delete_whatsapp_template', 'matched_route message.delete_whatsapp_template');
+};
+
+subtest 'templates_delete_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('message.delete_whatsapp_template', 500, { error => 'x' });
+    my $ok = eval { $client->whatsapp->templates->delete('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'message.delete_whatsapp_template', 'matched_route message.delete_whatsapp_template');
+};
+
+subtest 'templates_get_success' => sub {
+    my $client = MockTest::client();
+    $client->whatsapp->templates->get('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'message.retrieve_whatsapp_template', 'matched_route message.retrieve_whatsapp_template');
+};
+
+subtest 'templates_get_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('message.retrieve_whatsapp_template', 500, { error => 'x' });
+    my $ok = eval { $client->whatsapp->templates->get('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'message.retrieve_whatsapp_template', 'matched_route message.retrieve_whatsapp_template');
+};
+
+subtest 'templates_list_success' => sub {
+    my $client = MockTest::client();
+    $client->whatsapp->templates->list();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'message.list_whatsapp_templates', 'matched_route message.list_whatsapp_templates');
+};
+
+subtest 'templates_list_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('message.list_whatsapp_templates', 500, { error => 'x' });
+    my $ok = eval { $client->whatsapp->templates->list(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'message.list_whatsapp_templates', 'matched_route message.list_whatsapp_templates');
+};
+
+subtest 'templates_update_success' => sub {
+    my $client = MockTest::client();
+    $client->whatsapp->templates->update('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'PATCH', 'method PATCH');
+    is($last->{matched_route}, 'message.update_whatsapp_template', 'matched_route message.update_whatsapp_template');
+};
+
+subtest 'templates_update_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('message.update_whatsapp_template', 500, { error => 'x' });
+    my $ok = eval { $client->whatsapp->templates->update('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'message.update_whatsapp_template', 'matched_route message.update_whatsapp_template');
+};
+
 done_testing();

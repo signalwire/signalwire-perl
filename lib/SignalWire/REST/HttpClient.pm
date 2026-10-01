@@ -45,6 +45,10 @@ has 'host'    => ( is => 'ro', required => 1 );
 # tree (which shares this one HttpClient) inherits it.
 has 'request_options' => ( is => 'ro', default => sub { undef } );
 
+# Set (by RestClient) on the stand-in client of a credential that was not given:
+# every request then dies with this message before anything is sent.
+has '_missing_credential' => ( is => 'ro', default => sub { undef } );
+
 has 'base_url'     => ( init_arg => undef, is => 'lazy' );
 has '_ua'          => ( init_arg => undef, is => 'lazy' );
 has '_auth_header' => ( init_arg => undef, is => 'lazy' );
@@ -139,6 +143,7 @@ sub _build__auth_header {
 
 sub _request {
     my ( $self, $method, $path, %opts ) = @_;
+    die $self->_missing_credential . "\n" if defined $self->_missing_credential;
     my $url = $self->base_url . $path;
 
     # Add query params to URL
@@ -155,6 +160,18 @@ sub _request {
     if ( $opts{body} ) {
         $request_opts{content} = encode_json( $opts{body} );
     }
+
+    # Per-call request headers (e.g. an Idempotency-Key, or the Accept of a
+    # non-JSON success), sent on this request only over the UA defaults. A call
+    # that passes none is sent exactly as before.
+    if ( $opts{headers} && ref $opts{headers} eq 'HASH' && %{ $opts{headers} } ) {
+        $request_opts{headers} = { %{ $opts{headers} } };
+    }
+
+    # How the success is read: 'json' (default), 'text' (a non-JSON body returned
+    # verbatim), or 'redirect' (the success IS a 3xx; its Location is returned and
+    # the redirect is NOT followed).
+    my $read = $opts{response} // 'json';
 
     # Resolve the effective options: per-request over client-default over the
     # built-in defaults (plan 4.2). Every field is concrete after resolve().
@@ -184,9 +201,38 @@ sub _request {
         # and restore it afterwards (the resource tree shares one UA).
         my $ua       = $self->_ua;
         my $saved_to = $ua->{timeout};
-        $ua->{timeout} = $ro->{timeout} if defined $ro->{timeout};
+        my $saved_mr = $ua->{max_redirect};
+        $ua->{timeout}      = $ro->{timeout} if defined $ro->{timeout};
+        $ua->{max_redirect} = 0              if $read eq 'redirect';
         my $response = $ua->request( $method, $url, \%request_opts );
-        $ua->{timeout} = $saved_to;
+        $ua->{timeout}      = $saved_to;
+        $ua->{max_redirect} = $saved_mr;
+
+        if ( $read eq 'redirect' && !_is_transport_failure($response) ) {
+            my $status = $response->{status} // 0;
+            if ( $status >= 300 && $status < 400 ) {
+                my $location = $response->{headers}{location};
+                $location = $location->[0] if ref $location eq 'ARRAY';
+                return $location if defined $location && length $location;
+            }
+            if ( $status < 400 ) {
+
+                # A success that is not the redirect the endpoint answers with.
+                die SignalWireRestError->new(
+                    status_code => $status,
+                    body        => $response->{content} // '',
+                    url         => $url,
+                    method      => $method,
+                    headers     => $response->{headers},
+                );
+            }
+
+            # a 4xx/5xx: the error path below
+        }
+
+        if ( $response->{success} && $read eq 'text' ) {
+            return $response->{content} // '';
+        }
 
         if ( $response->{success} ) {
 
@@ -301,7 +347,34 @@ sub get {
     return $self->_request(
         'GET', $path,
         params          => $opts{params},
-        request_options => $opts{request_options}
+        request_options => $opts{request_options},
+        headers         => $opts{headers},
+    );
+}
+
+# GET whose success body is NOT JSON (e.g. text/csv): return it verbatim as a
+# string. Pass the media type as the Accept header. Errors raise exactly as get.
+sub get_text {
+    my ( $self, $path, %opts ) = @_;
+    return $self->_request(
+        'GET', $path,
+        params          => $opts{params},
+        request_options => $opts{request_options},
+        headers         => $opts{headers},
+        response        => 'text',
+    );
+}
+
+# GET whose success IS a redirect: return its Location without following it (the
+# endpoint's answer is the URL of the resource, e.g. a signed download URL).
+# Raises SignalWireRestError for an error status or a non-redirect success.
+sub get_redirect_location {
+    my ( $self, $path, %opts ) = @_;
+    return $self->_request(
+        'GET', $path,
+        params          => $opts{params},
+        request_options => $opts{request_options},
+        response        => 'redirect',
     );
 }
 
@@ -311,7 +384,8 @@ sub post {
         'POST', $path,
         body            => $opts{body},
         params          => $opts{params},
-        request_options => $opts{request_options}
+        request_options => $opts{request_options},
+        headers         => $opts{headers},
     );
 }
 
@@ -542,12 +616,29 @@ slashes so request paths concatenate cleanly.
 
 =item get($path, %opts)
 
-Issue a GET. Accepts C<params> (query hashref) and C<request_options>.
+Issue a GET. Accepts C<params> (query hashref), C<request_options>, and
+C<headers> (a hashref of extra request headers for this call only).
+
+=item get_text($path, %opts)
+
+Issue a GET whose success body is not JSON (for example C<text/csv>) and
+return the body as a string. Pass the media type in C<headers> as
+C<Accept>. Accepts the same options as C<get>; errors are raised the same
+way.
+
+=item get_redirect_location($path, %opts)
+
+Issue a GET whose success is a redirect and return the redirect's
+C<Location> URL without following it (for example a signed download URL
+you then fetch with any HTTP client). Accepts C<params> and
+C<request_options>. Dies with a L</SignalWireRestError> for an error
+status, or for a success that is not a redirect.
 
 =item post($path, %opts)
 
-Issue a POST. Accepts C<body> (JSON-encoded), C<params>, and
-C<request_options>.
+Issue a POST. Accepts C<body> (JSON-encoded), C<params>,
+C<request_options>, and C<headers> (extra request headers for this call
+only, such as an C<Idempotency-Key>).
 
 =item put($path, %opts)
 

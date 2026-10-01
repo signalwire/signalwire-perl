@@ -12,22 +12,24 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::RelayRest::BrandResponse: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'id'                  => ( is => 'ro' );
-has 'state'               => ( is => 'ro' );
-has 'name'                => ( is => 'ro' );
-has 'company_name'        => ( is => 'ro' );
-has 'contact_email'       => ( is => 'ro' );
-has 'contact_phone'       => ( is => 'ro' );
-has 'ein_issuing_country' => ( is => 'ro' );
-has 'legal_entity_type'   => ( is => 'ro' );
-has 'ein'                 => ( is => 'ro' );
-has 'company_address'     => ( is => 'ro' );
-has 'company_vertical'    => ( is => 'ro' );
-has 'company_website'     => ( is => 'ro' );
-has 'csp_brand_reference' => ( is => 'ro' );
-has 'csp_self_registered' => ( is => 'ro' );
-has 'status_callback_url' => ( is => 'ro' );
-has 'created_at'          => ( is => 'ro' );
-has 'updated_at'          => ( is => 'ro' );
+has 'id'                         => ( is => 'ro' );
+has 'state'                      => ( is => 'ro' );
+has 'name'                       => ( is => 'ro' );
+has 'company_name'               => ( is => 'ro' );
+has 'contact_email'              => ( is => 'ro' );
+has 'contact_phone'              => ( is => 'ro' );
+has 'ein_issuing_country'        => ( is => 'ro' );
+has 'legal_entity_type'          => ( is => 'ro' );
+has 'ein'                        => ( is => 'ro' );
+has 'company_address'            => ( is => 'ro' );
+has 'company_vertical'           => ( is => 'ro' );
+has 'csp_brand_reference'        => ( is => 'ro' );
+has 'csp_self_registered'        => ( is => 'ro' );
+has 'status_callback_url'        => ( is => 'ro' );
+has 'created_at'                 => ( is => 'ro' );
+has 'updated_at'                 => ( is => 'ro' );
+has 'signalwire_contact_emails'  => ( is => 'ro' );
+has 'large_message_limit'        => ( is => 'ro' );
+has 'number_pooling_for_company' => ( is => 'ro' );
 
 1;

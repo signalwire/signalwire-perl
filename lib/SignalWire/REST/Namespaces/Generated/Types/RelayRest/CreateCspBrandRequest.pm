@@ -12,9 +12,10 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::RelayRest::CreateCspBrandRequest: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'csp_self_registered' => ( is => 'ro' );
-has 'name'                => ( is => 'ro' );
-has 'csp_brand_reference' => ( is => 'ro' );
-has 'status_callback_url' => ( is => 'ro' );
+has 'csp_self_registered'       => ( is => 'ro' );
+has 'name'                      => ( is => 'ro' );
+has 'csp_brand_reference'       => ( is => 'ro' );
+has 'status_callback_url'       => ( is => 'ro' );
+has 'signalwire_contact_emails' => ( is => 'ro' );
 
 1;

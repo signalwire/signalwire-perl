@@ -29,6 +29,51 @@ sub search {
     );
 }
 
+sub assign_e911_address {
+    my ( $self, $id, %args ) = @_;
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path( $id, 'e911_address' ),
+        body            => $body,
+        request_options => $request_options
+    );
+}
+
+sub remove_e911_address {
+    my ( $self, $id, %opts ) = @_;
+    return $self->_http->delete_request( $self->_path( $id, 'e911_address' ),
+        request_options => $opts{request_options} );
+}
+
+sub get_cnam {
+    my ( $self, $id, %params ) = @_;
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get(
+        $self->_path( $id, 'cnam' ),
+        params          => $p,
+        request_options => $request_options
+    );
+}
+
+sub request_cnam {
+    my ( $self, $id, %args ) = @_;
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->post(
+        $self->_path( $id, 'cnam' ),
+        body            => $body,
+        request_options => $request_options
+    );
+}
+
+sub clear_cnam {
+    my ( $self, $id, %opts ) = @_;
+    return $self->_http->delete_request( $self->_path( $id, 'cnam' ),
+        request_options => $opts{request_options} );
+}
+
 sub set_swml_webhook {
     my ( $self, $resource_id, $url, %extra ) = @_;
     my $request_options = delete $extra{request_options};

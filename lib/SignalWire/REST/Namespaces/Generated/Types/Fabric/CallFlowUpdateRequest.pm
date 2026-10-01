@@ -14,5 +14,7 @@ use Moo;
 # methods (the reference records this as a method-less type).
 has 'title'            => ( is => 'ro' );
 has 'document_version' => ( is => 'ro' );
+has 'flow_data'        => ( is => 'ro' );
+has 'relayml'          => ( is => 'ro' );
 
 1;

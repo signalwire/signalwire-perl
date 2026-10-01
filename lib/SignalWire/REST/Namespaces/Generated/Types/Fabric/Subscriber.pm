@@ -18,9 +18,8 @@ has 'first_name'   => ( is => 'ro' );
 has 'last_name'    => ( is => 'ro' );
 has 'display_name' => ( is => 'ro' );
 has 'job_title'    => ( is => 'ro' );
-has 'timezone'     => ( is => 'ro' );
 has 'country'      => ( is => 'ro' );
-has 'region'       => ( is => 'ro' );
 has 'company_name' => ( is => 'ro' );
+has 'time_zone'    => ( is => 'ro' );
 
 1;

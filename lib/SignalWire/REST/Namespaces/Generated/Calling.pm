@@ -202,6 +202,31 @@ sub ai_stop {
     return $self->_execute( 'calling.ai.stop', $call_id, %args );
 }
 
+sub ai_sidecar {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar', $call_id, %args );
+}
+
+sub ai_sidecar_ask {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar.ask', $call_id, %args );
+}
+
+sub ai_sidecar_poke {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar.poke', $call_id, %args );
+}
+
+sub ai_sidecar_stop {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar.stop', $call_id, %args );
+}
+
+sub ai_sidecar_status {
+    my ( $self, $call_id, %args ) = @_;
+    return $self->_execute( 'calling.ai_sidecar.status', $call_id, %args );
+}
+
 sub send_fax_stop {
     my ( $self, $call_id, %args ) = @_;
     return $self->_execute( 'calling.send_fax.stop', $call_id, %args );

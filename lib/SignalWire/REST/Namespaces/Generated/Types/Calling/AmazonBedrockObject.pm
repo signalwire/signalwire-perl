@@ -12,11 +12,17 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::AmazonBedrockObject: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'global_data'     => ( is => 'ro' );
-has 'params'          => ( is => 'ro' );
-has 'post_prompt'     => ( is => 'ro' );
-has 'post_prompt_url' => ( is => 'ro' );
-has 'prompt'          => ( is => 'ro' );
-has 'SWAIG'           => ( is => 'ro' );
+has 'SWAIG'                  => ( is => 'ro' );
+has 'app_name'               => ( is => 'ro' );
+has 'assistant_name'         => ( is => 'ro' );
+has 'assistant_prompt'       => ( is => 'ro' );
+has 'conversation_id'        => ( is => 'ro' );
+has 'global_data'            => ( is => 'ro' );
+has 'greeting_prompt'        => ( is => 'ro' );
+has 'params'                 => ( is => 'ro' );
+has 'post_prompt'            => ( is => 'ro' );
+has 'post_prompt_url'        => ( is => 'ro' );
+has 'prompt'                 => ( is => 'ro' );
+has 'transcript_webhook_url' => ( is => 'ro' );
 
 1;

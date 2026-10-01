@@ -13,7 +13,6 @@ use Moo;
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
 has 'name'                        => ( is => 'ro' );
-has 'brand_id'                    => ( is => 'ro' );
 has 'sms_use_case'                => ( is => 'ro' );
 has 'sub_use_cases'               => ( is => 'ro' );
 has 'campaign_verify_token'       => ( is => 'ro' );
@@ -40,5 +39,7 @@ has 'age_gated_content'           => ( is => 'ro' );
 has 'lead_generation'             => ( is => 'ro' );
 has 'terms_and_conditions'        => ( is => 'ro' );
 has 'status_callback_url'         => ( is => 'ro' );
+has 'csp_campaign_reference'      => ( is => 'ro' );
+has 'signalwire_contact_emails'   => ( is => 'ro' );
 
 1;

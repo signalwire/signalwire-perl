@@ -104,6 +104,7 @@ SPEC_ORDER = [
     "projects",
     "chat",
     "pubsub",
+    "space",
     "swml-webhooks",
 ]
 
@@ -283,6 +284,11 @@ def load_bases(psdk: Path) -> dict[str, list[str]]:
 # ---------------------------------------------------------------------------
 
 
+#: The security scheme a Personal-Access-Token spec declares (rest-apis/space) —
+#: the same name the reference generator and the mock route by.
+PAT_SECURITY_SCHEME = "SignalWirePersonalAccessToken"
+
+
 class Spec:
     def __init__(self, name: str, doc: dict):
         self.name = name
@@ -293,7 +299,19 @@ class Spec:
                 f"{name}: servers[0].url path {self.server_path!r} has a trailing slash"
             )
         self.namespace_attr = (doc.get("x-sdk-namespace") or {}).get("attr") or ""
+        # A Personal-Access-Token spec (rest-apis/space): its root `security`
+        # accepts ONLY SignalWirePersonalAccessToken, so its resources are wired
+        # to the client's PAT credential, never the project token (mirrors the
+        # reference _is_pat_spec).
+        security = doc.get("security") or []
+        sec_names = [n for req in security if isinstance(req, dict) for n in req]
+        self.is_pat = bool(sec_names) and all(
+            n == PAT_SECURITY_SCHEME for n in sec_names
+        )
         self.ops: dict[str, tuple[str, str, bool]] = {}
+        # operationId -> (operation object, path-item object): responses + header
+        # parameters are read from these (text / redirect success, Idempotency-Key).
+        self.op_obj: dict[str, tuple[dict, dict]] = {}
         self.op_body: dict[
             str, dict
         ] = {}  # operationId -> requestBody JSON schema (or {})
@@ -306,6 +324,7 @@ class Spec:
                         path,
                         bool(o.get("requestBody")),
                     )
+                    self.op_obj[o["operationId"]] = (o, item)
                     body = o.get("requestBody") or {}
                     content = body.get("content") or {}
                     media = content.get("application/json") or (
@@ -683,12 +702,21 @@ def method_call_path(spec: Spec, anchor: str, markup: dict, op_path: str):
     id_args: list[str] = []
     pieces: list[str] = []
     for s in segs:
-        if s.startswith("{") and s.endswith("}"):
-            arg = arg_for(s[1:-1])
+        # A segment may carry a brace param with a literal prefix/suffix in the SAME
+        # segment (`{id}.mp3` — a Rails format suffix); the literal stays attached.
+        m = re.fullmatch(r"([^{}]*)\{([^}]+)\}([^{}]*)", s)
+        if m:
+            arg = arg_for(m.group(2))
             while arg in id_args:
                 arg += "2"
             id_args.append(arg)
-            pieces.append("$" + arg)
+            parts = []
+            if m.group(1):
+                parts.append(perl_str(m.group(1)))
+            parts.append("$" + arg)
+            if m.group(3):
+                parts.append(perl_str(m.group(3)))
+            pieces.append(" . ".join(parts))
         else:
             pieces.append(perl_str(s))
     if sibling:
@@ -729,6 +757,67 @@ def abs_perl_path(full: str, id_args: list[str]) -> str:
     return " . ".join(out) if out else "''"
 
 
+def response_kind(spec: Spec, op_id: str) -> tuple[str, str | None]:
+    """How an operation's success is read (mirrors the reference generator):
+    ``json`` (default); ``text`` when the success body is another media type
+    (``GET /space/billing_statement.csv`` -> text/csv); ``redirect`` when the only
+    success IS a 3xx carrying ``Location`` (``.pdf`` / recording ``.mp3`` -> the
+    method returns that URL instead of following it). Returns (kind, text_media)."""
+    op, _item = spec.op_obj[op_id]
+    responses = op.get("responses") or {}
+    ok = responses.get("200") or responses.get("201") or responses.get("2XX") or {}
+    ok_content = ok.get("content") or {}
+    text_media = next((m for m in ok_content if m != "application/json"), None)
+    if ok and "application/json" not in ok_content and text_media is not None:
+        return "text", text_media
+    if not ok:
+        for code, r in sorted(responses.items()):
+            if str(code).startswith("3") and "Location" in (
+                (r or {}).get("headers") or {}
+            ):
+                return "redirect", None
+    return "json", None
+
+
+def header_params(spec: Spec, op_id: str) -> list[tuple[str, str, bool]]:
+    """The operation's ``in: header`` parameters (path-item level + operation level,
+    $refs resolved): (wire header name, perl arg name, required). E.g. the top-up
+    ``Idempotency-Key`` the server answers 400 without."""
+    op, item = spec.op_obj[op_id]
+    out: list[tuple[str, str, bool]] = []
+    for raw in [*(item.get("parameters") or []), *(op.get("parameters") or [])]:
+        prm = raw
+        if isinstance(raw, dict) and "$ref" in raw:
+            prm = spec.doc
+            for part in str(raw["$ref"]).lstrip("#/").split("/"):
+                prm = (prm or {}).get(part) if isinstance(prm, dict) else None
+        if not isinstance(prm, dict) or prm.get("in") != "header":
+            continue
+        arg = re.sub(r"[^0-9A-Za-z]+", "_", prm["name"])
+        arg = re.sub(r"(?<!^)(?=[A-Z])", "_", arg).lower()
+        arg = re.sub(r"_+", "_", arg).strip("_")
+        out.append((prm["name"], arg, bool(prm.get("required"))))
+    return out
+
+
+def _headers_expr(hdrs: list[tuple[str, str, bool]], accept: str | None) -> str:
+    """The perl `headers => {...}` hashref expression for the declared header args
+    (an undef optional one is not sent) + the Accept of a non-JSON success."""
+    items = [f"{perl_str(n)} => ${a}" for n, a, _r in hdrs]
+    if accept:
+        items.append(f"Accept => {perl_str(accept)}")
+    if not items:
+        return ""
+    if any(not r for _n, _a, r in hdrs):
+        return (
+            "{ map { defined $_->[1] ? ( $_->[0] => $_->[1] ) : () } "
+            + ", ".join(f"[ {perl_str(n)}, ${a} ]" for n, a, _r in hdrs)
+            + (f", [ 'Accept', {perl_str(accept)} ]" if accept else "")
+            + " }"
+        )
+    return "{ " + ", ".join(items) + " }"
+
+
 def emit_method(
     spec: Spec, anchor: str, markup: dict, base: str, method_snake: str, op_id: str
 ) -> str:
@@ -746,25 +835,57 @@ def emit_method(
     id_unpack = "".join(", $" + a for a in id_args)
     write_verb = verb in ("post", "put", "patch")
     lines: list[str] = []
+    kind, text_media = response_kind(spec, op_id)
+    if kind != "json" and verb != "get":
+        raise SystemExit(
+            f"{cls}.{name} ({op_id}): a {kind} success on {verb.upper()}; "
+            "only GET is supported"
+        )
+    hdrs = header_params(spec, op_id)
+    if hdrs and verb not in ("get", "post"):
+        raise SystemExit(
+            f"{cls}.{name} ({op_id}): a header parameter on {verb.upper()}; "
+            "only GET/POST carry headers"
+        )
+    # Header params are keyword args (required ones first, like the reference),
+    # pulled out of the named-arg hash and sent as request headers.
+    hdr_records = [
+        {"name": a, "kind": "keyword", "type": "string", "required": r}
+        | ({} if r else {"default": None})
+        for _n, a, r in hdrs
+    ]
+    hdr_expr = _headers_expr(hdrs, text_media if kind == "text" else None)
+    hdr_arg = f", headers => {hdr_expr}" if hdr_expr else ""
+    hdr_pull = [f"    my ${a} = delete $args{{{a}}};" for _n, a, _r in hdrs]
 
     if write_verb and has_body:
         body_schema = spec.op_body.get(op_id) or {}
         if is_object_body(spec, body_schema):
             # §5.1 object body → named-hash args + extras (the slurpy is the tail).
             fields = object_body_fields(spec, body_schema)
-            _register_sidecar(cls, name, body_field_records(spec, fields, id_records))
+            _register_sidecar(
+                cls,
+                name,
+                body_field_records(spec, fields, id_records + hdr_records),
+            )
             lines.append(f"sub {name} {{")
             lines.append(f"    my ( $self{id_unpack}, %args ) = @_;")
             lines.append("    my $request_options = delete $args{request_options};")
+            lines.extend(hdr_pull)
             lines.append("    my $body = {%args};")
             verb_fn = {"post": "post", "put": "put", "patch": "patch"}[verb]
             lines.append(
                 f"    return $self->_http->{verb_fn}( {path_expr}, body => $body,"
-                " request_options => $request_options );"
+                f" request_options => $request_options{hdr_arg} );"
             )
             lines.append("}")
         else:
             # §5.2 union body → a single positional `body` param.
+            if hdrs:
+                raise SystemExit(
+                    f"{cls}.{name} ({op_id}): header params on a union body are "
+                    "not supported by this emitter"
+                )
             _register_sidecar(
                 cls,
                 name,
@@ -788,6 +909,11 @@ def emit_method(
             lines.append("}")
     elif write_verb:
         # write verb, no body → empty body.
+        if hdrs:
+            raise SystemExit(
+                f"{cls}.{name} ({op_id}): header params on a body-less write are "
+                "not supported by this emitter"
+            )
         _register_sidecar(cls, name, list(id_records))
         verb_fn = {"post": "post", "put": "put", "patch": "patch"}[verb]
         lines.append(f"sub {name} {{")
@@ -804,6 +930,7 @@ def emit_method(
             name,
             [
                 *id_records,
+                *hdr_records,
                 {
                     "name": "params",
                     "kind": "var_keyword",
@@ -816,10 +943,16 @@ def emit_method(
         lines.append(f"sub {name} {{")
         lines.append(f"    my ( $self{id_unpack}, %params ) = @_;")
         lines.append("    my $request_options = delete $params{request_options};")
+        lines.extend(x.replace("$args{", "$params{") for x in hdr_pull)
         lines.append("    my $p = %params ? \\%params : undef;")
+        get_fn = {
+            "json": "get",
+            "text": "get_text",
+            "redirect": "get_redirect_location",
+        }[kind]
         lines.append(
-            f"    return $self->_http->get( {path_expr}, params => $p,"
-            " request_options => $request_options );"
+            f"    return $self->_http->{get_fn}( {path_expr}, params => $p,"
+            f" request_options => $request_options{hdr_arg} );"
         )
         lines.append("}")
     else:  # delete
@@ -1279,6 +1412,8 @@ CONTAINERS = {
     "registry": ("RegistryNamespace", "registry"),
     "project": ("ProjectNamespace", "project"),
     "datasphere": ("DatasphereNamespace", "datasphere"),
+    "space": ("SpaceNamespace", "space"),
+    "whatsapp": ("WhatsappNamespace", "whatsapp"),
 }
 
 # Accessor-name overrides — mirrors the reference generator's _ATTR_OVERRIDE.
@@ -1360,14 +1495,31 @@ def emit_resource_tree(placed) -> str:
     flats = []  # (accessor, class)
     containers_seen = []  # ordered container attrs
     seen_c = set()
-    for _spec, _anchor, markup, container in placed:
+    # Which credential each container is wired to: a container whose resources ALL
+    # come from a Personal-Access-Token spec gets the PAT HTTP client; mixing PAT and
+    # project-token resources in one container fails loud (one container is handed
+    # one HTTP client) — mirrors the reference _pat_containers.
+    kinds: dict = {}
+    for spec, _anchor, markup, container in placed:
         name = markup["name"]
+        kinds.setdefault(container, set()).add(spec.is_pat)
         if not container:
             flats.append((flat_accessor(name), name))
         else:
             if container not in seen_c:
                 seen_c.add(container)
                 containers_seen.append(container)
+    mixed = sorted(str(c) for c, k in kinds.items() if len(k) > 1)
+    if mixed:
+        raise SystemExit(
+            f"placement container(s) {mixed} mix Personal-Access-Token and "
+            "project-token resources; a container is wired to one credential"
+        )
+    pat = {c for c, k in kinds.items() if k == {True}}
+    if "" in pat:
+        raise SystemExit(
+            "a Personal-Access-Token spec must declare x-sdk-namespace (a container)"
+        )
 
     out = GEN_BANNER.format(
         desc="Generated REST resource tree role the hand RestClient composes (§8). "
@@ -1382,8 +1534,12 @@ def emit_resource_tree(placed) -> str:
         clsname, _acc = CONTAINERS[c]
         out += f"use SignalWire::REST::Namespaces::Generated::{clsname} ();\n"
     out += "\n"
-    out += "# The consumer (the hand RestClient) must provide `_http`.\n"
-    out += "requires '_http';\n\n"
+    out += (
+        "# The consumer (the hand RestClient) must provide `_http` (the project-token\n"
+    )
+    out += "# client) and `_pat_http` (the Personal Access Token client).\n"
+    out += "requires '_http';\n"
+    out += "requires '_pat_http';\n\n"
     # init_arg => undef: these lazily-built resource/container accessors are never
     # constructor arguments. Critically, the consumer (the hand RestClient) takes a
     # `project` CREDENTIAL constructor arg; without init_arg => undef Moo would let
@@ -1401,9 +1557,10 @@ def emit_resource_tree(placed) -> str:
         out += "}\n\n"
     for c in containers_seen:
         clsname, acc = CONTAINERS[c]
+        cred = "_pat_http" if c in pat else "_http"
         out += f"sub _build_{acc} {{\n"
         out += "    my ($self) = @_;\n"
-        out += f"    return SignalWire::REST::Namespaces::Generated::{clsname}->new( _http => $self->_http );\n"
+        out += f"    return SignalWire::REST::Namespaces::Generated::{clsname}->new( _http => $self->{cred} );\n"
         out += "}\n\n"
     out += "1;\n"
     return out

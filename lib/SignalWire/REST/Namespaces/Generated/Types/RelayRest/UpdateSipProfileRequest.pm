@@ -12,10 +12,11 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::RelayRest::UpdateSipProfileRequest: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'domain_identifier'  => ( is => 'ro' );
-has 'default_codecs'     => ( is => 'ro' );
-has 'default_ciphers'    => ( is => 'ro' );
-has 'default_encryption' => ( is => 'ro' );
-has 'default_send_as'    => ( is => 'ro' );
+has 'domain_identifier'       => ( is => 'ro' );
+has 'default_codecs'          => ( is => 'ro' );
+has 'default_ciphers'         => ( is => 'ro' );
+has 'default_encryption'      => ( is => 'ro' );
+has 'default_send_as'         => ( is => 'ro' );
+has 'default_outbound_policy' => ( is => 'ro' );
 
 1;

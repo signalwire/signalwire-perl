@@ -38,5 +38,6 @@ has 'call_flow_id'                           => ( is => 'ro' );
 has 'call_flow_version'                      => ( is => 'ro' );
 has 'call_ai_agent_id'                       => ( is => 'ro' );
 has 'call_relay_script_url'                  => ( is => 'ro' );
+has 'call_relay_script_url_method'           => ( is => 'ro' );
 
 1;

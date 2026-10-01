@@ -26,6 +26,7 @@ has 'call_dialogflow_agent_id'               => ( is => 'ro' );
 has 'call_relay_topic'                       => ( is => 'ro' );
 has 'call_relay_topic_status_callback_url'   => ( is => 'ro' );
 has 'call_relay_script_url'                  => ( is => 'ro' );
+has 'call_relay_script_url_method'           => ( is => 'ro' );
 has 'call_relay_context'                     => ( is => 'ro' );
 has 'call_relay_context_status_callback_url' => ( is => 'ro' );
 has 'call_relay_application'                 => ( is => 'ro' );

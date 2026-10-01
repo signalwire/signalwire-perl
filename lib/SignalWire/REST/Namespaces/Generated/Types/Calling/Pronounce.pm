@@ -12,8 +12,8 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::Pronounce: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
+has 'ignore_case' => ( is => 'ro' );
 has 'replace'     => ( is => 'ro' );
 has 'with'        => ( is => 'ro', reader => 'get_with' );
-has 'ignore_case' => ( is => 'ro' );
 
 1;

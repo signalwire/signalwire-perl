@@ -12,19 +12,18 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Fabric::CxmlApplicationUpdateRequest: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'display_name'               => ( is => 'ro' );
-has 'account_sid'                => ( is => 'ro' );
-has 'voice_url'                  => ( is => 'ro' );
-has 'voice_method'               => ( is => 'ro' );
-has 'voice_fallback_url'         => ( is => 'ro' );
-has 'voice_fallback_method'      => ( is => 'ro' );
-has 'status_callback'            => ( is => 'ro' );
-has 'status_callback_method'     => ( is => 'ro' );
-has 'sms_url'                    => ( is => 'ro' );
-has 'sms_method'                 => ( is => 'ro' );
-has 'sms_fallback_url'           => ( is => 'ro' );
-has 'sms_fallback_method'        => ( is => 'ro' );
-has 'sms_status_callback'        => ( is => 'ro' );
-has 'sms_status_callback_method' => ( is => 'ro' );
+has 'name'                    => ( is => 'ro' );
+has 'call_request_url'        => ( is => 'ro' );
+has 'call_request_method'     => ( is => 'ro' );
+has 'call_fallback_url'       => ( is => 'ro' );
+has 'call_fallback_method'    => ( is => 'ro' );
+has 'call_status_url'         => ( is => 'ro' );
+has 'call_status_method'      => ( is => 'ro' );
+has 'message_request_url'     => ( is => 'ro' );
+has 'message_request_method'  => ( is => 'ro' );
+has 'message_fallback_url'    => ( is => 'ro' );
+has 'message_fallback_method' => ( is => 'ro' );
+has 'message_status_url'      => ( is => 'ro' );
+has 'message_status_method'   => ( is => 'ro' );
 
 1;

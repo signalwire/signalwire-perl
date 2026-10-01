@@ -68,6 +68,15 @@ our $ACTIVE_PROJECT;
 our $ACTIVE_AUTH;
 our $PROJECT;
 
+# The same client's Personal Access Token (pat_test_<hex>) and its auth header
+# (Basic base64(":pat_...") — an EMPTY username), which it sends on the
+# PAT-authenticated specs (client.space). The journal view covers both of the
+# client's credentials; a scenario armed for a PAT spec is scoped to the PAT
+# header (mirrors the python reference conftest).
+our $PAT;
+our $ACTIVE_PAT_AUTH;
+our %PAT_SPECS = ( space => 1 );
+
 _mint_project();
 
 sub _mint_project {
@@ -80,6 +89,10 @@ sub _mint_project {
     # Match SignalWire::REST::HttpClient->_build__auth_header exactly:
     # 'Basic ' . encode_base64("$project:$token", '').
     $ACTIVE_AUTH = 'Basic ' . encode_base64( "$ACTIVE_PROJECT:$TOKEN", '' );
+    my $prand = '';
+    $prand .= sprintf( '%x', int( rand(16) ) ) for 1 .. 12;
+    $PAT             = "pat_test_$prand";
+    $ACTIVE_PAT_AUTH = 'Basic ' . encode_base64( ":$PAT", '' );
     return;
 }
 
@@ -118,9 +131,10 @@ sub client {
         exit 0;
     }
     return SignalWire::REST::RestClient->new(
-        project => $PROJECT,
-        token   => $TOKEN,
-        host    => $BASE_URL,
+        project               => $PROJECT,
+        token                 => $TOKEN,
+        host                  => $BASE_URL,
+        personal_access_token => $PAT,
     );
 }
 
@@ -144,9 +158,13 @@ sub journal_reset {
 sub scenario_reset {
     _ensure_server();
     return if $_SKIP_REASON;
-    my $q    = _scope_query();
-    my $resp = _ua()->post("$BASE_URL/__mock__/scenarios/reset$q");
-    die "scenario_reset failed: $resp->{status}" unless $resp->{success};
+
+    # Both of this client's buckets: the project credential's and the PAT's.
+    for my $q ( _scope_query(), _scope_query('space.') ) {
+        my $resp = _ua()->post("$BASE_URL/__mock__/scenarios/reset$q");
+        die "scenario_reset failed: $resp->{status}" unless $resp->{success};
+        last if $q eq '';
+    }
     return;
 }
 
@@ -161,7 +179,7 @@ sub scenario_set {
     return if $_SKIP_REASON;
     my $payload = encode_json( { status => $status, response => $response_body } );
     my $resp    = _ua()->post(
-        "$BASE_URL/__mock__/scenarios/$endpoint_id" . _scope_query(),
+        "$BASE_URL/__mock__/scenarios/$endpoint_id" . _scope_query($endpoint_id),
         { content => $payload, headers => { 'Content-Type' => 'application/json' } },
     );
     die "scenario_set failed: $resp->{status} - $resp->{content}" unless $resp->{success};
@@ -171,8 +189,14 @@ sub scenario_set {
 # Build a `?session_id=<urlencoded auth header>` suffix scoping a control-plane
 # call to this client, or '' when no project is active (unscoped/shared).
 sub _scope_query {
+    my ($endpoint_id) = @_;
     return '' unless defined $ACTIVE_AUTH;
-    ( my $enc = $ACTIVE_AUTH ) =~ s/([^A-Za-z0-9_.~-])/sprintf('%%%02X', ord($1))/ge;
+    my $auth = $ACTIVE_AUTH;
+    if ( defined $endpoint_id ) {
+        my ($spec) = split /\./, $endpoint_id, 2;
+        $auth = $ACTIVE_PAT_AUTH if $PAT_SPECS{ $spec // '' };
+    }
+    ( my $enc = $auth ) =~ s/([^A-Za-z0-9_.~-])/sprintf('%%%02X', ord($1))/ge;
     return "?session_id=$enc";
 }
 
@@ -187,7 +211,8 @@ sub journal_all {
     die "journal fetch failed: $resp->{status}" unless $resp->{success};
     my $entries = decode_json( $resp->{content} || '[]' );
     return $entries unless defined $ACTIVE_AUTH;
-    return [ grep { ( $_->{headers}{authorization} // '' ) eq $ACTIVE_AUTH } @$entries ];
+    my %mine = map { $_ => 1 } grep { defined } $ACTIVE_AUTH, $ACTIVE_PAT_AUTH;
+    return [ grep { $mine{ $_->{headers}{authorization} // '' } } @$entries ];
 }
 
 # journal_last returns the most recently recorded request for THIS client.

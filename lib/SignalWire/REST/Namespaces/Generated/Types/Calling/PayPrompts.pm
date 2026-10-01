@@ -12,10 +12,12 @@ use Moo;
 # struct SignalWire::REST::Namespaces::Generated::Types::Calling::PayPrompts: pure data DTO (wire-response shape, not an exception).
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
-has 'actions'    => ( is => 'ro' );
-has 'for'        => ( is => 'ro' );
-has 'attempts'   => ( is => 'ro' );
-has 'card_type'  => ( is => 'ro' );
-has 'error_type' => ( is => 'ro' );
+has 'actions'                 => ( is => 'ro' );
+has 'attempt'                 => ( is => 'ro' );
+has 'card_type'               => ( is => 'ro' );
+has 'error_type'              => ( is => 'ro' );
+has 'for'                     => ( is => 'ro' );
+has 'play'                    => ( is => 'ro' );
+has 'require_matching_inputs' => ( is => 'ro' );
 
 1;

@@ -21,5 +21,6 @@ has 'state'        => ( is => 'ro' );
 has 'jurisdiction' => ( is => 'ro' );
 has 'lec'          => ( is => 'ro' );
 has 'linetype'     => ( is => 'ro' );
+has 'dnc'          => ( is => 'ro' );
 
 1;

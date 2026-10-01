@@ -39,17 +39,6 @@ sub refresh_subscriber_token {
     );
 }
 
-sub create_invite_token {
-    my ( $self, %args ) = @_;
-    my $request_options = delete $args{request_options};
-    my $body            = {%args};
-    return $self->_http->post(
-        '/api/fabric/subscriber/invites',
-        body            => $body,
-        request_options => $request_options
-    );
-}
-
 sub create_guest_token {
     my ( $self, %args ) = @_;
     my $request_options = delete $args{request_options};

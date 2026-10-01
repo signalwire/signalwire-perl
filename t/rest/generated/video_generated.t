@@ -228,6 +228,25 @@ subtest 'room_recordings_delete_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'video.delete_room_recording', 'matched_route video.delete_room_recording');
 };
 
+subtest 'room_recordings_download_success' => sub {
+    my $client = MockTest::client();
+    $client->video->room_recordings->download('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'video.download_room_recording', 'matched_route video.download_room_recording');
+};
+
+subtest 'room_recordings_download_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('video.download_room_recording', 500, { error => 'x' });
+    my $ok = eval { $client->video->room_recordings->download('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'video.download_room_recording', 'matched_route video.download_room_recording');
+};
+
 subtest 'room_recordings_get_success' => sub {
     my $client = MockTest::client();
     $client->video->room_recordings->get('x');

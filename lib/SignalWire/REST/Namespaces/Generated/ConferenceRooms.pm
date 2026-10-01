@@ -18,15 +18,4 @@ around BUILDARGS => sub {
     return $class->$orig(%args);
 };
 
-sub list_addresses {
-    my ( $self, $id, %params ) = @_;
-    my $request_options = delete $params{request_options};
-    my $p               = %params ? \%params : undef;
-    return $self->_http->get(
-        '/api/fabric/resources/conference_room/' . $id . '/addresses',
-        params          => $p,
-        request_options => $request_options
-    );
-}
-
 1;

@@ -42,6 +42,14 @@ sub get {
         request_options => $request_options );
 }
 
+sub update {
+    my ( $self, $id, %args ) = @_;
+    my $request_options = delete $args{request_options};
+    my $body            = {%args};
+    return $self->_http->put( $self->_path($id), body => $body,
+        request_options => $request_options );
+}
+
 sub list_campaigns {
     my ( $self, $id, %params ) = @_;
     my $request_options = delete $params{request_options};

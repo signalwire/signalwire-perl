@@ -39,4 +39,15 @@ sub delete {
         request_options => $opts{request_options} );
 }
 
+sub download {
+    my ( $self, $id, %params ) = @_;
+    my $request_options = delete $params{request_options};
+    my $p               = %params ? \%params : undef;
+    return $self->_http->get_redirect_location(
+        $self->_path( $id . '.mp3' ),
+        params          => $p,
+        request_options => $request_options
+    );
+}
+
 1;

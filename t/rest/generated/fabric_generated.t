@@ -19,6 +19,25 @@ use lib "$FindBin::Bin/../../lib";
 use Test::More;
 use MockTest;
 
+subtest 'addresses_delete_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->addresses->delete('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'fabric.delete_fabric_address', 'matched_route fabric.delete_fabric_address');
+};
+
+subtest 'addresses_delete_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.delete_fabric_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->addresses->delete('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.delete_fabric_address', 'matched_route fabric.delete_fabric_address');
+};
+
 subtest 'addresses_get_success' => sub {
     my $client = MockTest::client();
     $client->fabric->addresses->get('x');
@@ -152,6 +171,44 @@ subtest 'ai_agents_list_addresses_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.list_ai_agent_addresses', 'matched_route fabric.list_ai_agent_addresses');
 };
 
+subtest 'ai_agents_list_conversation_logs_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->ai_agents->list_conversation_logs('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fabric.list_ai_agent_conversation_logs', 'matched_route fabric.list_ai_agent_conversation_logs');
+};
+
+subtest 'ai_agents_list_conversation_logs_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.list_ai_agent_conversation_logs', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->ai_agents->list_conversation_logs('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.list_ai_agent_conversation_logs', 'matched_route fabric.list_ai_agent_conversation_logs');
+};
+
+subtest 'ai_agents_list_voices_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->ai_agents->list_voices();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fabric.list_ai_agent_voices', 'matched_route fabric.list_ai_agent_voices');
+};
+
+subtest 'ai_agents_list_voices_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.list_ai_agent_voices', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->ai_agents->list_voices(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.list_ai_agent_voices', 'matched_route fabric.list_ai_agent_voices');
+};
+
 subtest 'ai_agents_update_success' => sub {
     my $client = MockTest::client();
     $client->fabric->ai_agents->update('x');
@@ -169,6 +226,101 @@ subtest 'ai_agents_update_error' => sub {
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
     is($e->status_code, 500, 'status 500');
     is(MockTest::journal_last()->{matched_route}, 'fabric.update_ai_agent', 'matched_route fabric.update_ai_agent');
+};
+
+subtest 'alias_addresses_create_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->alias_addresses->create();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'POST', 'method POST');
+    is($last->{matched_route}, 'fabric.create_alias_address', 'matched_route fabric.create_alias_address');
+};
+
+subtest 'alias_addresses_create_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.create_alias_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->alias_addresses->create(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.create_alias_address', 'matched_route fabric.create_alias_address');
+};
+
+subtest 'alias_addresses_delete_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->alias_addresses->delete('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'fabric.delete_alias_address', 'matched_route fabric.delete_alias_address');
+};
+
+subtest 'alias_addresses_delete_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.delete_alias_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->alias_addresses->delete('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.delete_alias_address', 'matched_route fabric.delete_alias_address');
+};
+
+subtest 'alias_addresses_get_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->alias_addresses->get('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fabric.get_alias_address', 'matched_route fabric.get_alias_address');
+};
+
+subtest 'alias_addresses_get_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.get_alias_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->alias_addresses->get('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.get_alias_address', 'matched_route fabric.get_alias_address');
+};
+
+subtest 'alias_addresses_list_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->alias_addresses->list();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fabric.list_alias_addresses', 'matched_route fabric.list_alias_addresses');
+};
+
+subtest 'alias_addresses_list_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.list_alias_addresses', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->alias_addresses->list(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.list_alias_addresses', 'matched_route fabric.list_alias_addresses');
+};
+
+subtest 'alias_addresses_update_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->alias_addresses->update('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'PATCH', 'method PATCH');
+    is($last->{matched_route}, 'fabric.update_alias_address', 'matched_route fabric.update_alias_address');
+};
+
+subtest 'alias_addresses_update_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.update_alias_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->alias_addresses->update('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.update_alias_address', 'matched_route fabric.update_alias_address');
 };
 
 subtest 'call_flows_create_success' => sub {
@@ -874,6 +1026,101 @@ subtest 'freeswitch_connectors_update_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.update_freeswitch_connector', 'matched_route fabric.update_freeswitch_connector');
 };
 
+subtest 'phone_number_addresses_create_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->phone_number_addresses->create();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'POST', 'method POST');
+    is($last->{matched_route}, 'fabric.create_phone_number_address', 'matched_route fabric.create_phone_number_address');
+};
+
+subtest 'phone_number_addresses_create_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.create_phone_number_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->phone_number_addresses->create(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.create_phone_number_address', 'matched_route fabric.create_phone_number_address');
+};
+
+subtest 'phone_number_addresses_delete_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->phone_number_addresses->delete('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'fabric.delete_phone_number_address', 'matched_route fabric.delete_phone_number_address');
+};
+
+subtest 'phone_number_addresses_delete_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.delete_phone_number_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->phone_number_addresses->delete('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.delete_phone_number_address', 'matched_route fabric.delete_phone_number_address');
+};
+
+subtest 'phone_number_addresses_get_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->phone_number_addresses->get('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fabric.get_phone_number_address', 'matched_route fabric.get_phone_number_address');
+};
+
+subtest 'phone_number_addresses_get_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.get_phone_number_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->phone_number_addresses->get('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.get_phone_number_address', 'matched_route fabric.get_phone_number_address');
+};
+
+subtest 'phone_number_addresses_list_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->phone_number_addresses->list();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fabric.list_phone_number_addresses', 'matched_route fabric.list_phone_number_addresses');
+};
+
+subtest 'phone_number_addresses_list_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.list_phone_number_addresses', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->phone_number_addresses->list(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.list_phone_number_addresses', 'matched_route fabric.list_phone_number_addresses');
+};
+
+subtest 'phone_number_addresses_update_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->phone_number_addresses->update('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'PATCH', 'method PATCH');
+    is($last->{matched_route}, 'fabric.update_phone_number_address', 'matched_route fabric.update_phone_number_address');
+};
+
+subtest 'phone_number_addresses_update_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.update_phone_number_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->phone_number_addresses->update('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.update_phone_number_address', 'matched_route fabric.update_phone_number_address');
+};
+
 subtest 'relay_applications_create_success' => sub {
     my $client = MockTest::client();
     $client->fabric->relay_applications->create();
@@ -1026,6 +1273,44 @@ subtest 'resources_assign_phone_route_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'fabric.assign_resource_phone_route', 'matched_route fabric.assign_resource_phone_route');
 };
 
+subtest 'resources_assign_sip_endpoint_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->resources->assign_sip_endpoint('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'POST', 'method POST');
+    is($last->{matched_route}, 'fabric.assign_resource_sip_endpoint', 'matched_route fabric.assign_resource_sip_endpoint');
+};
+
+subtest 'resources_assign_sip_endpoint_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.assign_resource_sip_endpoint', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->resources->assign_sip_endpoint('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.assign_resource_sip_endpoint', 'matched_route fabric.assign_resource_sip_endpoint');
+};
+
+subtest 'resources_assign_whatsapp_number_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->resources->assign_whatsapp_number('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'POST', 'method POST');
+    is($last->{matched_route}, 'fabric.assign_resource_whatsapp_number', 'matched_route fabric.assign_resource_whatsapp_number');
+};
+
+subtest 'resources_assign_whatsapp_number_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.assign_resource_whatsapp_number', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->resources->assign_whatsapp_number('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.assign_resource_whatsapp_number', 'matched_route fabric.assign_resource_whatsapp_number');
+};
+
 subtest 'resources_delete_success' => sub {
     my $client = MockTest::client();
     $client->fabric->resources->delete('x');
@@ -1100,6 +1385,101 @@ subtest 'resources_list_addresses_error' => sub {
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
     is($e->status_code, 500, 'status 500');
     is(MockTest::journal_last()->{matched_route}, 'fabric.list_resource_addresses', 'matched_route fabric.list_resource_addresses');
+};
+
+subtest 'sip_addresses_create_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->sip_addresses->create();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'POST', 'method POST');
+    is($last->{matched_route}, 'fabric.create_sip_address', 'matched_route fabric.create_sip_address');
+};
+
+subtest 'sip_addresses_create_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.create_sip_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->sip_addresses->create(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.create_sip_address', 'matched_route fabric.create_sip_address');
+};
+
+subtest 'sip_addresses_delete_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->sip_addresses->delete('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'fabric.delete_sip_address', 'matched_route fabric.delete_sip_address');
+};
+
+subtest 'sip_addresses_delete_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.delete_sip_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->sip_addresses->delete('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.delete_sip_address', 'matched_route fabric.delete_sip_address');
+};
+
+subtest 'sip_addresses_get_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->sip_addresses->get('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fabric.get_sip_address', 'matched_route fabric.get_sip_address');
+};
+
+subtest 'sip_addresses_get_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.get_sip_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->sip_addresses->get('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.get_sip_address', 'matched_route fabric.get_sip_address');
+};
+
+subtest 'sip_addresses_list_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->sip_addresses->list();
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'fabric.list_sip_addresses', 'matched_route fabric.list_sip_addresses');
+};
+
+subtest 'sip_addresses_list_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.list_sip_addresses', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->sip_addresses->list(); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.list_sip_addresses', 'matched_route fabric.list_sip_addresses');
+};
+
+subtest 'sip_addresses_update_success' => sub {
+    my $client = MockTest::client();
+    $client->fabric->sip_addresses->update('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'PATCH', 'method PATCH');
+    is($last->{matched_route}, 'fabric.update_sip_address', 'matched_route fabric.update_sip_address');
+};
+
+subtest 'sip_addresses_update_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('fabric.update_sip_address', 500, { error => 'x' });
+    my $ok = eval { $client->fabric->sip_addresses->update('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'fabric.update_sip_address', 'matched_route fabric.update_sip_address');
 };
 
 subtest 'sip_endpoints_create_success' => sub {
@@ -1803,25 +2183,6 @@ subtest 'tokens_create_guest_token_error' => sub {
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
     is($e->status_code, 500, 'status 500');
     is(MockTest::journal_last()->{matched_route}, 'fabric.create_subscriber_guest_token', 'matched_route fabric.create_subscriber_guest_token');
-};
-
-subtest 'tokens_create_invite_token_success' => sub {
-    my $client = MockTest::client();
-    $client->fabric->tokens->create_invite_token();
-    my $last = MockTest::journal_last();
-    is($last->{method}, 'POST', 'method POST');
-    is($last->{matched_route}, 'fabric.create_subscriber_invite_token', 'matched_route fabric.create_subscriber_invite_token');
-};
-
-subtest 'tokens_create_invite_token_error' => sub {
-    my $client = MockTest::client();
-    MockTest::scenario_set('fabric.create_subscriber_invite_token', 500, { error => 'x' });
-    my $ok = eval { $client->fabric->tokens->create_invite_token(); 1 };
-    ok(!$ok, 'call raised');
-    my $e = $@;
-    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
-    is($e->status_code, 500, 'status 500');
-    is(MockTest::journal_last()->{matched_route}, 'fabric.create_subscriber_invite_token', 'matched_route fabric.create_subscriber_invite_token');
 };
 
 subtest 'tokens_create_subscriber_token_success' => sub {

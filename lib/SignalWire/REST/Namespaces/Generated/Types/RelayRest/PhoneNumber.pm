@@ -18,6 +18,8 @@ has 'name'                                   => ( is => 'ro' );
 has 'capabilities'                           => ( is => 'ro' );
 has 'number_type'                            => ( is => 'ro' );
 has 'e911_address_id'                        => ( is => 'ro' );
+has 'e911_status'                            => ( is => 'ro' );
+has 'cnam'                                   => ( is => 'ro' );
 has 'created_at'                             => ( is => 'ro' );
 has 'updated_at'                             => ( is => 'ro' );
 has 'next_billed_at'                         => ( is => 'ro' );

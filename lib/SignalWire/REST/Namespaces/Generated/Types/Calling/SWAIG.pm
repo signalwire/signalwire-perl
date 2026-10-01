@@ -13,9 +13,11 @@ use Moo;
 # One read-only accessor per property carrying the snake wire key; no
 # methods (the reference records this as a method-less type).
 has 'defaults'         => ( is => 'ro' );
-has 'native_functions' => ( is => 'ro' );
-has 'includes'         => ( is => 'ro' );
 has 'functions'        => ( is => 'ro' );
+has 'hooks'            => ( is => 'ro' );
+has 'includes'         => ( is => 'ro' );
 has 'internal_fillers' => ( is => 'ro' );
+has 'mcp_servers'      => ( is => 'ro' );
+has 'native_functions' => ( is => 'ro' );
 
 1;

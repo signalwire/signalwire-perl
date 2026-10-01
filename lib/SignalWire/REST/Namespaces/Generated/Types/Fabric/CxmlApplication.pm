@@ -27,5 +27,8 @@ has 'sms_fallback_url'           => ( is => 'ro' );
 has 'sms_fallback_method'        => ( is => 'ro' );
 has 'sms_status_callback'        => ( is => 'ro' );
 has 'sms_status_callback_method' => ( is => 'ro' );
+has 'message_status_callback'    => ( is => 'ro' );
+has 'api_version'                => ( is => 'ro' );
+has 'uri'                        => ( is => 'ro' );
 
 1;

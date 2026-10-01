@@ -95,6 +95,25 @@ subtest 'addresses_list_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.list_addresses', 'matched_route relay-rest.list_addresses');
 };
 
+subtest 'addresses_update_success' => sub {
+    my $client = MockTest::client();
+    $client->addresses->update('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'PUT', 'method PUT');
+    is($last->{matched_route}, 'relay-rest.update_address', 'matched_route relay-rest.update_address');
+};
+
+subtest 'addresses_update_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.update_address', 500, { error => 'x' });
+    my $ok = eval { $client->addresses->update('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.update_address', 'matched_route relay-rest.update_address');
+};
+
 subtest 'imported_numbers_create_success' => sub {
     my $client = MockTest::client();
     $client->imported_numbers->create();
@@ -361,6 +380,44 @@ subtest 'number_groups_update_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.update_number_group', 'matched_route relay-rest.update_number_group');
 };
 
+subtest 'phone_numbers_assign_e911_address_success' => sub {
+    my $client = MockTest::client();
+    $client->phone_numbers->assign_e911_address('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'POST', 'method POST');
+    is($last->{matched_route}, 'relay-rest.assign_e911_address', 'matched_route relay-rest.assign_e911_address');
+};
+
+subtest 'phone_numbers_assign_e911_address_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.assign_e911_address', 500, { error => 'x' });
+    my $ok = eval { $client->phone_numbers->assign_e911_address('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.assign_e911_address', 'matched_route relay-rest.assign_e911_address');
+};
+
+subtest 'phone_numbers_clear_cnam_success' => sub {
+    my $client = MockTest::client();
+    $client->phone_numbers->clear_cnam('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'relay-rest.clear_caller_id_name', 'matched_route relay-rest.clear_caller_id_name');
+};
+
+subtest 'phone_numbers_clear_cnam_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.clear_caller_id_name', 500, { error => 'x' });
+    my $ok = eval { $client->phone_numbers->clear_cnam('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.clear_caller_id_name', 'matched_route relay-rest.clear_caller_id_name');
+};
+
 subtest 'phone_numbers_create_success' => sub {
     my $client = MockTest::client();
     $client->phone_numbers->create();
@@ -418,6 +475,25 @@ subtest 'phone_numbers_get_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.retrieve_phone_number', 'matched_route relay-rest.retrieve_phone_number');
 };
 
+subtest 'phone_numbers_get_cnam_success' => sub {
+    my $client = MockTest::client();
+    $client->phone_numbers->get_cnam('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'relay-rest.retrieve_caller_id_name', 'matched_route relay-rest.retrieve_caller_id_name');
+};
+
+subtest 'phone_numbers_get_cnam_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.retrieve_caller_id_name', 500, { error => 'x' });
+    my $ok = eval { $client->phone_numbers->get_cnam('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.retrieve_caller_id_name', 'matched_route relay-rest.retrieve_caller_id_name');
+};
+
 subtest 'phone_numbers_list_success' => sub {
     my $client = MockTest::client();
     $client->phone_numbers->list();
@@ -435,6 +511,44 @@ subtest 'phone_numbers_list_error' => sub {
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
     is($e->status_code, 500, 'status 500');
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.list_phone_numbers', 'matched_route relay-rest.list_phone_numbers');
+};
+
+subtest 'phone_numbers_remove_e911_address_success' => sub {
+    my $client = MockTest::client();
+    $client->phone_numbers->remove_e911_address('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'DELETE', 'method DELETE');
+    is($last->{matched_route}, 'relay-rest.remove_e911_address', 'matched_route relay-rest.remove_e911_address');
+};
+
+subtest 'phone_numbers_remove_e911_address_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.remove_e911_address', 500, { error => 'x' });
+    my $ok = eval { $client->phone_numbers->remove_e911_address('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.remove_e911_address', 'matched_route relay-rest.remove_e911_address');
+};
+
+subtest 'phone_numbers_request_cnam_success' => sub {
+    my $client = MockTest::client();
+    $client->phone_numbers->request_cnam('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'POST', 'method POST');
+    is($last->{matched_route}, 'relay-rest.request_caller_id_name', 'matched_route relay-rest.request_caller_id_name');
+};
+
+subtest 'phone_numbers_request_cnam_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.request_caller_id_name', 500, { error => 'x' });
+    my $ok = eval { $client->phone_numbers->request_cnam('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.request_caller_id_name', 'matched_route relay-rest.request_caller_id_name');
 };
 
 subtest 'phone_numbers_search_success' => sub {
@@ -646,6 +760,25 @@ subtest 'recordings_delete_error' => sub {
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.delete_recording', 'matched_route relay-rest.delete_recording');
 };
 
+subtest 'recordings_download_success' => sub {
+    my $client = MockTest::client();
+    $client->recordings->download('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'GET', 'method GET');
+    is($last->{matched_route}, 'relay-rest.download_recording', 'matched_route relay-rest.download_recording');
+};
+
+subtest 'recordings_download_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.download_recording', 500, { error => 'x' });
+    my $ok = eval { $client->recordings->download('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.download_recording', 'matched_route relay-rest.download_recording');
+};
+
 subtest 'recordings_get_success' => sub {
     my $client = MockTest::client();
     $client->recordings->get('x');
@@ -777,6 +910,25 @@ subtest 'brands_list_campaigns_error' => sub {
     isa_ok($e, 'SignalWire::REST::HttpClient::Error');
     is($e->status_code, 500, 'status 500');
     is(MockTest::journal_last()->{matched_route}, 'relay-rest.list_campaigns', 'matched_route relay-rest.list_campaigns');
+};
+
+subtest 'brands_update_success' => sub {
+    my $client = MockTest::client();
+    $client->registry->brands->update('x');
+    my $last = MockTest::journal_last();
+    is($last->{method}, 'PUT', 'method PUT');
+    is($last->{matched_route}, 'relay-rest.update_brand', 'matched_route relay-rest.update_brand');
+};
+
+subtest 'brands_update_error' => sub {
+    my $client = MockTest::client();
+    MockTest::scenario_set('relay-rest.update_brand', 500, { error => 'x' });
+    my $ok = eval { $client->registry->brands->update('x'); 1 };
+    ok(!$ok, 'call raised');
+    my $e = $@;
+    isa_ok($e, 'SignalWire::REST::HttpClient::Error');
+    is($e->status_code, 500, 'status 500');
+    is(MockTest::journal_last()->{matched_route}, 'relay-rest.update_brand', 'matched_route relay-rest.update_brand');
 };
 
 subtest 'campaigns_create_order_success' => sub {

@@ -14,5 +14,9 @@ use Moo;
 # methods (the reference records this as a method-less type).
 has 'token'         => ( is => 'ro' );
 has 'refresh_token' => ( is => 'ro' );
+has 'address_uri'   => ( is => 'ro' );
+has 'expires_at'    => ( is => 'ro' );
+has 'expires_in'    => ( is => 'ro' );
+has 'issued_at'     => ( is => 'ro' );
 
 1;
