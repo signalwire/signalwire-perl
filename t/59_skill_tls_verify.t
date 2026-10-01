@@ -17,14 +17,15 @@ use Test::More;
 
 use File::Spec ();
 
-# skill file (relative to lib/) => the agent string that anchors its
-# HTTP::Tiny->new(...) constructor block.
+# skill file (relative to lib/) => the string that anchors its HTTP client
+# constructor block, and the constructor (an HTTP::Tiny, or an HTTP::Tiny
+# subclass such as the spider's PublicSession, which passes verify_SSL through).
 my @skills = (
     [ 'SignalWire/Skills/Builtin/WebSearch.pm',          'SignalWire-Perl-WebSearch' ],
     [ 'SignalWire/Skills/Builtin/WikipediaSearch.pm',    'SignalWire-Perl-WikipediaSearch' ],
     [ 'SignalWire/Skills/Builtin/Datasphere.pm',         'SignalWire-Perl-DataSphere' ],
     [ 'SignalWire/Skills/Builtin/NativeVectorSearch.pm', 'SignalWire-Perl-NativeVectorSearch' ],
-    [ 'SignalWire/Skills/Builtin/Spider.pm',             'SignalWire-Perl-Spider' ],
+    [ 'SignalWire/Skills/Builtin/Spider.pm',             'allow_private', 'PublicSession' ],
 );
 
 # Locate lib/ relative to this test file (t/59_...t -> ../lib).
@@ -32,7 +33,8 @@ my ( $vol, $dir ) = File::Spec->splitpath(__FILE__);
 my $lib = File::Spec->catdir( $dir, File::Spec->updir, 'lib' );
 
 for my $entry (@skills) {
-    my ( $rel, $agent ) = @$entry;
+    my ( $rel, $agent, $ctor ) = @$entry;
+    $ctor //= 'HTTP::Tiny';
     my $path = File::Spec->catfile( $lib, split m{/}, $rel );
     ok( -f $path, "$rel: source present" ) or next;
 
@@ -41,8 +43,8 @@ for my $entry (@skills) {
     close $fh;
 
     # Isolate the HTTP::Tiny->new( ... ) block for this skill.
-    my ($block) = $src =~ /HTTP::Tiny->new\(\s*(.*?)\)\s*;/s;
-    ok( defined $block, "$rel: found an HTTP::Tiny->new block" ) or next;
+    my ($block) = $src =~ /\Q$ctor\E->new\(\s*(.*?)\)\s*;/s;
+    ok( defined $block, "$rel: found a $ctor->new block" ) or next;
     like( $block, qr/\Q$agent\E/, "$rel: it is this skill's client block" );
     like( $block, qr/verify_SSL\s*=>\s*1\b/,
         "$rel: HTTP::Tiny built with explicit verify_SSL => 1 (TLS verify ON)" );

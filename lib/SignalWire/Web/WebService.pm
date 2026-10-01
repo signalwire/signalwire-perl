@@ -391,7 +391,11 @@ sub _wait_listening ( $host, $port ) {
             Proto    => 'tcp',
             Timeout  => 1,
         );
-        if ($sock) { $sock->close; return 1; }
+
+        # With Timeout, IO::Socket can hand back a socket for a REFUSED port
+        # (perl 5.44 / IO::Socket 1.56 / Darwin 27: an object whose peerport is
+        # undef), so only a socket with a real peer proves the server listens.
+        if ( $sock && defined $sock->peerport ) { $sock->close; return 1; }
         Time::HiRes::sleep(0.02);
     }
     return 0;

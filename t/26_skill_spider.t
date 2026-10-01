@@ -131,7 +131,12 @@ PSGI_SERVER
             PeerPort => $port,
             Timeout  => 1,
         );
-        if ($sock) { $up = 1; close $sock; last }
+
+        # A non-blocking connect (Timeout) can hand back a socket for a REFUSED
+        # port: measured on perl 5.44 / IO::Socket 1.56 / Darwin 27, connecting
+        # to a closed port with Timeout returned an object with an undef
+        # peerport. Only a socket with a real peer proves the fixture listens.
+        if ( $sock && defined $sock->peerport ) { $up = 1; close $sock; last }
         Time::HiRes::sleep(0.1);
     }
 

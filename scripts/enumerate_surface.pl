@@ -242,6 +242,12 @@ my %PACKAGE_TO_PY = (
     'SignalWire::Utils::UrlValidator' =>
         { module => 'signalwire.utils.url_validator', class => undef },
 
+    # The reference's PRIVATE url_validator._PublicSession (the session
+    # SpiderSkill.session holds). class => undef and NOT a free-function
+    # package, so -- like the private python class -- it emits zero surface.
+    'SignalWire::Utils::UrlValidator::PublicSession' =>
+        { module => 'signalwire.utils.url_validator', class => undef },
+
     # Contexts (multiple classes in one .pm)
     'SignalWire::Contexts'          => { module => 'signalwire.core.contexts', class => undef },
     'SignalWire::Contexts::Context' => { module => 'signalwire.core.contexts', class => 'Context' },
