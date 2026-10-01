@@ -67,6 +67,17 @@ sub set_post_process ( $self, $post_process ) {
     return $self;
 }
 
+# Set the structured response form, separating outcome from instruction:
+# { tool_result => "what the tool DID", tool_prompt => "what to SAY next" }.
+# Each key is included only when given (defined).
+sub set_tool_response ( $self, %opts ) {
+    my %payload;
+    $payload{tool_result} = $opts{tool_result} if defined $opts{tool_result};
+    $payload{tool_prompt} = $opts{tool_prompt} if defined $opts{tool_prompt};
+    $self->response( \%payload );
+    return $self;
+}
+
 sub add_action ( $self, $name, $data ) {
     push @{ $self->action }, { $name => $data };
     return $self;
@@ -120,15 +131,64 @@ sub swml_transfer ( $self, $dest, $ai_response, %opts ) {
     return $self;
 }
 
+# Change the agent's voice for the rest of the call (an `engine.voice:model`
+# spec, e.g. "elevenlabs.rachel"; wire action key `change_voice`).
+sub change_voice ( $self, $voice ) {
+    return $self->add_action( 'change_voice', $voice );
+}
+
 sub hangup ($self) {
     return $self->add_action( 'hangup', JSON::true );
 }
 
-sub hold ( $self, $timeout = undef ) {
+# Python parity: hold(prompt=None, timeout=300, step=None, timeout_step=None).
+#
+# `prompt` becomes the structured response (tool_result "status: on hold" +
+# tool_prompt) and switches post_process on, so the model speaks BEFORE the hold
+# lands (speech detection is paused during hold). Back-compat: a NUMBER passed
+# as the first argument is the timeout, so hold(120) keeps meaning
+# hold(timeout => 120); a JSON boolean is neither and is dropped. `step` /
+# `timeout_step` (trailing %opts) route the caller when the hold ends; with
+# neither, the action stays the bare integer form.
+sub hold ( $self, $prompt = undef, $timeout = 300, %opts ) {
+    if ( defined $prompt && JSON::is_bool($prompt) ) {
+        $prompt = undef;
+    } elsif ( _is_number_value($prompt) ) {
+        ( $timeout, $prompt ) = ( $prompt, undef );
+    }
+
+    if ( defined $prompt ) {
+        $self->set_tool_response( tool_result => 'status: on hold', tool_prompt => $prompt );
+        $self->post_process(1);
+    }
+
     $timeout //= 300;
     $timeout = 0   if $timeout < 0;
     $timeout = 900 if $timeout > 900;
-    return $self->add_action( 'hold', $timeout );
+
+    my $step         = $opts{step};
+    my $timeout_step = $opts{timeout_step};
+
+    # Bare integer unless routing is requested, so existing output is unchanged.
+    return $self->add_action( 'hold', $timeout )
+        if !defined $step && !defined $timeout_step;
+
+    my %hold_config = ( timeout => $timeout );
+    $hold_config{step}         = $step         if defined $step;
+    $hold_config{timeout_step} = $timeout_step if defined $timeout_step;
+    return $self->add_action( 'hold', \%hold_config );
+}
+
+# True when $v holds a NUMBER (not a string that happens to look like one): the
+# Perl analog of python's isinstance(prompt, int). A prompt string such as "120"
+# stays a prompt, exactly as it would in the reference.
+sub _is_number_value {
+    my ($v) = @_;
+    return 0 if !defined $v || ref $v;
+    require B;
+    my $flags = B::svref_2object( \$v )->FLAGS;
+    return 0 if $flags & B::SVp_POK();
+    return ( $flags & ( B::SVp_IOK() | B::SVp_NOK() ) ) ? 1 : 0;
 }
 
 sub wait_for_user ( $self, %opts ) {
@@ -682,19 +742,35 @@ sub rpc_dial ( $self, %opts ) {
     );
 }
 
+# Python parity: rpc_ai_message(call_id, message_text=None, role="system",
+# global_data=None). Either payload, or both: message_text lands as a turn in
+# the other agent's conversation; global_data is MERGED into the other call's
+# global_data. Dies when neither is given.
 sub rpc_ai_message ( $self, %opts ) {
-    my $call_id      = $opts{call_id}      // die "call_id is required";
-    my $message_text = $opts{message_text} // die "message_text is required";
-    my $role         = $opts{role}         // 'system';
+    my $call_id      = $opts{call_id} // die "call_id is required";
+    my $message_text = $opts{message_text};
+    my $role         = $opts{role} // 'system';
+    my $global_data  = $opts{global_data};
+
+    my %params;
+    if ( defined $message_text ) {
+        $params{role}         = $role;
+        $params{message_text} = $message_text;
+    }
+    $params{global_data} = $global_data if defined $global_data;
+    die "rpc_ai_message needs message_text, global_data, or both\n" unless %params;
 
     return $self->execute_rpc(
         method  => 'ai_message',
         call_id => $call_id,
-        params  => {
-            role         => $role,
-            message_text => $message_text,
-        },
+        params  => \%params,
     );
+}
+
+# Merge $data into another call's global_data, with no conversation turn. Thin
+# wrapper over rpc_ai_message(global_data => ...).
+sub rpc_ai_global_data ( $self, $call_id, $data ) {
+    return $self->rpc_ai_message( call_id => $call_id, global_data => $data );
 }
 
 sub rpc_ai_unhold ( $self, %opts ) {
@@ -742,7 +818,11 @@ sub create_payment_parameter ( $class_or_self, $name, $value ) {
 sub to_hash ($self) {
     my %result;
 
-    $result{response} = $self->response if length $self->response;
+    # Python's `if self.response:` — a string is emitted when non-empty, the
+    # structured {tool_result, tool_prompt} form when it is a NON-EMPTY hash.
+    my $response = $self->response;
+    $result{response} = $response
+        if ref $response ? _py_truthy($response) : ( defined $response && length $response );
 
     if ( @{ $self->action } ) {
         $result{action}       = $self->action;
@@ -820,6 +900,14 @@ Set the spoken response text.
 Set the post-process flag, normalized to 1/0. It only reaches the wire when
 the result also carries at least one action (see C<to_hash>).
 
+=item C<set_tool_response(tool_result =E<gt> $status, tool_prompt =E<gt> $instruction)>
+
+Set the structured response form, separating outcome from instruction: the
+response becomes C<< { tool_result => ..., tool_prompt => ... } >>, each key
+present only when given. C<tool_result> is what the tool DID (a status line for
+the model to reason from); C<tool_prompt> is what the model should now SAY.
+Splitting them keeps the model from reading a status line aloud.
+
 =item C<add_action($name, $data)>
 
 Append the raw action C<< { $name => $data } >>. The escape hatch for an
@@ -852,11 +940,24 @@ true and maps to the string-valued C<transfer> key.
 
 End the call (action key C<hangup>, value JSON C<true>).
 
-=item C<hold($timeout)>
+=item C<hold($prompt, $timeout, step =E<gt> $step, timeout_step =E<gt> $step)>
 
-Place the call on hold for C<$timeout> seconds. C<$timeout> defaults to 300
-and is B<clamped silently> into 0..900 — a negative value becomes 0 and
-anything above 900 becomes 900, with no warning.
+Put the call on hold. C<$timeout> defaults to 300 and is B<clamped silently>
+into 0..900. During hold speech detection is paused, so anything the caller
+must hear has to be said BEFORE the action lands: a C<$prompt> becomes the
+structured response (C<tool_result> C<"status: on hold"> plus C<tool_prompt>)
+and turns C<post_process> on, so the model speaks first. A B<number> passed as
+the first argument is the timeout (C<hold(120)> keeps working); a JSON boolean
+is ignored. C<step> / C<timeout_step> name the step to land in when the hold
+ends or times out (deferred, unlike C<swml_change_step>); with either, the
+action becomes C<< { timeout, step?, timeout_step? } >>, otherwise it stays
+the bare integer.
+
+=item C<change_voice($voice)>
+
+Change the agent's voice for the rest of the call. C<$voice> is an
+C<engine.voice:model> spec (e.g. C<elevenlabs.rachel>); the platform applies
+it at the next speech batch boundary. Wire action key C<change_voice>.
 
 =item C<wait_for_user(%opts)>
 
@@ -1077,9 +1178,17 @@ required and die if absent; C<device_type> defaults to C<phone>.
 
 =item C<rpc_ai_message(%opts)>
 
-Inject a message into a running AI session over RPC. C<call_id> and
-C<message_text> are required and die if absent; C<role> defaults to
-C<system>.
+Send a message and/or global_data to an AI session on another call over RPC.
+C<call_id> is required. C<message_text> (with C<role>, default C<system>)
+lands as a turn in that conversation; C<global_data> is B<merged> into the
+other call's global_data. Dies when neither C<message_text> nor
+C<global_data> is given.
+
+=item C<rpc_ai_global_data($call_id, $data)>
+
+Merge C<$data> into another call's global_data with no conversation turn --
+a thin wrapper over C<< rpc_ai_message(global_data => $data) >>. The
+destination prompt reads it back with C<${global_data.key}>.
 
 =item C<rpc_ai_unhold(%opts)>
 

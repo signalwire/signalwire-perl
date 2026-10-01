@@ -67,8 +67,15 @@ sub _is_set {
 # signalwire.core.logging_config.strip_control_chars — a structlog processor
 # in Python; here it is a plain hash transformer. Returns the same hashref
 # with string values sanitised.
+#
+# Accepts either the event hashref alone (strip_control_chars($event)) or a
+# structlog-style processor call ($logger, $method_name, $event): the LAST
+# argument is the event hashref (python parity: strip_control_chars(*args)).
+# Dies when called with no arguments.
 sub strip_control_chars {
-    my ($event_dict) = @_;
+    my (@args) = @_;
+    die "strip_control_chars() requires the event dict\n" unless @args;
+    my $event_dict = $args[-1];
     for my $key ( keys %$event_dict ) {
         my $value = $event_dict->{$key};
         if ( defined $value && !ref $value ) {
@@ -160,11 +167,14 @@ C<reset_logging_configuration> has run first.
 Reset the one-time configuration guard so C<configure_logging> can run
 again (used when the environment changes after initial setup).
 
-=item C<strip_control_chars($event_dict)>
+=item C<strip_control_chars(@args)>
 
 Strip C0/C1 control characters (minus tab/newline/carriage-return) from
 every string value of the log-event hashref, preventing log injection.
-Mutates and returns the same hashref.
+Mutates and returns the same hashref. The B<last> argument is the event
+hashref, so it can be called as C<strip_control_chars($event)> or with a
+processor-style C<($logger, $method_name, $event)>; called with no arguments
+it dies.
 
 =back
 
