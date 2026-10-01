@@ -516,8 +516,11 @@ sub tap ( $self, $uri, %opts ) {
     my $rtp_ptime  = $opts{rtp_ptime} // 20;
     my $status_url = $opts{status_url};
 
-    die "direction must be 'speak', 'hear', or 'both'"
-        unless $direction eq 'speak' || $direction eq 'hear' || $direction eq 'both';
+    # The SWML tap verb's direction enum is speak/listen/both (schema.json
+    # $defs/Tap; the same set record_call uses). 'hear' is not a tap direction —
+    # the platform rejects it — so it dies here like any other bad value.
+    die "direction must be 'speak', 'listen', or 'both'"
+        unless $direction eq 'speak' || $direction eq 'listen' || $direction eq 'both';
     die "codec must be 'PCMU' or 'PCMA'"
         unless $codec eq 'PCMU' || $codec eq 'PCMA';
 
@@ -527,9 +530,11 @@ sub tap ( $self, $uri, %opts ) {
     my %params = ( uri => $uri );
 
     # Conditional keys — each emitted only when it differs from its default,
-    # matching Python's per-key gating.
-    $params{control_id} = $control_id    if $control_id;
-    $params{direction}  = $direction     if $direction ne 'both';
+    # matching Python's per-key gating. direction is ALWAYS sent: the verb's
+    # own default is 'speak', not this helper's 'both', so omitting it would
+    # tap less than the caller asked for.
+    $params{control_id} = $control_id if $control_id;
+    $params{direction}  = $direction;
     $params{codec}      = $codec         if $codec ne 'PCMU';
     $params{rtp_ptime}  = $rtp_ptime + 0 if $rtp_ptime != 20;
     $params{status_url} = $status_url    if $status_url;
@@ -998,10 +1003,10 @@ when truthy.
 =item C<tap($uri, %opts)>
 
 Start tapping media to C<$uri> (SWML C<tap>). Dies unless C<direction> is
-speak/hear/both, C<codec> is PCMU or PCMA, and C<rtp_ptime> is positive.
-Note the direction set here is B<speak/hear/both> — not the
-speak/listen/both that C<record_call> accepts. Every optional key is
-emitted only when it differs from its default.
+speak/listen/both (default both), C<codec> is PCMU or PCMA, and
+C<rtp_ptime> is positive. C<direction> is always sent (the SWML verb's own
+default is speak); every other optional key is emitted only when it differs
+from its default.
 
 =item C<stop_tap(%opts)>
 

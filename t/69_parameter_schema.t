@@ -144,7 +144,7 @@ subtest 'builder == hand-written across all property kinds (incl. enum)' => sub 
 #     verbs validate against (RecordCall formats/directions, Tap
 #     directions/codecs). The vocabularies stay distinct.
 # ------------------------------------------------------------------
-subtest 'enum integrates the Tier-1 constant sets (distinct vocabularies)' => sub {
+subtest 'enum integrates the Tier-1 constant sets' => sub {
     my $h =
         schema()
         ->enum( 'rec_format',    SignalWire::SWAIG::RecordCall->formats,    'record format' )
@@ -165,8 +165,8 @@ subtest 'enum integrates the Tier-1 constant sets (distinct vocabularies)' => su
     );
     is_deeply(
         $h->{properties}{tap_direction}{enum},
-        [ 'speak', 'hear', 'both' ],
-        'Tap->directions => enum [speak,hear,both] (hear, NOT listen)'
+        [ 'speak', 'listen', 'both' ],
+        'Tap->directions => enum [speak,listen,both] (the SWML tap verb enum)'
     );
     is_deeply(
         $h->{properties}{tap_codec}{enum},
@@ -179,12 +179,13 @@ subtest 'enum integrates the Tier-1 constant sets (distinct vocabularies)' => su
         is( $h->{properties}{$name}{type}, 'string', "$name enum is a string type" );
     }
 
-    # The record-direction and tap-direction vocabularies are NOT the same
-    # set — the builder copies each verbatim and never unifies them.
-    isnt(
+    # The record and tap verbs share one direction vocabulary
+    # (speak/listen/both — the SWML enum of both verbs); the builder copies
+    # each module's set verbatim.
+    is(
         canon( $h->{properties}{rec_direction}{enum} ),
         canon( $h->{properties}{tap_direction}{enum} ),
-        'record-direction and tap-direction enums are distinct sets'
+        'record-direction and tap-direction enums are the same SWML set'
     );
 };
 

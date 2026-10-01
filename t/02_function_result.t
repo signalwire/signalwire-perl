@@ -870,11 +870,16 @@ sub tap_params {
 
 subtest 'tap rtp_ptime + status_url + validation (Python parity)' => sub {
 
-    # Defaults: only uri (rtp_ptime==20 and status_url undef are omitted,
+    # Defaults: uri + direction (direction is always sent — the SWML verb
+    # defaults to 'speak'; rtp_ptime==20 and status_url undef are omitted,
     # matching Python's per-key gating).
     my $r = SignalWire::SWAIG::FunctionResult->new;
     $r->tap('wss://t.test/s');
-    is_deeply( tap_params($r), { uri => 'wss://t.test/s' }, 'all-defaults tap emits only uri' );
+    is_deeply(
+        tap_params($r),
+        { uri => 'wss://t.test/s', direction => 'both' },
+        'all-defaults tap emits uri + direction'
+    );
 
     # Non-default rtp_ptime + status_url both reach the wire (were dropped).
     my $r2 = SignalWire::SWAIG::FunctionResult->new;
