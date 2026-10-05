@@ -18,7 +18,7 @@ requires 'Protocol::WebSocket', '0.26';
 
 # Testing
 on 'test' => sub {
-    requires 'Test::More', '1.302222';
+    requires 'Test::More', '1.302225';
     requires 'Test::Exception';
     requires 'Plack::Test';
     requires 'HTTP::Request::Common';
