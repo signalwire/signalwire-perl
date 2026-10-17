@@ -6,7 +6,7 @@ requires 'JSON', '4.11';
 requires 'JSON::PP';
 requires 'YAML::PP';
 requires 'Tie::IxHash';
-requires 'Plack', '1.0054';
+requires 'Plack', '1.0055';
 requires 'Plack::Request';
 requires 'HTTP::Tiny';
 requires 'Digest::SHA';
@@ -18,7 +18,7 @@ requires 'Protocol::WebSocket', '0.26';
 
 # Testing
 on 'test' => sub {
-    requires 'Test::More', '1.302222';
+    requires 'Test::More', '1.302225';
     requires 'Test::Exception';
     requires 'Plack::Test';
     requires 'HTTP::Request::Common';
